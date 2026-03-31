@@ -74,14 +74,72 @@ const inp = {
 // ── GUILLOCHÉ SVG (fondo hoja protocolar) ─────────────────
 const G = (op=1) => `rgba(90,90,90,${op})`;
 
+// ── HOJA PROTOCOLAR (imagen real + renglones SVG) ─────────
 function HojaProtocolarSVG({ margen }) {
-  const boxL = margen.left;
-  const boxT = margen.top;
-  const boxR = A4W - margen.right;
-  const boxB = A4H - margen.bottom;
-  const boxW = boxR - boxL;
-  const boxH = boxB - boxT;
+  const boxL  = margen.left;
+  const boxT  = margen.top;
+  const boxR  = A4W - margen.right;
+  const boxB  = A4H - margen.bottom;
+  const boxW  = boxR - boxL;
+  const boxH  = boxB - boxT;
   const lineH = boxH / LINE_COUNT;
+
+  return (
+    <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1 }}>
+
+      {/* ── Imagen real de la hoja protocolar ── */}
+      <img
+        src="/CAPA_PROTOCOLO_1.svg"
+        alt=""
+        style={{
+          position : "absolute",
+          inset    : 0,
+          width    : A4W,
+          height   : A4H,
+          display  : "block",
+          opacity  : 1,
+        }}
+      />
+
+      {/* ── Renglones numerados (SVG liviano encima) ── */}
+      <svg
+        width={A4W} height={A4H}
+        viewBox={`0 0 ${A4W} ${A4H}`}
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ position:"absolute", inset:0 }}
+      >
+        {/* Línea vertical izquierda de numeración */}
+        <line
+          x1={boxL - 22} y1={boxT}
+          x2={boxL - 22} y2={boxB}
+          stroke="rgba(90,90,90,0.08)" strokeWidth="0.4"
+        />
+
+        {Array.from({ length: LINE_COUNT }, (_, i) => {
+          const y = boxT + (i + 1) * lineH;
+          return (
+            <g key={i}>
+              <line
+                x1={boxL} y1={y} x2={boxR} y2={y}
+                stroke="rgba(90,90,90,0.13)" strokeWidth="0.4"
+              />
+              <text
+                fontFamily="'Courier New',monospace"
+                fontSize="9"
+                fill="rgba(90,90,90,0.30)"
+                x={boxL - 5} y={y - 3}
+                textAnchor="end"
+              >
+                {i + 1}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+    </div>
+  );
+}
 
   return (
     <svg width={A4W} height={A4H} viewBox={`0 0 ${A4W} ${A4H}`}
