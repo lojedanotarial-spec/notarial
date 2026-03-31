@@ -82,7 +82,7 @@ function HojaProtocolarSVG({ margen }) {
  
       {/* Imagen real de la hoja protocolar — copiá CAPA_PROTOCOLO_1.svg a /public */}
       <img
-        src="/CAPA_PROTOCOLO_1.svg"
+        src="/Protocolo_2.svg"
         alt=""
         style={{
           position: "absolute",
