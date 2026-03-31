@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
- 
+
 // ── PALETA ────────────────────────────────────────────────
 const C = {
   dark: "#1a2332", porcelain: "#FDFCFA", warm: "#f0ece3",
@@ -8,21 +8,21 @@ const C = {
   border: "rgba(26,35,50,.14)", borderStrong: "rgba(26,35,50,.22)",
   muted: "rgba(26,35,50,.45)", faint: "rgba(26,35,50,.3)",
 };
- 
+
 // ── A4 / MÁRGENES ─────────────────────────────────────────
 const A4W = 794;
 const A4H = 1123;
 const mm = (v) => (v / 210) * A4W;
- 
+
 const PROT = {
   left: mm(34), top: mm(70), right: mm(12), bottom: mm(16.5),
 };
 const NOPROT = {
   left: mm(30), top: mm(35), right: mm(20), bottom: mm(20),
 };
- 
+
 const LINE_COUNT = 24;
- 
+
 // ── CONSTANTES UI ─────────────────────────────────────────
 const ZOOM_LEVELS = [0.5, 0.65, 0.75, 0.85, 1, 1.25, 1.5];
 const FUENTES = [
@@ -52,7 +52,7 @@ const BADGE = {
   completo: { bg:"#f5edcc",           color:"#4e3d21",             border:"1px solid rgba(201,169,97,.35)" },
 };
 const ELABELS = { borrador:"Borrador", revision:"En revisión", completo:"Completo" };
- 
+
 // ── UTILS ─────────────────────────────────────────────────
 function useClickOutside(ref, cb) {
   useEffect(() => {
@@ -61,14 +61,14 @@ function useClickOutside(ref, cb) {
     return () => document.removeEventListener("mousedown", h);
   }, [ref, cb]);
 }
- 
+
 // ── ESTILOS BASE ──────────────────────────────────────────
 const inp = {
   padding:"8px 11px", border:`1px solid ${C.border}`, borderRadius:7,
   fontSize:13, background:C.porcelain, color:C.dark,
   fontFamily:"'Montserrat',sans-serif", width:"100%", boxSizing:"border-box",
 };
- 
+
 // ── HOJA PROTOCOLAR (imagen real + renglones SVG) ─────────
 function HojaProtocolarSVG({ margen }) {
   const boxL  = margen.left;
@@ -76,13 +76,13 @@ function HojaProtocolarSVG({ margen }) {
   const boxR  = A4W - margen.right;
   const boxB  = A4H - margen.bottom;
   const lineH = (boxB - boxT) / LINE_COUNT;
- 
+
   return (
     <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1 }}>
- 
+
       {/* Imagen real de la hoja protocolar — copiá CAPA_PROTOCOLO_1.svg a /public */}
       <img
-        src="/Protocolo_2.svg"
+        src="/CAPA_PROTOCOLO_1.svg"
         alt=""
         style={{
           position: "absolute",
@@ -92,7 +92,7 @@ function HojaProtocolarSVG({ margen }) {
           display:  "block",
         }}
       />
- 
+
       {/* Renglones numerados encima */}
       <svg
         width={A4W} height={A4H}
@@ -126,11 +126,11 @@ function HojaProtocolarSVG({ margen }) {
           );
         })}
       </svg>
- 
+
     </div>
   );
 }
- 
+
 // ── COMPONENTES UI ────────────────────────────────────────
 function NavBar({ docTitle, onStatus, onExport }) {
   return (
@@ -168,7 +168,7 @@ function NavBar({ docTitle, onStatus, onExport }) {
     </nav>
   );
 }
- 
+
 function TbBtn({ children, active, onClick, title }) {
   const [h, setH] = useState(false);
   const on = active || h;
@@ -184,11 +184,11 @@ function TbBtn({ children, active, onClick, title }) {
     </button>
   );
 }
- 
+
 const TbSep = () => (
   <div style={{ width:1, height:18, background:"rgba(26,35,50,.18)", margin:"0 4px", flexShrink:0 }}/>
 );
- 
+
 function Dropdown({ open, children }) {
   if (!open) return null;
   return (
@@ -199,7 +199,7 @@ function Dropdown({ open, children }) {
     </div>
   );
 }
- 
+
 function DdSection({ label, children }) {
   return (
     <div style={{ padding:"4px 0", borderBottom:`1px solid rgba(26,35,50,.07)` }}>
@@ -210,7 +210,7 @@ function DdSection({ label, children }) {
     </div>
   );
 }
- 
+
 function DdItem({ children, active, onClick, meta }) {
   const [h, setH] = useState(false);
   return (
@@ -229,7 +229,7 @@ function DdItem({ children, active, onClick, meta }) {
     </div>
   );
 }
- 
+
 function Var({ children, empty, show }) {
   if (!show) return <span>{children}</span>;
   return (
@@ -240,7 +240,7 @@ function Var({ children, empty, show }) {
     </span>
   );
 }
- 
+
 function Modal({ title, onClose, children, footer }) {
   return (
     <div onClick={(e)=>e.target===e.currentTarget&&onClose()}
@@ -267,7 +267,7 @@ function Modal({ title, onClose, children, footer }) {
     </div>
   );
 }
- 
+
 function Btn({ children, primary, danger, onClick }) {
   const [h, setH] = useState(false);
   return (
@@ -281,7 +281,7 @@ function Btn({ children, primary, danger, onClick }) {
     </button>
   );
 }
- 
+
 function Fg({ label, children, full }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:4, gridColumn:full?"1/-1":undefined }}>
@@ -292,7 +292,7 @@ function Fg({ label, children, full }) {
     </div>
   );
 }
- 
+
 function Warn({ children }) {
   return (
     <div style={{ display:"flex", gap:8, padding:"10px 12px", background:C.fawn50,
@@ -307,7 +307,7 @@ function Warn({ children }) {
     </div>
   );
 }
- 
+
 // ── HOME ──────────────────────────────────────────────────
 function HomeScreen({ onGo }) {
   return (
@@ -360,7 +360,7 @@ function HomeScreen({ onGo }) {
     </div>
   );
 }
- 
+
 // ── SELECTOR ──────────────────────────────────────────────
 function SelectorScreen({ onGo }) {
   const [selected, setSelected] = useState("Certificación de firma");
@@ -428,7 +428,7 @@ function SelectorScreen({ onGo }) {
     </div>
   );
 }
- 
+
 // ── EDITOR ────────────────────────────────────────────────
 function EditorScreen({ onGo }) {
   const [modal, setModal]         = useState(null);
@@ -442,15 +442,15 @@ function EditorScreen({ onGo }) {
   const [fuente, setFuente]       = useState(FUENTES[0]);
   const [margenKey, setMargenKey] = useState("protocolar");
   const [ddOpen, setDdOpen]       = useState(null);
- 
+
   const docRef   = useRef(null);
   const fmtRef   = useRef(null);
   const mgnRef   = useRef(null);
   const savedSel = useRef(null);
- 
+
   useClickOutside(fmtRef, ()=>ddOpen==="formato"  && setDdOpen(null));
   useClickOutside(mgnRef, ()=>ddOpen==="margenes" && setDdOpen(null));
- 
+
   const zoom   = ZOOM_LEVELS[zoomIdx];
   const margen = margenKey === "protocolar" ? PROT : NOPROT;
   const boxL   = margen.left;
@@ -458,7 +458,7 @@ function EditorScreen({ onGo }) {
   const boxW   = A4W - margen.right - boxL;
   const boxH   = A4H - margen.bottom - boxT;
   const lineH  = boxH / LINE_COUNT;
- 
+
   const saveSelection = () => {
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) savedSel.current = sel.getRangeAt(0).cloneRange();
@@ -479,15 +479,15 @@ function EditorScreen({ onGo }) {
     docRef.current?.focus();
   };
   const applyFuente = (f) => { setFuente(f); setDdOpen(null); };
- 
+
   const V = ({ children, empty }) => <Var show={varsOn} empty={empty}>{children}</Var>;
- 
+
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
                   fontFamily:"'Montserrat',sans-serif", overflow:"hidden" }}>
       <NavBar docTitle="Certificación de firma — Villegas — 14/11/2025"
               onStatus={()=>setModal("estado")} onExport={()=>setModal("exportar")}/>
- 
+
       {/* ── TOOLBAR ── */}
       <div style={{ background:C.porcelain, borderBottom:`1px solid rgba(26,35,50,.12)`,
                     padding:"6px 16px", flexShrink:0, zIndex:10 }}>
@@ -518,7 +518,7 @@ function EditorScreen({ onGo }) {
             Hoja
           </TbBtn>
           <TbSep/>
- 
+
           {/* Márgenes */}
           <div ref={mgnRef} style={{ position:"relative" }}>
             <TbBtn active={ddOpen==="margenes"}
@@ -534,7 +534,7 @@ function EditorScreen({ onGo }) {
               </DdSection>
             </Dropdown>
           </div>
- 
+
           {/* Fuente */}
           <div ref={fmtRef} style={{ position:"relative" }}>
             <TbBtn active={ddOpen==="formato"}
@@ -552,7 +552,7 @@ function EditorScreen({ onGo }) {
             </Dropdown>
           </div>
           <TbSep/>
- 
+
           {/* Zoom */}
           <TbBtn onClick={()=>setZoomIdx(Math.max(0, zoomIdx-1))}>−</TbBtn>
           <span style={{ fontSize:12, fontWeight:500, color:C.dark, minWidth:38, textAlign:"center" }}>
@@ -560,7 +560,7 @@ function EditorScreen({ onGo }) {
           </span>
           <TbBtn onClick={()=>setZoomIdx(Math.min(ZOOM_LEVELS.length-1, zoomIdx+1))}>+</TbBtn>
           <TbBtn onClick={()=>setZoomIdx(4)} title="100%">↺</TbBtn>
- 
+
           <div style={{ marginLeft:"auto" }}>
             <span onClick={()=>setModal("estado")}
                   style={{ ...BADGE[estado], fontSize:11, fontWeight:500,
@@ -570,7 +570,7 @@ function EditorScreen({ onGo }) {
           </div>
         </div>
       </div>
- 
+
       {/* ── ÁREA DE DOCUMENTO ── */}
       <div style={{ flex:1, background:C.warm, overflowY:"auto", overflowX:"auto",
                     display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"28px 20px" }}>
@@ -581,9 +581,9 @@ function EditorScreen({ onGo }) {
         }}>
           <div style={{ position:"relative", width:A4W, minHeight:A4H,
                         background:"#fff", boxShadow:"0 2px 16px rgba(26,35,50,.13)" }}>
- 
+
             {hojaOn && <HojaProtocolarSVG margen={margen}/>}
- 
+
             <div
               ref={docRef}
               contentEditable
@@ -591,19 +591,27 @@ function EditorScreen({ onGo }) {
               onMouseUp={saveSelection}
               onKeyUp={saveSelection}
               style={{
-                position:   "absolute",
-                left:       boxL,
-                top:        boxT,
-                width:      boxW,
-                minHeight:  boxH,
-                fontFamily: fuente.family,
-                fontSize:   "12pt",
-                lineHeight: `${lineH}px`,
-                textAlign:  "justify",
-                color:      C.dark,
-                outline:    "none",
-                zIndex:     2,
-                wordBreak:  "break-word",
+                position:    "absolute",
+                left:        boxL,
+                top:         boxT,
+                width:       boxW,
+                minHeight:   boxH,
+                fontFamily:  fuente.family,
+                fontSize:    "12pt",
+                lineHeight:  `${lineH}px`,
+                // Alinea la primera línea de texto con la primera guía SVG.
+                // lineH incluye el renglón completo; desplazamos el texto
+                // para que la baseline quede sobre la línea, no debajo.
+                paddingTop:   `${lineH * 0.72}px`,
+                // 2 mm de aire en ambos laterales para no tocar el borde
+                paddingLeft:  `${mm(2)}px`,
+                paddingRight: `${mm(2)}px`,
+                textAlign:   "justify",
+                color:       C.dark,
+                outline:     "none",
+                zIndex:      2,
+                wordBreak:   "break-word",
+                boxSizing:   "border-box",
               }}
             >
               <strong>FÁTIMA A. TAHA</strong>, Notaria Adscripta al Registro Notarial número
@@ -630,7 +638,7 @@ function EditorScreen({ onGo }) {
           </div>
         </div>
       </div>
- 
+
       {/* ── MODALES ── */}
       {modal==="partes" && (
         <Modal title="Partes comparecientes" onClose={()=>setModal(null)}
@@ -683,7 +691,7 @@ function EditorScreen({ onGo }) {
           </button>
         </Modal>
       )}
- 
+
       {modal==="instrumento" && (
         <Modal title="Instrumento certificado" onClose={()=>setModal(null)}
                footer={<><Btn onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -707,7 +715,7 @@ function EditorScreen({ onGo }) {
           </div>
         </Modal>
       )}
- 
+
       {modal==="protocolo" && (
         <Modal title="Protocolo" onClose={()=>setModal(null)}
                footer={<><Btn onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -728,7 +736,7 @@ function EditorScreen({ onGo }) {
           <Warn>El N° de acta es manual. El documento puede cerrarse sin completarlo.</Warn>
         </Modal>
       )}
- 
+
       {modal==="fecha" && (
         <Modal title="Fecha y lugar de otorgamiento" onClose={()=>setModal(null)}
                footer={<><Btn onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -753,7 +761,7 @@ function EditorScreen({ onGo }) {
           </Fg>
         </Modal>
       )}
- 
+
       {modal==="estado" && (
         <Modal title="Estado del documento" onClose={()=>setModal(null)}
                footer={<><Btn onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -773,7 +781,7 @@ function EditorScreen({ onGo }) {
           <Warn>Ningún estado bloquea la edición del documento.</Warn>
         </Modal>
       )}
- 
+
       {modal==="exportar" && (
         <Modal title="Exportar documento" onClose={()=>setModal(null)}
                footer={<Btn onClick={()=>setModal(null)}>Cerrar</Btn>}>
@@ -794,7 +802,7 @@ function EditorScreen({ onGo }) {
     </div>
   );
 }
- 
+
 // ── APP ───────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState("home");
