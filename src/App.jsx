@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-
+ 
 // ── PALETA ────────────────────────────────────────────────
 const C = {
   dark: "#1a2332", porcelain: "#FDFCFA", warm: "#f0ece3",
@@ -8,30 +8,28 @@ const C = {
   border: "rgba(26,35,50,.14)", borderStrong: "rgba(26,35,50,.22)",
   muted: "rgba(26,35,50,.45)", faint: "rgba(26,35,50,.3)",
 };
-
+ 
 // ── A4 / MÁRGENES ─────────────────────────────────────────
 const A4W = 794;
 const A4H = 1123;
 const mm = (v) => (v / 210) * A4W;
-
-// Márgenes protocolar reales (hoja Colegio Notarial Mendoza)
+ 
 const PROT = {
   left: mm(34), top: mm(70), right: mm(12), bottom: mm(16.5),
 };
-// Márgenes no protocolar
 const NOPROT = {
   left: mm(30), top: mm(35), right: mm(20), bottom: mm(20),
 };
-
+ 
 const LINE_COUNT = 24;
-
+ 
 // ── CONSTANTES UI ─────────────────────────────────────────
 const ZOOM_LEVELS = [0.5, 0.65, 0.75, 0.85, 1, 1.25, 1.5];
 const FUENTES = [
-  { key: "sitka",      label: "Sitka",            family: "'Sitka Text','Sitka',Georgia,serif" },
-  { key: "georgia",    label: "Georgia",           family: "Georgia,serif" },
-  { key: "times",      label: "Times New Roman",   family: "'Times New Roman',serif" },
-  { key: "montserrat", label: "Montserrat",        family: "'Montserrat',sans-serif" },
+  { key: "sitka",      label: "Sitka",           family: "'Sitka Text','Sitka',Georgia,serif" },
+  { key: "georgia",    label: "Georgia",          family: "Georgia,serif" },
+  { key: "times",      label: "Times New Roman",  family: "'Times New Roman',serif" },
+  { key: "montserrat", label: "Montserrat",       family: "'Montserrat',sans-serif" },
 ];
 const DEPARTAMENTOS = [
   "Ciudad","Godoy Cruz","Guaymallén","Las Heras","Lavalle","Luján de Cuyo",
@@ -54,7 +52,7 @@ const BADGE = {
   completo: { bg:"#f5edcc",           color:"#4e3d21",             border:"1px solid rgba(201,169,97,.35)" },
 };
 const ELABELS = { borrador:"Borrador", revision:"En revisión", completo:"Completo" };
-
+ 
 // ── UTILS ─────────────────────────────────────────────────
 function useClickOutside(ref, cb) {
   useEffect(() => {
@@ -63,58 +61,50 @@ function useClickOutside(ref, cb) {
     return () => document.removeEventListener("mousedown", h);
   }, [ref, cb]);
 }
-
+ 
 // ── ESTILOS BASE ──────────────────────────────────────────
 const inp = {
   padding:"8px 11px", border:`1px solid ${C.border}`, borderRadius:7,
   fontSize:13, background:C.porcelain, color:C.dark,
   fontFamily:"'Montserrat',sans-serif", width:"100%", boxSizing:"border-box",
 };
-
-// ── GUILLOCHÉ SVG (fondo hoja protocolar) ─────────────────
-const G = (op=1) => `rgba(90,90,90,${op})`;
-
+ 
 // ── HOJA PROTOCOLAR (imagen real + renglones SVG) ─────────
 function HojaProtocolarSVG({ margen }) {
   const boxL  = margen.left;
   const boxT  = margen.top;
   const boxR  = A4W - margen.right;
   const boxB  = A4H - margen.bottom;
-  const boxW  = boxR - boxL;
-  const boxH  = boxB - boxT;
-  const lineH = boxH / LINE_COUNT;
-
+  const lineH = (boxB - boxT) / LINE_COUNT;
+ 
   return (
     <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1 }}>
-
-      {/* ── Imagen real de la hoja protocolar ── */}
+ 
+      {/* Imagen real de la hoja protocolar — copiá CAPA_PROTOCOLO_1.svg a /public */}
       <img
         src="/CAPA_PROTOCOLO_1.svg"
         alt=""
         style={{
-          position : "absolute",
-          inset    : 0,
-          width    : A4W,
-          height   : A4H,
-          display  : "block",
-          opacity  : 1,
+          position: "absolute",
+          inset:    0,
+          width:    A4W,
+          height:   A4H,
+          display:  "block",
         }}
       />
-
-      {/* ── Renglones numerados (SVG liviano encima) ── */}
+ 
+      {/* Renglones numerados encima */}
       <svg
         width={A4W} height={A4H}
         viewBox={`0 0 ${A4W} ${A4H}`}
         xmlns="http://www.w3.org/2000/svg"
         style={{ position:"absolute", inset:0 }}
       >
-        {/* Línea vertical izquierda de numeración */}
         <line
           x1={boxL - 22} y1={boxT}
           x2={boxL - 22} y2={boxB}
           stroke="rgba(90,90,90,0.08)" strokeWidth="0.4"
         />
-
         {Array.from({ length: LINE_COUNT }, (_, i) => {
           const y = boxT + (i + 1) * lineH;
           return (
@@ -136,170 +126,11 @@ function HojaProtocolarSVG({ margen }) {
           );
         })}
       </svg>
-
+ 
     </div>
   );
 }
-
-  return (
-    <svg width={A4W} height={A4H} viewBox={`0 0 ${A4W} ${A4H}`}
-         xmlns="http://www.w3.org/2000/svg"
-         style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1 }}>
-      <defs>
-        <pattern id="gw" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-          <path d="M0 5 Q2.5 0 5 5 Q7.5 10 10 5" fill="none" stroke={G(0.18)} strokeWidth="0.55"/>
-          <path d="M0 5 Q2.5 10 5 5 Q7.5 0 10 5" fill="none" stroke={G(0.11)} strokeWidth="0.35"/>
-        </pattern>
-        <pattern id="ro" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
-          <ellipse cx="7" cy="7" rx="6" ry="2.5" fill="none" stroke={G(0.14)} strokeWidth="0.35" transform="rotate(0 7 7)"/>
-          <ellipse cx="7" cy="7" rx="6" ry="2.5" fill="none" stroke={G(0.12)} strokeWidth="0.3"  transform="rotate(45 7 7)"/>
-          <ellipse cx="7" cy="7" rx="6" ry="2.5" fill="none" stroke={G(0.1)}  strokeWidth="0.28" transform="rotate(90 7 7)"/>
-          <ellipse cx="7" cy="7" rx="6" ry="2.5" fill="none" stroke={G(0.1)}  strokeWidth="0.25" transform="rotate(135 7 7)"/>
-        </pattern>
-        <pattern id="cnp" x="0" y="0" width="22" height="44" patternUnits="userSpaceOnUse">
-          <rect width="22" height="44" fill={G(0.06)}/>
-          <path d="M4 10 Q8 2 11 10 Q14 18 11 22 Q8 18 4 10Z" fill="none" stroke={G(0.14)} strokeWidth="0.6"/>
-          <path d="M4 30 Q8 22 11 30 Q14 38 11 42 Q8 38 4 30Z" fill="none" stroke={G(0.11)} strokeWidth="0.5"/>
-        </pattern>
-      </defs>
-
-      {/* Header guilloché */}
-      <rect x="0" y="0" width={A4W} height="130" fill="url(#gw)"/>
-      <rect x="190" y="6" width={A4W-380} height="118" fill="rgba(255,255,255,0.72)" rx="2"/>
-      <rect x="0" y="130" width={A4W} height="1.5" fill={G(0.28)}/>
-      <rect x="0" y="132" width={A4W} height="0.5" fill={G(0.12)}/>
-
-      {/* Escudo izquierdo */}
-      <circle cx="82" cy="65" r="52" fill="url(#ro)"/>
-      <circle cx="82" cy="65" r="52" fill="none" stroke={G(0.22)} strokeWidth="1"/>
-      <circle cx="82" cy="65" r="47" fill="none" stroke={G(0.1)} strokeWidth="0.5"/>
-      <path d="M60 42 Q60 38 82 36 Q104 38 104 42 L104 74 Q104 94 82 104 Q60 94 60 74 Z"
-            fill="none" stroke={G(0.18)} strokeWidth="0.8"/>
-      {[42,54,66,78].map((y,i)=>(
-        <path key={i} d={`M61 ${y} Q82 ${y+2} 103 ${y} L103 ${y+12} Q82 ${y+14} 61 ${y+12} Z`}
-              fill={G(i%2===0?0.07:0.03)}/>
-      ))}
-      <circle cx="82" cy="56" r="6" fill="none" stroke={G(0.25)} strokeWidth="0.8"/>
-      {[0,45,90,135,180,225,270,315].map(a=>{
-        const r=a*Math.PI/180;
-        return <line key={a} x1={82+8*Math.sin(r)} y1={56-8*Math.cos(r)}
-                     x2={82+12*Math.sin(r)} y2={56-12*Math.cos(r)}
-                     stroke={G(0.18)} strokeWidth="0.7"/>;
-      })}
-      <path d="M77 44 Q82 37 87 44 Q84.5 42.5 82 43 Q79.5 42.5 77 44Z" fill={G(0.16)} stroke={G(0.12)} strokeWidth="0.5"/>
-      {[-1,1].map(s=>(
-        <g key={s} transform={`translate(${s===1?0:164-82*2} 0) scale(${s} 1)`}>
-          <path d="M36 56 Q30 50 32 42 Q38 48 38 56Z" fill={G(0.11)}/>
-          <path d="M34 66 Q28 62 29 54 Q35 59 35 66Z" fill={G(0.1)}/>
-          <path d="M35 76 Q29 74 29 66 Q35 70 36 77Z" fill={G(0.09)}/>
-          <path d="M37 86 Q31 86 32 78 Q38 81 38 87Z" fill={G(0.08)}/>
-        </g>
-      ))}
-
-      {/* Texto central header */}
-      <text fontFamily="'Arial Narrow','Arial',sans-serif" fontSize="26" fontWeight="bold"
-            fill={G(0.52)} x={A4W/2} y="68" textAnchor="middle" letterSpacing="6">
-        ACTUACION NOTARIAL
-      </text>
-      <line x1="230" y1="74" x2={A4W-230} y2="74" stroke={G(0.13)} strokeWidth="0.6"/>
-      <rect x={A4W/2-17} y="80" width="34" height="36" rx="3"
-            fill="rgba(255,255,255,0.55)" stroke={G(0.22)} strokeWidth="0.8"/>
-      {[0,1,2].map(i=>(
-        <rect key={i} x={A4W/2-15} y={82+i*11} width="30" height={i===2?10:11}
-              fill={G(i%2===0?0.07:0.03)} rx={i===2?1:0}/>
-      ))}
-      <text fontFamily="serif" fontSize="11" fontWeight="bold"
-            fill={G(0.38)} x={A4W/2} y="101" textAnchor="middle">CN</text>
-
-      {/* Sello CN derecho */}
-      <circle cx={A4W-75} cy="65" r="48" fill="url(#ro)"/>
-      <circle cx={A4W-75} cy="65" r="48" fill="none" stroke={G(0.2)} strokeWidth="1"/>
-      <circle cx={A4W-75} cy="65" r="43" fill="none" stroke={G(0.09)} strokeWidth="0.5"/>
-      <path id="a1" d={`M${A4W-75-38} 65 A38 38 0 0 1 ${A4W-75+38} 65`} fill="none"/>
-      <text fontSize="7.5" fontWeight="bold" fill={G(0.42)} letterSpacing="1.5">
-        <textPath href="#a1" startOffset="50%" textAnchor="middle">· COLEGIO NOTARIAL ·</textPath>
-      </text>
-      <path id="a2" d={`M${A4W-75-34} 65 A34 34 0 0 0 ${A4W-75+34} 65`} fill="none"/>
-      <text fontSize="7" fontWeight="bold" fill={G(0.38)} letterSpacing="1.3">
-        <textPath href="#a2" startOffset="50%" textAnchor="middle">PROVINCIA DE MENDOZA</textPath>
-      </text>
-      <path d={`M${A4W-92} 48 Q${A4W-92} 44 ${A4W-75} 42 Q${A4W-58} 44 ${A4W-58} 48 L${A4W-58} 70 Q${A4W-58} 83 ${A4W-75} 89 Q${A4W-92} 83 ${A4W-92} 70 Z`}
-            fill="none" stroke={G(0.18)} strokeWidth="0.8"/>
-      {[48,59,69].map((y,i)=>(
-        <rect key={i} x={A4W-91} y={y} width="32" height={i===2?10:11} fill={G(i%2===0?0.07:0.03)} rx="1"/>
-      ))}
-      <circle cx={A4W-75} cy="63" r="5" fill="none" stroke={G(0.18)} strokeWidth="0.7"/>
-
-      {/* Banda serie */}
-      <rect x="0" y="133" width={A4W} height="38" fill={G(0.025)}/>
-      <rect x="0" y="171" width={A4W} height="0.8" fill={G(0.18)}/>
-      <text fontFamily="'Courier New',monospace" fontSize="14" fontWeight="bold"
-            fill={G(0.42)} x={A4W-110} y="152" textAnchor="start" letterSpacing="1.5">
-        S  00331522
-      </text>
-      <text fontFamily="'Courier New',monospace" fontSize="8" fill={G(0.32)}
-            x={A4W-110} y="164" textAnchor="start" letterSpacing="1.5">
-        CE CE TR TR UN CI OO OO
-      </text>
-      <g transform={`translate(${A4W-60},136)`}>
-        <rect width="30" height="30" rx="2" fill="none" stroke={G(0.28)} strokeWidth="0.8"/>
-        <rect x="3" y="3" width="9" height="9" fill={G(0.22)} rx="1"/>
-        <rect x="4" y="4" width="7" height="7" fill="rgba(255,255,255,0.8)" rx="1"/>
-        <rect x="5" y="5" width="5" height="5" fill={G(0.2)} rx="1"/>
-        <rect x="18" y="3" width="9" height="9" fill={G(0.22)} rx="1"/>
-        <rect x="19" y="4" width="7" height="7" fill="rgba(255,255,255,0.8)" rx="1"/>
-        <rect x="20" y="5" width="5" height="5" fill={G(0.2)} rx="1"/>
-        <rect x="3" y="18" width="9" height="9" fill={G(0.22)} rx="1"/>
-        <rect x="4" y="19" width="7" height="7" fill="rgba(255,255,255,0.8)" rx="1"/>
-        <rect x="5" y="20" width="5" height="5" fill={G(0.2)} rx="1"/>
-        <rect x="13" y="13" width="4" height="4" fill={G(0.18)} rx="1"/>
-        <rect x="18" y="13" width="3" height="3" fill={G(0.15)}/>
-        <rect x="13" y="18" width="3" height="3" fill={G(0.15)}/>
-        <rect x="20" y="19" width="3" height="3" fill={G(0.15)}/>
-      </g>
-      <text fontFamily="serif" fontSize="9" fill={G(0.28)} x="14" y="10"
-            dominantBaseline="text-before-edge">
-        Colegio Notarial de Mendoza
-      </text>
-
-      {/* Borde CN derecho */}
-      <rect x={A4W-36} y="172" width="36" height={A4H-172} fill="url(#cnp)"/>
-      <line x1={A4W-36} y1="172" x2={A4W-36} y2={A4H} stroke={G(0.18)} strokeWidth="0.8"/>
-      <rect x={A4W-34} y="178" width="28" height="22" rx="3"
-            fill={G(0.07)} stroke={G(0.18)} strokeWidth="0.5"/>
-      <text fontFamily="'Arial',sans-serif" fontSize="11" fontWeight="bold"
-            fill={G(0.28)} x={A4W-20} y="193" textAnchor="middle">CN</text>
-
-      {/* Marcos exteriores */}
-      <rect x="8" y="172" width={A4W-44} height={A4H-180}
-            fill="none" stroke={G(0.16)} strokeWidth="0.7"/>
-      <rect x="11" y="175" width={A4W-50} height={A4H-186}
-            fill="none" stroke={G(0.08)} strokeWidth="0.3"/>
-      <rect x="1" y="1" width={A4W-2} height={A4H-2}
-            fill="none" stroke={G(0.2)} strokeWidth="1.2"/>
-      <rect x="4" y="4" width={A4W-8} height={A4H-8}
-            fill="none" stroke={G(0.09)} strokeWidth="0.4"/>
-
-      {/* Caja de texto + renglones */}
-      <rect x={boxL} y={boxT} width={boxW} height={boxH}
-            fill="none" stroke={G(0.2)} strokeWidth="0.6" strokeDasharray="4 3"/>
-      <line x1={boxL} y1={boxT} x2={boxL} y2={boxB} stroke={G(0.14)} strokeWidth="0.5"/>
-      <line x1={boxL-22} y1={boxT} x2={boxL-22} y2={boxB} stroke={G(0.08)} strokeWidth="0.4"/>
-
-      {Array.from({ length: LINE_COUNT }, (_, i) => {
-        const y = boxT + (i+1) * lineH;
-        return (
-          <g key={i}>
-            <line x1={boxL} y1={y} x2={boxR} y2={y} stroke={G(0.11)} strokeWidth="0.4"/>
-            <text fontFamily="'Courier New',monospace" fontSize="9"
-                  fill={G(0.28)} x={boxL-5} y={y-3} textAnchor="end">{i+1}</text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
+ 
 // ── COMPONENTES UI ────────────────────────────────────────
 function NavBar({ docTitle, onStatus, onExport }) {
   return (
@@ -337,7 +168,7 @@ function NavBar({ docTitle, onStatus, onExport }) {
     </nav>
   );
 }
-
+ 
 function TbBtn({ children, active, onClick, title }) {
   const [h, setH] = useState(false);
   const on = active || h;
@@ -353,11 +184,11 @@ function TbBtn({ children, active, onClick, title }) {
     </button>
   );
 }
-
+ 
 const TbSep = () => (
   <div style={{ width:1, height:18, background:"rgba(26,35,50,.18)", margin:"0 4px", flexShrink:0 }}/>
 );
-
+ 
 function Dropdown({ open, children }) {
   if (!open) return null;
   return (
@@ -368,7 +199,7 @@ function Dropdown({ open, children }) {
     </div>
   );
 }
-
+ 
 function DdSection({ label, children }) {
   return (
     <div style={{ padding:"4px 0", borderBottom:`1px solid rgba(26,35,50,.07)` }}>
@@ -379,7 +210,7 @@ function DdSection({ label, children }) {
     </div>
   );
 }
-
+ 
 function DdItem({ children, active, onClick, meta }) {
   const [h, setH] = useState(false);
   return (
@@ -398,7 +229,7 @@ function DdItem({ children, active, onClick, meta }) {
     </div>
   );
 }
-
+ 
 function Var({ children, empty, show }) {
   if (!show) return <span>{children}</span>;
   return (
@@ -409,7 +240,7 @@ function Var({ children, empty, show }) {
     </span>
   );
 }
-
+ 
 function Modal({ title, onClose, children, footer }) {
   return (
     <div onClick={(e)=>e.target===e.currentTarget&&onClose()}
@@ -436,7 +267,7 @@ function Modal({ title, onClose, children, footer }) {
     </div>
   );
 }
-
+ 
 function Btn({ children, primary, danger, onClick }) {
   const [h, setH] = useState(false);
   return (
@@ -450,7 +281,7 @@ function Btn({ children, primary, danger, onClick }) {
     </button>
   );
 }
-
+ 
 function Fg({ label, children, full }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:4, gridColumn:full?"1/-1":undefined }}>
@@ -461,7 +292,7 @@ function Fg({ label, children, full }) {
     </div>
   );
 }
-
+ 
 function Warn({ children }) {
   return (
     <div style={{ display:"flex", gap:8, padding:"10px 12px", background:C.fawn50,
@@ -476,7 +307,7 @@ function Warn({ children }) {
     </div>
   );
 }
-
+ 
 // ── HOME ──────────────────────────────────────────────────
 function HomeScreen({ onGo }) {
   return (
@@ -529,7 +360,7 @@ function HomeScreen({ onGo }) {
     </div>
   );
 }
-
+ 
 // ── SELECTOR ──────────────────────────────────────────────
 function SelectorScreen({ onGo }) {
   const [selected, setSelected] = useState("Certificación de firma");
@@ -597,77 +428,73 @@ function SelectorScreen({ onGo }) {
     </div>
   );
 }
-
+ 
 // ── EDITOR ────────────────────────────────────────────────
 function EditorScreen({ onGo }) {
   const [modal, setModal]         = useState(null);
   const [varsOn, setVarsOn]       = useState(true);
-  const [hojaOn, setHojaOn]       = useState(true);   // ← toggle hoja protocolar
+  const [hojaOn, setHojaOn]       = useState(true);
   const [acta, setActa]           = useState("");
   const [actaOk, setActaOk]       = useState(false);
   const [estado, setEstado]       = useState("borrador");
   const [parteOpen, setParteOpen] = useState(false);
-  const [zoomIdx, setZoomIdx]     = useState(4);       // índice en ZOOM_LEVELS (100%)
+  const [zoomIdx, setZoomIdx]     = useState(4);
   const [fuente, setFuente]       = useState(FUENTES[0]);
   const [margenKey, setMargenKey] = useState("protocolar");
   const [ddOpen, setDdOpen]       = useState(null);
-
-  const docRef  = useRef(null);
-  const fmtRef  = useRef(null);
-  const mgnRef  = useRef(null);
+ 
+  const docRef   = useRef(null);
+  const fmtRef   = useRef(null);
+  const mgnRef   = useRef(null);
   const savedSel = useRef(null);
-
+ 
   useClickOutside(fmtRef, ()=>ddOpen==="formato"  && setDdOpen(null));
   useClickOutside(mgnRef, ()=>ddOpen==="margenes" && setDdOpen(null));
-
-  const zoom = ZOOM_LEVELS[zoomIdx];
-
-  // Márgenes activos
+ 
+  const zoom   = ZOOM_LEVELS[zoomIdx];
   const margen = margenKey === "protocolar" ? PROT : NOPROT;
   const boxL   = margen.left;
   const boxT   = margen.top;
-  const boxR   = A4W - margen.right;
-  const boxB   = A4H - margen.bottom;
-  const boxW   = boxR - boxL;
-  const boxH   = boxB - boxT;
+  const boxW   = A4W - margen.right - boxL;
+  const boxH   = A4H - margen.bottom - boxT;
   const lineH  = boxH / LINE_COUNT;
-
+ 
   const saveSelection = () => {
     const sel = window.getSelection();
-    if (sel && sel.rangeCount>0) savedSel.current = sel.getRangeAt(0).cloneRange();
+    if (sel && sel.rangeCount > 0) savedSel.current = sel.getRangeAt(0).cloneRange();
   };
   const restoreSelection = () => {
     const sel = window.getSelection();
     if (savedSel.current && sel) { sel.removeAllRanges(); sel.addRange(savedSel.current); }
   };
-  const fmt = (cmd) => { restoreSelection(); document.execCommand(cmd,false,null); docRef.current?.focus(); };
+  const fmt = (cmd) => { restoreSelection(); document.execCommand(cmd, false, null); docRef.current?.focus(); };
   const convertCase = (upper) => {
     restoreSelection();
     const sel = window.getSelection();
-    if (!sel||sel.isCollapsed) return;
+    if (!sel || sel.isCollapsed) return;
     const range = sel.getRangeAt(0);
     const text  = range.toString();
     range.deleteContents();
-    range.insertNode(document.createTextNode(upper?text.toUpperCase():text.toLowerCase()));
+    range.insertNode(document.createTextNode(upper ? text.toUpperCase() : text.toLowerCase()));
     docRef.current?.focus();
   };
   const applyFuente = (f) => { setFuente(f); setDdOpen(null); };
-
-  const V = ({children,empty}) => <Var show={varsOn} empty={empty}>{children}</Var>;
-
+ 
+  const V = ({ children, empty }) => <Var show={varsOn} empty={empty}>{children}</Var>;
+ 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
                   fontFamily:"'Montserrat',sans-serif", overflow:"hidden" }}>
       <NavBar docTitle="Certificación de firma — Villegas — 14/11/2025"
               onStatus={()=>setModal("estado")} onExport={()=>setModal("exportar")}/>
-
+ 
       {/* ── TOOLBAR ── */}
       <div style={{ background:C.porcelain, borderBottom:`1px solid rgba(26,35,50,.12)`,
                     padding:"6px 16px", flexShrink:0, zIndex:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:3, flexWrap:"wrap", rowGap:4 }}>
-          <TbBtn title="Negrita" onClick={()=>fmt("bold")}><b>N</b></TbBtn>
-          <TbBtn title="Cursiva" onClick={()=>fmt("italic")}><i style={{fontStyle:"italic"}}>I</i></TbBtn>
-          <TbBtn title="Subrayado" onClick={()=>fmt("underline")}>
+          <TbBtn title="Negrita"    onClick={()=>fmt("bold")}><b>N</b></TbBtn>
+          <TbBtn title="Cursiva"    onClick={()=>fmt("italic")}><i style={{fontStyle:"italic"}}>I</i></TbBtn>
+          <TbBtn title="Subrayado"  onClick={()=>fmt("underline")}>
             <span style={{textDecoration:"underline"}}>S</span>
           </TbBtn>
           <TbSep/>
@@ -682,7 +509,6 @@ function EditorScreen({ onGo }) {
           <TbBtn active={varsOn} onClick={()=>setVarsOn(!varsOn)} title="Mostrar variables">
             Variables
           </TbBtn>
-          {/* ← TOGGLE HOJA PROTOCOLAR */}
           <TbBtn active={hojaOn} onClick={()=>setHojaOn(!hojaOn)} title="Mostrar hoja protocolar (borrador)">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
                  stroke="currentColor" strokeWidth="1.3" style={{flexShrink:0}}>
@@ -692,7 +518,7 @@ function EditorScreen({ onGo }) {
             Hoja
           </TbBtn>
           <TbSep/>
-
+ 
           {/* Márgenes */}
           <div ref={mgnRef} style={{ position:"relative" }}>
             <TbBtn active={ddOpen==="margenes"}
@@ -701,20 +527,14 @@ function EditorScreen({ onGo }) {
             </TbBtn>
             <Dropdown open={ddOpen==="margenes"}>
               <DdSection label="Formato de página">
-                <DdItem active={margenKey==="protocolar"}
-                        meta="34·70·12·16.5 mm"
-                        onClick={()=>{ setMargenKey("protocolar"); setDdOpen(null); }}>
-                  Protocolar
-                </DdItem>
-                <DdItem active={margenKey==="noprotocolar"}
-                        meta="30·35·20·20 mm"
-                        onClick={()=>{ setMargenKey("noprotocolar"); setDdOpen(null); }}>
-                  No protocolar
-                </DdItem>
+                <DdItem active={margenKey==="protocolar"}   meta="34·70·12·16.5 mm"
+                        onClick={()=>{ setMargenKey("protocolar");   setDdOpen(null); }}>Protocolar</DdItem>
+                <DdItem active={margenKey==="noprotocolar"} meta="30·35·20·20 mm"
+                        onClick={()=>{ setMargenKey("noprotocolar"); setDdOpen(null); }}>No protocolar</DdItem>
               </DdSection>
             </Dropdown>
           </div>
-
+ 
           {/* Fuente */}
           <div ref={fmtRef} style={{ position:"relative" }}>
             <TbBtn active={ddOpen==="formato"}
@@ -725,22 +545,22 @@ function EditorScreen({ onGo }) {
               <DdSection label="Fuente del documento">
                 {FUENTES.map(f=>(
                   <DdItem key={f.key} active={fuente.key===f.key} onClick={()=>applyFuente(f)}>
-                    <span style={{fontFamily:f.family,fontSize:14}}>{f.label}</span>
+                    <span style={{fontFamily:f.family, fontSize:14}}>{f.label}</span>
                   </DdItem>
                 ))}
               </DdSection>
             </Dropdown>
           </div>
           <TbSep/>
-
+ 
           {/* Zoom */}
-          <TbBtn onClick={()=>setZoomIdx(Math.max(0,zoomIdx-1))}>−</TbBtn>
+          <TbBtn onClick={()=>setZoomIdx(Math.max(0, zoomIdx-1))}>−</TbBtn>
           <span style={{ fontSize:12, fontWeight:500, color:C.dark, minWidth:38, textAlign:"center" }}>
             {Math.round(zoom*100)}%
           </span>
-          <TbBtn onClick={()=>setZoomIdx(Math.min(ZOOM_LEVELS.length-1,zoomIdx+1))}>+</TbBtn>
+          <TbBtn onClick={()=>setZoomIdx(Math.min(ZOOM_LEVELS.length-1, zoomIdx+1))}>+</TbBtn>
           <TbBtn onClick={()=>setZoomIdx(4)} title="100%">↺</TbBtn>
-
+ 
           <div style={{ marginLeft:"auto" }}>
             <span onClick={()=>setModal("estado")}
                   style={{ ...BADGE[estado], fontSize:11, fontWeight:500,
@@ -750,23 +570,20 @@ function EditorScreen({ onGo }) {
           </div>
         </div>
       </div>
-
+ 
       {/* ── ÁREA DE DOCUMENTO ── */}
       <div style={{ flex:1, background:C.warm, overflowY:"auto", overflowX:"auto",
                     display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"28px 20px" }}>
         <div style={{
           transform:`scale(${zoom})`, transformOrigin:"top center",
           width:A4W, minHeight:A4H, flexShrink:0,
-          marginBottom: zoom<1 ? `${-(1-zoom)*A4H}px` : 0,
+          marginBottom: zoom < 1 ? `${-(1-zoom)*A4H}px` : 0,
         }}>
-          {/* PÁGINA A4 — contenedor relativo */}
           <div style={{ position:"relative", width:A4W, minHeight:A4H,
                         background:"#fff", boxShadow:"0 2px 16px rgba(26,35,50,.13)" }}>
-
-            {/* SVG hoja protocolar — capa borrador */}
+ 
             {hojaOn && <HojaProtocolarSVG margen={margen}/>}
-
-            {/* TEXTO EDITABLE — alineado a márgenes reales */}
+ 
             <div
               ref={docRef}
               contentEditable
@@ -774,18 +591,19 @@ function EditorScreen({ onGo }) {
               onMouseUp={saveSelection}
               onKeyUp={saveSelection}
               style={{
-                position:"absolute",
-                left: boxL, top: boxT,
-                width: boxW,
-                minHeight: boxH,
+                position:   "absolute",
+                left:       boxL,
+                top:        boxT,
+                width:      boxW,
+                minHeight:  boxH,
                 fontFamily: fuente.family,
-                fontSize: "12pt",
+                fontSize:   "12pt",
                 lineHeight: `${lineH}px`,
-                textAlign: "justify",
-                color: C.dark,
-                outline: "none",
-                zIndex: 2,
-                wordBreak: "break-word",
+                textAlign:  "justify",
+                color:      C.dark,
+                outline:    "none",
+                zIndex:     2,
+                wordBreak:  "break-word",
               }}
             >
               <strong>FÁTIMA A. TAHA</strong>, Notaria Adscripta al Registro Notarial número
@@ -804,7 +622,7 @@ function EditorScreen({ onGo }) {
               en esta escribanía.- La compareciente manifiesta no tener su capacidad de
               ejercicio restringida por sentencia alguna.- El requerimiento respectivo ha
               sido formalizado en Acta número{" "}
-              <V empty={!actaOk}>{actaOk?acta:"⚠ N° acta"}</V> Libro de Requerimientos
+              <V empty={!actaOk}>{actaOk ? acta : "⚠ N° acta"}</V> Libro de Requerimientos
               para Certificaciones de Firmas número <V>IV</V>.- En <V>MENDOZA</V>, Provincia
               de Mendoza, República Argentina, a los{" "}
               <V>CATORCE días del mes de NOVIEMBRE de DOS MIL VEINTICINCO</V>.-
@@ -812,7 +630,7 @@ function EditorScreen({ onGo }) {
           </div>
         </div>
       </div>
-
+ 
       {/* ── MODALES ── */}
       {modal==="partes" && (
         <Modal title="Partes comparecientes" onClose={()=>setModal(null)}
@@ -836,14 +654,14 @@ function EditorScreen({ onGo }) {
               <div style={{ padding:14, borderTop:`1px solid rgba(26,35,50,.08)`, background:"#fff" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                   {[
-                    ["Género", <select style={inp}><option>Femenino</option><option>Masculino</option></select>],
-                    ["Apellido", <input style={inp} defaultValue="Villegas"/>],
-                    ["Nombre/s", <input style={inp} defaultValue="Carolina Elizabeth"/>],
-                    ["Nacionalidad", <input style={inp} defaultValue="argentina"/>],
-                    ["Tipo doc.", <select style={inp}><option>DNI</option><option>LE</option><option>Pasaporte</option></select>],
-                    ["N° documento", <input style={inp} defaultValue="38.475.547"/>],
-                    ["CUIT/CUIL", <input style={inp} defaultValue="27-38475547-5"/>],
-                    ["Estado civil", <select style={inp}><option>soltera</option><option>soltero</option><option>casada</option><option>casado</option></select>],
+                    ["Género",      <select style={inp}><option>Femenino</option><option>Masculino</option></select>],
+                    ["Apellido",    <input  style={inp} defaultValue="Villegas"/>],
+                    ["Nombre/s",    <input  style={inp} defaultValue="Carolina Elizabeth"/>],
+                    ["Nacionalidad",<input  style={inp} defaultValue="argentina"/>],
+                    ["Tipo doc.",   <select style={inp}><option>DNI</option><option>LE</option><option>Pasaporte</option></select>],
+                    ["N° documento",<input  style={inp} defaultValue="38.475.547"/>],
+                    ["CUIT/CUIL",   <input  style={inp} defaultValue="27-38475547-5"/>],
+                    ["Estado civil",<select style={inp}><option>soltera</option><option>soltero</option><option>casada</option><option>casado</option></select>],
                   ].map(([l,el])=><Fg key={l} label={l}>{el}</Fg>)}
                   <Fg label="Departamento" full>
                     <select style={inp}>{DEPARTAMENTOS.map(d=><option key={d}>{d}</option>)}</select>
@@ -865,7 +683,7 @@ function EditorScreen({ onGo }) {
           </button>
         </Modal>
       )}
-
+ 
       {modal==="instrumento" && (
         <Modal title="Instrumento certificado" onClose={()=>setModal(null)}
                footer={<><Btn onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -889,7 +707,7 @@ function EditorScreen({ onGo }) {
           </div>
         </Modal>
       )}
-
+ 
       {modal==="protocolo" && (
         <Modal title="Protocolo" onClose={()=>setModal(null)}
                footer={<><Btn onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -910,7 +728,7 @@ function EditorScreen({ onGo }) {
           <Warn>El N° de acta es manual. El documento puede cerrarse sin completarlo.</Warn>
         </Modal>
       )}
-
+ 
       {modal==="fecha" && (
         <Modal title="Fecha y lugar de otorgamiento" onClose={()=>setModal(null)}
                footer={<><Btn onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -935,7 +753,7 @@ function EditorScreen({ onGo }) {
           </Fg>
         </Modal>
       )}
-
+ 
       {modal==="estado" && (
         <Modal title="Estado del documento" onClose={()=>setModal(null)}
                footer={<><Btn onClick={()=>setModal(null)}>Cancelar</Btn>
@@ -955,7 +773,7 @@ function EditorScreen({ onGo }) {
           <Warn>Ningún estado bloquea la edición del documento.</Warn>
         </Modal>
       )}
-
+ 
       {modal==="exportar" && (
         <Modal title="Exportar documento" onClose={()=>setModal(null)}
                footer={<Btn onClick={()=>setModal(null)}>Cerrar</Btn>}>
@@ -976,7 +794,7 @@ function EditorScreen({ onGo }) {
     </div>
   );
 }
-
+ 
 // ── APP ───────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState("home");
