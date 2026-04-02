@@ -110,7 +110,7 @@ function HojaProtocolarSVG({ margen }) {
   const lineH = (boxB - boxT) / LINE_COUNT;
   return (
     <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1 }}>
-      <img src="/CAPA_PROTOCOLO_1.svg" alt=""
+      <img src="/MARCO_IMPRESION_FRENTE.svg" alt=""
            style={{ position:"absolute", inset:0, width:A4W, height:A4H, display:"block" }}/>
       <svg width={A4W} height={A4H} viewBox={`0 0 ${A4W} ${A4H}`}
            xmlns="http://www.w3.org/2000/svg" style={{ position:"absolute", inset:0 }}>
