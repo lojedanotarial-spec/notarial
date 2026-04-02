@@ -382,12 +382,12 @@ function ModalPartes({ partes, onApply, onClose }) {
                 <Fg label="Apellido">
                   <input style={inp} value={p.apellido}
                          onChange={e=>upd(p.id,"apellido",e.target.value.toUpperCase())}
-                         placeholder="VILLEGAS"/>
+                         placeholder="ingrese apellido/s"/>
                 </Fg>
                 <Fg label="Nombre/s">
                   <input style={inp} value={p.nombre}
                          onChange={e=>upd(p.id,"nombre",e.target.value.toUpperCase())}
-                         placeholder="CAROLINA ELIZABETH"/>
+                         placeholder="ingrese nombre/s"/>
                 </Fg>
                 <Fg label="Género">
                   <select style={inp} value={p.genero} onChange={e=>upd(p.id,"genero",e.target.value)}>
@@ -403,7 +403,7 @@ function ModalPartes({ partes, onApply, onClose }) {
                 <Fg label="Nacionalidad">
                   <input style={inp} value={p.nacionalidad}
                          onChange={e=>upd(p.id,"nacionalidad",e.target.value)}
-                         placeholder="argentina"/>
+                         placeholder="ej: argentino/a"/>
                 </Fg>
                 <Fg label="Tipo doc.">
                   <select style={inp} value={p.tipoDoc} onChange={e=>upd(p.id,"tipoDoc",e.target.value)}>
@@ -412,29 +412,29 @@ function ModalPartes({ partes, onApply, onClose }) {
                 </Fg>
                 <Fg label="N° documento">
                   <input style={inp} value={p.nroDoc}
-                         onChange={e=>upd(p.id,"nroDoc",e.target.value)} placeholder="38.475.547"/>
+                         onChange={e=>upd(p.id,"nroDoc",e.target.value)} placeholder="ingrese dni sin puntos"/>
                 </Fg>
                 <Fg label="CUIT/CUIL (opcional)">
                   <input style={inp} value={p.cuit}
-                         onChange={e=>upd(p.id,"cuit",e.target.value)} placeholder="27-38475547-5"/>
+                         onChange={e=>upd(p.id,"cuit",e.target.value)} placeholder="ingrese cuit/l sin puntos ni guiones"/>
                 </Fg>
                 <Fg label="Fecha de nacimiento">
                   <input style={inp} value={p.fechaNac}
                          onChange={e=>upd(p.id,"fechaNac",e.target.value)}
-                         placeholder="15 de enero de 1.995"/>
+                         placeholder="ingrese fecha en formato dd/mm/aaaa"/>
                 </Fg>
                 <Fg label="Rol en el acto">
                   <input style={inp} value={p.rol}
                          onChange={e=>upd(p.id,"rol",e.target.value.toUpperCase())}
-                         placeholder="COMPRADORA"/>
+                         placeholder="ej: COMPRADORA"/>
                 </Fg>
                 <Fg label="Calle">
                   <input style={inp} value={p.calle}
-                         onChange={e=>upd(p.id,"calle",e.target.value)} placeholder="Almagro"/>
+                         onChange={e=>upd(p.id,"calle",e.target.value)} placeholder="ingrese calle"/>
                 </Fg>
                 <Fg label="Número">
                   <input style={inp} value={p.numero}
-                         onChange={e=>upd(p.id,"numero",e.target.value)} placeholder="878"/>
+                         onChange={e=>upd(p.id,"numero",e.target.value)} placeholder="ingrese n°"/>
                 </Fg>
                 <Fg label="Piso (opcional)">
                   <input style={inp} value={p.piso} onChange={e=>upd(p.id,"piso",e.target.value)}/>
@@ -444,7 +444,7 @@ function ModalPartes({ partes, onApply, onClose }) {
                 </Fg>
                 <Fg label="Localidad / Barrio">
                   <input style={inp} value={p.localidad}
-                         onChange={e=>upd(p.id,"localidad",e.target.value)} placeholder="Dorrego"/>
+                         onChange={e=>upd(p.id,"localidad",e.target.value)} placeholder="ej: Dorrego"/>
                 </Fg>
                 <Fg label="Departamento Mendoza">
                   <select style={inp} value={p.departamento}
@@ -519,11 +519,11 @@ function ModalInstrumento({ instrumento, onApply, onClose }) {
                       <Btn primary onClick={()=>{ onApply(d); onClose(); }}>Aplicar</Btn></>}>
       <Fg label="Descripción (vacío = 'el instrumento adjunto a la presente Actuación Notarial')">
         <input style={inp} value={d.descripcion}
-               onChange={e=>upd("descripcion",e.target.value)} placeholder="CONTRATO DE LOCACIÓN"/>
+               onChange={e=>upd("descripcion",e.target.value)} placeholder="ej: CONTRATO DE LOCACIÓN"/>
       </Fg>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-        <Fg label="Serie"><input style={inp} value={d.serie} onChange={e=>upd("serie",e.target.value)} placeholder="Q"/></Fg>
-        <Fg label="N° actuación"><input style={inp} value={d.nroActuacion} onChange={e=>upd("nroActuacion",e.target.value)} placeholder="61548"/></Fg>
+        <Fg label="Serie"><input style={inp} value={d.serie} onChange={e=>upd("serie",e.target.value)} placeholder="ej: Q"/></Fg>
+        <Fg label="N° actuación"><input style={inp} value={d.nroActuacion} onChange={e=>upd("nroActuacion",e.target.value)} placeholder="ej: 61548"/></Fg>
       </div>
       <Fg label="Fojas (opcional)">
         <input style={inp} value={d.fojas} onChange={e=>upd("fojas",e.target.value)}
@@ -556,10 +556,10 @@ function ModalProtocolo({ protocolo, onApply, onClose }) {
       </Fg>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
         <Fg label="N° de libro">
-          <input style={inp} value={d.nroLibro} onChange={e=>upd("nroLibro",e.target.value)} placeholder="IV"/>
+          <input style={inp} value={d.nroLibro} onChange={e=>upd("nroLibro",e.target.value)} placeholder="ej: IV"/>
         </Fg>
         <Fg label="N° de acta">
-          <input style={inp} value={d.nroActa} onChange={e=>upd("nroActa",e.target.value)} placeholder="008"/>
+          <input style={inp} value={d.nroActa} onChange={e=>upd("nroActa",e.target.value)} placeholder="ej: 008"/>
         </Fg>
       </div>
       <Warn>El N° de acta es manual. El documento puede cerrarse sin completarlo.</Warn>
@@ -808,47 +808,62 @@ const V = ({children, empty, label}) => <Var show={varsOn} empty={empty} label={
   const fechaLetras = `${diaLetras(fecha.dia)} días del mes de ${MESES_LABEL[fecha.mes]} de ${anioLetras(fecha.anio)}`;
 
   // Bloque de partes encadenado
-const renderPartes = () => {
+ const renderPartes = () => {
     if (partes.length===0) return <V empty label="PARTE">sin partes</V>;
-    return partes.map((p, idx) => {
-      const domicilio = [
-        p.calle, p.numero,
-        p.piso    && `piso ${p.piso}`,
-        p.dpto    && `departamento ${p.dpto}`,
-        p.localidad,
-      ].filter(Boolean).join(", ");
 
-      return (
-        <span key={p.id}>
-          {idx > 0 && <span>, y </span>}
-          {`${idx===0?"por ":""}${gen(p,"la señora","el señor")} `}
-          <V empty={!p.apellido && !p.nombre} label="APELLIDO Y NOMBRE">
-            {p.apellido}{p.nombre ? `, ${p.nombre}` : ""}
-          </V>
-          {", "}
-          <V empty={!p.nacionalidad} label="NACIONALIDAD">{p.nacionalidad}</V>
-          {", con "}
-          <V empty={!p.tipoDoc} label="TIPO DOC">{p.tipoDoc}</V>
-          {" número "}
-          <V empty={!p.nroDoc} label="N° DOCUMENTO">{p.nroDoc}</V>
-          {p.cuit ? <span>, C.U.I.T./L. <V label="CUIT/CUIL">{p.cuit}</V></span> : ""}
-          {p.fechaNac ? <span>, nacid{gen(p,"a","o")} el <V label="FECHA NAC">{p.fechaNac}</V></span> : ""}
-          {", "}
-          {gen(p,"quien","quien")} manifiesta ser de estado de familia{" "}
-          <V empty={!p.estadoCivil} label="ESTADO CIVIL">{p.estadoCivil}</V>
-          {domicilio
-            ? <span>, con domicilio en <V label="DOMICILIO">{domicilio}</V>, departamento <V empty={!p.departamento} label="DEPARTAMENTO">{p.departamento}</V>, de ésta Provincia de Mendoza</span>
-            : ""}
-          {"; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, "}
-          {gen(p,"la que","el que")} firma en su carácter de{" "}
-          <V empty={!p.rol} label="ROL">{p.rol}</V>
-          {", y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.-"}
-          {" "}
-          {gen(p,"La compareciente","El compareciente")} manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.-
-        </span>
-      );
-    });
-  };
+    const fraseCapacidad = partes.length === 1
+      ? `${gen(partes[0],"La compareciente","El compareciente")} manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.-`
+      : "Los comparecientes manifiestan no tener su capacidad de ejercicio restringida por sentencia alguna.-";
+
+    const fraseIdentidad = partes.length === 1
+      ? ", y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.- "
+      : ", y cuyas identidades justifican conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhiben los documentos anteriormente relacionados cuyas copias archivo en esta escribanía.- ";
+
+    return (
+      <>
+        {partes.map((p, idx) => {
+          const esUltima = idx === partes.length - 1;
+          const domicilio = [
+            p.calle, p.numero,
+            p.piso     && `piso ${p.piso}`,
+            p.dpto     && `departamento ${p.dpto}`,
+            p.localidad,
+          ].filter(Boolean).join(", ");
+
+          return (
+            <span key={p.id}>
+              {idx === 0 && "por "}
+              {idx > 0 && !esUltima && "; "}
+              {idx > 0 && esUltima && "; y "}
+              {`${gen(p,"la señora","el señor")} `}
+              <V empty={!p.apellido && !p.nombre} label="APELLIDO Y NOMBRE">
+                {p.apellido}{p.nombre ? `, ${p.nombre}` : ""}
+              </V>
+              {", "}
+              <V empty={!p.nacionalidad} label="NACIONALIDAD">{p.nacionalidad}</V>
+              {", con "}
+              <V empty={!p.tipoDoc} label="TIPO DOC">{p.tipoDoc}</V>
+              {" número "}
+              <V empty={!p.nroDoc} label="N° DOCUMENTO">{p.nroDoc}</V>
+              {p.cuit ? <span>, C.U.I.T./L. <V label="CUIT/CUIL">{p.cuit}</V></span> : ""}
+              {p.fechaNac ? <span>, nacid{gen(p,"a","o")} el <V label="FECHA NAC">{p.fechaNac}</V></span> : ""}
+              {", "}
+              {gen(p,"quien","quien")} manifiesta ser de estado de familia{" "}
+              <V empty={!p.estadoCivil} label="ESTADO CIVIL">{p.estadoCivil}</V>
+              {domicilio
+                ? <span>, con domicilio en <V label="DOMICILIO">{domicilio}</V>, departamento <V empty={!p.departamento} label="DEPARTAMENTO">{p.departamento}</V>, de ésta Provincia de Mendoza</span>
+                : ""}
+              {"; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, "}
+              {gen(p,"la que","el que")} firma en su carácter de{" "}
+              <V empty={!p.rol} label="ROL">{p.rol}</V>
+            </span>
+          );
+        })}
+        {fraseIdentidad}
+        {fraseCapacidad}
+      </>
+    );
+  }; 
 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
