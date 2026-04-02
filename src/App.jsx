@@ -745,6 +745,7 @@ function EditorScreen({ onGo }) {
   const [fecha,       setFecha]       = useState(FECHA_HOY());
   const [protocolo,   setProtocolo]   = useState(PROTOCOLO_INI);
   const [instrumento, setInstrumento] = useState(INSTRUMENTO_INI);
+  const [fontSize, setFontSize] = useState(11);
 
   const docRef   = useRef(null);
   const fmtRef   = useRef(null);
@@ -897,6 +898,7 @@ function EditorScreen({ onGo }) {
 							</DdSection>
 						</Dropdown>
 					</div>
+          
 					<TbBtn onClick={()=>setZoomIdx(Math.max(0,zoomIdx-1))}>−</TbBtn>
 					<span style={{ fontSize:12, fontWeight:500, color:C.dark, minWidth:38, textAlign:"center" }}>
 						{Math.round(zoom*100)}%
@@ -924,52 +926,8 @@ function EditorScreen({ onGo }) {
 							<path d="M3 4h6M3 6h6M3 8h4" strokeLinecap="round"/>
 						</svg>
 						Fondo Impr
-					</TbBtn>
-          <TbSep/>
-          <div ref={mgnRef} style={{ position:"relative" }}>
-            <TbBtn active={ddOpen==="margenes"}
-                   onClick={()=>{ saveSelection(); setDdOpen(ddOpen==="margenes"?null:"margenes"); }}>
-              Márgenes ▾
             </TbBtn>
-            <Dropdown open={ddOpen==="margenes"}>
-              <DdSection label="Formato de página">
-                <DdItem active={margenKey==="protocolar"}   meta="34·70·12·16.5 mm"
-                        onClick={()=>{ setMargenKey("protocolar");   setDdOpen(null); }}>Protocolar</DdItem>
-                <DdItem active={margenKey==="noprotocolar"} meta="30·35·20·20 mm"
-                        onClick={()=>{ setMargenKey("noprotocolar"); setDdOpen(null); }}>No protocolar</DdItem>
-              </DdSection>
-            </Dropdown>
           </div>
-          <div ref={fmtRef} style={{ position:"relative" }}>
-            <TbBtn active={ddOpen==="formato"}
-                   onClick={()=>{ saveSelection(); setDdOpen(ddOpen==="formato"?null:"formato"); }}>
-              {fuente.label} ▾
-            </TbBtn>
-            <Dropdown open={ddOpen==="formato"}>
-              <DdSection label="Fuente del documento">
-                {FUENTES.map(f=>(
-                  <DdItem key={f.key} active={fuente.key===f.key} onClick={()=>applyFuente(f)}>
-                    <span style={{fontFamily:f.family,fontSize:14}}>{f.label}</span>
-                  </DdItem>
-                ))}
-              </DdSection>
-            </Dropdown>
-          </div>
-          <TbSep/>
-          <TbBtn onClick={()=>setZoomIdx(Math.max(0,zoomIdx-1))}>−</TbBtn>
-          <span style={{ fontSize:12, fontWeight:500, color:C.dark, minWidth:38, textAlign:"center" }}>
-            {Math.round(zoom*100)}%
-          </span>
-          <TbBtn onClick={()=>setZoomIdx(Math.min(ZOOM_LEVELS.length-1,zoomIdx+1))}>+</TbBtn>
-          <TbBtn onClick={()=>setZoomIdx(4)}>↺</TbBtn>
-          <div style={{ marginLeft:"auto" }}>
-            <span onClick={()=>setModal("estado")}
-                  style={{ ...BADGE[estado], fontSize:11, fontWeight:500,
-                           padding:"3px 10px", borderRadius:10, cursor:"pointer" }}>
-              {ELABELS[estado]}
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* ── DOCUMENTO ── */}
@@ -998,7 +956,7 @@ function EditorScreen({ onGo }) {
                 width:       boxW,
                 minHeight:   boxH,
                 fontFamily:  fuente.family,
-                fontSize:    "12pt",
+                fontSize:    `${fontSize}pt`,
                 lineHeight:  `${lineH}px`,
                 paddingTop:  `${lineH * 0.72}px`,
                 paddingLeft: `${mm(2)}px`,
