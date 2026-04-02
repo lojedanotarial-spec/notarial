@@ -153,13 +153,13 @@ function NavBar({ docTitle, estado, onStatus, onExport }) {
           <button onClick={onStatus} style={{
             border:"1px solid rgba(255,255,255,.2)", borderRadius:20,
             background:"rgba(255,255,255,.07)", color:"rgba(255,255,255,.75)",
-            fontSize:12, fontWeight:500, padding:"3px 12px", fontFamily:"'Montserrat',sans-serif",
+            fontSize:13, fontWeight:500, padding:"3px 12px", fontFamily:"'Montserrat',sans-serif",
             cursor:"pointer",
           }}>{ELABELS[estado]}</button>
           <button onClick={onExport} style={{
             border:"1px solid rgba(255,255,255,.2)", borderRadius:7,
             background:"transparent", color:"rgba(255,255,255,.8)",
-            fontSize:12, fontWeight:500, padding:"5px 12px", fontFamily:"'Montserrat',sans-serif",
+            fontSize:13, fontWeight:500, padding:"5px 12px", fontFamily:"'Montserrat',sans-serif",
             cursor:"pointer",
           }}>Exportar</button>
         </>)}
@@ -179,7 +179,7 @@ function TbBtn({ children, active, onClick, title }) {
             onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
             style={{ padding:"5px 10px", border:`1px solid ${on?C.cerulean:C.borderStrong}`,
                      borderRadius:6, background:on?C.ceruleanLight:"transparent",
-                     color:on?"#1f4862":C.dark, fontSize:12, fontWeight:500,
+                     color:on?"#1f4862":C.dark, fontSize:13, fontWeight:500,
                      fontFamily:"'Montserrat',sans-serif", display:"flex",
                      alignItems:"center", gap:4, whiteSpace:"nowrap", transition:"all .12s",
                      cursor:"pointer" }}>
@@ -230,14 +230,15 @@ function DdItem({ children, active, onClick, meta }) {
 }
 
 // Variable resaltada
-function Var({ children, empty, show }) {
+
+function Var({ children, empty, show, label }) {
   if (!show) return <span style={{ color:C.dark }}>{children || ""}</span>;
   const isEmpty = empty || children === "" || children == null;
   return (
     <span style={{ background:isEmpty?"#fdeaea":C.fawn50,
                    borderBottom:isEmpty?"1.5px dashed rgba(180,40,40,.55)":`1.5px dashed ${C.gold}`,
                    color:isEmpty?"#7a1a1a":"#4e3d21", borderRadius:2, padding:"0 2px" }}>
-      {isEmpty ? "⚠ pendiente" : children}
+      {isEmpty ? `⚠ ${label || "pendiente"}` : children}
     </span>
   );
 }
@@ -296,7 +297,7 @@ function Warn({ children }) {
   return (
     <div style={{ display:"flex", gap:8, padding:"10px 12px", background:C.fawn50,
                   borderRadius:7, border:"1px solid rgba(201,169,97,.3)",
-                  fontSize:12, color:"#4e3d21", fontFamily:"'Montserrat',sans-serif" }}>
+                  fontSize:13, color:"#4e3d21", fontFamily:"'Montserrat',sans-serif" }}>
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink:0, marginTop:1 }}>
         <path d="M6.5 1.5L12 11H1L6.5 1.5z" stroke="#a6864a" strokeWidth="1.3" fill="none"/>
         <path d="M6.5 5v2.5" stroke="#a6864a" strokeWidth="1.3" strokeLinecap="round"/>
@@ -356,7 +357,7 @@ function ModalPartes({ partes, onApply, onClose }) {
                               fontSize:10, fontWeight:700,
                               color: activo ? "#fff" : "#1f4862" }}>{inicial}</div>
                 <div style={{ minWidth:0 }}>
-                  <div style={{ fontSize:12, fontWeight:600, color:C.dark,
+                  <div style={{ fontSize:13, fontWeight:600, color:C.dark,
                                 overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                     {x.apellido || `Parte ${idx+1}`}
                   </div>
@@ -367,7 +368,7 @@ function ModalPartes({ partes, onApply, onClose }) {
           })}
           <button onClick={agregar}
                   style={{ padding:"7px 10px", border:"1px dashed rgba(26,35,50,.2)", borderRadius:8,
-                           fontSize:12, color:C.muted, background:"transparent",
+                           fontSize:13, color:C.muted, background:"transparent",
                            fontFamily:"'Montserrat',sans-serif", cursor:"pointer", textAlign:"center" }}>
             + Agregar
           </button>
@@ -595,7 +596,7 @@ function ModalFecha({ fecha, onApply, onClose }) {
                  style={{ ...inp, width:84, textAlign:"center" }}/>
           <button onClick={hoy}
                   style={{ padding:"6px 10px", border:`1px solid rgba(26,35,50,.2)`, borderRadius:6,
-                           fontSize:11, fontWeight:500, background:C.porcelain, color:C.dark,
+                           fontSize:13, fontWeight:500, background:C.porcelain, color:C.dark,
                            fontFamily:"'Montserrat',sans-serif", whiteSpace:"nowrap", cursor:"pointer" }}>
             ↺ Hoy
           </button>
@@ -649,7 +650,7 @@ function HomeScreen({ onGo }) {
             </div>
           </div>
           <div style={{ borderTop:"1px solid rgba(26,35,50,.08)", paddingTop:16, marginTop:8 }}>
-            <p style={{ fontSize:12, color:C.faint, lineHeight:1.7 }}>
+            <p style={{ fontSize:13, color:C.faint, lineHeight:1.7 }}>
               Esta pantalla inicia flujos de trabajo.<br/>No presenta información histórica ni estados.
             </p>
           </div>
@@ -790,7 +791,7 @@ function EditorScreen({ onGo }) {
   
   const applyFuente = (f) => { setFuente(f); setDdOpen(null); };
 
-  const V = ({children, empty}) => <Var show={varsOn} empty={empty}>{children}</Var>;
+const V = ({children, empty, label}) => <Var show={varsOn} empty={empty} label={label}>{children}</Var>;
 
   // Título dinámico en navbar
   const primerApellido = partes[0]?.apellido || null;
@@ -807,8 +808,8 @@ function EditorScreen({ onGo }) {
   const fechaLetras = `${diaLetras(fecha.dia)} días del mes de ${MESES_LABEL[fecha.mes]} de ${anioLetras(fecha.anio)}`;
 
   // Bloque de partes encadenado
-  const renderPartes = () => {
-    if (partes.length===0) return <V empty>sin partes</V>;
+const renderPartes = () => {
+    if (partes.length===0) return <V empty label="PARTE">sin partes</V>;
     return partes.map((p, idx) => {
       const domicilio = [
         p.calle, p.numero,
@@ -821,26 +822,26 @@ function EditorScreen({ onGo }) {
         <span key={p.id}>
           {idx > 0 && <span>, y </span>}
           {`${idx===0?"por ":""}${gen(p,"la señora","el señor")} `}
-          <V empty={!p.apellido && !p.nombre}>
+          <V empty={!p.apellido && !p.nombre} label="APELLIDO Y NOMBRE">
             {p.apellido}{p.nombre ? `, ${p.nombre}` : ""}
           </V>
           {", "}
-          <V empty={!p.nacionalidad}>{p.nacionalidad}</V>
+          <V empty={!p.nacionalidad} label="NACIONALIDAD">{p.nacionalidad}</V>
           {", con "}
-          <V empty={!p.tipoDoc}>{p.tipoDoc}</V>
+          <V empty={!p.tipoDoc} label="TIPO DOC">{p.tipoDoc}</V>
           {" número "}
-          <V empty={!p.nroDoc}>{p.nroDoc}</V>
-          {p.cuit ? <span>, C.U.I.T./L. <V>{p.cuit}</V></span> : ""}
-          {p.fechaNac ? <span>, nacid{gen(p,"a","o")} el <V>{p.fechaNac}</V></span> : ""}
+          <V empty={!p.nroDoc} label="N° DOCUMENTO">{p.nroDoc}</V>
+          {p.cuit ? <span>, C.U.I.T./L. <V label="CUIT/CUIL">{p.cuit}</V></span> : ""}
+          {p.fechaNac ? <span>, nacid{gen(p,"a","o")} el <V label="FECHA NAC">{p.fechaNac}</V></span> : ""}
           {", "}
           {gen(p,"quien","quien")} manifiesta ser de estado de familia{" "}
-          <V empty={!p.estadoCivil}>{p.estadoCivil}</V>
+          <V empty={!p.estadoCivil} label="ESTADO CIVIL">{p.estadoCivil}</V>
           {domicilio
-            ? <span>, con domicilio en <V>{domicilio}</V>, departamento <V empty={!p.departamento}>{p.departamento}</V>, de ésta Provincia de Mendoza</span>
+            ? <span>, con domicilio en <V label="DOMICILIO">{domicilio}</V>, departamento <V empty={!p.departamento} label="DEPARTAMENTO">{p.departamento}</V>, de ésta Provincia de Mendoza</span>
             : ""}
           {"; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, "}
           {gen(p,"la que","el que")} firma en su carácter de{" "}
-          <V empty={!p.rol}>{p.rol}</V>
+          <V empty={!p.rol} label="ROL">{p.rol}</V>
           {", y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.-"}
           {" "}
           {gen(p,"La compareciente","El compareciente")} manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.-
@@ -855,80 +856,96 @@ function EditorScreen({ onGo }) {
       <NavBar docTitle={docTitle} estado={estado}
               onStatus={()=>setModal("estado")} onExport={()=>setModal("exportar")}/>
 
-      {/* ── TOOLBAR ── */}
+{/* ── TOOLBAR ── */}
       <div style={{ background:C.porcelain, borderBottom:`1px solid rgba(26,35,50,.12)`,
-                    padding:"6px 16px", flexShrink:0, zIndex:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:3, flexWrap:"wrap", rowGap:4 }}>
-{/* Grupo 1 — Formato de texto */}
-					<TbBtn title="Negrita"   onClick={()=>fmt("bold")}><b>N</b></TbBtn>
-					<TbBtn title="Cursiva"   onClick={()=>fmt("italic")}><i style={{fontStyle:"italic"}}>I</i></TbBtn>
-					<TbBtn title="Subrayado" onClick={()=>fmt("underline")}><span style={{textDecoration:"underline"}}>S</span></TbBtn>
-					<TbBtn title="MAYÚSCULAS" onClick={()=>convertCase(true)}>AA</TbBtn>
-					<TbBtn title="minúsculas" onClick={()=>convertCase(false)}>aa</TbBtn>
-					<TbBtn title="Capitalizar" onClick={()=>convertCase("cap")}>Aa</TbBtn>
-					<TbSep/>
+                    padding:"6px 16px", flexShrink:0, zIndex:10, display:"flex", flexDirection:"column", gap:4 }}>
 
-					{/* Grupo 2 — Página */}
-					<div ref={mgnRef} style={{ position:"relative" }}>
-						<TbBtn active={ddOpen==="margenes"}
-						       onClick={()=>{ saveSelection(); setDdOpen(ddOpen==="margenes"?null:"margenes"); }}>
-							Márgenes ▾
-						</TbBtn>
-						<Dropdown open={ddOpen==="margenes"}>
-							<DdSection label="Formato de página">
-								<DdItem active={margenKey==="protocolar"}   meta="34·70·12·16.5 mm"
-								        onClick={()=>{ setMargenKey("protocolar");   setDdOpen(null); }}>Protocolar</DdItem>
-								<DdItem active={margenKey==="noprotocolar"} meta="30·35·20·20 mm"
-								        onClick={()=>{ setMargenKey("noprotocolar"); setDdOpen(null); }}>No protocolar</DdItem>
-							</DdSection>
-						</Dropdown>
-					</div>
-					<div ref={fmtRef} style={{ position:"relative" }}>
-						<TbBtn active={ddOpen==="formato"}
-						       onClick={()=>{ saveSelection(); setDdOpen(ddOpen==="formato"?null:"formato"); }}>
-							{fuente.label} ▾
-						</TbBtn>
-						<Dropdown open={ddOpen==="formato"}>
-							<DdSection label="Fuente del documento">
-								{FUENTES.map(f=>(
-									<DdItem key={f.key} active={fuente.key===f.key} onClick={()=>applyFuente(f)}>
-										<span style={{fontFamily:f.family,fontSize:14}}>{f.label}</span>
-									</DdItem>
-								))}
-							</DdSection>
-						</Dropdown>
-					</div>
-          
-					<TbBtn onClick={()=>setZoomIdx(Math.max(0,zoomIdx-1))}>−</TbBtn>
-					<span style={{ fontSize:12, fontWeight:500, color:C.dark, minWidth:38, textAlign:"center" }}>
-						{Math.round(zoom*100)}%
-					</span>
-					<TbBtn onClick={()=>setZoomIdx(Math.min(ZOOM_LEVELS.length-1,zoomIdx+1))}>+</TbBtn>
-					<TbBtn onClick={()=>setZoomIdx(4)}>↺</TbBtn>
-					<TbBtn title="Deshacer" onClick={()=>{ restoreSelection(); document.execCommand("undo",false,null); docRef.current?.focus(); }}>↩</TbBtn>
-					<TbBtn title="Rehacer" onClick={()=>{ restoreSelection(); document.execCommand("redo",false,null); docRef.current?.focus(); }}>↪</TbBtn>
-					<TbSep/>
+        {/* Fila 1 — Configuración */}
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <TbBtn title="Negrita"    onClick={()=>fmt("bold")}><b>N</b></TbBtn>
+          <TbBtn title="Cursiva"    onClick={()=>fmt("italic")}><i style={{fontStyle:"italic"}}>I</i></TbBtn>
+          <TbBtn title="Subrayado"  onClick={()=>fmt("underline")}><span style={{textDecoration:"underline"}}>S</span></TbBtn>
+          <TbBtn title="MAYÚSCULAS" onClick={()=>convertCase(true)}>AA</TbBtn>
+          <TbBtn title="minúsculas" onClick={()=>convertCase(false)}>aa</TbBtn>
+          <TbBtn title="Capitalizar" onClick={()=>convertCase("cap")}>Aa</TbBtn>
+          <TbSep/>
+          <div ref={fmtRef} style={{ position:"relative" }}>
+            <TbBtn active={ddOpen==="formato"}
+                   onClick={()=>{ saveSelection(); setDdOpen(ddOpen==="formato"?null:"formato"); }}>
+              {fuente.label} <svg width="11" height="11" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 2.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round"/></svg>
 
-					{/* Grupo 3 — Documento */}
-					<TbBtn onClick={()=>setModal("partes")}>Partes</TbBtn>
-					<TbBtn onClick={()=>setModal("escribano")}>Escribano</TbBtn>
-					<TbBtn onClick={()=>setModal("instrumento")}>Instrumento</TbBtn>
-					<TbBtn onClick={()=>setModal("protocolo")}>Protocolo</TbBtn>
-					<TbBtn onClick={()=>setModal("fecha")}>Lugar y fecha</TbBtn>
-					<TbSep/>
-
-					{/* Grupo 4 — Vista */}
-					<TbBtn active={varsOn} onClick={()=>setVarsOn(!varsOn)}>Variables</TbBtn>
-					<TbBtn active={hojaOn} onClick={()=>setHojaOn(!hojaOn)}>
-						<svg width="12" height="12" viewBox="0 0 12 12" fill="none"
-						     stroke="currentColor" strokeWidth="1.3" style={{flexShrink:0}}>
-							<rect x="1" y="1" width="10" height="10" rx="1.5"/>
-							<path d="M3 4h6M3 6h6M3 8h4" strokeLinecap="round"/>
-						</svg>
-						Fondo Impr
             </TbBtn>
+            <Dropdown open={ddOpen==="formato"}>
+              <DdSection label="Fuente del documento">
+                {FUENTES.map(f=>(
+                  <DdItem key={f.key} active={fuente.key===f.key} onClick={()=>applyFuente(f)}>
+                    <span style={{fontFamily:f.family,fontSize:14}}>{f.label}</span>
+                  </DdItem>
+                ))}
+              </DdSection>
+            </Dropdown>
           </div>
+
+
+          <select
+            
+            style={{ padding:"5px 4px", border:`1px solid ${C.borderStrong}`, borderRadius:6,
+                      fontSize:13, background:C.porcelain, color:C.dark,
+                      fontFamily:"'Montserrat',sans-serif", width:52, boxSizing:"border-box" }}
+            
+            value={fontSize}
+            onChange={e=>{ setFontSize(Number(e.target.value)); docRef.current.style.fontSize = e.target.value+"pt"; }}
+          >
+            {[8,9,10,11,12,13,14,16,18].map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+          <TbSep/>
+          <div ref={mgnRef} style={{ position:"relative" }}>
+            <TbBtn active={ddOpen==="margenes"}
+                   onClick={()=>{ saveSelection(); setDdOpen(ddOpen==="margenes"?null:"margenes"); }}>
+              Márgenes <svg width="11" height="11" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 2.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </TbBtn>
+            <Dropdown open={ddOpen==="margenes"}>
+              <DdSection label="Formato de página">
+                <DdItem active={margenKey==="protocolar"}   meta="34·70·12·16.5 mm"
+                        onClick={()=>{ setMargenKey("protocolar");   setDdOpen(null); }}>Protocolar</DdItem>
+                <DdItem active={margenKey==="noprotocolar"} meta="30·35·20·20 mm"
+                        onClick={()=>{ setMargenKey("noprotocolar"); setDdOpen(null); }}>No protocolar</DdItem>
+              </DdSection>
+            </Dropdown>
+          </div>
+          <TbSep/>
+          <TbBtn onClick={()=>setZoomIdx(Math.max(0,zoomIdx-1))}><span style={{fontSize:16}}>−</span></TbBtn>
+          <span style={{ fontSize:13, fontWeight:500, color:C.dark, minWidth:38, textAlign:"center" }}>
+            {Math.round(zoom*100)}%
+          </span>
+          <TbBtn onClick={()=>setZoomIdx(Math.min(ZOOM_LEVELS.length-1,zoomIdx+1))}><span style={{fontSize:16}}>+</span></TbBtn>
+          <TbBtn onClick={()=>setZoomIdx(4)}><span style={{fontSize:16}}>↺</span></TbBtn>
+          <TbBtn title="Deshacer" onClick={()=>{ restoreSelection(); document.execCommand("undo",false,null); docRef.current?.focus(); }}><span style={{fontSize:16}}>↩</span></TbBtn>
+          <TbBtn title="Rehacer" onClick={()=>{ restoreSelection(); document.execCommand("redo",false,null); docRef.current?.focus(); }}><span style={{fontSize:16}}>↪</span></TbBtn>
+        </div>
+
+
+        {/* Fila 2 — Documento */}
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <TbBtn onClick={()=>setModal("partes")}>Partes</TbBtn>
+          <TbBtn onClick={()=>setModal("escribano")}>Escribano</TbBtn>
+          <TbBtn onClick={()=>setModal("instrumento")}>Instrumento</TbBtn>
+          <TbBtn onClick={()=>setModal("protocolo")}>Protocolo</TbBtn>
+          <TbBtn onClick={()=>setModal("fecha")}>Lugar y fecha</TbBtn>
+          <TbSep/>
+          <TbBtn active={varsOn} onClick={()=>setVarsOn(!varsOn)}>Variables</TbBtn>
+          <TbBtn active={hojaOn} onClick={()=>setHojaOn(!hojaOn)}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+                 stroke="currentColor" strokeWidth="1.3" style={{flexShrink:0}}>
+              <rect x="1" y="1" width="10" height="10" rx="1.5"/>
+              <path d="M3 4h6M3 6h6M3 8h4" strokeLinecap="round"/>
+            </svg>
+            Fondo Impr
+          </TbBtn>
+        </div>
+
       </div>
+
 
       {/* ── DOCUMENTO ── */}
       <div style={{ flex:1, background:C.warm, overflowY:"auto", overflowX:"auto",
@@ -969,17 +986,18 @@ function EditorScreen({ onGo }) {
                 boxSizing:   "border-box",
               }}
             >
+              
               {/* APERTURA */}
-              <strong><V empty={!escribano.nombre}>{escribano.nombre}</V></strong>
+              <strong><V empty={!escribano.nombre} label="ESCRIBANO">{escribano.nombre}</V></strong>
               {", "}
-              <V empty={!escribano.caracter}>{escribano.caracter}</V>
+              <V empty={!escribano.caracter} label="CARÁCTER">{escribano.caracter}</V>
               {" al Registro Notarial número "}
-              <V empty={!escribano.registro}>{escribano.registro}</V>
+              <V empty={!escribano.registro} label="N° REGISTRO">{escribano.registro}</V>
               {" de la "}
-              <V empty={!escribano.circunscripcion}>{escribano.circunscripcion} circunscripción</V>
+              <V empty={!escribano.circunscripcion} label="CIRCUNSCRIPCIÓN">{escribano.circunscripcion} circunscripción</V>
               {", "}<strong>CERTIFICO:-</strong>
               {" Que la firma que se encuentra inserta en "}
-              <V>{instrTexto}</V>
+              <V label="INSTRUMENTO">{instrTexto}</V>
               {instrumento.fojas ? <span>, {instrumento.fojas}</span> : ""}
               {", que lleva mi firma y sello; ha sido puesta en mi presencia "}
 
@@ -988,16 +1006,18 @@ function EditorScreen({ onGo }) {
 
               {/* PROTOCOLO */}
               {" El requerimiento respectivo ha sido formalizado en Acta número "}
-              <V empty={!protocolo.nroActa}>{protocolo.nroActa}</V>
+              <V empty={!protocolo.nroActa} label="N° ACTA">{protocolo.nroActa}</V>
               {" "}
-              <V empty={!protocolo.libro}>{protocolo.libro}</V>
+              <V empty={!protocolo.libro} label="LIBRO">{protocolo.libro}</V>
               {" número "}
-              <V empty={!protocolo.nroLibro}>{protocolo.nroLibro}</V>
+              <V empty={!protocolo.nroLibro} label="N° LIBRO">{protocolo.nroLibro}</V>
               {".- En "}
-              <V empty={!fecha.ciudad}>{fecha.ciudad?.toUpperCase()}</V>
+              <V empty={!fecha.ciudad} label="CIUDAD">{fecha.ciudad?.toUpperCase()}</V>
               {", Provincia de Mendoza, República Argentina, a los "}
-              <V>{fechaLetras}</V>
+              <V label="FECHA">{fechaLetras}</V>
               {".-"}
+              
+              
             </div>
           </div>
         </div>
@@ -1065,8 +1085,7 @@ export default function App() {
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(26,35,50,.2); border-radius: 3px; }::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(26,35,50,.2); border-radius: 3px; }
+
       `}</style>
       {screen==="home"     && <HomeScreen     onGo={setScreen}/>}
       {screen==="selector" && <SelectorScreen onGo={setScreen}/>}
