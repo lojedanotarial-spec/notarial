@@ -231,7 +231,7 @@ function DdItem({ children, active, onClick, meta }) {
 
 // Variable resaltada
 function Var({ children, empty, show }) {
-  if (!show) return <span>{children}</span>;
+  if (!show) return <span style={{ color:C.dark }}>{children || ""}</span>;
   const isEmpty = empty || children === "" || children == null;
   return (
     <span style={{ background:isEmpty?"#fdeaea":C.fawn50,
@@ -246,9 +246,9 @@ function Modal({ title, onClose, children, footer }) {
   return (
     <div onClick={(e)=>e.target===e.currentTarget&&onClose()}
          style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.35)", zIndex:300,
-                  display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:52 }}>
+                  display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:20 }}>
       <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${C.border}`,
-                    width:520, maxWidth:"94vw", maxHeight:"82vh", display:"flex",
+                    width:680, maxWidth:"94vw", maxHeight:"92vh", display:"flex",
                     flexDirection:"column", boxShadow:"0 8px 32px rgba(26,35,50,.12)" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
                       padding:"14px 18px", borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
@@ -256,7 +256,7 @@ function Modal({ title, onClose, children, footer }) {
           <button onClick={onClose} style={{ background:"none", border:"none", fontSize:20,
                                              color:C.muted, cursor:"pointer" }}>×</button>
         </div>
-        <div style={{ padding:18, overflowY:"auto", display:"flex", flexDirection:"column", gap:12 }}>
+        <div style={{ padding:18, overflowY:"auto", flex: 1, display:"flex", flexDirection:"column", gap:12 }}>
           {children}
         </div>
         {footer && (
@@ -307,23 +307,27 @@ function Warn({ children }) {
   );
 }
 
-// ── MODAL PARTES ──────────────────────────────────────────
+// ---MODAL PARTES -------------------------------------------
+
 function ModalPartes({ partes, onApply, onClose }) {
   const [draft,  setDraft]  = useState(partes.map(p=>({...p})));
   const [openId, setOpenId] = useState(draft[0]?.id ?? null);
 
   const upd = (id, field, val) =>
     setDraft(d => d.map(p => p.id===id ? {...p,[field]:val} : p));
-
   const agregar = () => {
     const nueva = PARTE_VACIA();
     setDraft(d => [...d, nueva]);
     setOpenId(nueva.id);
   };
-  const quitar = (id) => { setDraft(d=>d.filter(p=>p.id!==id)); setOpenId(null); };
+  const quitar = (id) => {
+    setDraft(d => d.filter(p => p.id!==id));
+    setOpenId(draft.find(p=>p.id!==id)?.id ?? null);
+  };
 
   const EC_F = ["soltera","casada","divorciada","viuda","separada de hecho"];
   const EC_M = ["soltero","casado","divorciado","viudo","separado de hecho"];
+  const p = draft.find(x => x.id === openId);
 
   return (
     <Modal title="Partes comparecientes" onClose={onClose}
@@ -332,161 +336,174 @@ function ModalPartes({ partes, onApply, onClose }) {
              <Btn primary onClick={()=>{ onApply(draft); onClose(); }}>Aplicar al documento</Btn>
            </>}>
 
-      {draft.map((p, idx) => {
-        const isOpen  = openId === p.id;
-        const inicial = `${p.apellido?.[0]??"?"}${p.nombre?.[0]??""}`.toUpperCase();
-        const resumen = [p.tipoDoc, p.nroDoc, p.estadoCivil, p.departamento, p.rol].filter(Boolean).join(" · ");
-        return (
-          <div key={p.id} style={{ border:`1px solid rgba(26,35,50,.1)`, borderRadius:8,
-                                   overflow:"hidden", background:C.porcelain }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", cursor:"pointer" }}
-                 onClick={()=>setOpenId(isOpen?null:p.id)}>
-              <div style={{ width:30, height:30, borderRadius:"50%", background:C.ceruleanLight,
-                            display:"flex", alignItems:"center", justifyContent:"center",
-                            fontSize:10, fontWeight:700, color:"#1f4862", flexShrink:0 }}>{inicial}</div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, fontWeight:600, color:C.dark }}>
-                  {p.apellido||p.nombre ? `${p.apellido}${p.nombre?", "+p.nombre:""}` : `Parte ${idx+1} — sin datos`}
-                </div>
-                <div style={{ fontSize:11, color:C.muted, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                  {resumen || "Completá los datos"}
+      {/* Layout dos columnas */}
+      <div style={{ display:"flex", gap:12, minHeight:420 }}>
+
+        {/* Columna izquierda — lista */}
+        <div style={{ width:180, flexShrink:0, display:"flex", flexDirection:"column", gap:8 }}>
+          {draft.map((x, idx) => {
+            const inicial = `${x.apellido?.[0]??"?"}${x.nombre?.[0]??""}`.toUpperCase();
+            const activo  = openId === x.id;
+            return (
+              <div key={x.id} onClick={()=>setOpenId(x.id)}
+                   style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px",
+                            borderRadius:8, cursor:"pointer",
+                            background: activo ? C.ceruleanLight : C.porcelain,
+                            border: `1px solid ${activo ? C.cerulean : "rgba(26,35,50,.1)"}` }}>
+                <div style={{ width:28, height:28, borderRadius:"50%", flexShrink:0,
+                              background: activo ? C.cerulean : C.ceruleanLight,
+                              display:"flex", alignItems:"center", justifyContent:"center",
+                              fontSize:10, fontWeight:700,
+                              color: activo ? "#fff" : "#1f4862" }}>{inicial}</div>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontSize:12, fontWeight:600, color:C.dark,
+                                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {x.apellido || `Parte ${idx+1}`}
+                  </div>
+                  <div style={{ fontSize:10, color:C.muted }}>{x.rol || "sin rol"}</div>
                 </div>
               </div>
-              <span style={{ fontSize:11, color:C.faint, flexShrink:0,
-                             transition:"transform .15s", transform:isOpen?"rotate(180deg)":"none" }}>▾</span>
+            );
+          })}
+          <button onClick={agregar}
+                  style={{ padding:"7px 10px", border:"1px dashed rgba(26,35,50,.2)", borderRadius:8,
+                           fontSize:12, color:C.muted, background:"transparent",
+                           fontFamily:"'Montserrat',sans-serif", cursor:"pointer", textAlign:"center" }}>
+            + Agregar
+          </button>
+        </div>
+
+        {/* Columna derecha — formulario con scroll */}
+        <div style={{ flex:1, overflowY:"auto", paddingRight:4 }}>
+          {p ? (
+            <>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                <Fg label="Apellido">
+                  <input style={inp} value={p.apellido}
+                         onChange={e=>upd(p.id,"apellido",e.target.value.toUpperCase())}
+                         placeholder="VILLEGAS"/>
+                </Fg>
+                <Fg label="Nombre/s">
+                  <input style={inp} value={p.nombre}
+                         onChange={e=>upd(p.id,"nombre",e.target.value.toUpperCase())}
+                         placeholder="CAROLINA ELIZABETH"/>
+                </Fg>
+                <Fg label="Género">
+                  <select style={inp} value={p.genero} onChange={e=>upd(p.id,"genero",e.target.value)}>
+                    <option value="F">Femenino</option>
+                    <option value="M">Masculino</option>
+                  </select>
+                </Fg>
+                <Fg label="Estado civil">
+                  <select style={inp} value={p.estadoCivil} onChange={e=>upd(p.id,"estadoCivil",e.target.value)}>
+                    {(p.genero==="F"?EC_F:EC_M).map(ec=><option key={ec}>{ec}</option>)}
+                  </select>
+                </Fg>
+                <Fg label="Nacionalidad">
+                  <input style={inp} value={p.nacionalidad}
+                         onChange={e=>upd(p.id,"nacionalidad",e.target.value)}
+                         placeholder="argentina"/>
+                </Fg>
+                <Fg label="Tipo doc.">
+                  <select style={inp} value={p.tipoDoc} onChange={e=>upd(p.id,"tipoDoc",e.target.value)}>
+                    <option>DNI</option><option>LE</option><option>LC</option><option>Pasaporte</option>
+                  </select>
+                </Fg>
+                <Fg label="N° documento">
+                  <input style={inp} value={p.nroDoc}
+                         onChange={e=>upd(p.id,"nroDoc",e.target.value)} placeholder="38.475.547"/>
+                </Fg>
+                <Fg label="CUIT/CUIL (opcional)">
+                  <input style={inp} value={p.cuit}
+                         onChange={e=>upd(p.id,"cuit",e.target.value)} placeholder="27-38475547-5"/>
+                </Fg>
+                <Fg label="Fecha de nacimiento">
+                  <input style={inp} value={p.fechaNac}
+                         onChange={e=>upd(p.id,"fechaNac",e.target.value)}
+                         placeholder="15 de enero de 1.995"/>
+                </Fg>
+                <Fg label="Rol en el acto">
+                  <input style={inp} value={p.rol}
+                         onChange={e=>upd(p.id,"rol",e.target.value.toUpperCase())}
+                         placeholder="COMPRADORA"/>
+                </Fg>
+                <Fg label="Calle">
+                  <input style={inp} value={p.calle}
+                         onChange={e=>upd(p.id,"calle",e.target.value)} placeholder="Almagro"/>
+                </Fg>
+                <Fg label="Número">
+                  <input style={inp} value={p.numero}
+                         onChange={e=>upd(p.id,"numero",e.target.value)} placeholder="878"/>
+                </Fg>
+                <Fg label="Piso (opcional)">
+                  <input style={inp} value={p.piso} onChange={e=>upd(p.id,"piso",e.target.value)}/>
+                </Fg>
+                <Fg label="Depto. (opcional)">
+                  <input style={inp} value={p.dpto} onChange={e=>upd(p.id,"dpto",e.target.value)}/>
+                </Fg>
+                <Fg label="Localidad / Barrio">
+                  <input style={inp} value={p.localidad}
+                         onChange={e=>upd(p.id,"localidad",e.target.value)} placeholder="Dorrego"/>
+                </Fg>
+                <Fg label="Departamento Mendoza">
+                  <select style={inp} value={p.departamento}
+                          onChange={e=>upd(p.id,"departamento",e.target.value)}>
+                    {DEPARTAMENTOS.map(d=><option key={d}>{d}</option>)}
+                  </select>
+                </Fg>
+              </div>
+              <div style={{ display:"flex", justifyContent:"flex-end", marginTop:14,
+                            paddingTop:12, borderTop:`1px solid rgba(26,35,50,.08)` }}>
+                <Btn danger onClick={()=>quitar(p.id)}>Quitar parte</Btn>
+              </div>
+            </>
+          ) : (
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
+                          height:"100%", color:C.muted, fontSize:13 }}>
+              Seleccioná una parte
             </div>
-
-            {isOpen && (
-              <div style={{ padding:14, borderTop:`1px solid rgba(26,35,50,.08)`, background:"#fff" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                  <Fg label="Género">
-                    <select style={inp} value={p.genero} onChange={e=>upd(p.id,"genero",e.target.value)}>
-                      <option value="F">Femenino</option>
-                      <option value="M">Masculino</option>
-                    </select>
-                  </Fg>
-                  <Fg label="Estado civil">
-                    <select style={inp} value={p.estadoCivil} onChange={e=>upd(p.id,"estadoCivil",e.target.value)}>
-                      {(p.genero==="F"?EC_F:EC_M).map(ec=><option key={ec}>{ec}</option>)}
-                    </select>
-                  </Fg>
-                  <Fg label="Apellido">
-                    <input style={inp} value={p.apellido}
-                           onChange={e=>upd(p.id,"apellido",e.target.value.toUpperCase())}
-                           placeholder="VILLEGAS"/>
-                  </Fg>
-                  <Fg label="Nombre/s">
-                    <input style={inp} value={p.nombre}
-                           onChange={e=>upd(p.id,"nombre",e.target.value.toUpperCase())}
-                           placeholder="CAROLINA ELIZABETH"/>
-                  </Fg>
-                  <Fg label="Nacionalidad">
-                    <input style={inp} value={p.nacionalidad}
-                           onChange={e=>upd(p.id,"nacionalidad",e.target.value)}
-                           placeholder="argentina"/>
-                  </Fg>
-                  <Fg label="Tipo doc.">
-                    <select style={inp} value={p.tipoDoc} onChange={e=>upd(p.id,"tipoDoc",e.target.value)}>
-                      <option>DNI</option><option>LE</option><option>LC</option><option>Pasaporte</option>
-                    </select>
-                  </Fg>
-                  <Fg label="N° documento">
-                    <input style={inp} value={p.nroDoc}
-                           onChange={e=>upd(p.id,"nroDoc",e.target.value)} placeholder="38.475.547"/>
-                  </Fg>
-                  <Fg label="CUIT/CUIL (opcional)">
-                    <input style={inp} value={p.cuit}
-                           onChange={e=>upd(p.id,"cuit",e.target.value)} placeholder="27-38475547-5"/>
-                  </Fg>
-                  <Fg label="Fecha de nacimiento">
-                    <input style={inp} value={p.fechaNac}
-                           onChange={e=>upd(p.id,"fechaNac",e.target.value)}
-                           placeholder="15 de enero de 1.995"/>
-                  </Fg>
-                  <Fg label="Rol en el acto">
-                    <input style={inp} value={p.rol}
-                           onChange={e=>upd(p.id,"rol",e.target.value.toUpperCase())}
-                           placeholder="COMPRADORA"/>
-                  </Fg>
-                  <Fg label="Calle">
-                    <input style={inp} value={p.calle}
-                           onChange={e=>upd(p.id,"calle",e.target.value)} placeholder="Almagro"/>
-                  </Fg>
-                  <Fg label="Número">
-                    <input style={inp} value={p.numero}
-                           onChange={e=>upd(p.id,"numero",e.target.value)} placeholder="878"/>
-                  </Fg>
-                  <Fg label="Piso (opcional)">
-                    <input style={inp} value={p.piso} onChange={e=>upd(p.id,"piso",e.target.value)}/>
-                  </Fg>
-                  <Fg label="Depto. (opcional)">
-                    <input style={inp} value={p.dpto} onChange={e=>upd(p.id,"dpto",e.target.value)}/>
-                  </Fg>
-                  <Fg label="Localidad / Barrio">
-                    <input style={inp} value={p.localidad}
-                           onChange={e=>upd(p.id,"localidad",e.target.value)} placeholder="Dorrego"/>
-                  </Fg>
-                  <Fg label="Departamento Mendoza">
-                    <select style={inp} value={p.departamento}
-                            onChange={e=>upd(p.id,"departamento",e.target.value)}>
-                      {DEPARTAMENTOS.map(d=><option key={d}>{d}</option>)}
-                    </select>
-                  </Fg>
-                </div>
-                <div style={{ display:"flex", justifyContent:"space-between", marginTop:14,
-                              paddingTop:12, borderTop:`1px solid rgba(26,35,50,.08)` }}>
-                  <Btn danger onClick={()=>quitar(p.id)}>Quitar parte</Btn>
-                  <Btn onClick={()=>setOpenId(null)}>Cerrar</Btn>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      <button onClick={agregar}
-              style={{ padding:9, border:"1px dashed rgba(26,35,50,.2)", borderRadius:8,
-                       fontSize:13, fontWeight:500, color:C.dark, background:"transparent",
-                       width:"100%", fontFamily:"'Montserrat',sans-serif", cursor:"pointer" }}>
-        + Agregar compareciente
-      </button>
+          )}
+        </div>
+      </div>
     </Modal>
   );
 }
 
 // ── MODAL ESCRIBANO ───────────────────────────────────────
+const ESCRIBANOS = [
+  { nombre:"FÁTIMA A. TAHA",    caracter:"Notaria Adscripta",  registro:"853", circunscripcion:"primera", genero:"F" },
+  { nombre:"SERGIO MIRANDA",    caracter:"Notario Titular",    registro:"412", circunscripcion:"primera", genero:"M" },
+];
+
 function ModalEscribano({ escribano, onApply, onClose }) {
-  const [d, setD] = useState({...escribano});
-  const upd = (f,v) => setD(x=>({...x,[f]:v}));
+  const [sel, setSel] = useState(
+    ESCRIBANOS.findIndex(e => e.nombre === escribano.nombre) ?? 0
+  );
   return (
     <Modal title="Escribano / Notario" onClose={onClose}
-           footer={<><Btn onClick={onClose}>Cancelar</Btn>
-                      <Btn primary onClick={()=>{ onApply(d); onClose(); }}>Aplicar</Btn></>}>
-      <Fg label="Nombre completo (en mayúsculas)">
-        <input style={inp} value={d.nombre}
-               onChange={e=>upd("nombre",e.target.value.toUpperCase())} placeholder="FÁTIMA A. TAHA"/>
-      </Fg>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-        <Fg label="Carácter">
-          <select style={inp} value={d.caracter} onChange={e=>upd("caracter",e.target.value)}>
-            <option value="Notaria Adscripta">Notaria Adscripta</option>
-            <option value="Notario Adscripto">Notario Adscripto</option>
-            <option value="Notaria Titular">Notaria Titular</option>
-            <option value="Notario Titular">Notario Titular</option>
-          </select>
-        </Fg>
-        <Fg label="N° de registro">
-          <input style={inp} value={d.registro} onChange={e=>upd("registro",e.target.value)} placeholder="853"/>
-        </Fg>
-        <Fg label="Circunscripción" full>
-          <select style={inp} value={d.circunscripcion} onChange={e=>upd("circunscripcion",e.target.value)}>
-            <option value="primera">Primera circunscripción</option>
-            <option value="segunda">Segunda circunscripción</option>
-            <option value="tercera">Tercera circunscripción</option>
-            <option value="cuarta">Cuarta circunscripción</option>
-          </select>
-        </Fg>
-      </div>
+           footer={<>
+             <Btn onClick={onClose}>Cancelar</Btn>
+             <Btn primary onClick={()=>{ onApply(ESCRIBANOS[sel]); onClose(); }}>Aplicar</Btn>
+           </>}>
+      {ESCRIBANOS.map((e, i) => (
+        <div key={e.nombre} onClick={()=>setSel(i)}
+             style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px",
+                      borderRadius:8, cursor:"pointer",
+                      border:`1px solid ${sel===i ? C.cerulean : "rgba(26,35,50,.12)"}`,
+                      background: sel===i ? C.ceruleanLight : "transparent" }}>
+          <div style={{ width:36, height:36, borderRadius:"50%", flexShrink:0,
+                        background: sel===i ? C.cerulean : C.ceruleanLight,
+                        display:"flex", alignItems:"center", justifyContent:"center",
+                        fontSize:11, fontWeight:700,
+                        color: sel===i ? "#fff" : "#1f4862" }}>
+            {e.nombre.split(" ").map(w=>w[0]).slice(0,2).join("")}
+          </div>
+          <div>
+            <div style={{ fontSize:13, fontWeight:600, color:C.dark }}>{e.nombre}</div>
+            <div style={{ fontSize:11, color:C.muted }}>{e.caracter} · Registro {e.registro} · {e.circunscripcion} circ.</div>
+          </div>
+        </div>
+      ))}
     </Modal>
   );
 }
@@ -556,7 +573,7 @@ function ModalFecha({ fecha, onApply, onClose }) {
   const hoy = () => { const h=new Date(); setD(x=>({...x,dia:h.getDate(),mes:h.getMonth(),anio:h.getFullYear()})); };
   const preview = `${diaLetras(d.dia)} días del mes de ${MESES_LABEL[d.mes]} de ${anioLetras(d.anio)}`;
   return (
-    <Modal title="Fecha y lugar de otorgamiento" onClose={onClose}
+    <Modal title="Lugar y fecha de otorgamiento" onClose={onClose}
            footer={<><Btn onClick={onClose}>Cancelar</Btn>
                       <Btn primary onClick={()=>{ onApply(d); onClose(); }}>Aplicar</Btn></>}>
       <Fg label="Ciudad">
@@ -754,16 +771,22 @@ function EditorScreen({ onGo }) {
     if (savedSel.current && sel) { sel.removeAllRanges(); sel.addRange(savedSel.current); }
   };
   const fmt = (cmd) => { restoreSelection(); document.execCommand(cmd,false,null); docRef.current?.focus(); };
-  const convertCase = (upper) => {
-    restoreSelection();
-    const sel = window.getSelection();
-    if (!sel||sel.isCollapsed) return;
-    const range = sel.getRangeAt(0);
-    const text  = range.toString();
-    range.deleteContents();
-    range.insertNode(document.createTextNode(upper?text.toUpperCase():text.toLowerCase()));
-    docRef.current?.focus();
+  
+  const convertCase = (mode) => {
+  restoreSelection();
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  const text  = range.toString();
+  let result;
+  if (mode === true)    result = text.toUpperCase();
+  else if (mode === false) result = text.toLowerCase();
+  else result = text.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  range.deleteContents();
+  range.insertNode(document.createTextNode(result));
+  docRef.current?.focus();
   };
+  
   const applyFuente = (f) => { setFuente(f); setDdOpen(null); };
 
   const V = ({children, empty}) => <Var show={varsOn} empty={empty}>{children}</Var>;
@@ -835,28 +858,74 @@ function EditorScreen({ onGo }) {
       <div style={{ background:C.porcelain, borderBottom:`1px solid rgba(26,35,50,.12)`,
                     padding:"6px 16px", flexShrink:0, zIndex:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:3, flexWrap:"wrap", rowGap:4 }}>
-          <TbBtn title="Negrita"   onClick={()=>fmt("bold")}><b>N</b></TbBtn>
-          <TbBtn title="Cursiva"   onClick={()=>fmt("italic")}><i style={{fontStyle:"italic"}}>I</i></TbBtn>
-          <TbBtn title="Subrayado" onClick={()=>fmt("underline")}><span style={{textDecoration:"underline"}}>S</span></TbBtn>
-          <TbSep/>
-          <TbBtn title="Mayúsculas" onClick={()=>convertCase(true)}>MAYÚSC</TbBtn>
-          <TbBtn title="Minúsculas" onClick={()=>convertCase(false)}>minúsc</TbBtn>
-          <TbSep/>
-          <TbBtn onClick={()=>setModal("partes")}>Partes</TbBtn>
-          <TbBtn onClick={()=>setModal("escribano")}>Escribano</TbBtn>
-          <TbBtn onClick={()=>setModal("instrumento")}>Instrumento</TbBtn>
-          <TbBtn onClick={()=>setModal("protocolo")}>Protocolo</TbBtn>
-          <TbBtn onClick={()=>setModal("fecha")}>Fecha</TbBtn>
-          <TbSep/>
-          <TbBtn active={varsOn} onClick={()=>setVarsOn(!varsOn)}>Variables</TbBtn>
-          <TbBtn active={hojaOn} onClick={()=>setHojaOn(!hojaOn)}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
-                 stroke="currentColor" strokeWidth="1.3" style={{flexShrink:0}}>
-              <rect x="1" y="1" width="10" height="10" rx="1.5"/>
-              <path d="M3 4h6M3 6h6M3 8h4" strokeLinecap="round"/>
-            </svg>
-            Hoja
-          </TbBtn>
+          "   onClick={()=>fmt("bold")}><b>N</b></TbBtn>
+{/* Grupo 1 — Formato de texto */}
+					<TbBtn title="Negrita"   onClick={()=>fmt("bold")}><b>N</b></TbBtn>
+					<TbBtn title="Cursiva"   onClick={()=>fmt("italic")}><i style={{fontStyle:"italic"}}>I</i></TbBtn>
+					<TbBtn title="Subrayado" onClick={()=>fmt("underline")}><span style={{textDecoration:"underline"}}>S</span></TbBtn>
+					<TbBtn title="MAYÚSCULAS" onClick={()=>convertCase(true)}>AA</TbBtn>
+					<TbBtn title="minúsculas" onClick={()=>convertCase(false)}>aa</TbBtn>
+					<TbBtn title="Capitalizar" onClick={()=>convertCase("cap")}>Aa</TbBtn>
+					<TbSep/>
+
+					{/* Grupo 2 — Página */}
+					<div ref={mgnRef} style={{ position:"relative" }}>
+						<TbBtn active={ddOpen==="margenes"}
+						       onClick={()=>{ saveSelection(); setDdOpen(ddOpen==="margenes"?null:"margenes"); }}>
+							Márgenes ▾
+						</TbBtn>
+						<Dropdown open={ddOpen==="margenes"}>
+							<DdSection label="Formato de página">
+								<DdItem active={margenKey==="protocolar"}   meta="34·70·12·16.5 mm"
+								        onClick={()=>{ setMargenKey("protocolar");   setDdOpen(null); }}>Protocolar</DdItem>
+								<DdItem active={margenKey==="noprotocolar"} meta="30·35·20·20 mm"
+								        onClick={()=>{ setMargenKey("noprotocolar"); setDdOpen(null); }}>No protocolar</DdItem>
+							</DdSection>
+						</Dropdown>
+					</div>
+					<div ref={fmtRef} style={{ position:"relative" }}>
+						<TbBtn active={ddOpen==="formato"}
+						       onClick={()=>{ saveSelection(); setDdOpen(ddOpen==="formato"?null:"formato"); }}>
+							{fuente.label} ▾
+						</TbBtn>
+						<Dropdown open={ddOpen==="formato"}>
+							<DdSection label="Fuente del documento">
+								{FUENTES.map(f=>(
+									<DdItem key={f.key} active={fuente.key===f.key} onClick={()=>applyFuente(f)}>
+										<span style={{fontFamily:f.family,fontSize:14}}>{f.label}</span>
+									</DdItem>
+								))}
+							</DdSection>
+						</Dropdown>
+					</div>
+					<TbBtn onClick={()=>setZoomIdx(Math.max(0,zoomIdx-1))}>−</TbBtn>
+					<span style={{ fontSize:12, fontWeight:500, color:C.dark, minWidth:38, textAlign:"center" }}>
+						{Math.round(zoom*100)}%
+					</span>
+					<TbBtn onClick={()=>setZoomIdx(Math.min(ZOOM_LEVELS.length-1,zoomIdx+1))}>+</TbBtn>
+					<TbBtn onClick={()=>setZoomIdx(4)}>↺</TbBtn>
+					<TbBtn title="Deshacer" onClick={()=>{ restoreSelection(); document.execCommand("undo",false,null); docRef.current?.focus(); }}>↩</TbBtn>
+					<TbBtn title="Rehacer" onClick={()=>{ restoreSelection(); document.execCommand("redo",false,null); docRef.current?.focus(); }}>↪</TbBtn>
+					<TbSep/>
+
+					{/* Grupo 3 — Documento */}
+					<TbBtn onClick={()=>setModal("partes")}>Partes</TbBtn>
+					<TbBtn onClick={()=>setModal("escribano")}>Escribano</TbBtn>
+					<TbBtn onClick={()=>setModal("instrumento")}>Instrumento</TbBtn>
+					<TbBtn onClick={()=>setModal("protocolo")}>Protocolo</TbBtn>
+					<TbBtn onClick={()=>setModal("fecha")}>Lugar y fecha</TbBtn>
+					<TbSep/>
+
+					{/* Grupo 4 — Vista */}
+					<TbBtn active={varsOn} onClick={()=>setVarsOn(!varsOn)}>Variables</TbBtn>
+					<TbBtn active={hojaOn} onClick={()=>setHojaOn(!hojaOn)}>
+						<svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+						     stroke="currentColor" strokeWidth="1.3" style={{flexShrink:0}}>
+							<rect x="1" y="1" width="10" height="10" rx="1.5"/>
+							<path d="M3 4h6M3 6h6M3 8h4" strokeLinecap="round"/>
+						</svg>
+						Fondo Impr
+					</TbBtn>
           <TbSep/>
           <div ref={mgnRef} style={{ position:"relative" }}>
             <TbBtn active={ddOpen==="margenes"}
@@ -1036,6 +1105,11 @@ export default function App() {
         html, body, #root { height: 100%; overflow: hidden; }
         body { background: #f0ece3; font-family: 'Montserrat', sans-serif; }
         [contenteditable]:focus { outline: none; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(26,35,50,.2); border-radius: 3px; }::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(26,35,50,.2); border-radius: 3px; }
       `}</style>
       {screen==="home"     && <HomeScreen     onGo={setScreen}/>}
       {screen==="selector" && <SelectorScreen onGo={setScreen}/>}
