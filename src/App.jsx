@@ -858,7 +858,6 @@ function EditorScreen({ onGo }) {
       <div style={{ background:C.porcelain, borderBottom:`1px solid rgba(26,35,50,.12)`,
                     padding:"6px 16px", flexShrink:0, zIndex:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:3, flexWrap:"wrap", rowGap:4 }}>
-          "   onClick={()=>fmt("bold")}><b>N</b></TbBtn>
 {/* Grupo 1 — Formato de texto */}
 					<TbBtn title="Negrita"   onClick={()=>fmt("bold")}><b>N</b></TbBtn>
 					<TbBtn title="Cursiva"   onClick={()=>fmt("italic")}><i style={{fontStyle:"italic"}}>I</i></TbBtn>
