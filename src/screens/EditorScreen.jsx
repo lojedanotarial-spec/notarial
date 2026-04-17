@@ -16,6 +16,7 @@ import { TbBtn, Dropdown, DdSection, DdItem } from "../components/ui/Toolbar";
 import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { exportarDocx }   from "../utils/exportDocx";
+import { buildCertFirmaF08 } from "../templates/certFirmaF08";
 
 const LINE_HEIGHT_PT = 24;
 const LINE_HEIGHT_PX = LINE_HEIGHT_PT * (96 / 72);
@@ -79,7 +80,7 @@ function PanelSection({ label, onClick, children, alerta }) {
   );
 }
 
-export function EditorScreen({ onGo }) {
+export function EditorScreen({ onGo, params = {} }) {
   const [modal,     setModal]     = useState(null);
   const [hojaOn,    setHojaOn]    = useState(true);
   const [estado,    setEstado]    = useState("borrador");
@@ -174,30 +175,7 @@ export function EditorScreen({ onGo }) {
 
     const al_del = escribano.caracter?.toLowerCase().includes("titular") ? "del" : "al";
 
-    return "<p>" +
-      "<strong>" + v("ESCRIBANO", escribano.nombre) + "</strong>, " +
-      v("CARÁCTER", escribano.caracter) +
-      " " + al_del + " Registro Notarial número " +
-      v("N° REGISTRO", escribano.registro) +
-      " de la " +
-      v("CIRCUNSCRIPCIÓN", escribano.circunscripcion ? escribano.circunscripcion + " circunscripción" : "") +
-      ", <strong>CERTIFICO:-</strong>" +
-      " Que la firma que se encuentra inserta en " +
-      v("INSTRUMENTO", instrTexto) +
-      (instrumento.fojas ? ", " + instrumento.fojas : "") +
-      ", que lleva mi firma y sello; ha sido puesta en mi presencia " +
-      partesHTML +
-      " El requerimiento respectivo ha sido formalizado en Acta número " +
-      v("N° ACTA", protocolo.nroActa) +
-      " del " +
-      v("LIBRO", protocolo.libro) +
-      " número " +
-      v("N° LIBRO", protocolo.nroLibro) +
-      ".- En " +
-      v("CIUDAD", fecha.ciudad ? fecha.ciudad.toUpperCase() : "") +
-      ", Provincia de Mendoza, República Argentina, a los " +
-      v("FECHA", fechaLetras) +
-      ".-</p>";
+    return buildCertFirmaF08({ partes, escribano, fecha, protocolo, instrumento, instrTexto, fechaLetras, MESES_LABEL, gen });
   }, [partes, escribano, fecha, protocolo, instrumento, instrTexto, fechaLetras]);
 
   // ── PAGINACIÓN ─────────────────────────────────────────────────────────────
@@ -580,7 +558,7 @@ export function EditorScreen({ onGo }) {
       </div>
 
       {/* MODALES */}
-      {modal === "partes"      && <ModalPartes      partes={partes}           onApply={setPartes}      onClose={() => setModal(null)}/>}
+      {modal === "partes"      && <ModalPartes partes={partes} onApply={setPartes} onClose={() => setModal(null)} showRol={params?.templateKey === "certFirmaF08"}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={setEscribano}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={setInstrumento} onClose={() => setModal(null)}/>}
       {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={setProtocolo}   onClose={() => setModal(null)}/>}

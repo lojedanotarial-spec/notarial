@@ -27,19 +27,19 @@ function nodeToRuns(node, inherited = {}) {
   }
   if (node.nodeType !== Node.ELEMENT_NODE) return runs;
   const tag = node.tagName?.toLowerCase();
-  if (node.hasAttribute && node.hasAttribute("data-variable")) {
+
+if (node.hasAttribute && node.hasAttribute("data-variable")) {
     const text = node.textContent || "";
-    const isEmpty = text.startsWith("{{");
     runs.push(new TextRun({
       text,
-      font:      inherited.font || "Merriweather",
+      font:      inherited.font  || "Merriweather",
       size:      HALFPT(inherited.size || 11),
-      bold:      true,
-      underline: { type: "dotted" },
-      color:     isEmpty ? "c0392b" : "3a7ca5",
+      bold:      inherited.bold  || false,
+      color:     inherited.color || "1a2332",
     }));
     return runs;
   }
+
   const next = { ...inherited };
   if (tag === "strong" || tag === "b") next.bold      = true;
   if (tag === "em"     || tag === "i") next.italic    = true;

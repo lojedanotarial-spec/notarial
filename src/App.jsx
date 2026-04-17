@@ -23,12 +23,19 @@ const globalStyles = [
 
 export default function App() {
   const [screen, setScreen] = useState("home");
+  const [params, setParams] = useState({});
+
+  const handleGo = (targetScreen, targetParams = {}) => {
+    setParams(targetParams);
+    setScreen(targetScreen);
+  };
+
   return (
     <>
       <style>{globalStyles}</style>
-      {screen === "home"     && <HomeScreen     onGo={setScreen} />}
-      {screen === "selector" && <SelectorScreen onGo={setScreen} />}
-      {screen === "editor"   && <EditorScreen   onGo={setScreen} />}
+      {screen === "home"     && <HomeScreen     onGo={handleGo} />}
+      {screen === "selector" && <SelectorScreen onGo={handleGo} />}
+      {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} />}
     </>
   );
 }

@@ -189,7 +189,7 @@ export function HomeScreen({ onGo }) {
             <div style={{ background:"#fff", borderRadius:R.lg, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
               {filtrados.length > 0 ? (
                 filtrados.map((doc, idx) => (
-                  <FilaReciente key={doc.id} doc={doc} last={idx === filtrados.length - 1} onOpen={() => onGo("editor")} />
+                  <FilaReciente key={doc.id} doc={doc} last={idx === filtrados.length - 1} onOpen={() => {}} />
                 ))
               ) : (
                 <div style={{ padding:"28px 16px", textAlign:"center", ...T.l2 }}>

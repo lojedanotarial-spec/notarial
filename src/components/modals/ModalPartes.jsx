@@ -10,7 +10,7 @@ const fmtDni = (v) => {
   return isNaN(n) ? "" : n.toLocaleString("es-AR");
 };
 
-export function ModalPartes({ partes, onApply, onClose }) {
+export function ModalPartes({ partes, onApply, onClose, showRol = true }) {
   const [draft,  setDraft]  = useState(partes.map(p => ({ ...p })));
   const [openId, setOpenId] = useState(draft[0]?.id ?? null);
 
@@ -46,7 +46,9 @@ export function ModalPartes({ partes, onApply, onClose }) {
                                 overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                     {x.apellido || "Parte " + (idx + 1)}
                   </div>
-                  <div style={{ fontSize:10, color:C.muted }}>{x.rol || "sin rol"}</div>
+                  {showRol !== false && (
+                    <div style={{ fontSize:10, color:C.muted }}>{x.rol || "sin rol"}</div>
+                  )}
                 </div>
               </div>
             );
@@ -148,7 +150,11 @@ export function ModalPartes({ partes, onApply, onClose }) {
                     maxLength={10}
                   />
                 </Fg>
+              
+                {showRol !== false && (
                 <Fg label="Rol en el acto"><input style={inp} value={p.rol} onChange={e => upd(p.id,"rol",e.target.value.toUpperCase())} placeholder="ej: COMPRADORA"/></Fg>
+                )}
+                
                 <Fg label="Calle">  <input style={inp} value={p.calle}    onChange={e => upd(p.id,"calle",e.target.value)}    placeholder="ingrese calle"/></Fg>
                 <Fg label="Número"> <input style={inp} value={p.numero}   onChange={e => upd(p.id,"numero",e.target.value)}   placeholder="nº"/></Fg>
                 <Fg label="Piso">   <input style={inp} value={p.piso}     onChange={e => upd(p.id,"piso",e.target.value)}/></Fg>

@@ -1,14 +1,22 @@
 ﻿import { useState } from "react";
-import { C, FRECUENTES, INSTRUMENTOS, ELABELS, inp } from "../constants";
+import { C, INSTRUMENTOS, ELABELS, inp } from "../constants";
 import { NavBar } from "../components/NavBar";
 import { Fg } from "../components/ui/FormElements";
 
+const TEMPLATES = [
+  { key: "certFirma",    label: "Certificacion de Firma",       disponible: true  },
+  { key: "certFirmaF08", label: "Certificacion de Firma - F08", disponible: true  },
+  { key: "poderEspecial",  label: "Poder especial",             disponible: false },
+  { key: "actaConst",      label: "Acta de constatacion",       disponible: false },
+  { key: "autViaje",       label: "Autorizacion de viaje",      disponible: false },
+];
+
 const RECIENTES = [
-  { id:1, titulo:"Certificación de firma", parte:"GARCÍA",    fecha:"11/04/2026", diasAtras:2, estado:"revision" },
-  { id:2, titulo:"Certificación de firma", parte:"RODRÍGUEZ", fecha:"10/04/2026", diasAtras:3, estado:"completo" },
-  { id:3, titulo:"Poder especial",         parte:"LÓPEZ",     fecha:"08/04/2026", diasAtras:5, estado:"borrador" },
-  { id:4, titulo:"Acta de constatación",   parte:"FERNÁNDEZ", fecha:"05/04/2026", diasAtras:8, estado:"completo" },
-  { id:5, titulo:"Poder general",          parte:"DÍAZ",      fecha:"02/04/2026", diasAtras:11, estado:"borrador" },
+  { id:1, titulo:"Certificacion de firma", parte:"GARCIA",    fecha:"11/04/2026", diasAtras:2,  estado:"revision" },
+  { id:2, titulo:"Certificacion de firma", parte:"RODRIGUEZ", fecha:"10/04/2026", diasAtras:3,  estado:"completo" },
+  { id:3, titulo:"Poder especial",         parte:"LOPEZ",     fecha:"08/04/2026", diasAtras:5,  estado:"borrador" },
+  { id:4, titulo:"Acta de constatacion",   parte:"FERNANDEZ", fecha:"05/04/2026", diasAtras:8,  estado:"completo" },
+  { id:5, titulo:"Poder general",          parte:"DIAZ",      fecha:"02/04/2026", diasAtras:11, estado:"borrador" },
 ];
 
 const ESTADO_STYLE = {
@@ -20,7 +28,7 @@ const ESTADO_STYLE = {
 function FilaReciente({ doc, onOpen, last }) {
   const st    = ESTADO_STYLE[doc.estado];
   const label = ELABELS[doc.estado];
-  const rel   = doc.diasAtras === 1 ? "Ayer" : "Hace " + doc.diasAtras + " días";
+  const rel   = doc.diasAtras === 1 ? "Ayer" : "Hace " + doc.diasAtras + " dias";
   return (
     <div
       onClick={() => onOpen(doc)}
@@ -40,7 +48,7 @@ function FilaReciente({ doc, onOpen, last }) {
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:13, fontWeight:500, color:"#1a2332",
                       whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-          {doc.titulo} — {doc.parte} — {doc.fecha}
+          {doc.titulo} - {doc.parte} - {doc.fecha}
         </div>
         <div style={{ fontSize:11, color:"rgba(26,35,50,.3)", marginTop:1 }}>{rel}</div>
       </div>
@@ -53,7 +61,7 @@ function FilaReciente({ doc, onOpen, last }) {
 }
 
 export function SelectorScreen({ onGo }) {
-  const [selected, setSelected] = useState("Certificación de firma");
+  const [selected, setSelected] = useState("certFirmaF08");
   const [familia,  setFamilia]  = useState("");
   const [query,    setQuery]    = useState("");
   const [abierto,  setAbierto]  = useState(false);
@@ -71,7 +79,6 @@ export function SelectorScreen({ onGo }) {
 
       <NavBar />
 
-      {/* Subheader */}
       <div style={{ background:"#f0ece3", borderBottom:"1px solid rgba(26,35,50,.08)",
                     padding:"10px 24px", display:"flex", alignItems:"center", gap:16, flexShrink:0 }}>
         <button onClick={() => onGo("home")}
@@ -84,10 +91,9 @@ export function SelectorScreen({ onGo }) {
           Volver
         </button>
         <div style={{ width:1, height:14, background:"rgba(26,35,50,.15)" }}/>
-        <span style={{ fontSize:13, fontWeight:600, color:C.dark }}>Seleccioná el instrumento</span>
+        <span style={{ fontSize:13, fontWeight:600, color:C.dark }}>Selecciona el instrumento</span>
       </div>
 
-      {/* Contenido scrolleable */}
       <div style={{ flex:1, overflowY:"auto", padding:"20px 24px 100px" }}>
         <div style={{ maxWidth:900, margin:"0 auto", display:"flex", flexDirection:"column", gap:14 }}>
 
@@ -103,16 +109,35 @@ export function SelectorScreen({ onGo }) {
               </div>
             </div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {FRECUENTES.map(f => (
-                <button key={f} onClick={() => setSelected(f)} style={{
-                  padding:"7px 14px", borderRadius:20, cursor:"pointer",
-                  border: "1px solid " + (selected === f ? C.cerulean : "rgba(26,35,50,.18)"),
-                  background: selected === f ? C.ceruleanLight : "transparent",
-                  color: selected === f ? "#1f4862" : "#1a2332",
-                  fontSize:13, fontWeight: selected === f ? 600 : 400,
-                  fontFamily:"'Montserrat',sans-serif", transition:"all .12s",
-                }}>
-                  {f}
+              {TEMPLATES.map(t => (
+                <button
+                  key={t.key}
+                  disabled={!t.disponible}
+                  onClick={() => t.disponible && setSelected(t.key)}
+                  style={{
+                    padding:"7px 14px", borderRadius:20, cursor: t.disponible ? "pointer" : "not-allowed",
+                    border: "1px solid " + (
+                      !t.disponible ? "rgba(26,35,50,.08)" :
+                      selected === t.key ? C.cerulean : "rgba(26,35,50,.18)"
+                    ),
+                    background: !t.disponible ? "rgba(26,35,50,.03)" :
+                                selected === t.key ? C.ceruleanLight : "transparent",
+                    color: !t.disponible ? "rgba(26,35,50,.3)" :
+                           selected === t.key ? "#1f4862" : "#1a2332",
+                    fontSize:13,
+                    fontWeight: selected === t.key ? 600 : 400,
+                    fontFamily:"'Montserrat',sans-serif",
+                    transition:"all .12s",
+                    display:"flex", alignItems:"center", gap:6,
+                  }}
+                >
+                  {t.label}
+                  {!t.disponible && (
+                    <span style={{ fontSize:9, fontWeight:600, letterSpacing:".05em",
+                                   color:"rgba(26,35,50,.3)", textTransform:"uppercase" }}>
+                      pronto
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -122,7 +147,7 @@ export function SelectorScreen({ onGo }) {
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
             <div style={{ fontSize:11, fontWeight:600, letterSpacing:".07em", textTransform:"uppercase",
                           color:"rgba(26,35,50,.3)", marginBottom:12 }}>
-              O buscá por familia
+              O busca por familia
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <Fg label="Familia">
@@ -130,20 +155,20 @@ export function SelectorScreen({ onGo }) {
                   <option value="">Seleccionar...</option>
                   <option value="cert">Certificaciones</option>
                   <option value="acta">Actas notariales</option>
-                  <option value="escritura">Escrituras públicas</option>
+                  <option value="escritura">Escrituras publicas</option>
                   <option value="traslado">Traslados</option>
                 </select>
               </Fg>
               <Fg label="Instrumento">
                 <select style={inp} disabled={!familia} onChange={e => setSelected(e.target.value)}>
-                  <option>— elegí familia primero</option>
+                  <option>- elegi familia primero</option>
                   {familia && INSTRUMENTOS[familia]?.map(i => <option key={i}>{i}</option>)}
                 </select>
               </Fg>
             </div>
           </div>
 
-          {/* Documentos recientes colapsable */}
+          {/* Recientes */}
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
             <button
               onClick={() => setAbierto(!abierto)}
@@ -185,7 +210,7 @@ export function SelectorScreen({ onGo }) {
                             style={{ position:"absolute", right:9, top:"50%", transform:"translateY(-50%)",
                                      background:"none", border:"none", cursor:"pointer",
                                      color:"rgba(26,35,50,.4)", fontSize:16, lineHeight:1, padding:0 }}>
-                      ×
+                      x
                     </button>
                   )}
                 </div>
@@ -194,7 +219,7 @@ export function SelectorScreen({ onGo }) {
                     filtrados.map((doc, idx) => (
                       <FilaReciente key={doc.id} doc={doc}
                                     last={idx === filtrados.length - 1}
-                                    onOpen={() => onGo("editor")} />
+                                    onOpen={() => {}} />
                     ))
                   ) : (
                     <div style={{ padding:"20px 16px", textAlign:"center",
@@ -210,13 +235,10 @@ export function SelectorScreen({ onGo }) {
         </div>
       </div>
 
-      {/* FAB flotante */}
-      <div style={{ position:"fixed", bottom:24, left:1130, transform:"translateX(-50%)" }}>
-
-
-        
+      {/* FAB */}
+      <div style={{ position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)" }}>
         <button
-          onClick={() => onGo("editor")}
+          onClick={() => onGo("editor", { templateKey: selected })}
           style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 24px",
                    background:C.cerulean, color:"#fff", border:"none", borderRadius:28,
                    fontSize:14, fontWeight:700, fontFamily:"'Montserrat',sans-serif",
