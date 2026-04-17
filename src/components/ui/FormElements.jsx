@@ -3,7 +3,7 @@
 export function Fg({ label, children, full }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:4, gridColumn:full?"1/-1":undefined }}>
-      <label style={{ fontSize:11, fontWeight:500, color:C.muted, fontFamily:"'Montserrat',sans-serif" }}>
+      <label style={{ fontSize:11, fontWeight:500, color:C.dark, fontFamily:"'Montserrat',sans-serif" }}>
         {label}
       </label>
       {children}

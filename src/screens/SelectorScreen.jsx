@@ -20,7 +20,7 @@ const RECIENTES = [
 ];
 
 const ESTADO_STYLE = {
-  borrador: { bg:"rgba(26,35,50,.06)", color:"rgba(26,35,50,.55)", border:"1px solid rgba(26,35,50,.12)" },
+  borrador: { bg:"rgba(26,35,50,.06)", color:"rgba(26,35,50,1)", border:"1px solid rgba(26,35,50,.12)" },
   revision: { bg:"#e8f2f8",           color:"#1f4862",             border:"1px solid #bdd9ec" },
   completo: { bg:"#f5edcc",           color:"#4e3d21",             border:"1px solid rgba(201,169,97,.35)" },
 };
@@ -50,7 +50,7 @@ function FilaReciente({ doc, onOpen, last }) {
                       whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
           {doc.titulo} - {doc.parte} - {doc.fecha}
         </div>
-        <div style={{ fontSize:11, color:"rgba(26,35,50,.3)", marginTop:1 }}>{rel}</div>
+        <div style={{ fontSize:11, color:"rgba(26,35,50,1)", marginTop:1 }}>{rel}</div>
       </div>
       <span style={{ fontSize:11, borderRadius:20, padding:"2px 10px", flexShrink:0,
                      whiteSpace:"nowrap", background:st.bg, color:st.color, border:st.border }}>
@@ -104,7 +104,7 @@ export function SelectorScreen({ onGo }) {
                 <path d="M8 1l1.8 3.6L14 5.6l-3 2.9.7 4.1L8 10.5l-3.7 2.1.7-4.1-3-2.9 4.2-.6z"/>
               </svg>
               <div style={{ fontSize:11, fontWeight:600, letterSpacing:".07em",
-                            textTransform:"uppercase", color:"rgba(26,35,50,.3)" }}>
+                            textTransform:"uppercase", color:"rgba(26,35,50,1)" }}>
                 Favoritos
               </div>
             </div>
@@ -134,7 +134,7 @@ export function SelectorScreen({ onGo }) {
                   {t.label}
                   {!t.disponible && (
                     <span style={{ fontSize:9, fontWeight:600, letterSpacing:".05em",
-                                   color:"rgba(26,35,50,.3)", textTransform:"uppercase" }}>
+                                   color:"rgba(26,35,50,1)", textTransform:"uppercase" }}>
                       pronto
                     </span>
                   )}
@@ -146,7 +146,7 @@ export function SelectorScreen({ onGo }) {
           {/* Por familia */}
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
             <div style={{ fontSize:11, fontWeight:600, letterSpacing:".07em", textTransform:"uppercase",
-                          color:"rgba(26,35,50,.3)", marginBottom:12 }}>
+                          color:"rgba(26,35,50,1)", marginBottom:12 }}>
               O busca por familia
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
@@ -209,7 +209,7 @@ export function SelectorScreen({ onGo }) {
                     <button onClick={() => setQuery("")}
                             style={{ position:"absolute", right:9, top:"50%", transform:"translateY(-50%)",
                                      background:"none", border:"none", cursor:"pointer",
-                                     color:"rgba(26,35,50,.4)", fontSize:16, lineHeight:1, padding:0 }}>
+                                     color:"rgba(26,35,50,1)", fontSize:16, lineHeight:1, padding:0 }}>
                       x
                     </button>
                   )}
@@ -223,7 +223,7 @@ export function SelectorScreen({ onGo }) {
                     ))
                   ) : (
                     <div style={{ padding:"20px 16px", textAlign:"center",
-                                  color:"rgba(26,35,50,.35)", fontSize:13 }}>
+                                  color:"rgba(26,35,50,1)", fontSize:13 }}>
                       No se encontraron documentos para "{query}"
                     </div>
                   )}

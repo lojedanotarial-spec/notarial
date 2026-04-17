@@ -211,7 +211,7 @@ console.log("showVariables:", showVariables, "page:", page.id);
     <div>
       <div className="no-print" style={{
         fontSize: 12, fontWeight: 600, letterSpacing: ".07em",
-        textTransform: "uppercase", color: "rgba(26,35,50,.4)",
+        textTransform: "uppercase", color: "rgba(26,35,50,1)",
         marginBottom: 8, textAlign: "center",
       }}>
         {label}

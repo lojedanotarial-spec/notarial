@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import { HomeScreen }     from "./screens/HomeScreen";
 import { SelectorScreen } from "./screens/SelectorScreen";
-import { EditorScreen }   from "./screens/EditorScreen";
+import { BulkScreen  }   from "./screens/BulkScreen";
 
 const globalStyles = [
   "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');",
@@ -36,6 +36,7 @@ export default function App() {
       {screen === "home"     && <HomeScreen     onGo={handleGo} />}
       {screen === "selector" && <SelectorScreen onGo={handleGo} />}
       {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} />}
+      {screen === "bulk" && <BulkScreen onGo={handleGo} />}
     </>
   );
 }

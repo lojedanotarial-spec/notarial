@@ -11,7 +11,7 @@ export const C = {
   border:        "rgba(26,35,50,.14)",
   borderStrong:  "rgba(26,35,50,.22)",
   muted:         "rgba(26,35,50,.45)",
-  faint:         "rgba(26,35,50,.3)",
+  faint:         "rgba(26,35,50,.55)",
   danger:        "#c0392b",
 };
 
@@ -20,9 +20,9 @@ export const T = {
   // Nivel 1 — Principal: nombres, valores, títulos
   l1: { fontSize: 14, color: "#1a2332", fontWeight: 600 },
   // Nivel 2 — Secundario: subtítulos, metadata, descripciones
-  l2: { fontSize: 12, color: "rgba(26,35,50,.6)", fontWeight: 400 },
+  l2: { fontSize: 12, color: "rgba(26,35,50,1)", fontWeight: 400 },
   // Nivel 3 — Label: etiquetas en mayúsculas, texto de apoyo
-  l3: { fontSize: 11, color: "rgba(26,35,50,.4)", fontWeight: 700,
+  l3: { fontSize: 11, color: "rgba(26,35,50,1)", fontWeight: 700,
         textTransform: "uppercase", letterSpacing: ".07em" },
 };
 

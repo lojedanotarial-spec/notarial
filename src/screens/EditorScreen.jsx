@@ -63,7 +63,7 @@ function PanelSection({ label, onClick, children, alerta }) {
         justifyContent: "space-between", marginBottom: 6,
       }}>
         <div style={{
-          fontSize: 11, fontWeight: 700, color: "rgba(26,35,50,.4)",
+          fontSize: 11, fontWeight: 700, color: "rgba(26,35,50,1)",
           textTransform: "uppercase", letterSpacing: ".07em",
         }}>
           {label}
@@ -460,7 +460,7 @@ export function EditorScreen({ onGo, params = {} }) {
           }}>
             <PanelSection label="Escribano" onClick={() => setModal("escribano")}>
               <div style={{ fontSize: 14, color: C.dark, fontWeight: 600 }}>{escribano.nombre}</div>
-              <div style={{ fontSize: 12, color: "rgba(26,35,50,.6)", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "rgba(26,35,50,1)", marginTop: 2 }}>
                 {escribano.caracter} · Reg. {escribano.registro}
               </div>
             </PanelSection>
@@ -469,7 +469,7 @@ export function EditorScreen({ onGo, params = {} }) {
               <div style={{ fontSize: 14, color: C.dark, fontWeight: 600 }}>
                 {String(fecha.dia).padStart(2,"0")}/{String(fecha.mes+1).padStart(2,"0")}/{fecha.anio}
               </div>
-              <div style={{ fontSize: 12, color: "rgba(26,35,50,.6)", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "rgba(26,35,50,1)", marginTop: 2 }}>
                 {fecha.ciudad}, Mendoza
               </div>
             </PanelSection>
@@ -537,7 +537,7 @@ export function EditorScreen({ onGo, params = {} }) {
           <div style={{ padding: 10, borderTop: "1px solid rgba(26,35,50,.1)" }}>
             <div style={{
               fontSize: 11, fontWeight: 700, letterSpacing: ".07em",
-              textTransform: "uppercase", color: "rgba(26,35,50,.4)", marginBottom: 7,
+              textTransform: "uppercase", color: "rgba(26,35,50,1)", marginBottom: 7,
             }}>
               Estado
             </div>
@@ -610,7 +610,7 @@ export function EditorScreen({ onGo, params = {} }) {
               <div style={{ fontSize: 20, fontWeight: 700, color: C.dark, marginBottom: 6 }}>DOCX</div>
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Sin fondo · Para seguir editando</div>
               <div style={{
-                fontSize: 12, color: "rgba(26,35,50,.55)", lineHeight: 1.5,
+                fontSize: 12, color: "rgba(26,35,50,1)", lineHeight: 1.5,
                 borderTop: "1px solid rgba(26,35,50,.08)", paddingTop: 8, textAlign: "left",
               }}>
                 ⚠ El salto de línea puede variar en Word. Para el documento oficial usá Imprimir / PDF.
