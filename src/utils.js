@@ -1,137 +1,120 @@
-﻿import { numeroALetras, concatenarLimites, concatenarAdquirentes, concatenarEncabezado } from "../utils";
-import { diaLetras, anioLetras } from "../utils";
-import { MESES_LABEL } from "../constants";
+﻿import { useEffect } from "react";
+import { MESES_ORD, ANIOS_LETRAS } from "./constants";
 
-const fmtDni = (v) => {
-  if (!v) return "";
-  const n = Number(String(v).replace(/\D/g, ""));
-  return isNaN(n) ? "" : n.toLocaleString("es-AR");
-};
+export function useClickOutside(ref, cb) {
+  useEffect(() => {
+    const h = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) cb();
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [ref, cb]);
+}
 
-const fmtFechaLetras = (fechaStr) => {
-  if (!fechaStr) return "";
-  const [dia, mes, anio] = fechaStr.split("/").map(Number);
-  if (!dia || !mes || !anio) return fechaStr;
-  return `${dia} de ${MESES_LABEL[mes - 1]?.toLowerCase() || ""} de ${anio}`;
-};
+export const diaLetras  = (n) => (MESES_ORD[n - 1] || String(n)).toUpperCase();
+export const anioLetras = (n) => ANIOS_LETRAS[n] || String(n);
+export const gen = (p, f, m) => (p.genero === "F" ? f : m);
 
-const parseMonto = (v) =>
-  parseFloat((v || "0").replace(/\$|\./g, "").replace(",", ".")) || 0;
+export function numeroALetras(n) {
+  if (n === undefined || n === null || n === "") return "";
+  const num = typeof n === "string" ? parseFloat(n.replace(/\./g, "").replace(",", ".")) : n;
+  if (isNaN(num)) return "";
 
-const parseSup = (v) =>
-  parseFloat((v || "0").replace(/\./g, "").replace(",", ".")) || 0;
+  const UNIDADES = ["","UNO","DOS","TRES","CUATRO","CINCO","SEIS","SIETE","OCHO","NUEVE",
+                    "DIEZ","ONCE","DOCE","TRECE","CATORCE","QUINCE","DIECISÉIS","DIECISIETE",
+                    "DIECIOCHO","DIECINUEVE","VEINTE","VEINTIUNO","VEINTIDÓS","VEINTITRÉS",
+                    "VEINTICUATRO","VEINTICINCO","VEINTISÉIS","VEINTISIETE","VEINTIOCHO","VEINTINUEVE"];
+  const DECENAS = ["","","VEINTE","TREINTA","CUARENTA","CINCUENTA","SESENTA","SETENTA","OCHENTA","NOVENTA"];
+  const CENTENAS = ["","CIEN","DOSCIENTOS","TRESCIENTOS","CUATROCIENTOS","QUINIENTOS",
+                    "SEISCIENTOS","SETECIENTOS","OCHOCIENTOS","NOVECIENTOS"];
 
-const supLetras = (num) => {
-  if (isNaN(num) || num === 0) return "";
-  const entero = Math.floor(num);
-  const dec = Math.round((num - entero) * 100);
-  return numeroALetras(entero)
-    .replace(" CON 00/100", "")
-    .replace(/ CON \d+\/100/, "")
-    + " metros cuadrados"
-    + (dec > 0 ? ` con ${dec} decímetros cuadrados` : "");
-};
-
-export function generarEscritura(templateHTML, lote, barrio, escribano, fecha, nroEscritura) {
-  const adquirentes = lote.partes || [];
-  const primerAdq = adquirentes[0] || {};
-
-  // Fecha
-  const diaStr  = String(fecha.dia).padStart(2, "0");
-  const mesStr  = String(fecha.mes + 1).padStart(2, "0");
-  const anioStr = String(fecha.anio);
-
-  // Precio
-  const precioNum = parseMonto(lote.precio);
-
-  // Retención ganancias
-  const retencionNum = parseMonto(lote.retencionGanancias);
-
-  // Registro escribano en letras
-  const registroNum = Number(escribano?.registro || 0);
-
-  const vars = {
-    // Escribano
-    "ESCRIBANO_NOMBRE":           escribano?.nombre            || "",
-    "ESCRIBANO_CARACTER":         escribano?.caracter          || "",
-    "ESCRIBANO_REGISTRO":         escribano?.registro          || "",
-    "ESCRIBANO_REGISTRO_LETRAS":  numeroALetras(registroNum).replace(" CON 00/100", ""),
-    "ESCRIBANO_CIRCUNSCRIPCION":  escribano?.circunscripcion   || "",
-    "ESCRIBANO_LOCALIDAD":        escribano?.localidad_registro || "",
-
-    // Fecha
-    "FECHA_DIA_LETRAS":  diaLetras(fecha.dia),
-    "FECHA_MES":         MESES_LABEL[fecha.mes]?.toUpperCase() || "",
-    "FECHA_ANIO_LETRAS": anioLetras(fecha.anio),
-    "FECHA_DIA":         diaStr,
-    "FECHA_MES_NUM":     mesStr,
-    "FECHA_ANIO":        anioStr,
-
-    // Escritura
-    "NRO_ESCRITURA":        String(nroEscritura || lote.nroEscritura || ""),
-    "NRO_ESCRITURA_LETRAS": numeroALetras(Number(nroEscritura || lote.nroEscritura || 0)).replace(" CON 00/100", ""),
-    "FECHA_ESCRITURA":      lote.fechaEscritura || "",
-
-    // Adquirentes
-    "ADQUIRENTES_ENCABEZADO": concatenarEncabezado(adquirentes),
-    "ADQUIRENTES_TEXTO":      concatenarAdquirentes(adquirentes),
-    "ADQ_TRATAMIENTO":        primerAdq.genero === "F" ? "la señora" : "el señor",
-    "ADQ_NOMBRE_COMPLETO":    [primerAdq.apellido, primerAdq.nombre].filter(Boolean).join(" "),
-    "ADQ_NACIONALIDAD":       primerAdq.nacionalidad  || "",
-    "ADQ_TIPO_DOC":           primerAdq.tipoDoc       || "DNI",
-    "ADQ_NRO_DOC":            fmtDni(primerAdq.nroDoc),
-    "ADQ_CUIT":               primerAdq.cuit          || "",
-    "ADQ_FECHA_NAC":          fmtFechaLetras(primerAdq.fechaNac),
-    "ADQ_ESTADO_CIVIL":       primerAdq.estadoCivil   || "",
-    "ADQ_DOMICILIO":          [primerAdq.calle, primerAdq.numero, primerAdq.localidad].filter(Boolean).join(", "),
-
-    // Inmueble
-    "MANZANA":              lote.manzana    || "",
-    "LOTE":                 lote.lote       || "",
-    "FRENTE_CALLE":         barrio.frente   || "",
-    "PLANO_MENSURA":        barrio.plano    || "",
-    "LIMITES":              concatenarLimites(lote),
-
-    // Superficies — supTitulo1..4 en DB, expuestas como I..IV
-    "SUP_MENSURA":           lote.supMensura  || "",
-    "SUP_MENSURA_LETRAS":    supLetras(parseSup(lote.supMensura)),
-    "SUP_TITULO_I":          lote.supTitulo1  || "",
-    "SUP_TITULO_I_LETRAS":   supLetras(parseSup(lote.supTitulo1)),
-    "SUP_TITULO_II":         lote.supTitulo2  || "",
-    "SUP_TITULO_II_LETRAS":  supLetras(parseSup(lote.supTitulo2)),
-    "SUP_TITULO_III":        lote.supTitulo3  || "",
-    "SUP_TITULO_III_LETRAS": supLetras(parseSup(lote.supTitulo3)),
-    "SUP_TITULO_IV":         lote.supTitulo4  || "",
-    "SUP_TITULO_IV_LETRAS":  supLetras(parseSup(lote.supTitulo4)),
-
-    // Precio
-    "PRECIO_NUMEROS": lote.precio || "",
-    "PRECIO_LETRAS":  "PESOS " + numeroALetras(precioNum),
-
-    // Retención ganancias
-    "RETENCION_GANANCIAS":        lote.retencionGanancias || "",
-    "RETENCION_GANANCIAS_LETRAS": "PESOS " + numeroALetras(retencionNum),
-
-    // Certificados
-    "CERT_REGISTRO_NRO":   lote.certRegistro  || "",
-    "CERT_REGISTRO_FECHA": lote.fechaRegistro || "",
-    "CERT_CATASTRO_NRO":   lote.certCatastro  || "",
-    "CERT_CATASTRO_FECHA": lote.fechaCatastro || "",
-    "NOMENCLATURA":        lote.nomenclatura  || "",
-    "AVALUO":              lote.avaluo        || "",
-    "PADRON_TERRITORIAL":  lote.padronRentas  || "",
-    "PADRON_MUNICIPAL":    lote.padronMuni    || "",
-
-    // Transmitente (del barrio)
-    "TRANSMITENTE_NOMBRE": barrio.transmitente        || "",
-    "TRANSMITENTE_CUIT":   barrio.cuit                || "",
-    "MATRICULA_SIRC":      barrio.matricula           || "",
-  };
-
-  let resultado = templateHTML;
-  for (const [key, value] of Object.entries(vars)) {
-    resultado = resultado.replaceAll(`{{${key}}}`, value);
+  function centenasALetras(n) {
+    if (n === 100) return "CIEN";
+    const c = Math.floor(n / 100);
+    const resto = n % 100;
+    const centena = CENTENAS[c];
+    if (resto === 0) return centena;
+    if (resto < 30) return (centena ? centena + " " : "") + UNIDADES[resto];
+    const d = Math.floor(resto / 10);
+    const u = resto % 10;
+    return (centena ? centena + " " : "") + DECENAS[d] + (u > 0 ? " Y " + UNIDADES[u] : "");
   }
 
-  return resultado;
+  const entero = Math.floor(num);
+  const decimales = Math.round((num - entero) * 100);
+
+  let resultado = "";
+  if (entero === 0) resultado = "CERO";
+  else if (entero < 30) resultado = UNIDADES[entero];
+  else if (entero < 1000) resultado = centenasALetras(entero);
+  else if (entero < 1000000) {
+    const miles = Math.floor(entero / 1000);
+    const resto = entero % 1000;
+    resultado = (miles === 1 ? "MIL" : centenasALetras(miles) + " MIL");
+    if (resto > 0) resultado += " " + centenasALetras(resto);
+  } else {
+    const millones = Math.floor(entero / 1000000);
+    const resto = entero % 1000000;
+    resultado = centenasALetras(millones) + (millones === 1 ? " MILLÓN" : " MILLONES");
+    if (resto >= 1000) {
+      const miles = Math.floor(resto / 1000);
+      const restoMiles = resto % 1000;
+      resultado += " " + (miles === 1 ? "MIL" : centenasALetras(miles) + " MIL");
+      if (restoMiles > 0) resultado += " " + centenasALetras(restoMiles);
+    } else if (resto > 0) {
+      resultado += " " + centenasALetras(resto);
+    }
+  }
+
+  return resultado + (decimales > 0 ? " CON " + String(decimales).padStart(2,"0") + "/100" : " CON 00/100");
+}
+
+export function concatenarLimites(lote) {
+  const CARDINALES = [
+    ["norte","norteM","Norte"],
+    ["sur","surM","Sur"],
+    ["este","esteM","Este"],
+    ["oeste","oesteM","Oeste"],
+    ["noreste","noresteM","Noreste"],
+    ["noroeste","noroesteM","Noroeste"],
+    ["sureste","suresteM","Sureste"],
+    ["suroeste","suroesteM","Suroeste"],
+  ];
+  const partes = CARDINALES
+    .filter(([k]) => lote[k])
+    .map(([k, km, label]) => `${label}: con ${lote[k]} en ${lote[km] || "?"} metros`);
+  return partes.join("; ") + (partes.length > 0 ? "." : "");
+}
+
+export function concatenarAdquirentes(partes) {
+  if (!partes || partes.length === 0) return "";
+  const fmtDni = (v) => {
+    if (!v) return "";
+    const n = Number(String(v).replace(/\D/g, ""));
+    return isNaN(n) ? "" : n.toLocaleString("es-AR");
+  };
+  return partes.map((p) => {
+    const tratamiento = p.genero === "F" ? "la señora" : "el señor";
+    const nombre = [p.apellido, p.nombre].filter(Boolean).join(" ");
+    const domicilio = [p.calle, p.numero,
+      p.piso && "piso " + p.piso,
+      p.dpto && "dpto. " + p.dpto,
+      p.localidad,
+    ].filter(Boolean).join(", ");
+    let texto = `${tratamiento} ${nombre}, de nacionalidad ${p.nacionalidad || ""}, titular del Documento Nacional de Identidad número ${fmtDni(p.nroDoc)}`;
+    if (p.cuit) texto += `, CUIT/CUIL Nº ${p.cuit}`;
+    if (p.fechaNac) texto += `, nacid${p.genero === "F" ? "a" : "o"} el ${p.fechaNac}`;
+    if (p.estadoCivil) texto += `, quien manifiesta ser de estado civil ${p.estadoCivil}`;
+    if (domicilio) texto += `, y domiciliarse en ${domicilio}, departamento ${p.departamento || ""}, de esta Provincia de Mendoza`;
+    return texto;
+  }).join("; y ");
+}
+
+export function concatenarEncabezado(partes) {
+  if (!partes || partes.length === 0) return "";
+  const nombres = partes.map(p =>
+    [p.apellido, p.nombre].filter(Boolean).join(" ").toUpperCase()
+  );
+  if (nombres.length === 1) return nombres[0];
+  return nombres.slice(0, -1).join(", ") + " Y " + nombres[nombres.length - 1];
 }
