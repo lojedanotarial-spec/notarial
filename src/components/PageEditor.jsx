@@ -47,8 +47,6 @@ export function PageEditor({
   const boxW = A4W - boxR - boxL;
   const boxH = A4H - margen.bottom - boxT;
 
-console.log("showVariables:", showVariables, "page:", page.id);
-
   const overflowRef  = useRef(false);
   const editorBoxRef = useRef(null);
 

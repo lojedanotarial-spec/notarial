@@ -1,7 +1,10 @@
 ﻿import { useState } from "react";
-import { HomeScreen }     from "./screens/HomeScreen";
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import { LoginScreen }   from "./screens/LoginScreen.jsx";
+import { HomeScreen }    from "./screens/HomeScreen";
 import { SelectorScreen } from "./screens/SelectorScreen";
-import { BulkScreen  }   from "./screens/BulkScreen";
+import { EditorScreen }  from "./screens/EditorScreen";
+import { BulkScreen }    from "./screens/BulkScreen";
 
 const globalStyles = [
   "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');",
@@ -21,22 +24,43 @@ const globalStyles = [
   "}",
 ].join("\n");
 
-export default function App() {
+function AppRouter() {
+  const { session, cargando } = useAuth();
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
 
   const handleGo = (targetScreen, targetParams = {}) => {
+
     setParams(targetParams);
     setScreen(targetScreen);
   };
 
+  if (cargando) return (
+    <div style={{
+      height: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: "#1a2332",
+    }}>
+      <img src="/Logo Gold.png" alt="Notarial" style={{ height: 32, opacity: .6 }} />
+    </div>
+  );
+
+  if (!session) return <LoginScreen />;
+
   return (
     <>
-      <style>{globalStyles}</style>
       {screen === "home"     && <HomeScreen     onGo={handleGo} />}
       {screen === "selector" && <SelectorScreen onGo={handleGo} />}
       {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} />}
-      {screen === "bulk" && <BulkScreen onGo={handleGo} />}
+      {screen === "bulk"     && <BulkScreen     onGo={handleGo} />}
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <style>{globalStyles}</style>
+      <AppRouter />
+    </AuthProvider>
   );
 }

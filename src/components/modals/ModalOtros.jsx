@@ -1,34 +1,68 @@
 ﻿import { useState } from "react";
-import { C, DEPARTAMENTOS, ESCRIBANOS, MESES_LABEL, inp } from "../../constants";
+import { C, DEPARTAMENTOS, MESES_LABEL, inp } from "../../constants";
 import { diaLetras, anioLetras } from "../../utils";
+import { useAuth } from "../../context/AuthContext";
 import { Modal } from "../Modal";
 import { Btn }   from "../ui/Btn";
 import { Fg, Warn } from "../ui/FormElements";
 
 export function ModalEscribano({ escribano, onApply, onClose }) {
-  const [sel, setSel] = useState(ESCRIBANOS.findIndex(e => e.nombre === escribano.nombre) ?? 0);
+  const { miembros } = useAuth();
+  const [sel, setSel] = useState(
+    miembros.findIndex(e => e.nombre === escribano.nombre) ?? 0
+  );
+
+  function aplicar() {
+    const m = miembros[sel];
+    const ROL_CARACTER = {
+      titular:   m.genero === "f" ? "Notaria Titular"   : "Notario Titular",
+      adscripta: "Notaria Adscripta",
+      adscripto: "Notario Adscripto",
+    };
+    onApply({
+      nombre:          m.nombre_preferido || `${m.nombre} ${m.apellido}`,
+      caracter:        ROL_CARACTER[m.rol] || m.rol,
+      registro:        m.registro,
+      circunscripcion: m.circunscripcion,
+      genero:          m.genero,
+    });
+    onClose();
+  }
+
   return (
     <Modal title="Escribano / Notario" onClose={onClose}
            footer={<><Btn onClick={onClose}>Cancelar</Btn>
-                      <Btn primary onClick={() => { onApply(ESCRIBANOS[sel]); onClose(); }}>Aplicar</Btn></>}>
-      {ESCRIBANOS.map((e, i) => (
-        <div key={e.nombre} onClick={() => setSel(i)}
-             style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px",
-                      borderRadius:8, cursor:"pointer",
-                      border:"1px solid " + (sel === i ? C.cerulean : "rgba(26,35,50,.12)"),
-                      background: sel === i ? C.ceruleanLight : "transparent" }}>
-          <div style={{ width:36, height:36, borderRadius:"50%", flexShrink:0,
-                        background: sel === i ? C.cerulean : C.ceruleanLight,
-                        display:"flex", alignItems:"center", justifyContent:"center",
-                        fontSize:11, fontWeight:700, color: sel === i ? "#fff" : "#1f4862" }}>
-            {e.nombre.split(" ").map(w => w[0]).slice(0, 2).join("")}
+                      <Btn primary onClick={aplicar}>Aplicar</Btn></>}>
+      {miembros.map((m, i) => {
+        const nombre = m.nombre_preferido || `${m.nombre} ${m.apellido}`;
+        const iniciales = [m.nombre?.[0], m.apellido?.[0]].filter(Boolean).join("").toUpperCase();
+        const ROL_LABEL = { titular: "Titular", adscripta: "Adscripta", adscripto: "Adscripto" };
+        return (
+          <div key={m.id} onClick={() => setSel(i)}
+               style={{
+                 display: "flex", alignItems: "center", gap: 12,
+                 padding: "12px 14px", borderRadius: 8, cursor: "pointer",
+                 border: "1px solid " + (sel === i ? C.cerulean : "rgba(26,35,50,.12)"),
+                 background: sel === i ? C.ceruleanLight : "transparent",
+               }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+              background: sel === i ? C.cerulean : C.ceruleanLight,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 11, fontWeight: 700,
+              color: sel === i ? "#fff" : "#1f4862",
+            }}>
+              {iniciales}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.dark }}>{nombre}</div>
+              <div style={{ fontSize: 11, color: C.muted }}>
+                {ROL_LABEL[m.rol]} · Registro {m.registro} · {m.circunscripcion} circ.
+              </div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:600, color:C.dark }}>{e.nombre}</div>
-            <div style={{ fontSize:11, color:C.muted }}>{e.caracter} · Registro {e.registro} · {e.circunscripcion} circ.</div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </Modal>
   );
 }
@@ -75,9 +109,10 @@ export function ModalProtocolo({ protocolo, onApply, onClose }) {
                       <Btn primary onClick={() => { onApply(d); onClose(); }}>Aplicar</Btn></>}>
       <Fg label="Nombre del libro">
         <select style={inp} value={d.libro} onChange={e => upd("libro", e.target.value)}>
+          <option>Libro de Protocolo de Actas de Requerimientos para Certificaciones de Firmas e Impresiones Digitales</option>
           <option>Libro de Requerimientos para Certificaciones de Firmas</option>
           <option>Libro de Registros de firmas e impresiones digitales</option>
-          <option>Libro de Protocolo de Actas de Requerimientos para Certificaciones de Firmas e Impresiones Digitales</option>
+          
         </select>
       </Fg>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>

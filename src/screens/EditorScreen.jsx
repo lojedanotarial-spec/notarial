@@ -1,4 +1,5 @@
-﻿import { useState, useCallback, useEffect, useRef } from "react";
+﻿import { useAutoguardado } from "../hooks/useAutoguardado";
+import { useAuth } from "../context/AuthContext";
 import {
   C, A4W, A4H, mm, PROT, NOPROT,
   ZOOM_LEVELS, FUENTES, MESES_LABEL,
@@ -17,6 +18,8 @@ import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { exportarDocx }   from "../utils/exportDocx";
 import { buildCertFirmaF08 } from "../templates/certFirmaF08";
+import { supabase } from "../supabase";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 
 const LINE_HEIGHT_PT = 24;
 const LINE_HEIGHT_PX = LINE_HEIGHT_PT * (96 / 72);
@@ -81,6 +84,7 @@ function PanelSection({ label, onClick, children, alerta }) {
 }
 
 export function EditorScreen({ onGo, params = {} }) {
+  const { miUsuario, miembros } = useAuth();
   const [modal,     setModal]     = useState(null);
   const [hojaOn,    setHojaOn]    = useState(true);
   const [estado,    setEstado]    = useState("borrador");
@@ -92,10 +96,42 @@ export function EditorScreen({ onGo, params = {} }) {
   const [fontSize,  setFontSize]  = useState(11);
 
   const [partes,      setPartes]      = useState([PARTE_VACIA()]);
-  const [escribano,   setEscribano]   = useState(ESCRIBANO_INI);
+  const [escribano, setEscribano] = useState(() => miUsuario ? {
+    nombre:          miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
+    caracter:        miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
+    registro:        miUsuario.registro,
+    circunscripcion: miUsuario.circunscripcion,
+    } : ESCRIBANO_INI);
+  const [templateKey, setTemplateKey] = useState(params?.templateKey || "certFirmaF08");
   const [fecha,       setFecha]       = useState(FECHA_HOY());
   const [protocolo,   setProtocolo]   = useState(PROTOCOLO_INI);
   const [instrumento, setInstrumento] = useState(INSTRUMENTO_INI);
+
+  const { usuario } = useAuth();
+
+  // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
+  useEffect(() => {
+    if (!params.docId) return;
+    async function cargar() {
+      const { data } = await supabase.from("documentos")
+        .select("*").eq("id", params.docId).single();
+      if (!data) return;
+      const c = data.contenido || {};
+      if (c.partes)      setPartes(c.partes);
+      if (c.escribano)   setEscribano(c.escribano);
+      if (c.fecha)       setFecha(c.fecha);
+      if (c.protocolo)   setProtocolo(c.protocolo);
+      if (c.instrumento) setInstrumento(c.instrumento);
+      if (data.estado)   setEstado(data.estado);
+      if (data.template_key) setTemplateKey(data.template_key);
+    }
+    cargar();
+  }, [params.docId]);
+
+  const contenidoParaGuardar = useMemo(
+  () => ({ partes, escribano, fecha, protocolo, instrumento }),
+  [partes, escribano, fecha, protocolo, instrumento]
+  );
 
   // Ref al editor activo (el que tiene el foco) — la toolbar opera sobre él
   const activeEditor = useRef(null);
@@ -108,15 +144,45 @@ export function EditorScreen({ onGo, params = {} }) {
 
   const zoom = ZOOM_LEVELS[zoomIdx];
 
-  const primerApellido = partes[0]?.apellido || null;
-  const diaStr  = String(fecha.dia).padStart(2, "0");
-  const mesStr  = String(fecha.mes + 1).padStart(2, "0");
-  const docTitle = primerApellido
-    ? "Certificacion de firma - " + primerApellido + " - " + diaStr + "/" + mesStr + "/" + fecha.anio
-    : "Certificacion de firma - nuevo documento";
+const diaStr  = String(fecha.dia).padStart(2, "0");
+const mesStr  = String(fecha.mes + 1).padStart(2, "0");
+const fechaStr = diaStr + "/" + mesStr + "/" + fecha.anio;
+
+const partesLabel = partes
+  .filter(p => p.apellido || p.nombre)
+  .map(p => {
+    const nombre = [p.apellido, p.nombre].filter(Boolean).join(" ");
+    const reprs = (p.representaciones || [])
+      .filter(r => r.razon_social)
+      .map(r => r.razon_social)
+      .join(", ");
+    return reprs ? nombre + " (" + reprs + ")" : nombre;
+  })
+  .join(", ");
+
+const docTitle = partesLabel
+  ? "Certificacion de firma - " + partesLabel + " - " + fechaStr
+  : "Certificacion de firma - nuevo documento";
 
   const instrTexto  = instrumento.descripcion || "el instrumento adjunto a la presente Actuación Notarial";
   const fechaLetras = diaLetras(fecha.dia) + " días del mes de " + MESES_LABEL[fecha.mes] + " de " + anioLetras(fecha.anio);
+
+  const { indicador, guardarAhora, hayPendiente } = useAutoguardado({
+  titulo: docTitle,
+  estado,
+  contenido: contenidoParaGuardar,
+  templateKey: templateKey,
+  registroNumero: miUsuario?.registro,
+  usuarioId: usuario?.id,
+  initialDocId: params?.docId, 
+  });
+
+  function handleGo(screen, p) {
+  if (hayPendiente) {
+    if (!window.confirm("Hay cambios sin guardar. ¿Querés salir igual?")) return;
+  }
+  onGo(screen, p);
+  }
 
   const buildDocHTML = useCallback(() => {
     const fmtDni  = (val) => val ? Number(String(val).replace(/\D/g, "")).toLocaleString("es-AR") : "";
@@ -242,6 +308,9 @@ export function EditorScreen({ onGo, params = {} }) {
         estado={estado}
         onStatus={() => setModal("estado")}
         onExport={() => setModal("exportar")}
+        indicadorGuardado={indicador}
+        onGuardar={guardarAhora}
+        onGo={handleGo}
       />
 
       {/* TOOLBAR */}
@@ -558,7 +627,7 @@ export function EditorScreen({ onGo, params = {} }) {
       </div>
 
       {/* MODALES */}
-      {modal === "partes"      && <ModalPartes partes={partes} onApply={setPartes} onClose={() => setModal(null)} showRol={params?.templateKey === "certFirmaF08"}/>}
+      {modal === "partes"      && <ModalPartes partes={partes} onApply={setPartes} onClose={() => setModal(null)} showRol={templateKey === "certFirmaF08"}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={setEscribano}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={setInstrumento} onClose={() => setModal(null)}/>}
       {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={setProtocolo}   onClose={() => setModal(null)}/>}

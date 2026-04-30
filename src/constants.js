@@ -87,11 +87,6 @@ export const ELABELS = {
   completo: "Completo",
 };
 
-// ── ESCRIBANOS ────────────────────────────────────────────────────────────────
-export const ESCRIBANOS = [
-  { nombre:"FÁTIMA A. TAHA",  caracter:"Notaria Adscripta", registro:"853", circunscripcion:"primera", genero:"F" },
-  { nombre:"SERGIO MIRANDA",  caracter:"Notario Titular",   registro:"853", circunscripcion:"primera", genero:"M" },
-];
 
 // ── ESTADO INICIAL DE DOCUMENTO ───────────────────────────────────────────────
 export const PARTE_VACIA = () => ({

@@ -7,8 +7,8 @@ const v = (label, value) => {
   const isEmpty = !value;
   return '<span data-variable data-label="' + label + '" style="' +
     (isEmpty
-      ? "color:#c0392b;font-weight:700;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;"
-      : "color:#3a7ca5;font-weight:700;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;") +
+      ? "color:#c0392b;font-weight:700;"
+      : "color:#3a7ca5;font-weight:700;") +
     '">' + (isEmpty ? "{{" + label + "}}" : value) + "</span>";
 };
 

@@ -1,1 +1,5 @@
 /* estilos globales — agregar aqui si es necesario */
+::placeholder {
+  color: rgba(80, 80, 80, 0.438) !important;
+  font-style: italic !important;
+}
