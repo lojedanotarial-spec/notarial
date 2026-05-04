@@ -159,12 +159,25 @@ function PanelLote({ lote, barrio, escribano, fecha, miembros, onChange, onChang
       <Fg label="Sup. título I">
         <InputDecimal style={sInp} value={lote.supTitulo1 || ""} onChange={v => upd("supTitulo1", v)}/>
       </Fg>
+      <Fg label="Sup. título II">
+      <InputDecimal style={sInp} value={lote.supTitulo2 || ""} onChange={v => upd("supTitulo2", v)}/>
+      </Fg>  
+      <Fg label="Sup. título III">
+        <InputDecimal style={sInp} value={lote.supTitulo3 || ""} onChange={v => upd("supTitulo3", v)}/>
+      </Fg>
+      <Fg label="Sup. título IV">
+        <InputDecimal style={sInp} value={lote.supTitulo4 || ""} onChange={v => upd("supTitulo4", v)}/>
+      </Fg>  
 
       {/* PRECIO */}
       <div style={{ fontSize:11, fontWeight:700, letterSpacing:".06em", textTransform:"uppercase",
                     color:"rgba(26,35,50,.4)", marginTop:6, marginBottom:2 }}>Precio</div>
       <Fg label="Precio total">
         <InputDinero style={sInp} value={lote.precio || ""} onChange={v => upd("precio", v)}/>
+      </Fg>
+
+      <Fg label="Retención ganancias">
+        <InputDinero style={sInp} value={lote.retencionGanancias || ""} onChange={v => upd("retencionGanancias", v)}/>
       </Fg>
 
       {/* REGISTRACIONES */}
@@ -226,6 +239,8 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
     nombre: miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
     caracter: miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
     registro: miUsuario.registro,
+    circunscripcion: miUsuario.circunscripcion,
+    localidad_registro: miUsuario.localidad_registro,
   } : {};
 
   // Cargar template del barrio

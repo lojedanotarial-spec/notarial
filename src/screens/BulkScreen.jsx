@@ -15,7 +15,7 @@ const LOTE_VACIO = () => ({
   id: crypto.randomUUID(),
   nroEscritura: "", fechaEscritura: "", escribano: "",
   manzana: "", lote: "",
-  supMensura: "", supTitulo1: "", supTitulo2: "", supTitulo3: "",
+  supMensura: "", supTitulo1: "", supTitulo2: "", supTitulo3: "", supTitulo4: "", retencionGanancias: "",
   norte: "", norteM: "", sur: "", surM: "",
   este: "", esteM: "", oeste: "", oesteM: "",
   noreste: "", noresteM: "", noroeste: "", noroesteM: "",
@@ -131,7 +131,7 @@ function ModalLote({ lote, onSave, onClose }) {
           </Section>
 
           <Section title="Inmueble">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
               <Fg label="Manzana"><input style={inp} value={d.manzana} onChange={e => upd("manzana", e.target.value.toUpperCase())} placeholder="ej: U"/></Fg>
               <Fg label="Lote"><input style={inp} value={d.lote} onChange={e => upd("lote", e.target.value)} placeholder="ej: 25"/></Fg>
             </div>
@@ -149,7 +149,7 @@ function ModalLote({ lote, onSave, onClose }) {
                       background: "transparent",
                     }}>
                       <div style={{ fontWeight: 600 }}>{p.apellido || "?"}{p.nombre ? ", " + p.nombre : ""}</div>
-                      <div style={{ color: "rgba(26,35,50,.5)" }}>DNI {p.nroDoc || "-"}</div>
+                      <div style={{ color: "rgb(5, 28, 68)" }}>DNI {p.nroDoc || "-"}</div>
                       <div style={{ color: C.cerulean, fontWeight: 600, fontSize: 11 }}>{p.rol || ""}</div>
                     </div>
                   ))}
@@ -161,8 +161,8 @@ function ModalLote({ lote, onSave, onClose }) {
               )}
               <button onClick={() => setPartesAbierto(true)} style={{
                 padding: "5px 14px", borderRadius: 6, cursor: "pointer",
-                border: "1px dashed rgba(26,35,50,.25)", background: "transparent",
-                fontSize: 12, fontWeight: 600, color: "#1a2332",
+                border: "1px solid rgba(26,35,50,.20)", background: "rgb(109, 158, 255)",
+                fontSize: 12, fontWeight: 600, color: "#ffffff",
                 fontFamily: "'Montserrat',sans-serif",
               }}>
                 {d.partes.length === 0 ? "+ Agregar adquirentes" : "Editar adquirentes"}
@@ -171,11 +171,12 @@ function ModalLote({ lote, onSave, onClose }) {
           </Section>
 
 <Section title="Superficie">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 8 }}>
               <Fg label="Mensura"><InputDecimal style={inp} value={d.supMensura} onChange={v => upd("supMensura", v)} placeholder="210,49"/></Fg>
               <Fg label="Titulo I"><InputDecimal style={inp} value={d.supTitulo1} onChange={v => upd("supTitulo1", v)} placeholder="210,49"/></Fg>
               <Fg label="Titulo II"><InputDecimal style={inp} value={d.supTitulo2} onChange={v => upd("supTitulo2", v)} placeholder="opcional"/></Fg>
               <Fg label="Titulo III"><InputDecimal style={inp} value={d.supTitulo3} onChange={v => upd("supTitulo3", v)} placeholder="opcional"/></Fg>
+              <Fg label="Titulo IV"><InputDecimal style={inp} value={d.supTitulo4} onChange={v => upd("supTitulo4", v)} placeholder="opcional"/></Fg>
             </div>
           </Section>
 
@@ -191,6 +192,7 @@ function ModalLote({ lote, onSave, onClose }) {
 
           <Section title="Precio">
             <Fg label="Precio total"><InputDinero style={inp} value={d.precio} onChange={v => upd("precio", v)}/></Fg>
+            <Fg label="Retención ganancias"><InputDinero style={inp} value={d.retencionGanancias} onChange={v => upd("retencionGanancias", v)}/></Fg>
           </Section>
 
           <Section title="Registro Publico">
@@ -213,6 +215,7 @@ function ModalLote({ lote, onSave, onClose }) {
           </Section>
 
           <Section title="Municipalidad">
+            
             <Fg label="Padron municipal"><input style={inp} value={d.padronMuni} onChange={e => upd("padronMuni", e.target.value)} placeholder="ej: 67201"/></Fg>
           </Section>
         </div>
