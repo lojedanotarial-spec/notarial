@@ -113,10 +113,12 @@ export function generarEscritura(templateHTML, lote, barrio, escribano, fecha, n
     "MATRICULA_SIRC": barrio.matricula || "",
   };
 
-  // Reemplazar todas las variables en el template
-  let resultado = templateHTML;
+let resultado = templateHTML;
   for (const [key, value] of Object.entries(vars)) {
-    resultado = resultado.replaceAll(`{{${key}}}`, value);
+    const display = value
+      ? `<span class="var-filled">${value}</span>`
+      : `<span class="var-empty">{{${key}}}</span>`;
+    resultado = resultado.replaceAll(`{{${key}}}`, display);
   }
 
   return resultado;

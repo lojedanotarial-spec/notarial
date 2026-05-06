@@ -13,7 +13,7 @@ import { A4W, A4H, PROT, mm } from "../constants";
 const LINE_HEIGHT_PT = 24;
 const LINE_HEIGHT_PX = LINE_HEIGHT_PT * (96 / 72);
 
-function VistaDocumento({ html, fuente, fontSize, zoom, hojaOn }) {
+function VistaDocumento({ html, fuente, fontSize, zoom, hojaOn, showVars }) {
   const isAnverso = true;
   const margen = PROT;
   const boxL = margen.left;
@@ -48,6 +48,10 @@ function VistaDocumento({ html, fuente, fontSize, zoom, hojaOn }) {
               display:"block", pointerEvents:"none", zIndex:1,
             }}/>
           )}
+<style>{`
+            .var-filled { color: ${showVars ? "#3a7ca5" : "#1a2332"}; font-weight: ${showVars ? "700" : "400"}; }
+            .var-empty  { color: ${showVars ? "#c0392b" : "#1a2332"}; font-weight: ${showVars ? "700" : "400"}; }
+          `}</style>
           <div style={{
             position:"absolute",
             left:boxL, top:boxT,
@@ -231,6 +235,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
   const [fecha, setFecha] = useState({ dia: new Date().getDate(), mes: new Date().getMonth(), anio: new Date().getFullYear() });
   const [zoomIdx, setZoomIdx] = useState(4);
   const [hojaOn, setHojaOn] = useState(true);
+  const [showVars, setShowVars] = useState(true);
   const [fuente, setFuente] = useState(FUENTES[0]);
   const [fontSize, setFontSize] = useState(11);
   const zoom = ZOOM_LEVELS[zoomIdx];
@@ -368,8 +373,18 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
                        color: hojaOn ? C.cerulean : C.dark, fontFamily:"'Montserrat',sans-serif" }}>
               Fondo
             </button>
+            <button onClick={() => setShowVars(!showVars)}
+              style={{
+                padding:"3px 10px", borderRadius:6, fontSize:13, cursor:"pointer",
+                border:"1px solid rgba(26,35,50,.14)",
+                background: showVars ? C.ceruleanLight : "transparent",
+                color: showVars ? C.cerulean : C.dark,
+                fontFamily:"'Montserrat',sans-serif"
+              }}>
+              Variables
+            </button>
           </div>
-          <VistaDocumento html={htmlGenerado} fuente={fuente} fontSize={fontSize} zoom={zoom} hojaOn={hojaOn}/>
+          <VistaDocumento html={htmlGenerado} fuente={fuente} fontSize={fontSize} zoom={zoom} hojaOn={hojaOn} showVars={showVars}/>
         </div>
 
         {/* PANEL LATERAL */}
