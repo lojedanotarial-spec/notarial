@@ -10,6 +10,7 @@ import { ModalPartes } from "../components/modals/ModalPartes";
 import { InputFecha, InputDinero, InputDecimal } from "../components/ui/Masked";
 import { ModeloScreen } from "./ModeloScreen";
 import { LoteDocScreen } from "./LoteDocScreen";
+import { exportarBarrioZip } from "../utils/exportarBarrioZip";
 
 const LOTE_VACIO = () => ({
   id: crypto.randomUUID(),
@@ -92,7 +93,7 @@ function Section({ title, children }) {
 function ModalLote({ lote, onSave, onClose }) {
   const [d, setD] = useState({ ...lote });
   const upd = (f, v) => setD(prev => ({ ...prev, [f]: v }));
-  const { miembros } = useAuth();
+  const { miembros, miUsuario } = useAuth();
   const [partesAbierto, setPartesAbierto] = useState(false);
 
   const inp = {
@@ -237,17 +238,60 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
   const [editandoLote, setEditandoLote] = useState(null);
   const [confirmLote, setConfirmLote] = useState(null);
   const [verModelo, setVerModelo] = useState(false);
+  const [exportando, setExportando] = useState(false);
+  const [progreso, setProgreso] = useState(null);
   const loteEditar = editandoLote ? barrio.lotes.find(l => l.id === editandoLote) : null;
   const completosCount = barrio.lotes.filter(estaCompleto).length;
   const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: "#fff", fontSize: 12, color: "#1a2332", fontFamily: "'Montserrat',sans-serif", outline: "none", boxSizing: "border-box" };
+  const { miUsuario, usuario, registroActivo } = useAuth();
   const [verDocLote, setVerDocLote] = useState(null);
     useEffect(() => {
       if (verDocLote) { onVerDoc(verDocLote); setVerDocLote(null); }
     }, [verDocLote]);
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Montserrat',sans-serif", overflow: "hidden", background: C.warm }}>
-      <NavBar onGo={onGo} screenTitle={barrio.nombre} onVolver={onVolver} onExport={() => alert("Exportar barrio - próximamente")} onModelo={onModelo} />
-
+<NavBar
+        onGo={onGo}
+        screenTitle={barrio.nombre}
+        onVolver={onVolver}
+        onModelo={onModelo}
+        modeloLabel="Ver modelo"
+        exportLabel="Exportar ZIP"
+        onExport={async () => {
+          console.log("exportar clicked");
+          if (exportando) return;
+          const { data: tmpl } = await supabase
+            .from("templates_barrio").select("html")
+            .eq("barrio_id", barrio.id)
+            .order("created_at", { ascending: false })
+            .limit(1).maybeSingle();
+          console.log("template:", tmpl);
+          if (!tmpl?.html) {
+            alert("Este barrio no tiene modelo cargado.");
+            return;
+          }
+          const escribano = miUsuario ? {
+            nombre: miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
+            caracter: miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
+            registro: miUsuario.registro,
+            circunscripcion: miUsuario.circunscripcion,
+            localidad_registro: miUsuario.localidad_registro,
+          } : {};
+          const fecha = { dia: new Date().getDate(), mes: new Date().getMonth(), anio: new Date().getFullYear() };
+          setExportando(true);
+          setProgreso({ actual: 0, total: barrio.lotes.length, lote: null });
+          try {
+            await exportarBarrioZip({
+              barrio, lotes: barrio.lotes, templateHTML: tmpl.html,
+              escribano, fecha,
+              onProgress: (p) => setProgreso(p),
+            });
+          } finally {
+            setExportando(false);
+            setProgreso(null);
+          }
+        }}
+      />
       <div style={{ flex: 1, overflow: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ background: "#fff", borderRadius: 10, border: "1px solid rgba(26,35,50,.08)", padding: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: "#1a2332", marginBottom: 12 }}>Datos del transmitente</div>
@@ -322,6 +366,20 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
       {editandoLote && loteEditar && (
         <ModalLote lote={loteEditar} onSave={data => onUpdLote(barrio.id, data.id, data)} onClose={() => setEditandoLote(null)} />
       )}
+      {exportando && progreso && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.55)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ background:"#fff", borderRadius:14, padding:"28px 32px", minWidth:320, boxShadow:"0 8px 40px rgba(26,35,50,.2)", textAlign:"center", fontFamily:"'Montserrat',sans-serif" }}>
+            <div style={{ fontSize:15, fontWeight:700, color:"#1a2332", marginBottom:8 }}>Generando escrituras...</div>
+            <div style={{ fontSize:13, color:"rgba(26,35,50,.5)", marginBottom:16 }}>
+              {progreso.lote ? `Mz ${progreso.lote.manzana || "?"} · Lote ${progreso.lote.lote || "?"}` : "Iniciando..."}
+            </div>
+            <div style={{ background:"rgba(26,35,50,.08)", borderRadius:6, height:8, overflow:"hidden" }}>
+              <div style={{ height:"100%", borderRadius:6, background:"#3a7ca5", width:`${Math.round((progreso.actual/progreso.total)*100)}%`, transition:"width .3s" }}/>
+            </div>
+            <div style={{ fontSize:12, color:"rgba(26,35,50,.4)", marginTop:8 }}>{progreso.actual} / {progreso.total}</div>
+          </div>
+        </div>
+      )}
       {confirmLote && (
         <ConfirmEliminar
           titulo={"Lote " + (confirmLote.manzana || "?") + " - " + (confirmLote.lote || "?")}
@@ -332,6 +390,8 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
     </div>
   );
 }
+
+
 
 function FilaBarrio({ b, idx, total, onSeleccionar, onConfirmEliminar }) {
   const [hover, setHover] = useState(false);
@@ -377,53 +437,150 @@ function FilaBarrio({ b, idx, total, onSeleccionar, onConfirmEliminar }) {
   );
 }
 
-function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, cargando }) {
+function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, cargando, historial, cargandoHistorial, onAbrirLote }) {
   const [confirmBarrio, setConfirmBarrio] = useState(null);
+  const [query, setQuery] = useState("");
+
+  const filtrados = barrios.filter(b =>
+    !query || b.nombre?.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const ultimos5 = historial.slice(0, 5);
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Montserrat',sans-serif", overflow: "hidden", background: C.warm }}>
+    <div style={{ height:"100vh", display:"flex", flexDirection:"column", fontFamily:"'Montserrat',sans-serif", overflow:"hidden", background:C.warm }}>
       <NavBar onGo={onGo} screenTitle="Carga masiva" />
 
-      <div style={{ flex: 1, overflow: "auto", padding: "24px 20px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ flex:1, overflow:"hidden", display:"flex", gap:0 }}>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: 20, fontWeight: 700, color: C.dark, letterSpacing: "-.02em" }}>
-              Carga masiva
-            </div>
-            <button onClick={onAgregar}
-              style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 18px",
-                       background: C.cerulean, color: "#fff", border: "none", borderRadius: 8,
-                       fontSize: 13, fontWeight: 600, fontFamily: "'Montserrat',sans-serif",
-                       cursor: "pointer" }}>
-              + Nuevo barrio
-            </button>
-          </div>
+        {/* COLUMNA PRINCIPAL */}
+        <div style={{ flex:1, overflowY:"auto", padding:"24px 20px" }}>
+          <div style={{ maxWidth:700, margin:"0 auto", display:"flex", flexDirection:"column", gap:16 }}>
 
-          {cargando ? (
-            <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(26,35,50,.5)", fontSize: 13 }}>Cargando barrios...</div>
-          ) : barrios.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🏘</div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: "#1a2332", marginBottom: 6 }}>No hay barrios cargados</div>
-              <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20 }}>Crea un nuevo barrio para empezar a cargar lotes</div>
-              <button onClick={onAgregar} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: C.cerulean, color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "'Montserrat',sans-serif", cursor: "pointer" }}>+ Nuevo barrio</button>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ fontSize:20, fontWeight:700, color:C.dark, letterSpacing:"-.02em" }}>Carga masiva</div>
+              <button onClick={onAgregar} style={{
+                display:"flex", alignItems:"center", gap:8, padding:"8px 18px",
+                background:C.cerulean, color:"#fff", border:"none", borderRadius:8,
+                fontSize:13, fontWeight:600, fontFamily:"'Montserrat',sans-serif", cursor:"pointer",
+              }}>+ Nuevo barrio</button>
             </div>
-          ) : (
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid rgba(26,35,50,.08)", overflow: "hidden" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 80px 100px 32px",
-                            padding: "8px 16px", borderBottom: "2px solid rgba(26,35,50,.07)", background: "#faf8f4" }}>
-                {["Barrio","Lotes","Completos","Progreso",""].map(h => (
-                  <div key={h} style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em",
-                                        textTransform: "uppercase", color: "rgba(26,35,50,.4)" }}>{h}</div>
+
+            {/* BUSCADOR */}
+            <div style={{ position:"relative" }}>
+              <svg style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}
+                   width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="rgba(26,35,50,.35)" strokeWidth="1.5">
+                <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3" strokeLinecap="round"/>
+              </svg>
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Buscar barrio..."
+                style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:8,
+                         border:"1px solid rgba(26,35,50,.12)", background:"#fff", fontSize:13,
+                         color:C.dark, fontFamily:"'Montserrat',sans-serif",
+                         boxSizing:"border-box", outline:"none" }}
+              />
+              {query && (
+                <button onClick={() => setQuery("")} style={{
+                  position:"absolute", right:9, top:"50%", transform:"translateY(-50%)",
+                  background:"none", border:"none", cursor:"pointer",
+                  color:"rgba(26,35,50,.4)", fontSize:16, lineHeight:1, padding:0,
+                }}>×</button>
+              )}
+            </div>
+
+            {/* LISTA BARRIOS */}
+            {cargando ? (
+              <div style={{ textAlign:"center", padding:"40px 20px", color:"rgba(26,35,50,.5)", fontSize:13 }}>Cargando barrios...</div>
+            ) : filtrados.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"40px 20px" }}>
+                {query ? (
+                  <div style={{ fontSize:13, color:"rgba(26,35,50,.5)" }}>No se encontraron barrios con ese nombre.</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize:40, marginBottom:12 }}>🏘</div>
+                    <div style={{ fontSize:16, fontWeight:600, color:"#1a2332", marginBottom:6 }}>No hay barrios cargados</div>
+                    <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20 }}>Creá un nuevo barrio para empezar</div>
+                    <button onClick={onAgregar} style={{ padding:"8px 20px", borderRadius:8, border:"none", background:C.cerulean, color:"#fff", fontSize:13, fontWeight:700, fontFamily:"'Montserrat',sans-serif", cursor:"pointer" }}>+ Nuevo barrio</button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden",
+                            maxHeight: 6 * 57 + "px", overflowY:"auto" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 80px 80px 100px 32px",
+                              padding:"8px 16px", borderBottom:"2px solid rgba(26,35,50,.07)", background:"#faf8f4",
+                              position:"sticky", top:0, zIndex:1 }}>
+                  {["Barrio","Lotes","Completos","Progreso",""].map(h => (
+                    <div key={h} style={{ fontSize:10, fontWeight:700, letterSpacing:".06em",
+                                          textTransform:"uppercase", color:"rgba(26,35,50,.4)" }}>{h}</div>
+                  ))}
+                </div>
+                {filtrados.map((b, idx) => (
+                  <FilaBarrio key={b.id} b={b} idx={idx} total={filtrados.length} onSeleccionar={onSeleccionar} onConfirmEliminar={setConfirmBarrio}/>
                 ))}
               </div>
-              {barrios.map((b, idx) => (
-                <FilaBarrio key={b.id} b={b} idx={idx} total={barrios.length} onSeleccionar={onSeleccionar} onConfirmEliminar={setConfirmBarrio}/>
-              ))}
+            )}
+
+          </div>
+        </div>
+
+        {/* PANEL DERECHO — HISTORIAL */}
+        <div style={{ width:280, flexShrink:0, borderLeft:"1px solid rgba(26,35,50,.08)",
+                      background:"#fff", padding:"24px 16px", display:"flex", flexDirection:"column", gap:12 }}>
+          <div style={{ fontSize:12, fontWeight:700, letterSpacing:".07em", textTransform:"uppercase",
+                        color:"rgba(26,35,50,.4)" }}>Últimas escrituras</div>
+
+          {cargandoHistorial ? (
+            <div style={{ fontSize:12, color:"rgba(26,35,50,.4)", padding:"12px 0" }}>Cargando...</div>
+          ) : ultimos5.length === 0 ? (
+            <div style={{ fontSize:12, color:"rgba(26,35,50,.4)", fontStyle:"italic", padding:"12px 0" }}>
+              Sin escrituras generadas aún.
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {ultimos5.map(doc => {
+                const match = doc.titulo?.match(/Mz\s+(\S+)\s+Lote\s+(\S+)\s+-\s+(.+)$/i);
+                const manzana = match?.[1] || "—";
+                const lote    = match?.[2] || "—";
+                const barrio  = match?.[3] || doc.titulo || "—";
+                const fecha   = doc.updated_at ? new Date(doc.updated_at).toLocaleDateString("es-AR") : "—";
+                const estadoStyle = {
+                  borrador: { bg:"rgba(26,35,50,.06)", color:"rgba(26,35,50,.7)" },
+                  revision: { bg:"#e8f2f8", color:"#1f4862" },
+                  completo: { bg:"#f5edcc", color:"#4e3d21" },
+                };
+                const es = estadoStyle[doc.estado] || estadoStyle.borrador;
+                return (
+                  <div key={doc.id}
+                    onClick={() => onAbrirLote && onAbrirLote(doc.lote_id)}
+                    style={{
+                      padding:"10px 12px", borderRadius:8,
+                      border:"1px solid rgba(26,35,50,.08)", background:"#faf8f4",
+                      cursor:"pointer", transition:"background .1s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f0ece3"}
+                    onMouseLeave={e => e.currentTarget.style.background = "#faf8f4"}
+                  >
+                    <div style={{ fontSize:12, fontWeight:600, color:"#1a2332", marginBottom:3 }}>{barrio}</div>
+                    <div style={{ fontSize:11, color:"rgba(26,35,50,.5)", marginBottom:6 }}>
+                      Mz {manzana} · Lote {lote}
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                      <span style={{ fontSize:10, color:"rgba(26,35,50,.4)" }}>{fecha}</span>
+                      <span style={{ fontSize:10, fontWeight:600, padding:"2px 7px", borderRadius:10,
+                                     background:es.bg, color:es.color }}>
+                        {doc.estado || "borrador"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
+
       </div>
 
       {confirmBarrio && (
@@ -438,18 +595,21 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
 }
 
 export function BulkScreen({ onGo }) {
-  const { miUsuario } = useAuth();
+  const { miUsuario, usuario, registroActivo } = useAuth();
   const [barrios, setBarrios] = useState([]);
   const [vista, setVista] = useState({ tipo: "lista" });
   const [modalNombre, setModalNombre] = useState(false);
   const [nombreNuevo, setNombreNuevo] = useState("");
   const [cargando, setCargando] = useState(true);
+  const [historial, setHistorial] = useState([]);
+  const [cargandoHistorial, setCargandoHistorial] = useState(true);
 
-  const registroNumero = miUsuario?.registro;
+  const registroNumero = registroActivo || miUsuario?.registro;
 
   useEffect(() => {
     if (!registroNumero) return;
     async function cargar() {
+      console.log("BulkScreen cargar() — registroNumero:", registroNumero);
       setCargando(true);
       const { data: barriosData } = await supabase
         .from("barrios").select("*").eq("registro_id", registroNumero)
@@ -466,6 +626,22 @@ export function BulkScreen({ onGo }) {
     }
     cargar();
   }, [registroNumero]);
+
+  useEffect(() => {
+    if (!usuario) return;
+    async function cargarHistorial() {
+      setCargandoHistorial(true);
+      const { data } = await supabase
+        .from("documentos")
+        .select("id, titulo, estado, updated_at, lote_id")
+        .eq("template_key", "escrituraBarrio")
+        .order("updated_at", { ascending: false })
+        .limit(5);
+      setHistorial(data || []);
+      setCargandoHistorial(false);
+    }
+    cargarHistorial();
+  }, [usuario]);
 
   const updBarrio = async (bid, campo, valor) => {
     setBarrios(prev => prev.map(b => b.id === bid ? { ...b, [campo]: valor } : b));
@@ -539,7 +715,17 @@ export function BulkScreen({ onGo }) {
     <>
      <ListaBarrios barrios={barrios} onSeleccionar={id => setVista({ tipo: "detalle", barrioId: id })}
         onAgregar={() => setModalNombre(true)} onEliminar={eliminarBarrio}
-        onGo={onGo} cargando={cargando} />
+        onGo={onGo} cargando={cargando}
+        historial={historial} cargandoHistorial={cargandoHistorial}
+        onAbrirLote={loteId => {
+          for (const b of barrios) {
+            const lote = b.lotes.find(l => l.id === loteId);
+            if (lote) {
+              setVista({ tipo: "lote", barrioId: b.id, lote });
+              return;
+            }
+          }
+        }} />
       {modalNombre && (
         <Modal title="Nuevo barrio" onClose={() => { setModalNombre(false); setNombreNuevo(""); }}
           footer={<><Btn onClick={() => { setModalNombre(false); setNombreNuevo(""); }}>Cancelar</Btn><Btn primary onClick={confirmarNuevoBarrio}>Crear</Btn></>}>

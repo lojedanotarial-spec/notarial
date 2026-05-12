@@ -183,7 +183,8 @@ function UserDropdown({ onClose, onPreferencias }) {
 
 export function NavBar({
   docTitle, screenTitle,
-  estado, onStatus, onExport, onModelo,
+  estado, onStatus, onExport, exportLabel,
+  onModelo, modeloLabel,
   indicadorGuardado, onGuardar,
   onGo, onVolver,
 }) {
@@ -329,7 +330,7 @@ export function NavBar({
                 fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
                 letterSpacing: ".02em", flexShrink: 0,
               }}>
-                Modelo
+                {modeloLabel || "Modelo"}
               </button>
             )}
 
@@ -341,7 +342,8 @@ export function NavBar({
                 padding: "5px 16px", fontFamily: "'Montserrat',sans-serif",
                 cursor: "pointer", letterSpacing: ".02em", flexShrink: 0,
               }}>
-                Exportar
+                                {exportLabel || "Exportar"}
+
               </button>
             )}
           </div>

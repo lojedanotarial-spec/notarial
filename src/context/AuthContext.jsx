@@ -4,10 +4,11 @@ import { supabase } from "../supabase";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [session, setSession]   = useState(undefined);
-  const [usuario, setUsuario]   = useState(null);
-  const [miUsuario, setMiUsuario] = useState(null);
-  const [miembros, setMiembros] = useState([]);
+  const [session,    setSession]    = useState(undefined);
+  const [usuario,    setUsuario]    = useState(null);
+  const [miUsuario,  setMiUsuario]  = useState(null);
+  const [miembros,      setMiembros]      = useState([]);
+  const [registroActivo, setRegistroActivo] = useState(null);
 
   async function cargarPerfil(userId) {
     const { data: u } = await supabase
@@ -18,12 +19,18 @@ export function AuthProvider({ children }) {
     if (!u) return;
     setUsuario(u);
 
+    if (u.is_admin) {
+      setMiUsuario({ nombre: "Admin", apellido: "", is_admin: true });
+      setMiembros([]);
+      return;
+    }
+
     const { data: yo } = await supabase
       .from("registros")
       .select("*")
       .eq("id", u.registros_id)
       .single();
-    setMiUsuario(yo || null);
+    setMiUsuario(yo ? { ...yo, is_admin: false } : null);
 
     const { data: m } = await supabase
       .from("registros")
@@ -58,26 +65,28 @@ export function AuthProvider({ children }) {
   }
 
   async function actualizarMiembro(id, campos) {
-  
     const { error } = await supabase
       .from("registros")
       .update(campos)
       .eq("id", id);
-      if (!error) {
+    if (!error) {
       setMiUsuario(prev => prev?.id === id ? { ...prev, ...campos } : prev);
       setMiembros(prev => prev.map(m => m.id === id ? { ...m, ...campos } : m));
     }
   }
 
-  const iniciales = miUsuario
+  const iniciales = usuario?.is_admin
+    ? "AD"
+    : miUsuario
     ? [miUsuario.nombre?.[0], miUsuario.apellido?.[0]].filter(Boolean).join("").toUpperCase()
     : "";
 
   return (
     <AuthContext.Provider value={{
-      session, usuario, miUsuario, miembros, iniciales,
-      login, logout, actualizarMiembro,
-      cargando: session === undefined,
+    session, usuario, miUsuario, miembros, iniciales,
+    registroActivo, setRegistroActivo,
+    login, logout, actualizarMiembro,
+    cargando: session === undefined,
     }}>
       {children}
     </AuthContext.Provider>

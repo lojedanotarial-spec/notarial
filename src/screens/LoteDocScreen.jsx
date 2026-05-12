@@ -77,140 +77,164 @@ function VistaDocumento({ html, fuente, fontSize, zoom, hojaOn, showVars }) {
   );
 }
 
-function PanelLote({ lote, barrio, escribano, fecha, miembros, onChange, onChangeEscribano, onChangeFecha }) {
+function PanelSection({ label, children, onClick }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => onClick && setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        padding:"10px 12px", borderRadius:8,
+        border:"1px solid " + (hover ? C.cerulean : "rgba(26,35,50,.15)"),
+        cursor: onClick ? "pointer" : "default",
+        transition:"border-color .12s",
+      }}
+    >
+      <div style={{ fontSize:11, fontWeight:700, color:"rgba(26,35,50,1)",
+                    textTransform:"uppercase", letterSpacing:".07em", marginBottom:6 }}>
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function SectionLabel({ children }) {
+  return (
+    <div style={{ fontSize:11, fontWeight:700, letterSpacing:".06em", textTransform:"uppercase",
+                  color:"rgba(26,35,50,.4)", marginTop:8, marginBottom:4 }}>
+      {children}
+    </div>
+  );
+}
+
+function PanelLote({ lote, barrio, escribano, fecha, miembros, onChange }) {
   const [partesAbierto, setPartesAbierto] = useState(false);
-
   const upd = (campo, valor) => onChange({ ...lote, [campo]: valor });
-
   const sInp = { ...inp, fontSize:12, padding:"6px 9px" };
 
   return (
     <div style={{ flex:1, overflowY:"auto", padding:10, display:"flex", flexDirection:"column", gap:7 }}>
 
-      {/* ESCRITURA */}
-      <div style={{ fontSize:11, fontWeight:700, letterSpacing:".06em", textTransform:"uppercase",
-                    color:"rgba(26,35,50,.4)", marginBottom:2 }}>Escritura</div>
-      <Fg label="N° Escritura">
-        <input style={sInp} value={lote.nroEscritura || ""} onChange={e => upd("nroEscritura", e.target.value)} placeholder="ej: 29"/>
-      </Fg>
-      <Fg label="Fecha escritura">
-        <InputFecha style={sInp} value={lote.fechaEscritura || ""} onChange={v => upd("fechaEscritura", v)}/>
-      </Fg>
-      <Fg label="Escribano">
-        <select style={sInp} value={lote.escribano || ""} onChange={e => upd("escribano", e.target.value)}>
-          {miembros.map(m => {
-            const nombre = m.nombre_preferido || `${m.nombre} ${m.apellido}`;
-            return <option key={m.id} value={nombre}>{nombre}</option>;
-          })}
-        </select>
-      </Fg>
+      {/* ESCRIBANO */}
+      <PanelSection label="Escribano">
+        <Fg label="Seleccionar">
+          <select style={sInp} value={lote.escribano || ""} onChange={e => upd("escribano", e.target.value)}>
+            {miembros.map(m => {
+              const nombre = m.nombre_preferido || `${m.nombre} ${m.apellido}`;
+              return <option key={m.id} value={nombre}>{nombre}</option>;
+            })}
+          </select>
+        </Fg>
+        <div style={{ fontSize:11, color:"rgba(26,35,50,.5)", marginTop:4 }}>
+          {escribano?.caracter} · Reg. {escribano?.registro}
+        </div>
+      </PanelSection>
 
-      {/* FECHA DEL ACTO */}
-      <div style={{ fontSize:11, fontWeight:700, letterSpacing:".06em", textTransform:"uppercase",
-                    color:"rgba(26,35,50,.4)", marginTop:6, marginBottom:2 }}>Fecha del acto</div>
-      <Fg label="Día">
-        <input style={sInp} type="number" min="1" max="31" value={fecha.dia}
-          onChange={e => onChangeFecha({ ...fecha, dia: Number(e.target.value) })}/>
-      </Fg>
-      <Fg label="Mes">
-        <select style={sInp} value={fecha.mes} onChange={e => onChangeFecha({ ...fecha, mes: Number(e.target.value) })}>
-          {MESES_LABEL.map((m, i) => <option key={i} value={i}>{m}</option>)}
-        </select>
-      </Fg>
-      <Fg label="Año">
-        <input style={sInp} type="number" value={fecha.anio}
-          onChange={e => onChangeFecha({ ...fecha, anio: Number(e.target.value) })}/>
-      </Fg>
+      {/* ESCRITURA */}
+      <PanelSection label="Escritura">
+        <Fg label="N° Escritura">
+          <input style={sInp} value={lote.nroEscritura || ""} onChange={e => upd("nroEscritura", e.target.value)} placeholder="ej: 29"/>
+        </Fg>
+        <Fg label="Fecha escritura">
+          <InputFecha style={sInp} value={lote.fechaEscritura || ""} onChange={v => upd("fechaEscritura", v)}/>
+        </Fg>
+
+      </PanelSection>      
 
       {/* ADQUIRENTES */}
-      <div style={{ fontSize:11, fontWeight:700, letterSpacing:".06em", textTransform:"uppercase",
-                    color:"rgba(26,35,50,.4)", marginTop:6, marginBottom:2 }}>Adquirentes</div>
-      {lote.partes?.length > 0 ? (
-        <div style={{ border:"1px solid rgba(26,35,50,.1)", borderRadius:7, overflow:"hidden", marginBottom:4 }}>
-          {lote.partes.map((p, idx) => (
-            <div key={p.id} style={{
-              padding:"7px 10px", fontSize:12, color:C.dark,
-              borderBottom: idx < lote.partes.length-1 ? "1px solid rgba(26,35,50,.06)" : "none",
+      <PanelSection label="Adquirentes" onClick={() => setPartesAbierto(true)}>
+        {(lote.partes || []).length === 0 ? (
+          <div style={{ fontSize:12, color:"rgba(26,35,50,.4)", fontStyle:"italic" }}>Sin adquirentes</div>
+        ) : (lote.partes || []).map((p, idx) => (
+          <div key={idx} style={{
+            display:"flex", alignItems:"center", gap:8,
+            paddingBottom: idx < lote.partes.length-1 ? 5 : 0,
+            marginBottom: idx < lote.partes.length-1 ? 5 : 0,
+            borderBottom: idx < lote.partes.length-1 ? "1px solid rgba(26,35,50,.07)" : "none",
+          }}>
+            <div style={{
+              width:22, height:22, borderRadius:"50%", background:C.ceruleanLight,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:9, fontWeight:700, color:C.cerulean, flexShrink:0,
             }}>
-              <div style={{ fontWeight:600 }}>{p.apellido}{p.nombre ? ", "+p.nombre : ""}</div>
-              <div style={{ fontSize:11, color:"rgba(26,35,50,.45)" }}>DNI {p.nroDoc || "-"}</div>
+              {(p.apellido?.[0] || "?").toUpperCase()}
             </div>
-          ))}
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:12, fontWeight:600, color:C.dark,
+                            whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                {p.apellido}{p.nombre ? ", "+p.nombre : ""}
+              </div>
+              <div style={{ fontSize:10, color:"rgba(26,35,50,.45)" }}>DNI {p.nroDoc || "-"}</div>
+            </div>
+          </div>
+        ))}
+        <div style={{ fontSize:12, color:C.cerulean, marginTop:6, fontWeight:500 }}>
+          {lote.partes?.length > 0 ? "+ Editar adquirentes" : "+ Agregar adquirentes"}
         </div>
-      ) : (
-        <div style={{ fontSize:12, color:"rgba(26,35,50,.4)", fontStyle:"italic" }}>Sin adquirentes</div>
-      )}
-      <button onClick={() => setPartesAbierto(true)} style={{
-        padding:"5px 10px", borderRadius:6, cursor:"pointer",
-        border:"1px dashed rgba(26,35,50,.25)", background:"transparent",
-        fontSize:11, fontWeight:600, color:"#1a2332", fontFamily:"'Montserrat',sans-serif",
-      }}>
-        {lote.partes?.length > 0 ? "Editar adquirentes" : "+ Agregar adquirentes"}
-      </button>
+      </PanelSection>
+
+
 
       {/* INMUEBLE */}
-      <div style={{ fontSize:11, fontWeight:700, letterSpacing:".06em", textTransform:"uppercase",
-                    color:"rgba(26,35,50,.4)", marginTop:6, marginBottom:2 }}>Inmueble</div>
-      <Fg label="Manzana">
-        <input style={sInp} value={lote.manzana || ""} onChange={e => upd("manzana", e.target.value.toUpperCase())}/>
-      </Fg>
-      <Fg label="Lote">
-        <input style={sInp} value={lote.lote || ""} onChange={e => upd("lote", e.target.value)}/>
-      </Fg>
-      <Fg label="Sup. mensura">
-        <InputDecimal style={sInp} value={lote.supMensura || ""} onChange={v => upd("supMensura", v)}/>
-      </Fg>
-      <Fg label="Sup. título I">
-        <InputDecimal style={sInp} value={lote.supTitulo1 || ""} onChange={v => upd("supTitulo1", v)}/>
-      </Fg>
-      <Fg label="Sup. título II">
-      <InputDecimal style={sInp} value={lote.supTitulo2 || ""} onChange={v => upd("supTitulo2", v)}/>
-      </Fg>  
-      <Fg label="Sup. título III">
-        <InputDecimal style={sInp} value={lote.supTitulo3 || ""} onChange={v => upd("supTitulo3", v)}/>
-      </Fg>
-      <Fg label="Sup. título IV">
-        <InputDecimal style={sInp} value={lote.supTitulo4 || ""} onChange={v => upd("supTitulo4", v)}/>
-      </Fg>  
+      <PanelSection label="Inmueble">
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+          <Fg label="Manzana">
+            <input style={sInp} value={lote.manzana || ""} onChange={e => upd("manzana", e.target.value.toUpperCase())}/>
+          </Fg>
+          <Fg label="Lote">
+            <input style={sInp} value={lote.lote || ""} onChange={e => upd("lote", e.target.value)}/>
+          </Fg>
+        </div>
+        <Fg label="Sup. mensura">
+          <InputDecimal style={sInp} value={lote.supMensura || ""} onChange={v => upd("supMensura", v)}/>
+        </Fg>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+          <Fg label="Título I"><InputDecimal style={sInp} value={lote.supTitulo1 || ""} onChange={v => upd("supTitulo1", v)}/></Fg>
+          <Fg label="Título II"><InputDecimal style={sInp} value={lote.supTitulo2 || ""} onChange={v => upd("supTitulo2", v)}/></Fg>
+          <Fg label="Título III"><InputDecimal style={sInp} value={lote.supTitulo3 || ""} onChange={v => upd("supTitulo3", v)}/></Fg>
+          <Fg label="Título IV"><InputDecimal style={sInp} value={lote.supTitulo4 || ""} onChange={v => upd("supTitulo4", v)}/></Fg>
+        </div>
+      </PanelSection>
 
       {/* PRECIO */}
-      <div style={{ fontSize:11, fontWeight:700, letterSpacing:".06em", textTransform:"uppercase",
-                    color:"rgba(26,35,50,.4)", marginTop:6, marginBottom:2 }}>Precio</div>
-      <Fg label="Precio total">
-        <InputDinero style={sInp} value={lote.precio || ""} onChange={v => upd("precio", v)}/>
-      </Fg>
+      <PanelSection label="Precio">
+        <Fg label="Precio total">
+          <InputDinero style={sInp} value={lote.precio || ""} onChange={v => upd("precio", v)}/>
+        </Fg>
+        <Fg label="Retención ganancias">
+          <InputDinero style={sInp} value={lote.retencionGanancias || ""} onChange={v => upd("retencionGanancias", v)}/>
+        </Fg>
+      </PanelSection>
 
-      <Fg label="Retención ganancias">
-        <InputDinero style={sInp} value={lote.retencionGanancias || ""} onChange={v => upd("retencionGanancias", v)}/>
-      </Fg>
-
-      {/* REGISTRACIONES */}
-      <div style={{ fontSize:11, fontWeight:700, letterSpacing:".06em", textTransform:"uppercase",
-                    color:"rgba(26,35,50,.4)", marginTop:6, marginBottom:2 }}>Registraciones</div>
-      <Fg label="Nomenclatura">
-        <input style={sInp} value={lote.nomenclatura || ""} onChange={e => upd("nomenclatura", e.target.value)}/>
-      </Fg>
-      <Fg label="Avalúo fiscal">
-        <InputDinero style={sInp} value={lote.avaluo || ""} onChange={v => upd("avaluo", v)}/>
-      </Fg>
-      <Fg label="Padrón territorial">
-        <input style={sInp} value={lote.padronRentas || ""} onChange={e => upd("padronRentas", e.target.value)}/>
-      </Fg>
-      <Fg label="Padrón municipal">
-        <input style={sInp} value={lote.padronMuni || ""} onChange={e => upd("padronMuni", e.target.value)}/>
-      </Fg>
-      <Fg label="N° cert. registro">
-        <input style={sInp} value={lote.certRegistro || ""} onChange={e => upd("certRegistro", e.target.value)}/>
-      </Fg>
-      <Fg label="Fecha cert. registro">
-        <InputFecha style={sInp} value={lote.fechaRegistro || ""} onChange={v => upd("fechaRegistro", v)}/>
-      </Fg>
-      <Fg label="N° cert. catastro">
-        <input style={sInp} value={lote.certCatastro || ""} onChange={e => upd("certCatastro", e.target.value)}/>
-      </Fg>
-      <Fg label="Fecha cert. catastro">
-        <InputFecha style={sInp} value={lote.fechaCatastro || ""} onChange={v => upd("fechaCatastro", v)}/>
-      </Fg>
+{/* REGISTRACIONES */}
+      <PanelSection label="Registraciones">
+        <Fg label="Nomenclatura">
+          <input style={sInp} value={lote.nomenclatura || ""} onChange={e => upd("nomenclatura", e.target.value)}/>
+        </Fg>
+        <Fg label="Avalúo fiscal">
+          <InputDinero style={sInp} value={lote.avaluo || ""} onChange={v => upd("avaluo", v)}/>
+        </Fg>
+        <Fg label="Padrón territorial">
+          <input style={sInp} value={lote.padronRentas || ""} onChange={e => upd("padronRentas", e.target.value)}/>
+        </Fg>
+        <Fg label="Padrón municipal">
+          <input style={sInp} value={lote.padronMuni || ""} onChange={e => upd("padronMuni", e.target.value)}/>
+        </Fg>
+        <Fg label="N° cert. registro">
+          <input style={sInp} value={lote.certRegistro || ""} onChange={e => upd("certRegistro", e.target.value)}/>
+        </Fg>
+        <Fg label="Fecha cert. registro">
+          <InputFecha style={sInp} value={lote.fechaRegistro || ""} onChange={v => upd("fechaRegistro", v)}/>
+        </Fg>
+        <Fg label="N° cert. catastro">
+          <input style={sInp} value={lote.certCatastro || ""} onChange={e => upd("certCatastro", e.target.value)}/>
+        </Fg>
+        <Fg label="Fecha cert. catastro">
+          <InputFecha style={sInp} value={lote.fechaCatastro || ""} onChange={v => upd("fechaCatastro", v)}/>
+        </Fg>
+      </PanelSection>
 
       {partesAbierto && (
         <ModalPartes
@@ -232,7 +256,12 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
   const [guardando, setGuardando] = useState(false);
   const [docId, setDocId] = useState(null);
   const [estado, setEstado] = useState("borrador");
-  const [fecha, setFecha] = useState({ dia: new Date().getDate(), mes: new Date().getMonth(), anio: new Date().getFullYear() });
+  const fechaDeEscritura = () => {
+    if (!lote.fechaEscritura) return { dia: new Date().getDate(), mes: new Date().getMonth(), anio: new Date().getFullYear() };
+    const [dia, mes, anio] = lote.fechaEscritura.split("/").map(Number);
+    return { dia: dia || new Date().getDate(), mes: (mes - 1) || new Date().getMonth(), anio: anio || new Date().getFullYear() };
+  };
+  const fecha = fechaDeEscritura();
   const [zoomIdx, setZoomIdx] = useState(4);
   const [hojaOn, setHojaOn] = useState(true);
   const [showVars, setShowVars] = useState(true);
@@ -271,6 +300,16 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
       if (doc) {
         setDocId(doc.id);
         setEstado(doc.estado || "borrador");
+      }
+
+      // Recargar datos frescos del lote desde Supabase
+      const { data: loteData } = await supabase
+        .from("lotes")
+        .select("datos_json")
+        .eq("id", lote.id)
+        .maybeSingle();
+      if (loteData?.datos_json) {
+        setLote({ ...loteData.datos_json, id: lote.id });
       }
 
       setTemplateHTML(tmpl?.html || "<p>Sin modelo cargado para este barrio.</p>");
@@ -353,38 +392,40 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
       />
 
       <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
-        {/* VISTA DEL DOCUMENTO */}
-        <div style={{ flex:1, background:C.warm, overflowY:"auto", overflowX:"auto",
-                      display:"flex", flexDirection:"column", alignItems:"center",
-                      padding:"28px 20px", gap:32 }}>
-          <div style={{ display:"flex", gap:8, marginBottom:4 }}>
+{/* VISTA DEL DOCUMENTO */}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+          <div style={{
+            flexShrink:0, background:"#fff", borderBottom:"1px solid rgba(26,35,50,.1)",
+            padding:"0 16px", height:40, display:"flex", alignItems:"center", gap:6,
+          }}>
             <button onClick={() => setZoomIdx(Math.max(0, zoomIdx-1))}
-              style={{ padding:"3px 10px", borderRadius:6, border:"1px solid rgba(26,35,50,.14)",
-                       background:"transparent", cursor:"pointer", fontSize:13 }}>−</button>
-            <span style={{ fontSize:13, fontWeight:500, color:C.dark, minWidth:48, textAlign:"center",
-                           lineHeight:"28px" }}>{Math.round(zoom*100)}%</span>
+              style={{ padding:"2px 10px", borderRadius:6, border:"1px solid rgba(26,35,50,.14)",
+                       background:"transparent", cursor:"pointer", fontSize:13, color:C.dark }}>−</button>
+            <span style={{ fontSize:13, fontWeight:500, color:C.dark, minWidth:44, textAlign:"center" }}>
+              {Math.round(zoom*100)}%
+            </span>
             <button onClick={() => setZoomIdx(Math.min(ZOOM_LEVELS.length-1, zoomIdx+1))}
-              style={{ padding:"3px 10px", borderRadius:6, border:"1px solid rgba(26,35,50,.14)",
-                       background:"transparent", cursor:"pointer", fontSize:13 }}>+</button>
-            <button onClick={() => setHojaOn(!hojaOn)}
-              style={{ padding:"3px 10px", borderRadius:6, fontSize:13, cursor:"pointer",
-                       border:"1px solid rgba(26,35,50,.14)",
-                       background: hojaOn ? C.ceruleanLight : "transparent",
-                       color: hojaOn ? C.cerulean : C.dark, fontFamily:"'Montserrat',sans-serif" }}>
-              Fondo
-            </button>
-            <button onClick={() => setShowVars(!showVars)}
-              style={{
-                padding:"3px 10px", borderRadius:6, fontSize:13, cursor:"pointer",
-                border:"1px solid rgba(26,35,50,.14)",
-                background: showVars ? C.ceruleanLight : "transparent",
-                color: showVars ? C.cerulean : C.dark,
-                fontFamily:"'Montserrat',sans-serif"
-              }}>
-              Variables
-            </button>
+              style={{ padding:"2px 10px", borderRadius:6, border:"1px solid rgba(26,35,50,.14)",
+                       background:"transparent", cursor:"pointer", fontSize:13, color:C.dark }}>+</button>
+            <div style={{ width:1, height:18, background:"rgba(26,35,50,.12)", margin:"0 4px" }}/>
+            <button onClick={() => setHojaOn(!hojaOn)} style={{
+              padding:"2px 10px", borderRadius:6, fontSize:14, cursor:"pointer",
+              border:"1px solid rgba(26,35,50,.14)", fontFamily:"'Montserrat',sans-serif",
+              background: hojaOn ? C.ceruleanLight : "transparent",
+              color: hojaOn ? C.cerulean : C.dark,
+            }}>Fondo</button>
+            <button onClick={() => setShowVars(!showVars)} style={{
+              padding:"2px 10px", borderRadius:6, fontSize:14, cursor:"pointer",
+              border:"1px solid rgba(26,35,50,.14)", fontFamily:"'Montserrat',sans-serif",
+              background: showVars ? C.ceruleanLight : "transparent",
+              color: showVars ? C.cerulean : C.dark,
+            }}>Variables</button>
           </div>
-          <VistaDocumento html={htmlGenerado} fuente={fuente} fontSize={fontSize} zoom={zoom} hojaOn={hojaOn} showVars={showVars}/>
+          <div style={{ flex:1, background:C.warm, overflowY:"auto", overflowX:"auto",
+                        display:"flex", flexDirection:"column", alignItems:"center",
+                        padding:"28px 20px", gap:32 }}>
+            <VistaDocumento html={htmlGenerado} fuente={fuente} fontSize={fontSize} zoom={zoom} hojaOn={hojaOn} showVars={showVars}/>
+          </div>
         </div>
 
         {/* PANEL LATERAL */}
@@ -402,7 +443,6 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
             fecha={fecha}
             miembros={miembros}
             onChange={handleCambioLote}
-            onChangeFecha={setFecha}
           />
         </div>
       </div>

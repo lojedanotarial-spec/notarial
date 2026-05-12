@@ -1,10 +1,12 @@
-﻿import { useState } from "react";
+﻿import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { LoginScreen }   from "./screens/LoginScreen.jsx";
 import { HomeScreen }    from "./screens/HomeScreen";
 import { SelectorScreen } from "./screens/SelectorScreen";
 import { EditorScreen }  from "./screens/EditorScreen";
 import { BulkScreen }    from "./screens/BulkScreen";
+import { AdminScreen }   from "./screens/AdminScreen";
+
 
 const globalStyles = [
   "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');",
@@ -25,15 +27,24 @@ const globalStyles = [
 ].join("\n");
 
 function AppRouter() {
-  const { session, cargando } = useAuth();
+  const { session, cargando, usuario, setRegistroActivo } = useAuth();
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
 
   const handleGo = (targetScreen, targetParams = {}) => {
-
+    if (targetParams.registroActivo) {
+      setRegistroActivo(targetParams.registroActivo);
+    }
     setParams(targetParams);
     setScreen(targetScreen);
   };
+
+  // Admin va directo al selector de registro
+  useEffect(() => {
+    if (session && usuario?.is_admin && screen === "home") {
+      setScreen("admin");
+    }
+  }, [session, usuario]);
 
   if (cargando) return (
     <div style={{
@@ -52,6 +63,7 @@ function AppRouter() {
       {screen === "selector" && <SelectorScreen onGo={handleGo} />}
       {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} />}
       {screen === "bulk"     && <BulkScreen     onGo={handleGo} />}
+      {screen === "admin"    && <AdminScreen    onGo={handleGo} />}
     </>
   );
 }

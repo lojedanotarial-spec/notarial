@@ -198,7 +198,8 @@ function FilaDoc({ doc, onOpen, onDelete, last }) {
 
 // ── SCREEN PRINCIPAL ──────────────────────────────────────────────────────────
 export function HomeScreen({ onGo }) {
-  const { miUsuario, usuario } = useAuth();
+  const { miUsuario, usuario, registroActivo } = useAuth();
+  const esAdmin = usuario?.is_admin;
 
   // datos
   const [docs, setDocs]         = useState([]);
@@ -221,18 +222,26 @@ export function HomeScreen({ onGo }) {
   useEffect(() => {
     if (!usuario) return;
     async function cargar() {
+      console.log("cargar() — registroActivo:", registroActivo, "usuario:", usuario?.id);
       setCargando(true);
-      const { data } = await supabase
+      const query = supabase
         .from("documentos")
         .select("id, titulo, estado, template_key, contenido, created_at, updated_at")
-        .eq("usuario_id", usuario.id)
         .order("updated_at", { ascending: false })
         .limit(200);
-      setDocs(data || []);
+
+      if (registroActivo) {
+        query.eq("registro_id", registroActivo);
+      } else {
+        query.eq("usuario_id", usuario.id);
+      }
+
+      const { data } = await query;
+      setDocs((data || []).filter(d => d.template_key !== "escrituraBarrio"));
       setCargando(false);
     }
     cargar();
-  }, [usuario]);
+  }, [usuario, registroActivo]);
 
   // ── FILTRADO ───────────────────────────────────────────────────────────────
   const filtrados = useCallback(() => {
@@ -354,6 +363,14 @@ export function HomeScreen({ onGo }) {
                 <p style={{ ...T.l2, margin:0 }}>{fechaHoy()}</p>
               </div>
               <div style={{ display:"flex", gap:8 }}>
+                {esAdmin && (
+                  <button onClick={() => onGo("admin")}
+                          style={{ padding:"8px 16px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
+                                   background:"#fff", fontSize:13, fontWeight:600, color:C.dark,
+                                   cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>
+                    ⚙ Admin
+                  </button>
+                )}
                 <button onClick={() => onGo("selector")}
                         onMouseEnter={e => e.currentTarget.style.background = C.ceruleanLight}
                         onMouseLeave={e => e.currentTarget.style.background = "#fff"}

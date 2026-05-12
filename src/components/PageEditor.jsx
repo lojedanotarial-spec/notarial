@@ -94,6 +94,8 @@ export function PageEditor({
     const current = editor.getHTML();
     if (current !== page.content) {
       editor.commands.setContent(page.content, false);
+      // Disparar overflow check después de que el DOM se actualice
+      setTimeout(() => checkOverflow(editor), 50);
     }
   }, [page.content, editor]);
 

@@ -13,6 +13,12 @@ function TbSep() {
   return <div style={{ width:1, height:20, background:"rgba(26,35,50,.13)", margin:"0 6px", flexShrink:0 }}/>;
 }
 
+function inyectarVariables(html) {
+  return html.replace(/\{\{([A-Z_0-9]+)\}\}/g, (_, label) =>
+    `<span data-variable data-label="${label}">{{${label}}}</span>`
+  );
+}
+
 function EditorModelo({ barrio, templateId: initTemplateId, htmlInicial, onVolver, onGo }) {
   const [templateId, setTemplateId] = useState(initTemplateId);
   const [guardando,  setGuardando]  = useState(false);
@@ -131,7 +137,11 @@ function EditorModelo({ barrio, templateId: initTemplateId, htmlInicial, onVolve
         <TbBtn title="Restablecer zoom" onClick={() => setZoomIdx(4)}>↺</TbBtn>
         <TbSep/>
         <TbBtn active={hojaOn} onClick={() => setHojaOn(!hojaOn)}>Fondo</TbBtn>
-        <TbBtn active={showVars} onClick={() => setShowVars(!showVars)}>Variables</TbBtn>
+        <TbSep/>
+        <TbBtn onClick={() => {
+          const html = prompt("Pegá el HTML del template:");
+          if (html) handleUpdate(inyectarVariables(html));
+        }}>⬆ Importar HTML</TbBtn>
       </div>
 
       <div style={{ flex:1, background:C.warm, overflowY:"auto", overflowX:"auto",
@@ -177,7 +187,7 @@ export function ModeloScreen({ barrio, onVolver, onGo }) {
 
       setEstado({
         cargando: false,
-        html: data?.html || CONTENIDO_VACIO,
+        html: inyectarVariables(data?.html || CONTENIDO_VACIO),
         templateId: data?.id || null,
       });
     }
