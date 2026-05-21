@@ -67,7 +67,7 @@ export function EditorScreen({ onGo, params = {} }) {
   const [documentUrl,  setDocumentUrl]  = useState(null);
   const [documentKey,  setDocumentKey]  = useState(null);
   const [generating,   setGenerating]   = useState(false);
-  const [pluginReady,  setPluginReady]  = useState(false);
+  const [pluginTick,   setPluginTick]   = useState(0);
   const pluginWindowRef   = useRef(null);
   const [isDirty,        setIsDirty]        = useState(false);
   const generatedOnceRef = useRef(false);
@@ -192,7 +192,7 @@ export function EditorScreen({ onGo, params = {} }) {
       if (!e.data || e.data.type !== "oo-plugin") return;
       if (e.data.action === "ready") {
         pluginWindowRef.current = e.source;
-        setPluginReady(true);
+        setPluginTick(t => t + 1);
       } else if (e.data.action === "open-modal") {
         setModal(e.data.modal);
       } else if (e.data.action === "regenerar") {
@@ -203,15 +203,15 @@ export function EditorScreen({ onGo, params = {} }) {
     return () => window.removeEventListener("message", handler);
   }, []);
 
-  // Plugin: push updated data whenever document state changes
+  // Plugin: push updated data whenever document state changes or plugin reopens
   useEffect(() => {
-    if (!pluginReady || !pluginWindowRef.current) return;
+    if (!pluginTick || !pluginWindowRef.current) return;
     pluginWindowRef.current.postMessage({
       type: "oo-plugin-data",
       partes, escribano, fecha, protocolo, instrumento,
       fuente, fontSize, margenKey, interlineado, isDirty, generating,
     }, "*");
-  }, [partes, escribano, fecha, protocolo, instrumento, fuente, fontSize, margenKey, interlineado, isDirty, generating, pluginReady]);
+  }, [partes, escribano, fecha, protocolo, instrumento, fuente, fontSize, margenKey, interlineado, isDirty, generating, pluginTick]);
 
   const diaStr   = String(fecha.dia).padStart(2, "0");
   const mesStr   = String(fecha.mes + 1).padStart(2, "0");
