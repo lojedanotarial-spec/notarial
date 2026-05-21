@@ -70,6 +70,7 @@ export function EditorScreen({ onGo, params = {} }) {
   const [pluginTick,   setPluginTick]   = useState(0);
   const pluginWindowRef   = useRef(null);
   const [isDirty,        setIsDirty]        = useState(false);
+  const [showProps,      setShowProps]      = useState(true);
   const generatedOnceRef = useRef(false);
   const handleGenerarRef = useRef(null);
 
@@ -265,35 +266,139 @@ export function EditorScreen({ onGo, params = {} }) {
       />
 
       {/* BODY */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
-        <OnlyOfficeEditor
-          documentUrl={documentUrl}
-          documentKey={documentKey}
-          documentTitle={docTitle}
-          serverUrl={ONLYOFFICE_URL}
-        />
+        {/* Editor */}
+        <div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden" }}>
+          <OnlyOfficeEditor
+            documentUrl={documentUrl}
+            documentKey={documentKey}
+            documentTitle={docTitle}
+            serverUrl={ONLYOFFICE_URL}
+          />
+        </div>
 
-        {isDirty && (
+        {/* Panel de propiedades React */}
+        {showProps && (
           <div style={{
-            position: "absolute", bottom: 20, left: "50%",
-            transform: "translateX(-50%)", zIndex: 100,
+            width: 240, flexShrink: 0, display: "flex", flexDirection: "column",
+            borderLeft: "1px solid rgba(26,35,50,.1)", background: "#fff", overflow: "hidden",
           }}>
-            <button
-              onClick={handleGenerar}
-              disabled={generating}
-              style={{
-                padding: "10px 24px", borderRadius: 24, border: "none",
-                background: "#1a5276", color: "#fff", cursor: "pointer",
-                fontFamily: "'Montserrat',sans-serif", fontSize: 13, fontWeight: 700,
-                boxShadow: "0 4px 16px rgba(26,35,50,.3)", opacity: generating ? 0.7 : 1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {generating ? "Actualizando..." : "↻ Actualizar documento"}
-            </button>
+            <div style={{
+              padding: "10px 14px 8px", borderBottom: "1px solid rgba(26,35,50,.08)",
+              fontSize: 11, fontWeight: 700, color: "rgba(26,35,50,.5)",
+              textTransform: "uppercase", letterSpacing: ".07em", flexShrink: 0,
+            }}>
+              Propiedades del acto
+            </div>
+            <div style={{ flex: 1, overflowY: "auto" }}>
+
+              <PanelSection label="Escribano" onClick={() => setModal("escribano")}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>{escribano.nombre || "Sin nombre"}</div>
+                <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginTop: 2 }}>
+                  {escribano.caracter || ""} &middot; Reg. {escribano.registro || ""}
+                </div>
+              </PanelSection>
+
+              <PanelSection label="Fecha y lugar" onClick={() => setModal("fecha")}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>{fechaStr}</div>
+                <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginTop: 2 }}>
+                  {fecha.ciudad || "Ciudad"}, Mendoza
+                </div>
+              </PanelSection>
+
+              <PanelSection
+                label="Partes"
+                onClick={() => setModal("partes")}
+                alerta={partes.some(p => !p.apellido || !p.nombre)}
+              >
+                {partes.map((p, i) => {
+                  const a0 = p.apellido ? p.apellido[0].toUpperCase() : "?";
+                  const n0 = p.nombre   ? p.nombre[0].toUpperCase()   : "";
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3, minWidth: 0 }}>
+                      <div style={{
+                        width: 22, height: 22, borderRadius: "50%", background: "#ddeef7",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 9, fontWeight: 700, color: "#1f4862", flexShrink: 0,
+                      }}>{a0 + n0}</div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {p.apellido || "Sin nombre"}{p.nombre ? ", " + p.nombre : ""}
+                      </span>
+                    </div>
+                  );
+                })}
+                <div style={{ fontSize: 12, color: C.cerulean, fontWeight: 500, marginTop: 3 }}>+ Editar partes</div>
+              </PanelSection>
+
+              <PanelSection label="Protocolo" onClick={() => setModal("protocolo")} alerta={!protocolo.nroActa}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>Libro {protocolo.nroLibro || "—"}</div>
+                <div style={{ fontSize: 12, color: protocolo.nroActa ? "rgba(26,35,50,.5)" : "#c0392b", fontWeight: protocolo.nroActa ? 400 : 600, marginTop: 2 }}>
+                  Acta n&ordm; {protocolo.nroActa || "pendiente"}
+                </div>
+              </PanelSection>
+
+              <PanelSection label="Instrumento" onClick={() => setModal("instrumento")}>
+                <div style={{ fontSize: 14, fontWeight: instrumento.descripcion ? 600 : 400, fontStyle: instrumento.descripcion ? "normal" : "italic", color: instrumento.descripcion ? C.dark : "rgba(26,35,50,.4)" }}>
+                  {instrumento.descripcion || "Sin especificar"}
+                </div>
+              </PanelSection>
+
+              <PanelSection label="Formato" onClick={() => setModal("formato")}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>
+                  {fuente.label || "Merriweather"} {fontSize}pt
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginTop: 2 }}>
+                  {margenKey === "protocolar" ? "Protocolar" : "No protocolar"} &middot; {interlineado.label || "Protocolar"}
+                </div>
+              </PanelSection>
+
+            </div>
+            {isDirty && (
+              <div style={{ flexShrink: 0, padding: "10px 12px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
+                <button
+                  onClick={handleGenerar}
+                  disabled={generating}
+                  style={{
+                    width: "100%", padding: "8px", borderRadius: 7, border: "none",
+                    background: "#1a5276", color: "#fff", cursor: generating ? "default" : "pointer",
+                    fontFamily: "'Montserrat',sans-serif", fontSize: 12, fontWeight: 700,
+                    opacity: generating ? 0.6 : 1,
+                  }}
+                >
+                  {generating ? "Actualizando..." : "↻ Actualizar documento"}
+                </button>
+              </div>
+            )}
           </div>
         )}
+
+        {/* Strip vertical */}
+        <div style={{
+          width: 40, flexShrink: 0, background: "#f5f3ef",
+          borderLeft: "1px solid rgba(26,35,50,.1)",
+          display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8, gap: 4,
+        }}>
+          <button
+            onClick={() => setShowProps(v => !v)}
+            title="Propiedades del acto"
+            style={{
+              width: 32, height: 32, borderRadius: 6, border: "none",
+              background: showProps ? "#ddeef7" : "transparent",
+              color: showProps ? "#1a5276" : "rgba(26,35,50,.4)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background .12s, color .12s",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+        </div>
 
       </div>
 
