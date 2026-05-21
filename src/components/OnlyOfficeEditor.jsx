@@ -38,7 +38,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
           hideRightMenu: true,
           hideRulers:    true,
           zoom:          100,
-          spellcheck:    true,
+          features: { spellcheck: true },
         },
       },
       height: "100%",
@@ -132,28 +132,27 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
 
   return (
     <div style={{ flex: 1, position: "relative", display: "flex" }}>
-      {(!ready || reconnecting) && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 10,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "#f0ece3", fontFamily: "'Montserrat',sans-serif",
-          fontSize: 14, color: "#1a2332", flexDirection: "column", gap: 10,
-        }}>
-          <div>{reconnecting ? "Reconectando editor..." : "Cargando editor..."}</div>
-          {reconnecting && (
-            <button
-              onClick={() => { setReconnecting(false); createEditor(); }}
-              style={{
-                marginTop: 8, padding: "6px 18px", borderRadius: 7, border: "none",
-                background: "#1a5276", color: "#fff", cursor: "pointer",
-                fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 13,
-              }}
-            >
-              Reconectar ahora
-            </button>
-          )}
-        </div>
-      )}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 10,
+        display: (!ready || reconnecting) ? "flex" : "none",
+        alignItems: "center", justifyContent: "center",
+        background: "#f0ece3", fontFamily: "'Montserrat',sans-serif",
+        fontSize: 14, color: "#1a2332", flexDirection: "column", gap: 10,
+      }}>
+        <div>{reconnecting ? "Reconectando editor..." : "Cargando editor..."}</div>
+        {reconnecting && (
+          <button
+            onClick={() => { setReconnecting(false); createEditor(); }}
+            style={{
+              marginTop: 8, padding: "6px 18px", borderRadius: 7, border: "none",
+              background: "#1a5276", color: "#fff", cursor: "pointer",
+              fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 13,
+            }}
+          >
+            Reconectar ahora
+          </button>
+        )}
+      </div>
       <div id="oo-container" style={{ flex: 1 }} />
     </div>
   );
