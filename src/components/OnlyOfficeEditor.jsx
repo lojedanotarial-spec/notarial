@@ -124,7 +124,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
         </svg>
         <div style={{ fontSize: 15, color: "#1a2332", fontWeight: 600,
                       fontFamily: "'Montserrat',sans-serif" }}>
-          Completá los datos del panel y hacé clic en <strong>Generar documento</strong>
+          Preparando documento...
         </div>
       </div>
     );

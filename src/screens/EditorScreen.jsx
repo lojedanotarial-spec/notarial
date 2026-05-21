@@ -195,6 +195,8 @@ export function EditorScreen({ onGo, params = {} }) {
         setPluginReady(true);
       } else if (e.data.action === "open-modal") {
         setModal(e.data.modal);
+      } else if (e.data.action === "regenerar") {
+        handleGenerarRef.current?.();
       }
     };
     window.addEventListener("message", handler);
@@ -207,8 +209,9 @@ export function EditorScreen({ onGo, params = {} }) {
     pluginWindowRef.current.postMessage({
       type: "oo-plugin-data",
       partes, escribano, fecha, protocolo, instrumento,
+      fuente, fontSize, margenKey, interlineado, isDirty, generating,
     }, "*");
-  }, [partes, escribano, fecha, protocolo, instrumento, pluginReady]);
+  }, [partes, escribano, fecha, protocolo, instrumento, fuente, fontSize, margenKey, interlineado, isDirty, generating, pluginReady]);
 
   const diaStr   = String(fecha.dia).padStart(2, "0");
   const mesStr   = String(fecha.mes + 1).padStart(2, "0");
@@ -262,9 +265,8 @@ export function EditorScreen({ onGo, params = {} }) {
       />
 
       {/* BODY */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
 
-        {/* ÁREA EDITOR ONLYOFFICE */}
         <OnlyOfficeEditor
           documentUrl={documentUrl}
           documentKey={documentKey}
@@ -272,147 +274,27 @@ export function EditorScreen({ onGo, params = {} }) {
           serverUrl={ONLYOFFICE_URL}
         />
 
-        {/* PANEL LATERAL */}
-        <div
-          className="no-print"
-          style={{
-            width: 260, flexShrink: 0, background: "#fff",
-            borderLeft: "1px solid rgba(26,35,50,.15)",
-            display: "flex", flexDirection: "column", overflow: "hidden",
-          }}
-        >
+        {isDirty && (
           <div style={{
-            padding: "12px 14px", borderBottom: "1px solid rgba(26,35,50,.1)",
-            fontSize: 14, fontWeight: 700, color: C.dark,
+            position: "absolute", bottom: 20, left: "50%",
+            transform: "translateX(-50%)", zIndex: 100,
           }}>
-            Propiedades
-          </div>
-
-          <div style={{
-            flex: 1, overflowY: "auto", padding: 10,
-            display: "flex", flexDirection: "column", gap: 7,
-          }}>
-            <PanelSection label="Escribano" onClick={() => setModal("escribano")}>
-              <div style={{ fontSize: 14, color: C.dark, fontWeight: 600 }}>{escribano.nombre}</div>
-              <div style={{ fontSize: 12, color: "rgba(26,35,50,1)", marginTop: 2 }}>
-                {escribano.caracter} · Reg. {escribano.registro}
-              </div>
-            </PanelSection>
-
-            <PanelSection label="Fecha y lugar" onClick={() => setModal("fecha")}>
-              <div style={{ fontSize: 14, color: C.dark, fontWeight: 600 }}>
-                {String(fecha.dia).padStart(2,"0")}/{String(fecha.mes+1).padStart(2,"0")}/{fecha.anio}
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(26,35,50,1)", marginTop: 2 }}>
-                {fecha.ciudad}, Mendoza
-              </div>
-            </PanelSection>
-
-            <PanelSection
-              label="Partes"
-              onClick={() => setModal("partes")}
-              alerta={partes.some(p => !p.apellido || !p.nombre)}
+            <button
+              onClick={handleGenerar}
+              disabled={generating}
+              style={{
+                padding: "10px 24px", borderRadius: 24, border: "none",
+                background: "#1a5276", color: "#fff", cursor: "pointer",
+                fontFamily: "'Montserrat',sans-serif", fontSize: 13, fontWeight: 700,
+                boxShadow: "0 4px 16px rgba(26,35,50,.3)", opacity: generating ? 0.7 : 1,
+                whiteSpace: "nowrap",
+              }}
             >
-              {partes.map(p => (
-                <div key={p.id} style={{
-                  display: "flex", alignItems: "center", gap: 7, marginBottom: 4,
-                }}>
-                  <div style={{
-                    width: 22, height: 22, minWidth: 22, borderRadius: "50%",
-                    background: C.ceruleanLight,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 9, fontWeight: 700, color: "#1f4862",
-                  }}>
-                    {((p.apellido?.[0] || "?") + (p.nombre?.[0] || "")).toUpperCase()}
-                  </div>
-                  <span style={{
-                    fontSize: 14, color: C.dark, fontWeight: 600,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {p.apellido || "Sin nombre"}
-                  </span>
-                </div>
-              ))}
-              <div style={{ fontSize: 12, color: C.cerulean, marginTop: 3, fontWeight: 500 }}>
-                + Editar partes
-              </div>
-            </PanelSection>
-
-            <PanelSection
-              label="Protocolo"
-              onClick={() => setModal("protocolo")}
-              alerta={!protocolo.nroActa}
-            >
-              <div style={{ fontSize: 14, color: C.dark, fontWeight: 600 }}>
-                Libro {protocolo.nroLibro}
-              </div>
-              <div style={{
-                fontSize: 12,
-                color: protocolo.nroActa ? "rgba(26,35,50,.6)" : "#c0392b",
-                marginTop: 2,
-                fontWeight: protocolo.nroActa ? 400 : 600,
-              }}>
-                Acta nº {protocolo.nroActa || "pendiente"}
-              </div>
-            </PanelSection>
-
-            <PanelSection label="Instrumento" onClick={() => setModal("instrumento")}>
-              <div style={{
-                fontSize: 14,
-                color: instrumento.descripcion ? C.dark : "rgba(26,35,50,.45)",
-                fontStyle: instrumento.descripcion ? "normal" : "italic",
-                fontWeight: instrumento.descripcion ? 600 : 400,
-              }}>
-                {instrumento.descripcion || "Sin especificar"}
-              </div>
-            </PanelSection>
-
-            <PanelSection label="Formato" onClick={() => setModal("formato")}>
-              <div style={{ fontSize: 14, color: C.dark, fontWeight: 600 }}>
-                {fuente.label} · {fontSize}pt
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(26,35,50,.6)", marginTop: 2 }}>
-                {margenKey === "protocolar" ? "Márgenes protocolar" : "Márgenes no protocolar"}
-                {" · "}{interlineado.label}
-              </div>
-            </PanelSection>
-          </div>
-
-          <div style={{ padding: 10, borderTop: "1px solid rgba(26,35,50,.1)" }}>
-            {isDirty && (
-              <button
-                onClick={handleGenerar}
-                disabled={generating}
-                style={{
-                  width: "100%", padding: "8px 10px", borderRadius: 7, marginBottom: 10,
-                  fontFamily: "'Montserrat',sans-serif", fontSize: 13, fontWeight: 700,
-                  border: "none", background: "#1a5276", color: "#fff", cursor: "pointer",
-                  opacity: generating ? 0.7 : 1,
-                }}
-              >
-                {generating ? "Actualizando..." : "Actualizar documento"}
-              </button>
-            )}
-            <div style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: ".07em",
-              textTransform: "uppercase", color: "rgba(26,35,50,1)", marginBottom: 7,
-            }}>
-              Estado
-            </div>
-            <button onClick={() => setModal("estado")} style={{
-              width: "100%", padding: "8px 10px", borderRadius: 7, cursor: "pointer",
-              fontFamily: "'Montserrat',sans-serif", fontSize: 14, fontWeight: 600,
-              border: "1px solid rgba(26,35,50,.2)", background: C.porcelain, color: C.dark,
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              {ELABELS[estado]}
-              <svg width="10" height="10" viewBox="0 0 8 8" fill="none"
-                   stroke="currentColor" strokeWidth="1.5">
-                <path d="M1 2.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              {generating ? "Actualizando..." : "↻ Actualizar documento"}
             </button>
           </div>
-        </div>
+        )}
+
       </div>
 
       {/* MODALES */}
