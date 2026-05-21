@@ -37,6 +37,17 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
           hideRulers:     true,
           zoom:           100,
           spellcheck:     true,
+          layout: {
+            toolbar: {
+              tabs: [
+                { id: "draw",       visible: false },
+                { id: "references", visible: false },
+                { id: "protect",    visible: false },
+              ],
+            },
+            statusBar: { visible: false },
+            leftMenu:  { visible: false },
+          },
         },
       },
       height: "100%",
