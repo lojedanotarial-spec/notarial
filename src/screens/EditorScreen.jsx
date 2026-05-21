@@ -68,7 +68,10 @@ export function EditorScreen({ onGo, params = {} }) {
   const [documentKey,  setDocumentKey]  = useState(null);
   const [generating,   setGenerating]   = useState(false);
   const [pluginReady,  setPluginReady]  = useState(false);
-  const pluginWindowRef = useRef(null);
+  const pluginWindowRef   = useRef(null);
+  const [isDirty,        setIsDirty]        = useState(false);
+  const generatedOnceRef = useRef(false);
+  const handleGenerarRef = useRef(null);
 
   const [partes,      setPartes]      = useState([PARTE_VACIA()]);
   const [escribano,   setEscribano]   = useState(() => miUsuario ? {
@@ -130,6 +133,8 @@ export function EditorScreen({ onGo, params = {} }) {
 
       setDocumentUrl(publicUrl);
       setDocumentKey(key);
+      generatedOnceRef.current = true;
+      setIsDirty(false);
     } catch (e) {
       alert("Error al generar el documento: " + e.message);
     } finally {
@@ -137,11 +142,19 @@ export function EditorScreen({ onGo, params = {} }) {
     }
   }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado]);
 
-  // Auto-generate on mount and regenerate (debounced) on any data/format change
+  // Keep ref updated so the mount effect can call the latest version
+  useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);
+
+  // Auto-generate once on mount (delay lets the admin escribano effect settle first)
   useEffect(() => {
-    const t = setTimeout(handleGenerar, 600);
+    const t = setTimeout(() => handleGenerarRef.current?.(), 800);
     return () => clearTimeout(t);
-  }, [handleGenerar]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Mark dirty whenever data changes after first generation
+  useEffect(() => {
+    if (generatedOnceRef.current) setIsDirty(true);
+  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado]);
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
@@ -366,6 +379,20 @@ export function EditorScreen({ onGo, params = {} }) {
           </div>
 
           <div style={{ padding: 10, borderTop: "1px solid rgba(26,35,50,.1)" }}>
+            {isDirty && (
+              <button
+                onClick={handleGenerar}
+                disabled={generating}
+                style={{
+                  width: "100%", padding: "8px 10px", borderRadius: 7, marginBottom: 10,
+                  fontFamily: "'Montserrat',sans-serif", fontSize: 13, fontWeight: 700,
+                  border: "none", background: "#1a5276", color: "#fff", cursor: "pointer",
+                  opacity: generating ? 0.7 : 1,
+                }}
+              >
+                {generating ? "Actualizando..." : "Actualizar documento"}
+              </button>
+            )}
             <div style={{
               fontSize: 11, fontWeight: 700, letterSpacing: ".07em",
               textTransform: "uppercase", color: "rgba(26,35,50,1)", marginBottom: 7,
