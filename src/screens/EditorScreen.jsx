@@ -1,53 +1,24 @@
 ﻿import { useAutoguardado } from "../hooks/useAutoguardado";
 import { useAuth } from "../context/AuthContext";
 import {
-  C, A4W, A4H, mm, PROT, NOPROT,
-  ZOOM_LEVELS, FUENTES, MESES_LABEL,
+  C, FUENTES, MESES_LABEL,
   PARTE_VACIA, ESCRIBANO_INI, FECHA_HOY, PROTOCOLO_INI, INSTRUMENTO_INI,
   ELABELS, inp,
 } from "../constants";
 import { diaLetras, anioLetras, gen } from "../utils";
-import { usePagination }  from "../hooks/usePagination";
-import { PageEditor }     from "../components/PageEditor";
-import { NavBar }         from "../components/NavBar";
-import { Modal }          from "../components/Modal";
-import { Btn }            from "../components/ui/Btn";
-import { Warn }           from "../components/ui/FormElements";
-import { TbBtn, Dropdown, DdSection, DdItem } from "../components/ui/Toolbar";
+import { NavBar }  from "../components/NavBar";
+import { Modal }   from "../components/Modal";
+import { Btn }     from "../components/ui/Btn";
+import { Warn }    from "../components/ui/FormElements";
 import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
-import { exportarDocx }   from "../utils/exportDocx";
-import { buildCertFirmaF08 } from "../templates/certFirmaF08";
+import { buildDocxCertFirmaF08 } from "../utils/buildDocx";
+import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 
-const LINE_HEIGHT_PT = 24;
-const LINE_HEIGHT_PX = LINE_HEIGHT_PT * (96 / 72);
+const ONLYOFFICE_URL = import.meta.env.VITE_ONLYOFFICE_URL || "http://192.168.100.7";
 
-const HIGHLIGHT_COLORS = [
-  { color: "#fef9c3", title: "Amarillo" },
-  { color: "#d1fae5", title: "Verde menta" },
-  { color: "#fce7f3", title: "Rosa palo" },
-];
-
-const v = (label, value) => {
-  const isEmpty = !value;
-  return '<span data-variable data-label="' + label + '" style="' +
-    (isEmpty
-      ? "color:#c0392b;font-weight:700;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;"
-      : "color:#3a7ca5;font-weight:700;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;") +
-    '">' + (isEmpty ? "{{" + label + "}}" : value) + "</span>";
-};
-
-function TbSep() {
-  return (
-    <div style={{
-      width: 1, height: 20,
-      background: "rgba(26,35,50,.13)",
-      margin: "0 6px", flexShrink: 0,
-    }}/>
-  );
-}
 
 function PanelSection({ label, onClick, children, alerta }) {
   return (
@@ -83,31 +54,82 @@ function PanelSection({ label, onClick, children, alerta }) {
   );
 }
 
+
 export function EditorScreen({ onGo, params = {} }) {
-  const { miUsuario, miembros } = useAuth();
-  const [modal,     setModal]     = useState(null);
-  const [hojaOn,    setHojaOn]    = useState(true);
-  const [estado,    setEstado]    = useState("borrador");
-  const [zoomIdx,   setZoomIdx]   = useState(4);
-  const [fuente,    setFuente]    = useState(FUENTES[0]);
-  const [margenKey, setMargenKey] = useState("protocolar");
-  const [ddOpen,    setDdOpen]    = useState(null);
-  const [showVars,  setShowVars]  = useState(true);
-  const [fontSize,  setFontSize]  = useState(11);
+  const { miUsuario, miembros, registroActivo } = useAuth();
+  const [modal,       setModal]       = useState(null);
+  const [estado,      setEstado]      = useState("borrador");
+  const [fuente,      setFuente]      = useState(FUENTES[0]);
+  const [margenKey,   setMargenKey]   = useState("protocolar");
+  const [fontSize,    setFontSize]    = useState(11);
+  const [documentUrl, setDocumentUrl] = useState(null);
+  const [documentKey, setDocumentKey] = useState(null);
+  const [generating,  setGenerating]  = useState(false);
 
   const [partes,      setPartes]      = useState([PARTE_VACIA()]);
-  const [escribano, setEscribano] = useState(() => miUsuario ? {
+  const [escribano,   setEscribano]   = useState(() => miUsuario ? {
     nombre:          miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
     caracter:        miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
     registro:        miUsuario.registro,
     circunscripcion: miUsuario.circunscripcion,
-    } : ESCRIBANO_INI);
+  } : ESCRIBANO_INI);
   const [templateKey, setTemplateKey] = useState(params?.templateKey || "certFirmaF08");
   const [fecha,       setFecha]       = useState(FECHA_HOY());
   const [protocolo,   setProtocolo]   = useState(PROTOCOLO_INI);
   const [instrumento, setInstrumento] = useState(INSTRUMENTO_INI);
 
   const { usuario } = useAuth();
+
+  // Para admin: cargar datos del titular del registro activo
+  useEffect(() => {
+    if (!miUsuario?.is_admin || !registroActivo || params?.docId) return;
+    supabase
+      .from("registros")
+      .select("*")
+      .eq("registro", registroActivo)
+      .then(({ data }) => {
+        const titular = (data || []).find(m => m.rol === "titular") || data?.[0];
+        if (titular) setEscribano({
+          nombre:          titular.nombre_preferido || `${titular.nombre} ${titular.apellido}`,
+          caracter:        titular.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
+          registro:        titular.registro,
+          circunscripcion: titular.circunscripcion,
+        });
+      });
+  }, [miUsuario?.is_admin, registroActivo]);
+
+  const handleGenerar = async () => {
+    setGenerating(true);
+    try {
+      const blob = await buildDocxCertFirmaF08({
+        partes, escribano, fecha, protocolo, instrumento,
+        instrTexto, fechaLetras, gen,
+        margenKey, fontSize, fuente,
+      });
+
+      const key      = `doc-${Date.now()}`;
+      const filePath = `${key}.docx`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("oo-docs")
+        .upload(filePath, blob, {
+          contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          upsert: true,
+        });
+      if (uploadError) throw new Error(`Error al subir archivo: ${uploadError.message}`);
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("oo-docs")
+        .getPublicUrl(filePath);
+
+      setDocumentUrl(publicUrl);
+      setDocumentKey(key);
+    } catch (e) {
+      alert("Error al generar el documento: " + e.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
@@ -129,173 +151,53 @@ export function EditorScreen({ onGo, params = {} }) {
   }, [params.docId]);
 
   const contenidoParaGuardar = useMemo(
-  () => ({ partes, escribano, fecha, protocolo, instrumento }),
-  [partes, escribano, fecha, protocolo, instrumento]
+    () => ({ partes, escribano, fecha, protocolo, instrumento }),
+    [partes, escribano, fecha, protocolo, instrumento]
   );
 
-  // Ref al editor activo (el que tiene el foco) — la toolbar opera sobre él
-  const activeEditor = useRef(null);
-
   useEffect(() => {
-  const handler = (e) => setModal(e.detail.modal);
-  window.addEventListener("notarial:openmodal", handler);
-  return () => window.removeEventListener("notarial:openmodal", handler);
+    const handler = (e) => setModal(e.detail.modal);
+    window.addEventListener("notarial:openmodal", handler);
+    return () => window.removeEventListener("notarial:openmodal", handler);
   }, []);
 
-  const zoom = ZOOM_LEVELS[zoomIdx];
+  const diaStr   = String(fecha.dia).padStart(2, "0");
+  const mesStr   = String(fecha.mes + 1).padStart(2, "0");
+  const fechaStr = diaStr + "/" + mesStr + "/" + fecha.anio;
 
-const diaStr  = String(fecha.dia).padStart(2, "0");
-const mesStr  = String(fecha.mes + 1).padStart(2, "0");
-const fechaStr = diaStr + "/" + mesStr + "/" + fecha.anio;
+  const partesLabel = partes
+    .filter(p => p.apellido || p.nombre)
+    .map(p => {
+      const nombre = [p.apellido, p.nombre].filter(Boolean).join(" ");
+      const reprs  = (p.representaciones || [])
+        .filter(r => r.razon_social).map(r => r.razon_social).join(", ");
+      return reprs ? nombre + " (" + reprs + ")" : nombre;
+    })
+    .join(", ");
 
-const partesLabel = partes
-  .filter(p => p.apellido || p.nombre)
-  .map(p => {
-    const nombre = [p.apellido, p.nombre].filter(Boolean).join(" ");
-    const reprs = (p.representaciones || [])
-      .filter(r => r.razon_social)
-      .map(r => r.razon_social)
-      .join(", ");
-    return reprs ? nombre + " (" + reprs + ")" : nombre;
-  })
-  .join(", ");
-
-const docTitle = partesLabel
-  ? "Certificacion de firma - " + partesLabel + " - " + fechaStr
-  : "Certificacion de firma - nuevo documento";
+  const docTitle = partesLabel
+    ? "Certificación de firma - " + partesLabel + " - " + fechaStr
+    : "Certificación de firma - nuevo documento";
 
   const instrTexto  = instrumento.descripcion || "el instrumento adjunto a la presente Actuación Notarial";
   const fechaLetras = diaLetras(fecha.dia) + " días del mes de " + MESES_LABEL[fecha.mes] + " de " + anioLetras(fecha.anio);
 
   const { indicador, guardarAhora, hayPendiente } = useAutoguardado({
-  titulo: docTitle,
-  estado,
-  contenido: contenidoParaGuardar,
-  templateKey: templateKey,
-  registroNumero: miUsuario?.registro,
-  usuarioId: usuario?.id,
-  initialDocId: params?.docId, 
+    titulo: docTitle,
+    estado,
+    contenido: contenidoParaGuardar,
+    templateKey,
+    registroNumero: miUsuario?.registro || registroActivo,
+    usuarioId: usuario?.id,
+    initialDocId: params?.docId,
   });
 
   function handleGo(screen, p) {
-  if (hayPendiente) {
-    if (!window.confirm("Hay cambios sin guardar. ¿Querés salir igual?")) return;
-  }
-  onGo(screen, p);
-  }
-
-  const buildDocHTML = useCallback(() => {
-    const fmtDni  = (val) => val ? Number(String(val).replace(/\D/g, "")).toLocaleString("es-AR") : "";
-    const fmtCuit = (c) => {
-      if (!c) return "";
-      const [pre, mid, suf] = c.split("-");
-      return pre + "-" + (mid ? Number(mid).toLocaleString("es-AR") : "") + "-" + (suf || "");
-    };
-
-    let partesHTML = "";
-    if (partes.length === 0) {
-      partesHTML = v("PARTE", "");
-    } else {
-      const fraseIdentidad = partes.length === 1
-        ? ", y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.- "
-        : ", y cuyas identidades justifican conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhiben los documentos anteriormente relacionados cuyas copias archivo en esta escribanía.- ";
-      const fraseCapacidad = partes.length === 1
-        ? gen(partes[0], "La compareciente", "El compareciente") + " manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.-"
-        : "Los comparecientes manifiestan no tener su capacidad de ejercicio restringida por sentencia alguna.-";
-
-      partes.forEach((p, idx) => {
-        const esUltima = idx === partes.length - 1;
-        const domicilio = [p.calle, p.numero,
-          p.piso && "piso " + p.piso,
-          p.dpto && "departamento " + p.dpto,
-          p.localidad,
-        ].filter(Boolean).join(", ");
-
-        if (idx === 0) partesHTML += "por ";
-        if (idx > 0 && !esUltima) partesHTML += "; ";
-        if (idx > 0 && esUltima)  partesHTML += "; y ";
-
-        partesHTML += gen(p, "la señora", "el señor") + " ";
-        partesHTML += v("APELLIDO Y NOMBRE", p.apellido ? p.apellido + (p.nombre ? ", " + p.nombre : "") : "");
-        partesHTML += ", ";
-        partesHTML += v("NACIONALIDAD", p.nacionalidad);
-        partesHTML += ", con ";
-        partesHTML += v("TIPO DOC", p.tipoDoc);
-        partesHTML += " número ";
-        partesHTML += v("N° DOCUMENTO", fmtDni(p.nroDoc));
-        if (p.cuit) partesHTML += ", C.U.I.T./L. " + v("CUIT/CUIL", fmtCuit(p.cuit));
-        if (p.fechaNac) partesHTML += ", nacid" + gen(p, "a", "o") + " el " + v("FECHA NAC", p.fechaNac);
-        partesHTML += ", quien manifiesta ser de estado de familia ";
-        partesHTML += v("ESTADO CIVIL", p.estadoCivil);
-        if (domicilio) {
-          partesHTML += ", con domicilio en " + v("DOMICILIO", domicilio);
-          partesHTML += ", departamento " + v("DEPARTAMENTO", p.departamento);
-          partesHTML += ", de esta Provincia de Mendoza";
-        }
-        partesHTML += "; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, ";
-        partesHTML += gen(p, "la que", "el que") + " firma en su carácter de ";
-        partesHTML += v("ROL", p.rol);
-      });
-      partesHTML += fraseIdentidad + fraseCapacidad;
+    if (hayPendiente) {
+      if (!window.confirm("Hay cambios sin guardar. ¿Querés salir igual?")) return;
     }
-
-    const al_del = escribano.caracter?.toLowerCase().includes("titular") ? "del" : "al";
-
-    return buildCertFirmaF08({ partes, escribano, fecha, protocolo, instrumento, instrTexto, fechaLetras, MESES_LABEL, gen });
-  }, [partes, escribano, fecha, protocolo, instrumento, instrTexto, fechaLetras]);
-
-  // ── PAGINACIÓN ─────────────────────────────────────────────────────────────
-  const { pages, updatePage, addPage, removePage, prependToPage } = usePagination(buildDocHTML());
-
-  // Cuando cambian los datos del documento, regenerar y resetear a 1 página
-  useEffect(() => {
-    // Sólo resetear si el usuario no tiene múltiples páginas editadas
-    // (heurística: resetear siempre al cambiar datos del panel)
-    const html = buildDocHTML();
-    // Forzamos a una sola página con el nuevo contenido
-    // usePagination no expone reset directo; lo hacemos via updatePage de la primera
-    updatePage(pages[0].id, html);
-    // Eliminar páginas extra si existían
-    pages.slice(1).forEach(p => removePage(p.id));
-  }, [partes, escribano, fecha, protocolo, instrumento]);
-
-  // Handler de overflow: recibe HTML que desbordó de la página pageId
-  const handleOverflow = useCallback((pageId, overflowHTML) => {
-    const idx = pages.findIndex(p => p.id === pageId);
-    if (idx === -1) return;
-
-    const nextPage = pages[idx + 1];
-    if (nextPage) {
-      // Prepend al inicio de la siguiente página
-      const combined = overflowHTML + nextPage.content.replace(/^<p><\/p>/, "");
-      prependToPage(nextPage.id, combined);
-    } else {
-      // Crear nueva página con el overflow
-      addPage(pageId, overflowHTML);
-    }
-  }, [pages, addPage, prependToPage]);
-
-  // Handler de underflow: si página queda vacía, eliminarla (excepto la primera)
-  const handleUnderflow = useCallback((pageId) => {
-    removePage(pageId);
-  }, [removePage]);
-
-  // ── TOOLBAR ────────────────────────────────────────────────────────────────
-  const tbCmd = (fn) => () => {
-    const ed = activeEditor.current;
-    if (!ed) return;
-    fn(ed);
-  };
-
-  const handleDocx = () => {
-    const ed = activeEditor.current;
-    if (!ed) return;
-    // Concatena el HTML de todas las páginas para exportar
-    const allHTML = pages.map(p => p.content).join("\n");
-    exportarDocx({ html: allHTML, fuente, fontSize, docTitle });
-  };
-
-  const handlePrint = () => window.print();
+    onGo(screen, p);
+  }
 
   return (
     <div style={{
@@ -319,193 +221,57 @@ const docTitle = partesLabel
         style={{
           background: "#f8f6f2", borderBottom: "1px solid rgba(26,35,50,.1)",
           padding: "0 14px", height: 42, flexShrink: 0,
-          display: "flex", alignItems: "center", gap: 2,
+          display: "flex", alignItems: "center", gap: 8,
         }}
       >
-        <TbBtn title="Negrita"
-               active={activeEditor.current?.isActive("bold")}
-               onClick={tbCmd(ed => ed.chain().focus().toggleBold().run())}>
-          <b>N</b>
-        </TbBtn>
-        <TbBtn title="Cursiva"
-               active={activeEditor.current?.isActive("italic")}
-               onClick={tbCmd(ed => ed.chain().focus().toggleItalic().run())}>
-          <i style={{ fontStyle: "italic" }}>I</i>
-        </TbBtn>
-        <TbBtn title="Subrayado"
-               active={activeEditor.current?.isActive("underline")}
-               onClick={tbCmd(ed => ed.chain().focus().toggleUnderline().run())}>
-          <span style={{ textDecoration: "underline" }}>S</span>
-        </TbBtn>
+        <select value={fuente.key} onChange={e => setFuente(FUENTES.find(f => f.key === e.target.value))}
+          style={{ padding: "3px 6px", border: "1px solid " + C.borderStrong, borderRadius: 5,
+                   fontSize: 13, background: "#f8f6f2", color: C.dark,
+                   fontFamily: "'Montserrat',sans-serif" }}>
+          {FUENTES.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+        </select>
 
-        <TbSep/>
-
-        <TbBtn title="MAYÚSCULAS" onClick={tbCmd(ed => {
-          const { from, to } = ed.state.selection;
-          const text = ed.state.doc.textBetween(from, to);
-          ed.chain().focus().insertContentAt({ from, to }, text.toUpperCase()).run();
-        })}><span style={{ fontSize: 12, fontWeight: 600 }}>AA</span></TbBtn>
-        <TbBtn title="minúsculas" onClick={tbCmd(ed => {
-          const { from, to } = ed.state.selection;
-          const text = ed.state.doc.textBetween(from, to);
-          ed.chain().focus().insertContentAt({ from, to }, text.toLowerCase()).run();
-        })}><span style={{ fontSize: 12 }}>aa</span></TbBtn>
-        <TbBtn title="Capitalizar" onClick={tbCmd(ed => {
-          const { from, to } = ed.state.selection;
-          const text = ed.state.doc.textBetween(from, to);
-          const cap = text.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-          ed.chain().focus().insertContentAt({ from, to }, cap).run();
-        })}><span style={{ fontSize: 12 }}>Aa</span></TbBtn>
-
-        <TbSep/>
-
-        <div style={{ position: "relative" }}>
-          <TbBtn
-            active={ddOpen === "formato"}
-            onClick={() => setDdOpen(ddOpen === "formato" ? null : "formato")}
-          >
-            {fuente.label}
-            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M1 2.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </TbBtn>
-          <Dropdown open={ddOpen === "formato"}>
-            <DdSection label="Fuente">
-              {FUENTES.map(f => (
-                <DdItem key={f.key} active={fuente.key === f.key}
-                        onClick={() => {
-                          setFuente(f);
-                          setDdOpen(null);
-                          activeEditor.current?.chain().focus().setFontFamily(f.family).run();
-                        }}>
-                  <span style={{ fontFamily: f.family, fontSize: 14 }}>{f.label}</span>
-                </DdItem>
-              ))}
-            </DdSection>
-          </Dropdown>
-        </div>
-
-        <select
-          value={fontSize}
-          onChange={e => setFontSize(Number(e.target.value))}
-          style={{
-            padding: "3px 4px", border: "1px solid " + C.borderStrong,
-            borderRadius: 5, fontSize: 13, background: "#f8f6f2",
-            color: C.dark, fontFamily: "'Montserrat',sans-serif", width: 48,
-          }}
-        >
+        <select value={fontSize} onChange={e => setFontSize(Number(e.target.value))}
+          style={{ padding: "3px 4px", border: "1px solid " + C.borderStrong, borderRadius: 5,
+                   fontSize: 13, background: "#f8f6f2", color: C.dark,
+                   fontFamily: "'Montserrat',sans-serif", width: 48 }}>
           {[8,9,10,11,12,13,14,16,18].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
 
-        <TbSep/>
+        <select value={margenKey} onChange={e => setMargenKey(e.target.value)}
+          style={{ padding: "3px 6px", border: "1px solid " + C.borderStrong, borderRadius: 5,
+                   fontSize: 13, background: "#f8f6f2", color: C.dark,
+                   fontFamily: "'Montserrat',sans-serif" }}>
+          <option value="protocolar">Protocolar</option>
+          <option value="noprotocolar">No protocolar</option>
+        </select>
 
-        {HIGHLIGHT_COLORS.map(({ color, title }) => (
-          <button
-            key={color}
-            title={"Resaltar: " + title}
-            onClick={tbCmd(ed => ed.chain().focus().setHighlight({ color }).run())}
-            style={{
-              width: 20, height: 20, borderRadius: 4, background: color,
-              border: "1px solid rgba(26,35,50,.2)", cursor: "pointer",
-              flexShrink: 0, padding: 0,
-            }}
-          />
-        ))}
+        <div style={{ flex: 1 }} />
+
         <button
-          title="Quitar resaltado"
-          onClick={tbCmd(ed => ed.chain().focus().unsetHighlight().run())}
+          onClick={handleGenerar}
+          disabled={generating}
           style={{
-            width: 20, height: 20, borderRadius: 4, background: "transparent",
-            border: "1px solid rgba(26,35,50,.2)", cursor: "pointer",
-            flexShrink: 0, display: "flex", alignItems: "center",
-            justifyContent: "center", padding: 0,
+            padding: "6px 18px", borderRadius: 7, border: "none",
+            background: generating ? C.muted : C.cerulean,
+            color: "#fff", cursor: generating ? "not-allowed" : "pointer",
+            fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 13,
           }}
         >
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-               stroke="rgba(26,35,50,.4)" strokeWidth="1.5">
-            <path d="M2 2l6 6M8 2l-6 6" strokeLinecap="round"/>
-          </svg>
+          {generating ? "Generando..." : documentUrl ? "Regenerar documento" : "Generar documento"}
         </button>
-
-        <TbSep/>
-
-        <div style={{ position: "relative" }}>
-          <TbBtn
-            active={ddOpen === "margenes"}
-            onClick={() => setDdOpen(ddOpen === "margenes" ? null : "margenes")}
-          >
-            Márgenes
-            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M1 2.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </TbBtn>
-          <Dropdown open={ddOpen === "margenes"}>
-            <DdSection label="Formato de página">
-              <DdItem active={margenKey === "protocolar"} meta="36·76·15·20 mm"
-                      onClick={() => { setMargenKey("protocolar"); setDdOpen(null); }}>
-                Protocolar
-              </DdItem>
-              <DdItem active={margenKey === "noprotocolar"} meta="30·35·20·20 mm"
-                      onClick={() => { setMargenKey("noprotocolar"); setDdOpen(null); }}>
-                No protocolar
-              </DdItem>
-            </DdSection>
-          </Dropdown>
-        </div>
-
-        <TbSep/>
-
-        <TbBtn title="Deshacer" onClick={tbCmd(ed => ed.chain().focus().undo().run())}>↩</TbBtn>
-        <TbBtn title="Rehacer" onClick={tbCmd(ed => ed.chain().focus().redo().run())}>↪</TbBtn>
-
-        <TbSep/>
-
-        <TbBtn onClick={() => setZoomIdx(Math.max(0, zoomIdx - 1))}>−</TbBtn>
-        <span style={{
-          fontSize: 13, fontWeight: 500, color: C.dark,
-          minWidth: 38, textAlign: "center",
-        }}>
-          {Math.round(zoom * 100)}%
-        </span>
-        <TbBtn onClick={() => setZoomIdx(Math.min(ZOOM_LEVELS.length - 1, zoomIdx + 1))}>+</TbBtn>
-        <TbBtn title="Restablecer zoom" onClick={() => setZoomIdx(4)}>↺</TbBtn>
-
-        <TbSep/>
-
-        <TbBtn active={hojaOn} onClick={() => setHojaOn(!hojaOn)}>Fondo</TbBtn>
-        <TbBtn active={showVars} onClick={() => setShowVars(!showVars)}>Variables</TbBtn>
       </div>
 
       {/* BODY */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
-        {/* ÁREA DE PÁGINAS */}
-        <div style={{
-          flex: 1, background: C.warm,
-          overflowY: "auto", overflowX: "auto",
-          display: "flex", flexDirection: "column",
-          alignItems: "center",
-          padding: "28px 20px", gap: 32,
-        }}>
-          {pages.map((page, idx) => (
-            <PageEditor
-              key={page.id}
-              page={page}
-              pageIndex={idx}
-              isFirst={idx === 0}
-              hojaOn={hojaOn}
-              margenKey={margenKey}
-              fuente={fuente}
-              fontSize={fontSize}
-              zoom={zoom}
-              activeEditor={activeEditor}
-              showVariables={showVars}
-              onOverflow={(overflowHTML) => handleOverflow(page.id, overflowHTML)}
-              onUnderflow={() => handleUnderflow(page.id)}
-              onUpdate={(html) => updatePage(page.id, html)}
-            />
-          ))}
-        </div>
+        {/* ÁREA EDITOR ONLYOFFICE */}
+        <OnlyOfficeEditor
+          documentUrl={documentUrl}
+          documentKey={documentKey}
+          documentTitle={docTitle}
+          serverUrl={ONLYOFFICE_URL}
+        />
 
         {/* PANEL LATERAL */}
         <div
@@ -656,59 +422,7 @@ const docTitle = partesLabel
         </Modal>
       )}
 
-      {modal === "exportar" && (
-        <Modal title="Exportar documento" onClose={() => setModal(null)}
-               footer={<Btn onClick={() => setModal(null)}>Cerrar</Btn>}>
-          <div style={{ display: "flex", gap: 12 }}>
-            <div
-              onClick={handleDocx}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = C.cerulean;
-                e.currentTarget.style.background = C.ceruleanLight;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = "rgba(26,35,50,.12)";
-                e.currentTarget.style.background = "transparent";
-              }}
-              style={{
-                flex: 1, padding: 20,
-                border: "1px solid rgba(26,35,50,.12)", borderRadius: 10,
-                textAlign: "center", cursor: "pointer", transition: "all .12s",
-              }}
-            >
-              <div style={{ fontSize: 20, fontWeight: 700, color: C.dark, marginBottom: 6 }}>DOCX</div>
-              <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Sin fondo · Para seguir editando</div>
-              <div style={{
-                fontSize: 12, color: "rgba(26,35,50,1)", lineHeight: 1.5,
-                borderTop: "1px solid rgba(26,35,50,.08)", paddingTop: 8, textAlign: "left",
-              }}>
-                ⚠ El salto de línea puede variar en Word. Para el documento oficial usá Imprimir / PDF.
-              </div>
-            </div>
-            <div
-              onClick={handlePrint}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = C.cerulean;
-                e.currentTarget.style.background = C.ceruleanLight;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = "rgba(26,35,50,.12)";
-                e.currentTarget.style.background = "transparent";
-              }}
-              style={{
-                flex: 1, padding: 20,
-                border: "1px solid rgba(26,35,50,.12)", borderRadius: 10,
-                textAlign: "center", cursor: "pointer", transition: "all .12s",
-              }}
-            >
-              <div style={{ fontSize: 20, fontWeight: 700, color: C.dark, marginBottom: 6 }}>Imprimir / PDF</div>
-              <div style={{ fontSize: 12, color: C.muted }}>
-                {hojaOn ? "Con fondo protocolar" : "Sin fondo"}
-              </div>
-            </div>
-          </div>
-        </Modal>
-      )}
+
     </div>
   );
 }
