@@ -29,25 +29,16 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       editorConfig: {
         mode: "edit",
         lang: "es",
+        plugins: {
+          autostart:   ["asc.{8f3e2a91-4c7d-4b9e-a123-5f6e7d8c9b0a}"],
+          pluginsData: [window.location.origin + "/oo-plugin/config.json"],
+        },
         customization: {
-          autosave:       false,
-          compactToolbar: true,
-          toolbarNoTabs:  true,
-          hideRightMenu:  true,
-          hideRulers:     true,
-          zoom:           100,
-          spellcheck:     true,
-          layout: {
-            toolbar: {
-              tabs: [
-                { id: "draw",       visible: false },
-                { id: "references", visible: false },
-                { id: "protect",    visible: false },
-              ],
-            },
-            statusBar: { visible: false },
-            leftMenu:  { visible: false },
-          },
+          autosave:      false,
+          hideRightMenu: true,
+          hideRulers:    true,
+          zoom:          100,
+          spellcheck:    true,
         },
       },
       height: "100%",

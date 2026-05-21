@@ -16,7 +16,7 @@ import { ModalFormato }  from "../components/modals/ModalFormato";
 import { buildDocxCertFirmaF08 } from "../utils/buildDocx";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 
 const ONLYOFFICE_URL = import.meta.env.VITE_ONLYOFFICE_URL || "http://192.168.100.7";
 
@@ -67,6 +67,8 @@ export function EditorScreen({ onGo, params = {} }) {
   const [documentUrl,  setDocumentUrl]  = useState(null);
   const [documentKey,  setDocumentKey]  = useState(null);
   const [generating,   setGenerating]   = useState(false);
+  const [pluginReady,  setPluginReady]  = useState(false);
+  const pluginWindowRef = useRef(null);
 
   const [partes,      setPartes]      = useState([PARTE_VACIA()]);
   const [escribano,   setEscribano]   = useState(() => miUsuario ? {
@@ -170,6 +172,30 @@ export function EditorScreen({ onGo, params = {} }) {
     window.addEventListener("notarial:openmodal", handler);
     return () => window.removeEventListener("notarial:openmodal", handler);
   }, []);
+
+  // Plugin: receive "ready" and "open-modal" messages
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.data || e.data.type !== "oo-plugin") return;
+      if (e.data.action === "ready") {
+        pluginWindowRef.current = e.source;
+        setPluginReady(true);
+      } else if (e.data.action === "open-modal") {
+        setModal(e.data.modal);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  // Plugin: push updated data whenever document state changes
+  useEffect(() => {
+    if (!pluginReady || !pluginWindowRef.current) return;
+    pluginWindowRef.current.postMessage({
+      type: "oo-plugin-data",
+      partes, escribano, fecha, protocolo, instrumento,
+    }, window.location.origin);
+  }, [partes, escribano, fecha, protocolo, instrumento, pluginReady]);
 
   const diaStr   = String(fecha.dia).padStart(2, "0");
   const mesStr   = String(fecha.mes + 1).padStart(2, "0");

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Propiedades</title>
+  <script src="https://onlyoffice.github.io/sdkjs-plugins/v1/plugins.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      background: #fff;
+      color: #1a2332;
+      font-size: 13px;
+    }
+    #loading {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: rgba(26,35,50,.45);
+      font-size: 12px;
+    }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 2px solid rgba(58,124,165,.2);
+      border-top-color: #3a7ca5;
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #app { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    .panel-header {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid rgba(26,35,50,.1);
+      font-size: 12px;
+      font-weight: 700;
+      color: #1a2332;
+      letter-spacing: .04em;
+      flex-shrink: 0;
+    }
+    .sections { flex: 1; overflow-y: auto; }
+    .section {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(26,35,50,.08);
+      cursor: pointer;
+      user-select: none;
+    }
+    .section:hover { background: #f8f6f2; }
+    .section:active { background: #f0ece3; }
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: rgba(26,35,50,.5);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #e07070;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a2332;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .section-title.muted {
+      font-weight: 400;
+      font-style: italic;
+      color: rgba(26,35,50,.4);
+    }
+    .section-sub {
+      font-size: 11px;
+      color: rgba(26,35,50,.5);
+      margin-top: 2px;
+    }
+    .section-sub.alerta { color: #c0392b; font-weight: 600; }
+    .parte-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+    .avatar {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #e8f2f8;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; font-weight: 700; color: #1f4862;
+      flex-shrink: 0;
+    }
+    .edit-hint {
+      font-size: 11px;
+      color: #3a7ca5;
+      font-weight: 500;
+      margin-top: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="spinner"></div>
+    Conectando...
+  </div>
+  <div id="app" style="display:none"></div>
+
+  <script>
+    var ORIGIN = window.location.origin;
+
+    function requestData() {
+      window.top.postMessage({ type: "oo-plugin", action: "ready" }, ORIGIN);
+    }
+
+    // OO Plugin API — init is called by OO when the plugin is ready
+    if (window.Asc && window.Asc.plugin) {
+      window.Asc.plugin.init = function() { requestData(); };
+      window.Asc.plugin.button = function(id) {};
+    } else {
+      // Fallback: request data after short delay (for testing outside OO)
+      setTimeout(requestData, 300);
+    }
+
+    // Receive variable data from React
+    window.addEventListener("message", function(e) {
+      if (!e.data || e.data.type !== "oo-plugin-data") return;
+      render(e.data);
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("app").style.display = "flex";
+    });
+
+    function openModal(modal) {
+      window.top.postMessage({ type: "oo-plugin", action: "open-modal", modal: modal }, ORIGIN);
+    }
+
+    function esc(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function render(data) {
+      var partes      = data.partes      || [];
+      var escribano   = data.escribano   || {};
+      var fecha       = data.fecha       || {};
+      var protocolo   = data.protocolo   || {};
+      var instrumento = data.instrumento || {};
+
+      var html = '<div class="panel-header">Propiedades del acto</div><div class="sections">';
+
+      // Escribano
+      html += mkSection("escribano", "Escribano", false,
+        '<div class="section-title">' + esc(escribano.nombre || "Sin nombre") + "</div>" +
+        '<div class="section-sub">' + esc(escribano.caracter || "") + " · Reg. " + esc(escribano.registro || "") + "</div>"
+      );
+
+      // Fecha y lugar
+      var d = String(fecha.dia || 1).padStart(2, "0");
+      var m = String((fecha.mes || 0) + 1).padStart(2, "0");
+      html += mkSection("fecha", "Fecha y lugar", false,
+        '<div class="section-title">' + d + "/" + m + "/" + esc(fecha.anio || "") + "</div>" +
+        '<div class="section-sub">' + esc(fecha.ciudad || "") + ", Mendoza</div>"
+      );
+
+      // Partes
+      var partesAlerta = partes.some(function(p) { return !p.apellido || !p.nombre; });
+      var partesBody = "";
+      partes.forEach(function(p) {
+        var initials = ((p.apellido || "?")[0] + (p.nombre || "")[0]).toUpperCase();
+        partesBody +=
+          '<div class="parte-row">' +
+          '<div class="avatar">' + initials + "</div>" +
+          '<span class="section-title">' + esc(p.apellido || "Sin nombre") + "</span>" +
+          "</div>";
+      });
+      partesBody += '<div class="edit-hint">+ Editar partes</div>';
+      html += mkSection("partes", "Partes", partesAlerta, partesBody);
+
+      // Protocolo
+      var protoAlerta = !protocolo.nroActa;
+      html += mkSection("protocolo", "Protocolo", protoAlerta,
+        '<div class="section-title">Libro ' + esc(protocolo.nroLibro || "") + "</div>" +
+        '<div class="section-sub' + (protoAlerta ? " alerta" : "") + '">Acta nº ' +
+        esc(protocolo.nroActa || "pendiente") + "</div>"
+      );
+
+      // Instrumento
+      var tieneInstr = !!instrumento.descripcion;
+      html += mkSection("instrumento", "Instrumento", false,
+        '<div class="section-title' + (tieneInstr ? "" : " muted") + '">' +
+        esc(instrumento.descripcion || "Sin especificar") + "</div>"
+      );
+
+      html += "</div>";
+      document.getElementById("app").innerHTML = html;
+
+      document.querySelectorAll("[data-modal]").forEach(function(el) {
+        el.addEventListener("click", function() { openModal(el.dataset.modal); });
+      });
+    }
+
+    function mkSection(modal, label, alerta, body) {
+      return '<div class="section" data-modal="' + modal + '">' +
+        '<div class="section-label">' + label + (alerta ? '<span class="dot"></span>' : "") + "</div>" +
+        body + "</div>";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "Propiedades del Acto",
+  "guid": "asc.{8f3e2a91-4c7d-4b9e-a123-5f6e7d8c9b0a}",
+  "version": "1.0",
+  "minVersion": "7.3.3",
+  "variations": [
+    {
+      "description": "Variables y propiedades del acto notarial",
+      "url": "index.html",
+      "EditorsSupport": ["word"],
+      "type": "panelRight"
+    }
+  ]
+}
