@@ -194,7 +194,7 @@ export function EditorScreen({ onGo, params = {} }) {
     pluginWindowRef.current.postMessage({
       type: "oo-plugin-data",
       partes, escribano, fecha, protocolo, instrumento,
-    }, window.location.origin);
+    }, "*");
   }, [partes, escribano, fecha, protocolo, instrumento, pluginReady]);
 
   const diaStr   = String(fecha.dia).padStart(2, "0");
