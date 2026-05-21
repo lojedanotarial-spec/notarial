@@ -31,7 +31,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
         lang: "es",
         plugins: {
           autostart:   ["asc.{8f3e2a91-4c7d-4b9e-a123-5f6e7d8c9b0a}"],
-          pluginsData: [`${serverUrl}/notarial-plugin/config.json`],
+          pluginsData: [`${serverUrl}/sdkjs-plugins/notarial-plugin/config.json`],
         },
         customization: {
           autosave:      false,
