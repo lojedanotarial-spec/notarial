@@ -16,7 +16,7 @@ import { ModalFormato }  from "../components/modals/ModalFormato";
 import { buildDocxCertFirmaF08 } from "../utils/buildDocx";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 const ONLYOFFICE_URL = import.meta.env.VITE_ONLYOFFICE_URL || "http://192.168.100.7";
 
@@ -67,7 +67,6 @@ export function EditorScreen({ onGo, params = {} }) {
   const [documentUrl,  setDocumentUrl]  = useState(null);
   const [documentKey,  setDocumentKey]  = useState(null);
   const [generating,   setGenerating]   = useState(false);
-  const isMounted = useRef(false);
 
   const [partes,      setPartes]      = useState([PARTE_VACIA()]);
   const [escribano,   setEscribano]   = useState(() => miUsuario ? {
@@ -138,12 +137,7 @@ export function EditorScreen({ onGo, params = {} }) {
 
   // Auto-generate on mount and regenerate (debounced) on any data/format change
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      handleGenerar();
-      return;
-    }
-    const t = setTimeout(handleGenerar, 800);
+    const t = setTimeout(handleGenerar, 600);
     return () => clearTimeout(t);
   }, [handleGenerar]);
 
