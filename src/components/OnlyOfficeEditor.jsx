@@ -90,12 +90,22 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
     const old = document.getElementById("oo-api-script");
     if (old) old.remove();
 
-    const script = document.createElement("script");
-    script.id  = "oo-api-script";
-    script.src = `${serverUrl}/web-apps/apps/api/documents/api.js`;
-    script.onerror = () => console.error("[OO] Error cargando api.js desde", serverUrl);
-    script.onload  = createEditor;
-    document.head.appendChild(script);
+    const loadScript = () => {
+      const existing = document.getElementById("oo-api-script");
+      if (existing) existing.remove();
+      const script = document.createElement("script");
+      script.id  = "oo-api-script";
+      script.src = `${serverUrl}/web-apps/apps/api/documents/api.js`;
+      script.onerror = () => {
+        console.warn("[OO] api.js no disponible, reintentando en 5s...");
+        setReconnecting(true);
+        if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = setTimeout(loadScript, 5000);
+      };
+      script.onload = () => { setReconnecting(false); createEditor(); };
+      document.head.appendChild(script);
+    };
+    loadScript();
 
     return () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
