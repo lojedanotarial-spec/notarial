@@ -217,14 +217,14 @@ export function NavBar({
             onClick={() => onGo && onGo("home")}
             style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", padding:0 }}
           >
-            <img src="/Logo Gold.png" alt="Notarial" style={{ height: 28, display: "block" }} />
+            <img src="/logo-pen-transparent.png" alt="Notarial" style={{ height: 28, display: "block" }} />
             <div style={{ width: 1, height: 14, background: "rgba(253,252,250,.2)" }} />
             <span style={{ color: "#FDFCFA", fontSize: 13, fontWeight: 700, letterSpacing: "-.01em" }}>
               Notarial
             </span>
           </button>
           <span style={{ color: "rgba(253,252,250,.3)", fontSize: 12 }}>|</span>
-          <span style={{ color: "rgba(255,255,255,.5)", fontSize: 12 }}>fe pública digital</span>
+          <span style={{ color: "rgba(255,255,255,.45)", fontSize: 10, fontWeight: 600, letterSpacing: ".12em", textTransform: "uppercase" }}>Fe pública digital</span>
 
           <div style={{ marginLeft: "auto", position: "relative" }}>
             <button

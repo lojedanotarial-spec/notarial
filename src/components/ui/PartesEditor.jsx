@@ -218,8 +218,8 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
 }
 
 export function PartesEditor({ partes, onChange, showRol = true }) {
-  const { usuario } = useAuth();
-  const registroNumero = usuario?.registro_numero;
+  const { usuario, registroActivo } = useAuth();
+  const registroNumero = usuario?.registro_numero || registroActivo;
   const [openId, setOpenId] = useState(partes[0]?.id ?? null);
   const [confirmQuitar, setConfirmQuitar] = useState(null);
   const [hoverQuitar, setHoverQuitar] = useState(null);

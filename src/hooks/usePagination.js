@@ -1,49 +1,57 @@
 ﻿import { useState, useCallback } from "react";
 
-/**
- * usePagination
- * Maneja el array de páginas del documento.
- * Cada página tiene: { id, content (HTML string) }
- * La detección de overflow y migración de nodos se hace en PageEditor.
- */
 export function usePagination(initialHTML) {
   const [pages, setPages] = useState([
-    { id: 1, content: initialHTML },
+    { id: Date.now(), content: initialHTML },
   ]);
 
-  // Actualiza el contenido HTML de una página específica
   const updatePage = useCallback((id, content) => {
-    setPages(prev =>
-      prev.map(p => p.id === id ? { ...p, content } : p)
-    );
+    setPages(prev => prev.map(p => p.id === id ? { ...p, content } : p));
   }, []);
 
-  // Agrega una página nueva al final con contenido opcional
   const addPage = useCallback((afterId, content = "<p></p>") => {
     setPages(prev => {
       const idx = prev.findIndex(p => p.id === afterId);
       if (idx === -1) return prev;
-      const newId = Date.now();
+      const newPage = { id: Date.now(), content };
       const next = [...prev];
-      next.splice(idx + 1, 0, { id: newId, content });
+      next.splice(idx + 1, 0, newPage);
       return next;
     });
   }, []);
 
-  // Elimina una página si está vacía (y no es la primera)
   const removePage = useCallback((id) => {
+    setPages(prev => prev.length <= 1 ? prev : prev.filter(p => p.id !== id));
+  }, []);
+
+  /**
+   * Mueve el contenido de la página `id` al final de la página anterior,
+   * luego elimina `id`. Usado en underflow para merge hacia atrás.
+   */
+  const mergeWithPrev = useCallback((id, contentToMerge) => {
     setPages(prev => {
       if (prev.length <= 1) return prev;
-      return prev.filter(p => p.id !== id);
+      const idx = prev.findIndex(p => p.id === id);
+      if (idx <= 0) return prev;
+
+      const prevPage = prev[idx - 1];
+      // Limpiar el <p></p> vacío del final de la página anterior
+      const prevContent = prevPage.content.replace(/<p>\s*<\/p>\s*$/, "");
+      // Limpiar el <p></p> inicial del contenido que se merge
+      const mergeContent = contentToMerge.replace(/^<p>\s*<\/p>/, "");
+
+      const merged = prevContent + (mergeContent || "");
+
+      return prev
+        .map(p => p.id === prevPage.id ? { ...p, content: merged } : p)
+        .filter(p => p.id !== id);
     });
   }, []);
 
-  // Prepend content al inicio de la página siguiente
-  const prependToPage = useCallback((id, content) => {
-    setPages(prev =>
-      prev.map(p => p.id === id ? { ...p, content } : p)
-    );
+  // Reset: volver a 1 página con nuevo contenido
+  const reset = useCallback((html) => {
+    setPages([{ id: Date.now(), content: html }]);
   }, []);
 
-  return { pages, updatePage, addPage, removePage, prependToPage };
+  return { pages, updatePage, addPage, removePage, mergeWithPrev, reset };
 }

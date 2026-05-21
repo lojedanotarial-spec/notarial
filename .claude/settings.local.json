@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(sudo docker exec 44b3a0241286 find /var/lib/onlyoffice/documentserver/App_Data/cache/files/data/ -maxdepth 3)",
+      "WebFetch(domain:community.onlyoffice.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.onlyoffice.com)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:ngrok.com)",
+      "Bash(cd /tmp)",
+      "Bash(curl -s \"https://github.com/ONLYOFFICE/onlyoffice-nextcloud/issues/55\")",
+      "WebFetch(domain:helpcenter.onlyoffice.com)",
+      "WebFetch(domain:dev-old.onlyoffice.org)",
+      "Bash(docker --version)",
+      "Read(//c/Users/Florencia Martinez/.ssh/**)",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 ubuntu@192.168.100.7 \"echo connected\")",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 root@192.168.100.7 \"echo connected\")",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 florencia@192.168.100.7 \"echo connected\")",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 admin@192.168.100.7 \"echo connected\")",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 notarial@192.168.100.7 \"echo connected\")"
+    ]
+  }
+}

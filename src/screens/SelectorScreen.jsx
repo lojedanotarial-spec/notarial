@@ -6,11 +6,11 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
 
 const TEMPLATES = [
-  { key: "certFirma",    label: "Certificacion de Firma",       disponible: true  },
-  { key: "certFirmaF08", label: "Certificacion de Firma - F08", disponible: true  },
+  { key: "certFirma",    label: "Certificación de Firma",       disponible: true  },
+  { key: "certFirmaF08", label: "Certificación de Firma - F08", disponible: true  },
   { key: "poderEspecial",  label: "Poder especial",             disponible: false },
-  { key: "actaConst",      label: "Acta de constatacion",       disponible: false },
-  { key: "autViaje",       label: "Autorizacion de viaje",      disponible: false },
+  { key: "actaConst",      label: "Acta de constatación",       disponible: false },
+  { key: "autViaje",       label: "Autorización de viaje",      disponible: false },
 ];
 
 const ESTADO_STYLE = {
@@ -60,7 +60,7 @@ function FilaDoc({ doc, onOpen, last }) {
 }
 
 export function SelectorScreen({ onGo }) {
-  const { usuario } = useAuth();
+  const { usuario, registroActivo } = useAuth();
   const [selected, setSelected] = useState("certFirmaF08");
   const [familia,  setFamilia]  = useState("");
   const [query,    setQuery]    = useState("");
@@ -72,12 +72,14 @@ export function SelectorScreen({ onGo }) {
     if (!usuario || !abierto) return;
     async function cargar() {
       setCargando(true);
-      const { data } = await supabase
+      const q = supabase
         .from("documentos")
         .select("id, titulo, estado, updated_at, created_at")
-        .eq("usuario_id", usuario.id)
         .order("updated_at", { ascending: false })
         .limit(20);
+      if (registroActivo) q.eq("registro_id", registroActivo);
+      else q.eq("usuario_id", usuario.id);
+      const { data } = await q;
       setDocs(data || []);
       setCargando(false);
     }

@@ -4,19 +4,21 @@ import { supabase } from "../supabase";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [session,    setSession]    = useState(undefined);
-  const [usuario,    setUsuario]    = useState(null);
-  const [miUsuario,  setMiUsuario]  = useState(null);
+  const [session,       setSession]       = useState(undefined);
+  const [usuario,       setUsuario]       = useState(null);
+  const [miUsuario,     setMiUsuario]     = useState(null);
   const [miembros,      setMiembros]      = useState([]);
   const [registroActivo, setRegistroActivo] = useState(null);
+  const [perfilCargado, setPerfilCargado] = useState(false);
 
   async function cargarPerfil(userId) {
+    setPerfilCargado(false);
     const { data: u } = await supabase
       .from("usuarios")
       .select("*")
       .eq("id", userId)
       .single();
-    if (!u) return;
+    if (!u) { setPerfilCargado(true); return; }
     setUsuario(u);
 
     if (u.is_admin) {
@@ -38,6 +40,7 @@ export function AuthProvider({ children }) {
       .eq("registro", u.registro_numero)
       .order("rol");
     setMiembros(m || []);
+    setPerfilCargado(true);
   }
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) cargarPerfil(session.user.id);
-      else { setUsuario(null); setMiUsuario(null); setMiembros([]); }
+      else { setUsuario(null); setMiUsuario(null); setMiembros([]); setPerfilCargado(false); }
     });
 
     return () => subscription.unsubscribe();
@@ -57,6 +60,14 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }
+
+  async function loginWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
     if (error) throw error;
   }
 
@@ -85,8 +96,9 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
     session, usuario, miUsuario, miembros, iniciales,
     registroActivo, setRegistroActivo,
-    login, logout, actualizarMiembro,
+    login, loginWithGoogle, logout, actualizarMiembro,
     cargando: session === undefined,
+    perfilCargado,
     }}>
       {children}
     </AuthContext.Provider>

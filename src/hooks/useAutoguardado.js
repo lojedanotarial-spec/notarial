@@ -1,16 +1,16 @@
-﻿import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../supabase";
 
-const DEBOUNCE = 2000; // guarda 2s después del último cambio
+const DEBOUNCE = 2000;
 
 export function useAutoguardado({ titulo, estado, contenido, templateKey, registroNumero, usuarioId, initialDocId }) {
   const [docId,          setDocId]          = useState(initialDocId || null);
   const [guardando,      setGuardando]      = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState(null);
   const [error,          setError]          = useState(null);
-  const timerRef     = useRef(null);
-  const prevRef      = useRef(null);
-  const [hayPendiente, setHayPendiente] = useState(false);
+  const [hayPendiente,   setHayPendiente]   = useState(false);
+  const timerRef = useRef(null);
+  const prevRef  = useRef(null);
 
   useEffect(() => {
     if (initialDocId) setDocId(initialDocId);
@@ -20,6 +20,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, regist
     if (!registroNumero || !usuarioId) return;
 
     setGuardando(true);
+    setHayPendiente(false);
     setError(null);
 
     const payload = {
@@ -51,6 +52,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, regist
       setUltimoGuardado(new Date());
     } catch (e) {
       setError("Error al guardar");
+      setHayPendiente(true);
       console.error(e);
     } finally {
       setGuardando(false);
@@ -64,6 +66,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, regist
     if (serializado === prevRef.current) return;
     prevRef.current = serializado;
 
+    setHayPendiente(true);
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => guardar(), DEBOUNCE);
 
@@ -85,11 +88,13 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, regist
     ? "Guardando..."
     : error
     ? error
+    : hayPendiente
+    ? "Cambios sin guardar"
     : ultimoGuardado
     ? "Guardado " + formatTiempo(ultimoGuardado)
     : "Sin guardar";
 
-  return { docId, guardando, ultimoGuardado, error, indicador, guardarAhora };
+  return { docId, guardando, ultimoGuardado, error, indicador, guardarAhora, hayPendiente };
 }
 
 function formatTiempo(fecha) {

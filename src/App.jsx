@@ -27,7 +27,7 @@ const globalStyles = [
 ].join("\n");
 
 function AppRouter() {
-  const { session, cargando, usuario, setRegistroActivo } = useAuth();
+  const { session, cargando, usuario, perfilCargado, logout, setRegistroActivo } = useAuth();
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
 
@@ -51,11 +51,35 @@ function AppRouter() {
       height: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
       background: "#1a2332",
     }}>
-      <img src="/Logo Gold.png" alt="Notarial" style={{ height: 32, opacity: .6 }} />
+      <img src="/logo-pen-transparent.png" alt="Notarial" style={{ height: 56, opacity: .75 }} />
     </div>
   );
 
   if (!session) return <LoginScreen />;
+
+  if (perfilCargado && !usuario) return (
+    <div style={{
+      height: "100vh", display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      background: "#1a2332", gap: 20,
+    }}>
+      <img src="/logo-pen-transparent.png" alt="Notarial" style={{ height: 56, opacity: .5 }} />
+      <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 8 }}>
+        <p style={{ margin: 0, fontFamily: "'Merriweather', serif", fontSize: 18,
+          fontWeight: 400, color: "#fdfcfa" }}>Sin acceso</p>
+        <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 13,
+          color: "rgba(253,252,250,0.55)", maxWidth: 300, lineHeight: 1.5 }}>
+          Tu cuenta no tiene acceso al sistema notarial. Contactá al administrador.
+        </p>
+      </div>
+      <button onClick={logout} style={{
+        marginTop: 8, padding: "10px 24px", borderRadius: 8, border: "none",
+        background: "rgba(253,252,250,0.1)", color: "rgba(253,252,250,0.7)",
+        fontFamily: "'Montserrat', sans-serif", fontSize: 13, fontWeight: 600,
+        cursor: "pointer",
+      }}>Cerrar sesión</button>
+    </div>
+  );
 
   return (
     <>

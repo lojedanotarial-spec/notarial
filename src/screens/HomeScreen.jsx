@@ -15,16 +15,15 @@ const ESTADO_STYLE = {
 };
 
 const TIPO_LABEL = {
-  certFirma:    "Certificación",
+  certFirma:    "Cert. de firma",
   certFirmaF08: "Cert. F08",
   poderEspecial:"Poder especial",
   poderGeneral: "Poder general",
   actaConst:    "Acta",
-  autViaje:     "Aut. viaje",
+  autViaje:     "Aut. de viaje",
   compraventa:  "Compraventa",
 };
 
-const ESCRIBANOS_FILTRO = ["TAHA", "MIRANDA"];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function saludo() {
@@ -172,7 +171,7 @@ function FilaDoc({ doc, onOpen, onDelete, last }) {
       </div>
       <div><TipoPill templateKey={doc.template_key} /></div>
       <div style={{ fontSize:11, color:"rgba(26,35,50,.55)" }}>
-        {doc.contenido?.escribano?.nombre?.split(" ").pop() || "—"}
+        {doc.contenido?.escribano?.nombre || "—"}
       </div>
       <div style={{ fontSize:11, color:"rgba(26,35,50,.55)" }}>{fmtFecha(doc.updated_at)}</div>
       <div><Badge estado={doc.estado} /></div>
@@ -259,7 +258,7 @@ export function HomeScreen({ onGo }) {
       if (q && !d.titulo?.toLowerCase().includes(q)) return false;
       if (dni) {
         const partes = d.contenido?.partes || [];
-        if (!partes.some(p => (p.nroDoc || "").includes(dni))) return false;
+        if (!partes.some(p => (p.nroDoc || "").replace(/\D/g, "").includes(dni))) return false;
       }
       return true;
     });
@@ -285,6 +284,13 @@ export function HomeScreen({ onGo }) {
 
   const nombre = miUsuario?.nombre_preferido || miUsuario?.nombre || "";
   const hayFiltros = fEstado || fTipo || fEscribano || fDesde || fHasta || query || queryDni;
+
+  const escribanosFiltro = [...new Set(
+    docs.map(d => d.contenido?.escribano?.nombre).filter(Boolean)
+  )].map(nombre => {
+    const apellido = nombre.trim().split(" ").pop().toUpperCase();
+    return { val: apellido, label: nombre.trim() };
+  });
 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
@@ -320,7 +326,7 @@ export function HomeScreen({ onGo }) {
           </SideSection>
 
           <SideSection label="Escribano">
-            {[["","Todos"], ...ESCRIBANOS_FILTRO.map(e => [e, e.charAt(0) + e.slice(1).toLowerCase()])].map(([val, label]) => (
+            {[{ val: "", label: "Todos" }, ...escribanosFiltro].map(({ val, label }) => (
               <FilterItem key={val} label={label} active={fEscribano === val}
                           onClick={() => { setFEscribano(val); resetPag(); }} />
             ))}
@@ -365,38 +371,42 @@ export function HomeScreen({ onGo }) {
               <div style={{ display:"flex", gap:8 }}>
                 {esAdmin && (
                   <button onClick={() => onGo("admin")}
-                          style={{ padding:"8px 16px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
+                          style={{ padding:"8px 14px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
                                    background:"#fff", fontSize:13, fontWeight:600, color:C.dark,
-                                   cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>
-                    ⚙ Admin
+                                   cursor:"pointer", fontFamily:"'Montserrat',sans-serif",
+                                   display:"flex", alignItems:"center", gap:6 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Admin
                   </button>
                 )}
-                <button onClick={() => onGo("selector")}
-                        onMouseEnter={e => e.currentTarget.style.background = C.ceruleanLight}
+                <button onClick={() => onGo("bulk")}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
                         onMouseLeave={e => e.currentTarget.style.background = "#fff"}
                         style={{ padding:"8px 16px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
                                  background:"#fff", fontSize:13, fontWeight:600, color:C.dark,
                                  cursor:"pointer", fontFamily:"'Montserrat',sans-serif", transition:"background .12s" }}>
-                  + Documento
+                  Carga masiva
                 </button>
-                <button onClick={() => onGo("bulk")}
+                <button onClick={() => onGo("selector")}
                         onMouseEnter={e => e.currentTarget.style.opacity = "1"}
                         onMouseLeave={e => e.currentTarget.style.opacity = ".88"}
                         style={{ padding:"8px 16px", borderRadius:8, border:"none",
                                  background:C.cerulean, fontSize:13, fontWeight:600, color:"#fff",
                                  cursor:"pointer", fontFamily:"'Montserrat',sans-serif",
                                  opacity:.88, transition:"opacity .12s" }}>
-                  Carga masiva
+                  + Documento
                 </button>
               </div>
             </div>
 
             {/* Stats */}
             <div style={{ display:"flex", gap:8 }}>
-              <StatCard num={docs.length}                              label="Total" />
-              <StatCard num={cnt("estado","revision")} label="En revisión" color={C.cerulean} />
-              <StatCard num={cnt("estado","completo")} label="Completos"   color="#c9a961" />
-              <StatCard num={cnt("estado","borrador")} label="Borradores"  color="rgba(26,35,50,.45)" />
+              <StatCard num={docs.length} label="Total" />
+              <StatCard num={cnt("estado","revision")} label="En revisión" color={cnt("estado","revision") > 0 ? C.cerulean : undefined} />
+              <StatCard num={cnt("estado","completo")} label="Completos"   color={cnt("estado","completo") > 0 ? "#c9a961" : undefined} />
+              <StatCard num={cnt("estado","borrador")} label="Borradores"  color={cnt("estado","borrador") > 0 ? "rgba(26,35,50,.6)" : undefined} />
             </div>
 
             {/* Buscadores */}

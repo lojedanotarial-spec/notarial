@@ -20,7 +20,7 @@ export function AdminScreen({ onGo }) {
         if (!agrupados[r.registro]) agrupados[r.registro] = [];
         agrupados[r.registro].push(r);
       }
-      setRegistros(Object.entries(agrupados));
+      setRegistros(Object.entries(agrupados).sort(([a], [b]) => Number(a) - Number(b)));
       setCargando(false);
     }
     cargar();
@@ -55,6 +55,12 @@ export function AdminScreen({ onGo }) {
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter" && filtrados.length > 0) {
+                  const [nro, miembros] = filtrados[0];
+                  onGo("home", { registroActivo: nro, miembrosActivos: miembros });
+                }
+              }}
               placeholder="Buscar por número o nombre..."
               style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:8,
                        border:"1px solid rgba(26,35,50,.12)", background:"#fff", fontSize:13,

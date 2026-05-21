@@ -5,14 +5,14 @@ import { PartesEditor, guardarPartesEnCRM } from "../ui/PartesEditor";
 import { useAuth } from "../../context/AuthContext";
 
 export function ModalPartes({ partes, onApply, onClose, showRol = true }) {
-  const { usuario } = useAuth();
+  const { usuario, registroActivo } = useAuth();
   const [draft, setDraft] = useState(partes.map(p => ({ ...p })));
   const [guardando, setGuardando] = useState(false);
 
   async function handleGuardar() {
     
     setGuardando(true);
-    await guardarPartesEnCRM(draft, usuario?.registro_numero);
+    await guardarPartesEnCRM(draft, usuario?.registro_numero || registroActivo);
     onApply(draft);
     setGuardando(false);
     onClose();

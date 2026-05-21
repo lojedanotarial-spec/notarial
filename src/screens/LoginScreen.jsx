@@ -58,12 +58,13 @@ function EyeButton({ visible, onClick }) {
 }
 
 export function LoginScreen() {
-  const { login } = useAuth();
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw]     = useState(false);
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
+  const { login, loginWithGoogle } = useAuth();
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
+  const [showPw, setShowPw]       = useState(false);
+  const [error, setError]         = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -75,6 +76,17 @@ export function LoginScreen() {
       setError("Email o contraseña incorrectos.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle();
+    } catch {
+      setError("No se pudo conectar con Google. Intentá de nuevo.");
+      setGoogleLoading(false);
     }
   }
 
@@ -162,13 +174,14 @@ export function LoginScreen() {
             <span style={{ flex: 1, height: 1, background: "rgba(253,252,250,0.10)" }} />
           </div>
 
-          {/* Google SSO — deshabilitado */}
-          <button type="button" disabled style={{
+          <button type="button" onClick={handleGoogle} disabled={googleLoading || loading} style={{
             width: "100%", padding: "12px 16px", background: C.porcelain,
             color: C.dark, border: "1px solid rgba(26,35,50,0.18)", borderRadius: 8,
             fontFamily: "'Montserrat', sans-serif", fontSize: 13, fontWeight: 500,
-            cursor: "not-allowed", opacity: 0.4, display: "inline-flex",
-            alignItems: "center", justifyContent: "center", gap: 10
+            cursor: googleLoading || loading ? "not-allowed" : "pointer",
+            opacity: googleLoading || loading ? 0.6 : 1,
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
+            transition: "opacity 160ms ease",
           }}>
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
               <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
@@ -176,7 +189,7 @@ export function LoginScreen() {
               <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.6 39.7 16.2 44 24 44z"/>
               <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.2C41 35.2 44 30 44 24c0-1.3-.1-2.4-.4-3.5z"/>
             </svg>
-            Continuar con Google
+            {googleLoading ? "Redirigiendo…" : "Continuar con Google"}
           </button>
         </form>
 
