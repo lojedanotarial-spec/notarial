@@ -1,57 +1,74 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serverUrl }) {
-  const editorRef    = useRef(null);
-  const [ready, setReady] = useState(false);
+  const editorRef       = useRef(null);
+  const reconnectTimer  = useRef(null);
+  const [ready, setReady]             = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
 
-  useEffect(() => {
-    if (!documentUrl || !serverUrl) return;
+  const createEditor = useCallback(() => {
+    if (!window.DocsAPI || !documentUrl) return;
 
     if (editorRef.current) {
       try { editorRef.current.destroyEditor(); } catch {}
       editorRef.current = null;
     }
-    setReady(false);
 
-    const createEditor = () => {
-      if (!window.DocsAPI) return;
-      editorRef.current = new window.DocsAPI.DocEditor("oo-container", {
-        document: {
-          fileType: "docx",
-          key:      documentKey,
-          title:    documentTitle || "Documento notarial",
-          url:      documentUrl,
-          permissions: { edit: true, print: true, download: true },
+    const container = document.getElementById("oo-container");
+    if (container) container.innerHTML = "";
+
+    editorRef.current = new window.DocsAPI.DocEditor("oo-container", {
+      document: {
+        fileType: "docx",
+        key:      documentKey,
+        title:    documentTitle || "Documento notarial",
+        url:      documentUrl,
+        permissions: { edit: true, print: true, download: true },
+      },
+      documentType: "word",
+      editorConfig: {
+        mode: "edit",
+        lang: "es",
+        customization: {
+          autosave:       false,
+          compactToolbar: true,
+          toolbarNoTabs:  true,
+          hideRightMenu:  true,
+          hideRulers:     true,
+          zoom:           100,
+          spellcheck:     true,
         },
-        documentType: "word",
-        editorConfig: {
-          mode: "edit",
-          lang: "es",
-          customization: {
-            autosave:       false,
-            compactToolbar: true,
-            toolbarNoTabs:  true,
-            hideRightMenu:  true,
-            hideRulers:     true,
-            zoom:           100,
-            spellcheck:     true,
-          },
+      },
+      height: "100%",
+      width:  "100%",
+      events: {
+        onAppReady:     () => { setReady(true); setReconnecting(false); },
+        onReady:        () => { setReady(true); setReconnecting(false); },
+        onDocumentReady:() => { setReady(true); setReconnecting(false); },
+        onError: (e) => {
+          console.error("[OO] error:", e?.data);
+          setReady(false);
+          setReconnecting(true);
+          if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+          reconnectTimer.current = setTimeout(() => {
+            createEditor();
+          }, 12000);
         },
-        height: "100%",
-        width:  "100%",
-        events: {
-          onAppReady:     () => setReady(true),
-          onReady:        () => setReady(true),
-          onDocumentReady:() => setReady(true),
-          onError:        (e) => console.error("[OO] error:", e?.data),
-          onWarning:      (e) => console.warn("[OO] warning:", e),
-        },
-      });
-    };
+        onWarning: (e) => console.warn("[OO] warning:", e),
+      },
+    });
+  }, [documentUrl, documentKey, documentTitle]);
+
+  useEffect(() => {
+    if (!documentUrl || !serverUrl) return;
+
+    setReady(false);
+    setReconnecting(false);
 
     if (window.DocsAPI) {
       createEditor();
       return () => {
+        if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
         if (editorRef.current) {
           try { editorRef.current.destroyEditor(); } catch {}
           editorRef.current = null;
@@ -70,6 +87,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
     document.head.appendChild(script);
 
     return () => {
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       if (editorRef.current) {
         try { editorRef.current.destroyEditor(); } catch {}
         editorRef.current = null;
@@ -77,7 +95,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       const s = document.getElementById("oo-api-script");
       if (s) s.remove();
     };
-  }, [documentUrl, documentKey, serverUrl]);
+  }, [documentUrl, documentKey, serverUrl, createEditor]);
 
   if (!documentUrl) {
     return (
@@ -102,14 +120,26 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
 
   return (
     <div style={{ flex: 1, position: "relative", display: "flex" }}>
-      {!ready && (
+      {(!ready || reconnecting) && (
         <div style={{
           position: "absolute", inset: 0, zIndex: 10,
           display: "flex", alignItems: "center", justifyContent: "center",
           background: "#f0ece3", fontFamily: "'Montserrat',sans-serif",
-          fontSize: 14, color: "#1a2332",
+          fontSize: 14, color: "#1a2332", flexDirection: "column", gap: 10,
         }}>
-          Cargando editor...
+          <div>{reconnecting ? "Reconectando editor..." : "Cargando editor..."}</div>
+          {reconnecting && (
+            <button
+              onClick={() => { setReconnecting(false); createEditor(); }}
+              style={{
+                marginTop: 8, padding: "6px 18px", borderRadius: 7, border: "none",
+                background: "#1a5276", color: "#fff", cursor: "pointer",
+                fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 13,
+              }}
+            >
+              Reconectar ahora
+            </button>
+          )}
         </div>
       )}
       <div id="oo-container" style={{ flex: 1 }} />
