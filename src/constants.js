@@ -33,6 +33,13 @@ export const FUENTES = [
   { key:"montserrat", label:"Montserrat",      family:"'Montserrat',sans-serif" },
 ];
 
+export const INTERLINEADOS = [
+  { key:"protocolar", label:"Protocolar (24pt fijo)", line:480, rule:"exact" },
+  { key:"simple",     label:"Sencillo",               line:240, rule:"auto"  },
+  { key:"15",         label:"1,5 líneas",             line:360, rule:"auto"  },
+  { key:"doble",      label:"Doble",                  line:480, rule:"auto"  },
+];
+
 // ── DATOS GEOGRÁFICOS ─────────────────────────────────────────────────────────
 export const DEPARTAMENTOS = [
   "Ciudad", "Godoy Cruz", "Guaymallén", "Las Heras", "Lavalle",

@@ -1,7 +1,7 @@
 ﻿import { useAutoguardado } from "../hooks/useAutoguardado";
 import { useAuth } from "../context/AuthContext";
 import {
-  C, FUENTES, MESES_LABEL,
+  C, FUENTES, INTERLINEADOS, MESES_LABEL,
   PARTE_VACIA, ESCRIBANO_INI, FECHA_HOY, PROTOCOLO_INI, INSTRUMENTO_INI,
   ELABELS, inp,
 } from "../constants";
@@ -12,10 +12,11 @@ import { Btn }     from "../components/ui/Btn";
 import { Warn }    from "../components/ui/FormElements";
 import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
+import { ModalFormato }  from "../components/modals/ModalFormato";
 import { buildDocxCertFirmaF08 } from "../utils/buildDocx";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 
 const ONLYOFFICE_URL = import.meta.env.VITE_ONLYOFFICE_URL || "http://192.168.100.7";
 
@@ -57,14 +58,16 @@ function PanelSection({ label, onClick, children, alerta }) {
 
 export function EditorScreen({ onGo, params = {} }) {
   const { miUsuario, miembros, registroActivo } = useAuth();
-  const [modal,       setModal]       = useState(null);
-  const [estado,      setEstado]      = useState("borrador");
-  const [fuente,      setFuente]      = useState(FUENTES[0]);
-  const [margenKey,   setMargenKey]   = useState("protocolar");
-  const [fontSize,    setFontSize]    = useState(11);
-  const [documentUrl, setDocumentUrl] = useState(null);
-  const [documentKey, setDocumentKey] = useState(null);
-  const [generating,  setGenerating]  = useState(false);
+  const [modal,        setModal]        = useState(null);
+  const [estado,       setEstado]       = useState("borrador");
+  const [fuente,       setFuente]       = useState(FUENTES[0]);
+  const [margenKey,    setMargenKey]    = useState("protocolar");
+  const [fontSize,     setFontSize]     = useState(11);
+  const [interlineado, setInterlineado] = useState(INTERLINEADOS[0]);
+  const [documentUrl,  setDocumentUrl]  = useState(null);
+  const [documentKey,  setDocumentKey]  = useState(null);
+  const [generating,   setGenerating]   = useState(false);
+  const isMounted = useRef(false);
 
   const [partes,      setPartes]      = useState([PARTE_VACIA()]);
   const [escribano,   setEscribano]   = useState(() => miUsuario ? {
@@ -98,13 +101,15 @@ export function EditorScreen({ onGo, params = {} }) {
       });
   }, [miUsuario?.is_admin, registroActivo]);
 
-  const handleGenerar = async () => {
+  const handleGenerar = useCallback(async () => {
+    const instrTexto  = instrumento.descripcion || "el instrumento adjunto a la presente Actuación Notarial";
+    const fechaLetras = diaLetras(fecha.dia) + " días del mes de " + MESES_LABEL[fecha.mes] + " de " + anioLetras(fecha.anio);
     setGenerating(true);
     try {
       const blob = await buildDocxCertFirmaF08({
         partes, escribano, fecha, protocolo, instrumento,
         instrTexto, fechaLetras, gen,
-        margenKey, fontSize, fuente,
+        margenKey, fontSize, fuente, interlineado,
       });
 
       const key      = `doc-${Date.now()}`;
@@ -129,7 +134,18 @@ export function EditorScreen({ onGo, params = {} }) {
     } finally {
       setGenerating(false);
     }
-  };
+  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado]);
+
+  // Auto-generate on mount and regenerate (debounced) on any data/format change
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      handleGenerar();
+      return;
+    }
+    const t = setTimeout(handleGenerar, 800);
+    return () => clearTimeout(t);
+  }, [handleGenerar]);
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
@@ -179,9 +195,6 @@ export function EditorScreen({ onGo, params = {} }) {
     ? "Certificación de firma - " + partesLabel + " - " + fechaStr
     : "Certificación de firma - nuevo documento";
 
-  const instrTexto  = instrumento.descripcion || "el instrumento adjunto a la presente Actuación Notarial";
-  const fechaLetras = diaLetras(fecha.dia) + " días del mes de " + MESES_LABEL[fecha.mes] + " de " + anioLetras(fecha.anio);
-
   const { indicador, guardarAhora, hayPendiente } = useAutoguardado({
     titulo: docTitle,
     estado,
@@ -214,53 +227,6 @@ export function EditorScreen({ onGo, params = {} }) {
         onGuardar={guardarAhora}
         onGo={handleGo}
       />
-
-      {/* TOOLBAR */}
-      <div
-        className="no-print"
-        style={{
-          background: "#f8f6f2", borderBottom: "1px solid rgba(26,35,50,.1)",
-          padding: "0 14px", height: 42, flexShrink: 0,
-          display: "flex", alignItems: "center", gap: 8,
-        }}
-      >
-        <select value={fuente.key} onChange={e => setFuente(FUENTES.find(f => f.key === e.target.value))}
-          style={{ padding: "3px 6px", border: "1px solid " + C.borderStrong, borderRadius: 5,
-                   fontSize: 13, background: "#f8f6f2", color: C.dark,
-                   fontFamily: "'Montserrat',sans-serif" }}>
-          {FUENTES.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
-        </select>
-
-        <select value={fontSize} onChange={e => setFontSize(Number(e.target.value))}
-          style={{ padding: "3px 4px", border: "1px solid " + C.borderStrong, borderRadius: 5,
-                   fontSize: 13, background: "#f8f6f2", color: C.dark,
-                   fontFamily: "'Montserrat',sans-serif", width: 48 }}>
-          {[8,9,10,11,12,13,14,16,18].map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-
-        <select value={margenKey} onChange={e => setMargenKey(e.target.value)}
-          style={{ padding: "3px 6px", border: "1px solid " + C.borderStrong, borderRadius: 5,
-                   fontSize: 13, background: "#f8f6f2", color: C.dark,
-                   fontFamily: "'Montserrat',sans-serif" }}>
-          <option value="protocolar">Protocolar</option>
-          <option value="noprotocolar">No protocolar</option>
-        </select>
-
-        <div style={{ flex: 1 }} />
-
-        <button
-          onClick={handleGenerar}
-          disabled={generating}
-          style={{
-            padding: "6px 18px", borderRadius: 7, border: "none",
-            background: generating ? C.muted : C.cerulean,
-            color: "#fff", cursor: generating ? "not-allowed" : "pointer",
-            fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 13,
-          }}
-        >
-          {generating ? "Generando..." : documentUrl ? "Regenerar documento" : "Generar documento"}
-        </button>
-      </div>
 
       {/* BODY */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -367,6 +333,16 @@ export function EditorScreen({ onGo, params = {} }) {
                 {instrumento.descripcion || "Sin especificar"}
               </div>
             </PanelSection>
+
+            <PanelSection label="Formato" onClick={() => setModal("formato")}>
+              <div style={{ fontSize: 14, color: C.dark, fontWeight: 600 }}>
+                {fuente.label} · {fontSize}pt
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(26,35,50,.6)", marginTop: 2 }}>
+                {margenKey === "protocolar" ? "Márgenes protocolar" : "Márgenes no protocolar"}
+                {" · "}{interlineado.label}
+              </div>
+            </PanelSection>
           </div>
 
           <div style={{ padding: 10, borderTop: "1px solid rgba(26,35,50,.1)" }}>
@@ -398,6 +374,13 @@ export function EditorScreen({ onGo, params = {} }) {
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={setInstrumento} onClose={() => setModal(null)}/>}
       {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={setProtocolo}   onClose={() => setModal(null)}/>}
       {modal === "fecha"       && <ModalFecha       fecha={fecha}             onApply={setFecha}       onClose={() => setModal(null)}/>}
+      {modal === "formato"     && <ModalFormato
+        fuente={fuente} fontSize={fontSize} margenKey={margenKey} interlineado={interlineado}
+        onApply={({ fuente: f, fontSize: fs, margenKey: mk, interlineado: il }) => {
+          setFuente(f); setFontSize(fs); setMargenKey(mk); setInterlineado(il);
+        }}
+        onClose={() => setModal(null)}
+      />}
 
       {modal === "estado" && (
         <Modal title="Estado del documento" onClose={() => setModal(null)}

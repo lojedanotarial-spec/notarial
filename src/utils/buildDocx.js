@@ -8,6 +8,7 @@ export async function buildDocxCertFirmaF08({
   margenKey = "protocolar",
   fontSize = 11,
   fuente,
+  interlineado,
 }) {
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2; // docx uses half-points
@@ -143,7 +144,7 @@ export async function buildDocxCertFirmaF08({
       children: [
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
-          spacing: { line: 480, lineRule: "exact" },
+          spacing: { line: interlineado?.line ?? 480, lineRule: interlineado?.rule ?? "exact" },
           children: mainRuns,
         }),
       ],
