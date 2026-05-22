@@ -18,7 +18,7 @@ import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 
-const ONLYOFFICE_URL = import.meta.env.VITE_ONLYOFFICE_URL || "http://192.168.100.7";
+const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
 
 function PanelSection({ label, onClick, children, alerta }) {
