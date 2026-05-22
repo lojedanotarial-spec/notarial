@@ -69,8 +69,9 @@ export function EditorScreen({ onGo, params = {} }) {
   const [generating,   setGenerating]   = useState(false);
   const [pluginTick,   setPluginTick]   = useState(0);
   const pluginWindowRef   = useRef(null);
-  const [isDirty,        setIsDirty]        = useState(false);
-  const [showProps,      setShowProps]      = useState(true);
+  const [isDirty,          setIsDirty]          = useState(false);
+  const [showProps,        setShowProps]        = useState(true);
+  const [showVarHighlight, setShowVarHighlight] = useState(true);
   const generatedOnceRef  = useRef(false);
   const handleGenerarRef  = useRef(null);
   const generateAfterRef  = useRef(false);
@@ -116,6 +117,7 @@ export function EditorScreen({ onGo, params = {} }) {
         partes, escribano, fecha, protocolo, instrumento,
         instrTexto, fechaLetras, gen,
         margenKey, fontSize, fuente, interlineado,
+        showVarHighlight,
       });
 
       const key      = `doc-${Date.now()}`;
@@ -142,7 +144,7 @@ export function EditorScreen({ onGo, params = {} }) {
     } finally {
       setGenerating(false);
     }
-  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado]);
+  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight]);
 
   // Keep ref updated so the mount effect can call the latest version
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);
@@ -161,7 +163,7 @@ export function EditorScreen({ onGo, params = {} }) {
       generateAfterRef.current = false;
       handleGenerarRef.current?.();
     }
-  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado]);
+  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight]);
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
@@ -404,6 +406,23 @@ export function EditorScreen({ onGo, params = {} }) {
               <circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/>
               <circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/>
               <circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+          </button>
+
+          <button
+            onClick={() => { generateAfterRef.current = true; setShowVarHighlight(v => !v); }}
+            title={showVarHighlight ? "Ocultar resaltado de variables" : "Mostrar resaltado de variables"}
+            style={{
+              width: 32, height: 32, borderRadius: 6, border: "none",
+              background: showVarHighlight ? "rgba(201,169,97,.2)" : "transparent",
+              color: showVarHighlight ? "#a07c30" : "rgba(26,35,50,.4)",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background .12s, color .12s",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>
             </svg>
           </button>
         </div>

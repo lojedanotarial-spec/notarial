@@ -9,6 +9,7 @@ export async function buildDocxCertFirmaF08({
   fontSize = 11,
   fuente,
   interlineado,
+  showVarHighlight = true,
 }) {
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2; // docx uses half-points
@@ -29,7 +30,7 @@ export async function buildDocxCertFirmaF08({
       color: "1A2332",
       size,
       font: fontName,
-      shading: { type: ShadingType.CLEAR, color: "auto", fill: "F0E6C8" },
+      ...(showVarHighlight ? { shading: { type: ShadingType.CLEAR, color: "auto", fill: "F0E6C8" } } : {}),
     });
 
   const r = (text, bold = false) =>
