@@ -29,7 +29,7 @@ export async function buildDocxCertFirmaF08({
       color: "1A2332",
       size,
       font: fontName,
-      shading: { type: ShadingType.CLEAR, color: "auto", fill: "C9A961" },
+      shading: { type: ShadingType.CLEAR, color: "auto", fill: "F0E6C8" },
     });
 
   const r = (text, bold = false) =>
