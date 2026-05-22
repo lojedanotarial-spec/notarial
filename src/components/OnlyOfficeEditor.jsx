@@ -47,9 +47,9 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       height: "100%",
       width:  "100%",
       events: {
-        onAppReady:      () => { console.log("[OO] onAppReady"); setReady(true); setReconnecting(false); },
-        onReady:         () => { console.log("[OO] onReady"); setReady(true); setReconnecting(false); },
-        onDocumentReady: () => { console.log("[OO] onDocumentReady"); setReady(true); setReconnecting(false); },
+        onAppReady:      () => { setReady(true); setReconnecting(false); },
+        onReady:         () => { setReady(true); setReconnecting(false); },
+        onDocumentReady: () => { setReady(true); setReconnecting(false); },
         onError: (e) => {
           console.error("[OO] error:", e?.data);
           setReady(false);
