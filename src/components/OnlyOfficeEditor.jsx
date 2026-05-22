@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
 export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serverUrl }) {
-  const editorRef       = useRef(null);
-  const reconnectTimer  = useRef(null);
-  const [ready, setReady]             = useState(false);
+  const editorRef        = useRef(null);
+  const reconnectTimer   = useRef(null);
+  const documentTitleRef = useRef(documentTitle);
+  const [ready, setReady]               = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
+
+  documentTitleRef.current = documentTitle;
 
   const createEditor = useCallback(() => {
     if (!window.DocsAPI || !documentUrl) return;
@@ -16,13 +19,12 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
 
     const container = document.getElementById("oo-container");
     if (container) container.innerHTML = "";
-    console.log("[OO] createEditor — url:", documentUrl?.slice(0, 60), "key:", documentKey);
 
     editorRef.current = new window.DocsAPI.DocEditor("oo-container", {
       document: {
         fileType: "docx",
         key:      documentKey,
-        title:    documentTitle || "Documento notarial",
+        title:    documentTitleRef.current || "Documento notarial",
         url:      documentUrl,
         permissions: { edit: true, print: true, download: true },
       },
@@ -45,22 +47,20 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       height: "100%",
       width:  "100%",
       events: {
-        onAppReady:     () => { console.log("[OO] onAppReady fired"); setReady(true); setReconnecting(false); },
-        onReady:        () => { console.log("[OO] onReady fired"); setReady(true); setReconnecting(false); },
-        onDocumentReady:() => { console.log("[OO] onDocumentReady fired"); setReady(true); setReconnecting(false); },
+        onAppReady:      () => { console.log("[OO] onAppReady"); setReady(true); setReconnecting(false); },
+        onReady:         () => { console.log("[OO] onReady"); setReady(true); setReconnecting(false); },
+        onDocumentReady: () => { console.log("[OO] onDocumentReady"); setReady(true); setReconnecting(false); },
         onError: (e) => {
           console.error("[OO] error:", e?.data);
           setReady(false);
           setReconnecting(true);
           if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-          reconnectTimer.current = setTimeout(() => {
-            createEditor();
-          }, 12000);
+          reconnectTimer.current = setTimeout(() => createEditor(), 12000);
         },
         onWarning: (e) => console.warn("[OO] warning:", e),
       },
     });
-  }, [documentUrl, documentKey, documentTitle]);
+  }, [documentUrl, documentKey, serverUrl]);
 
   useEffect(() => {
     if (!documentUrl || !serverUrl) return;
@@ -68,17 +68,13 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
     setReady(false);
     setReconnecting(false);
 
-    if (window.DocsAPI) {
-      createEditor();
-      return () => {
-        if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-        if (editorRef.current) {
-          try { editorRef.current.destroyEditor(); } catch {}
-          editorRef.current = null;
-        }
-      };
+    if (editorRef.current) {
+      try { editorRef.current.destroyEditor(); } catch {}
+      editorRef.current = null;
     }
 
+    // Siempre hacer reload limpio de api.js para evitar estado corrupto de OO
+    delete window.DocsAPI;
     const old = document.getElementById("oo-api-script");
     if (old) old.remove();
 
@@ -105,6 +101,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
         try { editorRef.current.destroyEditor(); } catch {}
         editorRef.current = null;
       }
+      delete window.DocsAPI;
       const s = document.getElementById("oo-api-script");
       if (s) s.remove();
     };
