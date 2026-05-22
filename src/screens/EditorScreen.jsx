@@ -71,8 +71,9 @@ export function EditorScreen({ onGo, params = {} }) {
   const pluginWindowRef   = useRef(null);
   const [isDirty,        setIsDirty]        = useState(false);
   const [showProps,      setShowProps]      = useState(true);
-  const generatedOnceRef = useRef(false);
-  const handleGenerarRef = useRef(null);
+  const generatedOnceRef  = useRef(false);
+  const handleGenerarRef  = useRef(null);
+  const generateAfterRef  = useRef(false);
 
   const [partes,      setPartes]      = useState([PARTE_VACIA()]);
   const [escribano,   setEscribano]   = useState(() => miUsuario ? {
@@ -152,9 +153,14 @@ export function EditorScreen({ onGo, params = {} }) {
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mark dirty whenever data changes after first generation
+  // Mark dirty whenever data changes after first generation; auto-generate si viene de un modal
   useEffect(() => {
-    if (generatedOnceRef.current) setIsDirty(true);
+    if (!generatedOnceRef.current) return;
+    setIsDirty(true);
+    if (generateAfterRef.current) {
+      generateAfterRef.current = false;
+      handleGenerarRef.current?.();
+    }
   }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado]);
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
@@ -242,6 +248,8 @@ export function EditorScreen({ onGo, params = {} }) {
     initialDocId: params?.docId,
   });
 
+  const applyAndGen = (setter) => (val) => { generateAfterRef.current = true; setter(val); };
+
   function handleGo(screen, p) {
     if (hayPendiente) {
       if (!window.confirm("Hay cambios sin guardar. ¿Querés salir igual?")) return;
@@ -259,7 +267,7 @@ export function EditorScreen({ onGo, params = {} }) {
         docTitle={docTitle}
         estado={estado}
         onStatus={() => setModal("estado")}
-        onExport={() => setModal("exportar")}
+
         indicadorGuardado={indicador}
         onGuardar={guardarAhora}
         onGo={handleGo}
@@ -403,14 +411,15 @@ export function EditorScreen({ onGo, params = {} }) {
       </div>
 
       {/* MODALES */}
-      {modal === "partes"      && <ModalPartes partes={partes} onApply={setPartes} onClose={() => setModal(null)} showRol={templateKey === "certFirmaF08"}/>}
-      {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={setEscribano}   onClose={() => setModal(null)}/>}
-      {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={setInstrumento} onClose={() => setModal(null)}/>}
-      {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={setProtocolo}   onClose={() => setModal(null)}/>}
-      {modal === "fecha"       && <ModalFecha       fecha={fecha}             onApply={setFecha}       onClose={() => setModal(null)}/>}
+      {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={templateKey === "certFirmaF08"}/>}
+      {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
+      {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
+      {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={applyAndGen(setProtocolo)}   onClose={() => setModal(null)}/>}
+      {modal === "fecha"       && <ModalFecha       fecha={fecha}             onApply={applyAndGen(setFecha)}       onClose={() => setModal(null)}/>}
       {modal === "formato"     && <ModalFormato
         fuente={fuente} fontSize={fontSize} margenKey={margenKey} interlineado={interlineado}
         onApply={({ fuente: f, fontSize: fs, margenKey: mk, interlineado: il }) => {
+          generateAfterRef.current = true;
           setFuente(f); setFontSize(fs); setMargenKey(mk); setInterlineado(il);
         }}
         onClose={() => setModal(null)}

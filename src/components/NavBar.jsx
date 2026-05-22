@@ -300,9 +300,9 @@ export function NavBar({
 
             {onGuardar && (
               <button onClick={onGuardar} style={{
-                border: "1px solid rgba(255,255,255,.15)", borderRadius: 6,
-                background: "transparent", color: "rgba(255,255,255,.6)",
-                fontSize: 11, fontWeight: 600, padding: "3px 10px",
+                border: "1px solid rgba(255,255,255,.25)", borderRadius: 6,
+                background: "transparent", color: "rgba(255,255,255,.75)",
+                fontSize: 12, fontWeight: 600, padding: "5px 12px",
                 fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
                 flexShrink: 0,
               }}>
@@ -312,9 +312,9 @@ export function NavBar({
 
             {onStatus && (
               <button onClick={onStatus} style={{
-                border: "1px solid " + ec.border, borderRadius: 20,
+                border: "1px solid " + ec.border, borderRadius: 6,
                 background: ec.bg, color: ec.color,
-                fontSize: 11, fontWeight: 600, padding: "2px 10px",
+                fontSize: 12, fontWeight: 600, padding: "5px 12px",
                 fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
                 letterSpacing: ".04em", textTransform: "uppercase", flexShrink: 0,
               }}>
@@ -324,26 +324,13 @@ export function NavBar({
 
             {onModelo && (
               <button onClick={onModelo} style={{
-                border: "1px solid rgba(255,255,255,.25)", borderRadius: 7,
-                background: "transparent", color: "rgba(255,255,255,.8)",
-                fontSize: 13, fontWeight: 600, padding: "5px 16px",
+                border: "1px solid rgba(255,255,255,.25)", borderRadius: 6,
+                background: "transparent", color: "rgba(255,255,255,.75)",
+                fontSize: 12, fontWeight: 600, padding: "5px 12px",
                 fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
-                letterSpacing: ".02em", flexShrink: 0,
+                flexShrink: 0,
               }}>
                 {modeloLabel || "Modelo"}
-              </button>
-            )}
-
-
-            {onExport && (
-              <button onClick={onExport} style={{
-                border: "none", borderRadius: 7, background: C.cerulean,
-                color: "#FDFCFA", fontSize: 13, fontWeight: 700,
-                padding: "5px 16px", fontFamily: "'Montserrat',sans-serif",
-                cursor: "pointer", letterSpacing: ".02em", flexShrink: 0,
-              }}>
-                                {exportLabel || "Exportar"}
-
               </button>
             )}
           </div>

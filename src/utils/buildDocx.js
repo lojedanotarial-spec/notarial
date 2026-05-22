@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import { Document, Packer, Paragraph, TextRun, AlignmentType, ShadingType } from "docx";
 
 const mm2twip = (mm) => Math.round(mm * 56.69);
 
@@ -26,9 +26,10 @@ export async function buildDocxCertFirmaF08({
     new TextRun({
       text: value ? String(value) : `{{${label}}}`,
       bold,
-      color: value ? "3A7CA5" : "C0392B",
+      color: "1A2332",
       size,
       font: fontName,
+      shading: { type: ShadingType.CLEAR, color: "auto", fill: "C9A961" },
     });
 
   const r = (text, bold = false) =>
