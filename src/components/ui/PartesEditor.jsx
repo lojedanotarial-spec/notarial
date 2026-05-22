@@ -72,13 +72,12 @@ function BuscadorDNI({ registroNumero, onSelect }) {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       setBuscando(true);
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("personas")
         .select("*")
         .eq("registro_id", registroNumero)
         .ilike("nro_doc", "%" + q + "%")
         .limit(5);
-      console.log("[BuscadorDNI] registroNumero:", registroNumero, "q:", q, "data:", data, "error:", error);
       setResultados(data || []);
       setBuscando(false);
     }, 300);
