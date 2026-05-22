@@ -16,6 +16,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
 
     const container = document.getElementById("oo-container");
     if (container) container.innerHTML = "";
+    console.log("[OO] createEditor — url:", documentUrl?.slice(0, 60), "key:", documentKey);
 
     editorRef.current = new window.DocsAPI.DocEditor("oo-container", {
       document: {
@@ -44,9 +45,9 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       height: "100%",
       width:  "100%",
       events: {
-        onAppReady:     () => { setReady(true); setReconnecting(false); },
-        onReady:        () => { setReady(true); setReconnecting(false); },
-        onDocumentReady:() => { setReady(true); setReconnecting(false); },
+        onAppReady:     () => { console.log("[OO] onAppReady fired"); setReady(true); setReconnecting(false); },
+        onReady:        () => { console.log("[OO] onReady fired"); setReady(true); setReconnecting(false); },
+        onDocumentReady:() => { console.log("[OO] onDocumentReady fired"); setReady(true); setReconnecting(false); },
         onError: (e) => {
           console.error("[OO] error:", e?.data);
           setReady(false);
