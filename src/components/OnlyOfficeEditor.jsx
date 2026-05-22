@@ -65,6 +65,29 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
   useEffect(() => {
     if (!documentUrl || !serverUrl) return;
 
+    // Si el editor ya está vivo, intentar refreshFile en lugar de recrear
+    if (editorRef.current) {
+      console.log("[OO] refreshFile →", documentKey);
+      try {
+        editorRef.current.refreshFile({
+          document: {
+            fileType: "docx",
+            key:      documentKey,
+            title:    documentTitleRef.current || "Documento notarial",
+            url:      documentUrl,
+            permissions: { edit: true, print: true, download: true },
+          },
+          documentType: "word",
+          editorConfig: { mode: "edit", lang: "es" },
+        });
+        return; // no recrear
+      } catch (e) {
+        console.warn("[OO] refreshFile falló, recreando:", e);
+        // cae al recreate completo
+      }
+    }
+
+    // Recreate completo (primera carga o tras fallo de refreshFile)
     setReady(false);
     setReconnecting(false);
 
@@ -73,7 +96,6 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       editorRef.current = null;
     }
 
-    // Siempre hacer reload limpio de api.js para evitar estado corrupto de OO
     delete window.DocsAPI;
     const old = document.getElementById("oo-api-script");
     if (old) old.remove();
