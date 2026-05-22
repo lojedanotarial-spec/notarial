@@ -183,9 +183,10 @@ function UserDropdown({ onClose, onPreferencias }) {
 
 export function NavBar({
   docTitle, screenTitle,
-  estado, onStatus, onExport, exportLabel,
+  estado, onStatus,
   onModelo, modeloLabel,
   indicadorGuardado, onGuardar,
+  showVarHighlight, onToggleVarHighlight,
   onGo, onVolver,
 }) {
   const { iniciales } = useAuth();
@@ -296,6 +297,20 @@ export function NavBar({
               }}>
                 {indicadorGuardado}
               </span>
+            )}
+
+            {onToggleVarHighlight && (
+              <button onClick={onToggleVarHighlight} style={{
+                border: "1px solid " + (showVarHighlight ? "rgba(201,169,97,.5)" : "rgba(255,255,255,.2)"),
+                borderRadius: 6,
+                background: showVarHighlight ? "rgba(201,169,97,.15)" : "transparent",
+                color: showVarHighlight ? "#c9a961" : "rgba(255,255,255,.45)",
+                fontSize: 12, fontWeight: 600, padding: "5px 12px",
+                fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                flexShrink: 0,
+              }}>
+                Variables
+              </button>
             )}
 
             {onGuardar && (
