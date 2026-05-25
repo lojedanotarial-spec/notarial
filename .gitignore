@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+scripts/.env
+scripts/*.json
+scripts/*.csv
+scripts/*.docx
+scripts/~$*
+scripts/raw_response.txt
