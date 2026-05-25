@@ -75,15 +75,18 @@ export function EditorScreen({ onGo, params = {} }) {
   const handleGenerarRef  = useRef(null);
   const generateAfterRef  = useRef(false);
 
-  const [partes,      setPartes]      = useState([PARTE_VACIA()]);
-  const [escribano,   setEscribano]   = useState(() => miUsuario ? {
+  const [partes,        setPartes]        = useState([PARTE_VACIA()]);
+  const [escribano,     setEscribano]     = useState(() => miUsuario ? {
     nombre:          miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
     caracter:        miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
     registro:        miUsuario.registro,
     circunscripcion: miUsuario.circunscripcion,
   } : ESCRIBANO_INI);
-  const [templateKey, setTemplateKey] = useState(params?.templateKey || "certFirmaF08");
-  const [fecha,       setFecha]       = useState(FECHA_HOY());
+  const [templateKey,   setTemplateKey]   = useState(params?.templateKey || "");
+  const [templateId,    setTemplateId]    = useState(params?.templateId  || null);
+  const [templateSlug,  setTemplateSlug]  = useState(params?.templateSlug || params?.templateKey || "cert_firma_f08");
+  const [templateNombre,setTemplateNombre]= useState("");
+  const [fecha,         setFecha]         = useState(FECHA_HOY());
   const [protocolo,   setProtocolo]   = useState(PROTOCOLO_INI);
   const [instrumento, setInstrumento] = useState(INSTRUMENTO_INI);
 
@@ -107,7 +110,22 @@ export function EditorScreen({ onGo, params = {} }) {
       });
   }, [miUsuario?.is_admin, registroActivo]);
 
+  // Cargar nombre del template desde Supabase
+  useEffect(() => {
+    if (!templateId) return;
+    supabase.from("templates").select("nombre, slug").eq("id", templateId).single()
+      .then(({ data }) => {
+        if (data) {
+          setTemplateNombre(data.nombre);
+          setTemplateSlug(data.slug || "");
+        }
+      });
+  }, [templateId]);
+
+  const SLUGS_CON_GENERADOR = ["cert_firma_f08", "certFirmaF08", "cert_firma", "certFirma"];
+
   const handleGenerar = useCallback(async () => {
+    if (!SLUGS_CON_GENERADOR.includes(templateSlug)) return;
     const instrTexto  = instrumento.descripcion || "el instrumento adjunto a la presente Actuación Notarial";
     const fechaLetras = diaLetras(fecha.dia) + " días del mes de " + MESES_LABEL[fecha.mes] + " de " + anioLetras(fecha.anio);
     setGenerating(true);
@@ -177,8 +195,10 @@ export function EditorScreen({ onGo, params = {} }) {
       if (c.fecha)       setFecha(c.fecha);
       if (c.protocolo)   setProtocolo(c.protocolo);
       if (c.instrumento) setInstrumento(c.instrumento);
-      if (data.estado)   setEstado(data.estado);
+      if (data.estado)      setEstado(data.estado);
       if (data.template_key) setTemplateKey(data.template_key);
+      if (data.template_id)  setTemplateId(data.template_id);
+      if (data.tipo_acto)    setTemplateSlug(data.tipo_acto);
     }
     cargar();
   }, [params.docId]);
@@ -235,15 +255,17 @@ export function EditorScreen({ onGo, params = {} }) {
     })
     .join(", ");
 
-  const docTitle = partesLabel
-    ? "Certificación de firma - " + partesLabel + " - " + fechaStr
-    : "Certificación de firma - nuevo documento";
+  const tipoLabel = templateNombre || templateKey || "Documento notarial";
+  const docTitle  = partesLabel
+    ? tipoLabel + " - " + partesLabel + " - " + fechaStr
+    : tipoLabel + " - nuevo documento";
 
   const { indicador, guardarAhora, hayPendiente } = useAutoguardado({
     titulo: docTitle,
     estado,
     contenido: contenidoParaGuardar,
     templateKey,
+    templateId,
     registroNumero: miUsuario?.registro || registroActivo,
     usuarioId: usuario?.id,
     initialDocId: params?.docId,
@@ -384,7 +406,7 @@ export function EditorScreen({ onGo, params = {} }) {
       </div>
 
       {/* MODALES */}
-      {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={templateKey === "certFirmaF08"}/>}
+      {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={["cert_firma_f08","certFirmaF08"].includes(templateSlug)}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
       {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={applyAndGen(setProtocolo)}   onClose={() => setModal(null)}/>}

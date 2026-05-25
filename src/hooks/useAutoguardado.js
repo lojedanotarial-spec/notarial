@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 
 const DEBOUNCE = 2000;
 
-export function useAutoguardado({ titulo, estado, contenido, templateKey, registroNumero, usuarioId, initialDocId }) {
+export function useAutoguardado({ titulo, estado, contenido, templateKey, templateId, registroNumero, usuarioId, initialDocId }) {
   const [docId,          setDocId]          = useState(initialDocId || null);
   const [guardando,      setGuardando]      = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState(null);
@@ -28,6 +28,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, regist
       estado,
       contenido,
       template_key: templateKey || "",
+      ...(templateId ? { template_id: templateId } : {}),
       registro_id:  registroNumero,
       usuario_id:   usuarioId,
       updated_at:   new Date().toISOString(),

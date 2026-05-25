@@ -1,16 +1,17 @@
 ﻿import { useState, useEffect } from "react";
-import { C, INSTRUMENTOS, ELABELS, inp } from "../constants";
+import { C, ELABELS, inp } from "../constants";
 import { NavBar } from "../components/NavBar";
 import { Fg } from "../components/ui/FormElements";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
 
-const TEMPLATES = [
-  { key: "certFirma",    label: "Certificación de Firma",       disponible: true  },
-  { key: "certFirmaF08", label: "Certificación de Firma - F08", disponible: true  },
-  { key: "poderEspecial",  label: "Poder especial",             disponible: false },
-  { key: "actaConst",      label: "Acta de constatación",       disponible: false },
-  { key: "autViaje",       label: "Autorización de viaje",      disponible: false },
+const FAMILIAS = [
+  { key: "cert",      label: "Certificaciones" },
+  { key: "poder",     label: "Poderes" },
+  { key: "acta",      label: "Actas notariales" },
+  { key: "escritura", label: "Escrituras públicas" },
+  { key: "traslado",  label: "Traslados" },
+  { key: "sucesion",  label: "Sucesiones" },
 ];
 
 const ESTADO_STYLE = {
@@ -61,13 +62,32 @@ function FilaDoc({ doc, onOpen, last }) {
 
 export function SelectorScreen({ onGo }) {
   const { usuario, registroActivo } = useAuth();
-  const [selected, setSelected] = useState("certFirmaF08");
-  const [familia,  setFamilia]  = useState("");
-  const [query,    setQuery]    = useState("");
-  const [abierto,  setAbierto]  = useState(false);
-  const [docs,     setDocs]     = useState([]);
-  const [cargando, setCargando] = useState(false);
+  const [selected,   setSelected]   = useState(null);       // template row completo
+  const [familia,    setFamilia]    = useState("");
+  const [query,      setQuery]      = useState("");
+  const [abierto,    setAbierto]    = useState(false);
+  const [docs,       setDocs]       = useState([]);
+  const [templates,  setTemplates]  = useState([]);
+  const [cargando,   setCargando]   = useState(false);
+  const [cargandoTpl,setCargandoTpl]= useState(true);
 
+  // Cargar todos los templates globales ordenados por frecuencia
+  useEffect(() => {
+    async function cargarTemplates() {
+      const { data } = await supabase
+        .from("templates")
+        .select("id, nombre, slug, familia, frecuencia, visible")
+        .is("registro_id", null)
+        .eq("visible", true)
+        .order("frecuencia", { ascending: true });
+      setTemplates(data || []);
+      if (data?.length) setSelected(data[0]);
+      setCargandoTpl(false);
+    }
+    cargarTemplates();
+  }, []);
+
+  // Cargar documentos recientes
   useEffect(() => {
     if (!usuario || !abierto) return;
     async function cargar() {
@@ -86,7 +106,9 @@ export function SelectorScreen({ onGo }) {
     cargar();
   }, [usuario, abierto]);
 
-  const filtrados = query.trim() === ""
+  const frecuentes = templates.filter(t => t.frecuencia <= 5);
+  const porFamilia = familia ? templates.filter(t => t.familia === familia) : [];
+  const filtrados  = query.trim() === ""
     ? docs.slice(0, 5)
     : docs.filter(d => d.titulo?.toLowerCase().includes(query.toLowerCase()));
 
@@ -99,6 +121,7 @@ export function SelectorScreen({ onGo }) {
       <div style={{ flex:1, overflowY:"auto", padding:"20px 24px 100px" }}>
         <div style={{ maxWidth:900, margin:"0 auto", display:"flex", flexDirection:"column", gap:14 }}>
 
+          {/* Frecuentes */}
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
             <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:12 }}>
               <svg width="12" height="12" viewBox="0 0 16 16" fill="#c9a961">
@@ -106,33 +129,30 @@ export function SelectorScreen({ onGo }) {
               </svg>
               <div style={{ fontSize:11, fontWeight:600, letterSpacing:".07em",
                             textTransform:"uppercase", color:"rgba(26,35,50,1)" }}>
-                Favoritos
+                Frecuentes
               </div>
             </div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {TEMPLATES.map(t => (
-                <button key={t.key} disabled={!t.disponible}
-                  onClick={() => t.disponible && setSelected(t.key)}
+              {cargandoTpl ? (
+                <span style={{ fontSize:13, color:"rgba(26,35,50,.4)" }}>Cargando...</span>
+              ) : frecuentes.map(t => (
+                <button key={t.id}
+                  onClick={() => setSelected(t)}
                   style={{
-                    padding:"7px 14px", borderRadius:20,
-                    cursor: t.disponible ? "pointer" : "not-allowed",
-                    border: "1px solid " + (!t.disponible ? "rgba(26,35,50,.08)" : selected === t.key ? C.cerulean : "rgba(26,35,50,.18)"),
-                    background: !t.disponible ? "rgba(26,35,50,.03)" : selected === t.key ? C.ceruleanLight : "transparent",
-                    color: !t.disponible ? "rgba(26,35,50,.3)" : selected === t.key ? "#1f4862" : "#1a2332",
-                    fontSize:13, fontWeight: selected === t.key ? 600 : 400,
+                    padding:"7px 14px", borderRadius:20, cursor:"pointer",
+                    border: "1px solid " + (selected?.id === t.id ? C.cerulean : "rgba(26,35,50,.18)"),
+                    background: selected?.id === t.id ? C.ceruleanLight : "transparent",
+                    color: selected?.id === t.id ? "#1f4862" : "#1a2332",
+                    fontSize:13, fontWeight: selected?.id === t.id ? 600 : 400,
                     fontFamily:"'Montserrat',sans-serif", transition:"all .12s",
-                    display:"flex", alignItems:"center", gap:6,
                   }}>
-                  {t.label}
-                  {!t.disponible && (
-                    <span style={{ fontSize:9, fontWeight:600, letterSpacing:".05em",
-                                   color:"rgba(26,35,50,1)", textTransform:"uppercase" }}>pronto</span>
-                  )}
+                  {t.nombre}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Buscar por familia */}
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
             <div style={{ fontSize:11, fontWeight:600, letterSpacing:".07em", textTransform:"uppercase",
                           color:"rgba(26,35,50,1)", marginBottom:12 }}>
@@ -140,23 +160,23 @@ export function SelectorScreen({ onGo }) {
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <Fg label="Familia">
-                <select style={inp} value={familia} onChange={e => setFamilia(e.target.value)}>
+                <select style={inp} value={familia} onChange={e => { setFamilia(e.target.value); }}>
                   <option value="">Seleccionar...</option>
-                  <option value="cert">Certificaciones</option>
-                  <option value="acta">Actas notariales</option>
-                  <option value="escritura">Escrituras publicas</option>
-                  <option value="traslado">Traslados</option>
+                  {FAMILIAS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
                 </select>
               </Fg>
               <Fg label="Instrumento">
-                <select style={inp} disabled={!familia} onChange={e => setSelected(e.target.value)}>
-                  <option>- elegi familia primero</option>
-                  {familia && INSTRUMENTOS[familia]?.map(i => <option key={i}>{i}</option>)}
+                <select style={inp} disabled={!familia}
+                  value={selected?.id || ""}
+                  onChange={e => setSelected(porFamilia.find(t => t.id === e.target.value) || null)}>
+                  <option value="">— elegí familia primero</option>
+                  {porFamilia.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                 </select>
               </Fg>
             </div>
           </div>
 
+          {/* Documentos recientes */}
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
             <button onClick={() => setAbierto(!abierto)}
               style={{ width:"100%", padding:"13px 16px", display:"flex", alignItems:"center",
@@ -211,7 +231,7 @@ export function SelectorScreen({ onGo }) {
                     ))
                   ) : (
                     <div style={{ padding:"20px 16px", textAlign:"center", color:"rgba(26,35,50,.5)", fontSize:13 }}>
-                      {query ? "No se encontraron documentos para \"" + query + "\"" : "No hay documentos todavía."}
+                      {query ? `No se encontraron documentos para "${query}"` : "No hay documentos todavía."}
                     </div>
                   )}
                 </div>
@@ -224,15 +244,18 @@ export function SelectorScreen({ onGo }) {
 
       <div style={{ position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)" }}>
         <button
-          onClick={() => onGo("editor", { templateKey: selected })}
+          disabled={!selected}
+          onClick={() => selected && onGo("editor", { templateId: selected.id, templateSlug: selected.slug })}
           onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
           onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
           style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 24px",
-                   background:C.cerulean, color:"#fff", border:"none", borderRadius:28,
+                   background: selected ? C.cerulean : "rgba(26,35,50,.2)",
+                   color:"#fff", border:"none", borderRadius:28,
                    fontSize:14, fontWeight:700, fontFamily:"'Montserrat',sans-serif",
-                   cursor:"pointer", boxShadow:"0 4px 20px rgba(58,124,165,.45)",
+                   cursor: selected ? "pointer" : "not-allowed",
+                   boxShadow: selected ? "0 4px 20px rgba(58,124,165,.45)" : "none",
                    transition:"transform .1s" }}>
-          Abrir en editor
+          {selected ? `Crear: ${selected.nombre}` : "Seleccioná un instrumento"}
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" strokeWidth="2">
             <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
