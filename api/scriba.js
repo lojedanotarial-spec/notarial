@@ -277,11 +277,13 @@ export default async function handler(req, res) {
       }
 
       const { data, error } = await buildPersonasQuery(true);
+      console.log("[scriba] buscar_personas — registroId:", registroId, "input:", JSON.stringify(input), "resultado con filtro:", data?.length ?? "error", error?.message);
       if (error) return { error: error.message, _debug: { registroId, input } };
       if (data?.length > 0) return { total: data.length, personas: data };
 
-      // fallback sin filtro de registro (para debug y robustez)
+      // fallback sin filtro de registro
       const { data: d2, error: e2 } = await buildPersonasQuery(false);
+      console.log("[scriba] buscar_personas — fallback sin registro_id, resultado:", d2?.length ?? "error", e2?.message);
       if (e2) return { error: e2.message, _debug: { registroId, input } };
       return {
         total: d2?.length || 0,
