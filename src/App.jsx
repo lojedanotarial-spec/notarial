@@ -31,6 +31,7 @@ function AppRouter() {
   const { session, cargando, usuario, perfilCargado, logout, setRegistroActivo } = useAuth();
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
+  const [scribaOpen, setScribaOpen] = useState(false);
 
   const handleGo = (targetScreen, targetParams = {}) => {
     if (targetParams.registroActivo) {
@@ -81,8 +82,6 @@ function AppRouter() {
       }}>Cerrar sesión</button>
     </div>
   );
-
-  const [scribaOpen, setScribaOpen] = useState(false);
 
   return (
     <>
