@@ -57,7 +57,14 @@
       if (!e.data || e.data.type !== "oo-plugin-data") return;
       if (e.data.action === "insertar") {
         if (window.Asc && window.Asc.plugin) {
-          window.Asc.plugin.executeMethod("InputText", [{ sText: e.data.texto || "" }]);
+          var lineas = (e.data.texto || "").split("\n");
+          // Embeber el texto en el cuerpo de la función (callCommand serializa con toString)
+          var parrafosCodigo = lineas.map(function(l, i) {
+            return "var p" + i + "=Api.CreateParagraph();p" + i + ".AddText(" + JSON.stringify(l) + ");arr.push(p" + i + ");";
+          }).join("");
+          var fnStr = "(function(){var arr=[];" + parrafosCodigo + "Api.GetDocument().InsertContent(arr);})";
+          // eslint-disable-next-line no-eval
+          window.Asc.plugin.callCommand(eval(fnStr), false);
         }
         return;
       }
