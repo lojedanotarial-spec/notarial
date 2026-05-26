@@ -6,6 +6,7 @@ import { SelectorScreen } from "./screens/SelectorScreen";
 import { EditorScreen }  from "./screens/EditorScreen";
 import { BulkScreen }    from "./screens/BulkScreen";
 import { AdminScreen }   from "./screens/AdminScreen";
+import { ScribaPanel }   from "./components/ScribaPanel";
 
 
 const globalStyles = [
@@ -81,6 +82,8 @@ function AppRouter() {
     </div>
   );
 
+  const [scribaOpen, setScribaOpen] = useState(false);
+
   return (
     <>
       {screen === "home"     && <HomeScreen     onGo={handleGo} />}
@@ -88,6 +91,31 @@ function AppRouter() {
       {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} />}
       {screen === "bulk"     && <BulkScreen     onGo={handleGo} />}
       {screen === "admin"    && <AdminScreen    onGo={handleGo} />}
+
+      {/* Botón flotante Scriba */}
+      <button
+        onClick={() => setScribaOpen(o => !o)}
+        title="Scriba — asistente notarial"
+        style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 199,
+          width: 52, height: 52, borderRadius: "50%",
+          background: scribaOpen ? "#3a7ca5" : "#1a2332",
+          border: "2px solid " + (scribaOpen ? "rgba(126,200,227,.5)" : "rgba(255,255,255,.15)"),
+          color: "#fff", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 20px rgba(0,0,0,.35)",
+          transition: "all .2s",
+        }}
+        onMouseEnter={e => { if (!scribaOpen) e.currentTarget.style.background = "#3a7ca5"; }}
+        onMouseLeave={e => { if (!scribaOpen) e.currentTarget.style.background = "#1a2332"; }}
+      >
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+          <path d="M3 12L5 7l3 3 3-5 2 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="8" cy="2.5" r="1.5" fill="currentColor" opacity=".8"/>
+        </svg>
+      </button>
+
+      {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} />}
     </>
   );
 }

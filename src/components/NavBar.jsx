@@ -2,7 +2,6 @@
 import { C, ELABELS } from "../constants";
 import { useAuth } from "../context/AuthContext";
 import { Modal } from "./Modal";
-import { ScribaPanel } from "./ScribaPanel";
 
 const ESTADO_COLORS = {
   borrador: { bg: "rgba(255,255,255,.08)", color: "rgba(255, 138, 138, 0.6)",  border: "rgba(255,255,255,.15)" },
@@ -191,9 +190,8 @@ export function NavBar({
   onGo, onVolver,
 }) {
   const { iniciales } = useAuth();
-  const [menuOpen,   setMenuOpen]   = useState(false);
-  const [prefOpen,   setPrefOpen]   = useState(false);
-  const [scribaOpen, setScribaOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [prefOpen, setPrefOpen] = useState(false);
   const ec = ESTADO_COLORS[estado] || ESTADO_COLORS.borrador;
   const tieneSegundaFila = docTitle || screenTitle;
 
@@ -229,31 +227,7 @@ export function NavBar({
           <span style={{ color: "rgba(253,252,250,.3)", fontSize: 12 }}>|</span>
           <span style={{ color: "rgba(255,255,255,.45)", fontSize: 10, fontWeight: 600, letterSpacing: ".12em", textTransform: "uppercase" }}>Fe pública digital</span>
 
-          {/* Botón Scriba */}
-          <button
-            onClick={() => setScribaOpen(o => !o)}
-            style={{
-              marginLeft: "auto",
-              display: "flex", alignItems: "center", gap: 6,
-              background: scribaOpen ? "rgba(58,124,165,.25)" : "rgba(255,255,255,.07)",
-              border: "1px solid " + (scribaOpen ? "rgba(58,124,165,.5)" : "rgba(255,255,255,.12)"),
-              borderRadius: 7, padding: "5px 11px",
-              color: scribaOpen ? "#7ec8e3" : "rgba(255,255,255,.65)",
-              fontSize: 12, fontWeight: 600,
-              fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
-              transition: "all .15s",
-            }}
-            onMouseEnter={e => { if (!scribaOpen) e.currentTarget.style.background = "rgba(255,255,255,.12)"; }}
-            onMouseLeave={e => { if (!scribaOpen) e.currentTarget.style.background = "rgba(255,255,255,.07)"; }}
-          >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-              <path d="M3 12L5 7l3 3 3-5 2 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="8" cy="2.5" r="1.5" fill="currentColor" opacity=".8"/>
-            </svg>
-            Scriba
-          </button>
-
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative", marginLeft: "auto" }}>
             <button
               onClick={() => setMenuOpen(o => !o)}
               style={{
@@ -378,8 +352,7 @@ export function NavBar({
         )}
       </nav>
 
-      {prefOpen   && <ModalPreferencias onClose={() => setPrefOpen(false)} />}
-      {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} />}
+      {prefOpen && <ModalPreferencias onClose={() => setPrefOpen(false)} />}
     </>
   );
 }
