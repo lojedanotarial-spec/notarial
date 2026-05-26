@@ -19,9 +19,8 @@ function ScribaAvatar({ size = 26 }) {
       flexShrink: 0,
     }}>
       <span style={{
-        fontFamily: "'Merriweather', serif",
-        fontStyle: "italic",
-        fontSize: Math.round(size * 0.58),
+        fontFamily: "'Carattere', cursive",
+        fontSize: Math.round(size * 0.68),
         color: "#c9a961",
         lineHeight: 1,
         userSelect: "none",
@@ -184,7 +183,7 @@ export function ScribaPanel({ onClose }) {
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{
                 color: "#FDFCFA", fontSize: 15,
-                fontFamily: "'Merriweather', serif", fontStyle: "italic", fontWeight: 700,
+                fontFamily: "'Carattere', cursive", fontWeight: 400,
               }}>Scriba</span>
               <SparkleIcon size={8} color="#7ec8e3" />
             </div>

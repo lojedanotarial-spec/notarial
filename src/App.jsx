@@ -10,7 +10,7 @@ import { ScribaPanel }   from "./components/ScribaPanel";
 
 
 const globalStyles = [
-  "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');",
+  "@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Carattere&display=swap');",
   "*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }",
   "html, body, #root { height: 100%; overflow: hidden; }",
   "body { background: #f0ece3; font-family: 'Montserrat', sans-serif; }",
@@ -109,9 +109,8 @@ function AppRouter() {
         onMouseLeave={e => { e.currentTarget.style.borderColor = scribaOpen ? "rgba(201,169,97,.55)" : "rgba(201,169,97,.25)"; }}
       >
         <span style={{
-          fontFamily: "'Merriweather', serif",
-          fontStyle: "italic",
-          fontSize: 24,
+          fontFamily: "'Carattere', cursive",
+          fontSize: 26,
           color: "#c9a961",
           lineHeight: 1,
           userSelect: "none",
