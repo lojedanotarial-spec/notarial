@@ -24,6 +24,8 @@ function ScribaAvatar({ size = 26 }) {
         color: "#c9a961",
         lineHeight: 1,
         userSelect: "none",
+        transform: "translate(1px, 1px)",
+        display: "block",
       }}>S</span>
     </div>
   );

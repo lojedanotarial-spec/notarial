@@ -119,6 +119,8 @@ function AppRouter() {
           color: "#c9a961",
           lineHeight: 1,
           userSelect: "none",
+          transform: "translate(2px, 2px)",
+          display: "block",
         }}>S</span>
       </button>
 
