@@ -262,7 +262,7 @@ export default async function handler(req, res) {
     if (name === "buscar_personas") {
       function buildPersonasQuery(withRegistro) {
         let q = sb.from("personas")
-          .select("apellido, nombre, tipo_doc, nro_doc, cuit, fecha_nac, estado_civil, nacionalidad, calle, numero, piso, dpto, localidad, departamento, representaciones")
+          .select("*")
           .limit(8);
         if (withRegistro && registroId) q = q.eq("registro_id", String(registroId));
         if (input.nro_doc) {
