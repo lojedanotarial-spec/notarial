@@ -266,8 +266,9 @@ export default async function handler(req, res) {
       if (registroId) q = q.eq("registro_id", registroId);
       if (input.nombre) q = q.or(`apellido.ilike.%${input.nombre}%,nombre.ilike.%${input.nombre}%`);
       if (input.nro_doc) {
-        const docNum = input.nro_doc.replace(/[.\s-]/g, "");
-        q = q.ilike("nro_doc", `%${docNum}%`);
+        const docNum      = input.nro_doc.replace(/[.\s-]/g, "");
+        const docFormated = docNum.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        q = q.or(`nro_doc.eq.${docNum},nro_doc.eq.${docFormated}`);
       }
       const { data, error } = await q;
       if (error) return { error: error.message };
