@@ -31,7 +31,14 @@ const globalStyles = [
   "}",
   ".scriba-fab { animation: scriba-pulse 3.5s ease-in-out infinite; }",
   ".scriba-fab.open { animation: none; }",
-  ".scriba-fab:hover { animation: none !important; box-shadow: 0 4px 28px rgba(0,0,0,.5), 0 0 26px 8px rgba(201,169,97,.4) !important; border-color: rgba(201,169,97,.8) !important; }",
+  ".scriba-fab:hover { animation: none !important; box-shadow: 0 4px 28px rgba(0,0,0,.5), 0 0 26px 8px rgba(201,169,97,.4) !important; }",
+  "@keyframes scriba-label {",
+  "  0%   { opacity: 0; transform: translateX(8px); }",
+  "  12%  { opacity: 1; transform: translateX(0);   }",
+  "  80%  { opacity: 1; transform: translateX(0);   }",
+  "  100% { opacity: 0; transform: translateX(8px); }",
+  "}",
+  ".scriba-label { animation: scriba-label 4s ease forwards; pointer-events: none; }",
 ].join("\n");
 
 function AppRouter() {
@@ -39,6 +46,12 @@ function AppRouter() {
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
   const [scribaOpen, setScribaOpen] = useState(false);
+  const [scribaLabel, setScribaLabel] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setScribaLabel(false), 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleGo = (targetScreen, targetParams = {}) => {
     if (targetParams.registroActivo) {
@@ -97,6 +110,26 @@ function AppRouter() {
       {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} />}
       {screen === "bulk"     && <BulkScreen     onGo={handleGo} />}
       {screen === "admin"    && <AdminScreen    onGo={handleGo} />}
+
+      {/* Label de descubrimiento */}
+      {scribaLabel && !scribaOpen && (
+        <div className="scriba-label no-print" style={{
+          position: "fixed", bottom: 37, right: 88, zIndex: 198,
+          background: "#1a2332",
+          border: "1px solid rgba(201,169,97,.35)",
+          color: "#FDFCFA", fontSize: 13, fontWeight: 600,
+          fontFamily: "'Montserrat', sans-serif",
+          padding: "7px 14px 7px 11px",
+          borderRadius: 20, whiteSpace: "nowrap",
+          boxShadow: "0 4px 16px rgba(0,0,0,.25)",
+          display: "flex", alignItems: "center", gap: 7,
+        }}>
+          <svg width="8" height="8" viewBox="0 0 10 10" fill="#7ec8e3">
+            <path d="M5 0L5.7 4.3 10 5 5.7 5.7 5 10 4.3 5.7 0 5 4.3 4.3 5 0Z"/>
+          </svg>
+          Scriba
+        </div>
+      )}
 
       {/* Botón flotante Scriba */}
       <button
