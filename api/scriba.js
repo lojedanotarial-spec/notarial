@@ -264,8 +264,11 @@ export default async function handler(req, res) {
         .select("apellido, nombre, tipo_doc, nro_doc, cuit, fecha_nac, estado_civil, nacionalidad, calle, numero, piso, dpto, localidad, departamento, representaciones")
         .limit(8);
       if (registroId) q = q.eq("registro_id", registroId);
-      if (input.nombre) q = q.ilike("apellido", `%${input.nombre}%`);
-      if (input.nro_doc) q = q.eq("nro_doc", input.nro_doc);
+      if (input.nombre) q = q.or(`apellido.ilike.%${input.nombre}%,nombre.ilike.%${input.nombre}%`);
+      if (input.nro_doc) {
+        const docNum = input.nro_doc.replace(/[.\s-]/g, "");
+        q = q.ilike("nro_doc", `%${docNum}%`);
+      }
       const { data, error } = await q;
       if (error) return { error: error.message };
       return { total: data?.length || 0, personas: data || [] };

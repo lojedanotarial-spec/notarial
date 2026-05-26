@@ -196,7 +196,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
           mensaje: pregunta,
           mensajes_anteriores: mensajes,
           contexto: contexto || null,
-          registroId: registroActivo?.id || null,
+          registroId: registroActivo || null,
         }),
       });
 
