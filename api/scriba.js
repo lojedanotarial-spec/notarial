@@ -85,7 +85,7 @@ const DB_TOOLS = [
 
 const ABRIR_EDITOR_TOOL = [{
   name: "abrir_editor",
-  description: "Abre el editor notarial con el template del instrumento indicado. Usá esta herramienta cuando el escribano pide crear, abrir o trabajar en un tipo específico de instrumento — por ejemplo 'quiero hacer una compraventa', 'abrí una certificación de firma', 'necesito un poder especial'.",
+  description: "Abre el editor notarial con el template del instrumento indicado. Usá esta herramienta cuando el escribano pide crear, abrir o trabajar en un tipo específico de instrumento. Si mencionó personas, buscalas primero con buscar_personas para tener los datos completos y pasarlas en 'partes'.",
   input_schema: {
     type: "object",
     properties: {
@@ -95,7 +95,42 @@ const ABRIR_EDITOR_TOOL = [{
       },
       mensaje: {
         type: "string",
-        description: "Mensaje breve y directo para mostrar al escribano antes de abrir el editor (ej: 'Perfecto, te abro la certificación de firma.')",
+        description: "Mensaje breve y directo para mostrar al escribano antes de abrir el editor.",
+      },
+      partes: {
+        type: "array",
+        description: "Personas a pre-cargar como partes del acto. Usar los objetos devueltos por buscar_personas tal como vienen, agregando el campo 'rol' si se sabe (ej: 'requirente', 'vendedor', 'comprador', 'poderdante', 'apoderado', 'donante', 'donatario').",
+        items: {
+          type: "object",
+          properties: {
+            apellido:    { type: "string" },
+            nombre:      { type: "string" },
+            genero:      { type: "string", description: "M o F" },
+            tipo_doc:    { type: "string", description: "DNI, LC, LE, PAS, etc." },
+            nro_doc:     { type: "string" },
+            cuit:        { type: "string" },
+            fecha_nac:   { type: "string" },
+            estado_civil:{ type: "string" },
+            nacionalidad:{ type: "string" },
+            calle:       { type: "string" },
+            numero:      { type: "string" },
+            piso:        { type: "string" },
+            dpto:        { type: "string" },
+            localidad:   { type: "string" },
+            departamento:{ type: "string" },
+            rol:         { type: "string", description: "Rol en el acto" },
+          },
+        },
+      },
+      fecha: {
+        type: "object",
+        description: "Fecha del acto. Si no se especificó, omitir (se usa la fecha de hoy).",
+        properties: {
+          dia:    { type: "number" },
+          mes:    { type: "number", description: "0=enero, 11=diciembre" },
+          anio:   { type: "number" },
+          ciudad: { type: "string" },
+        },
       },
     },
     required: ["slug", "mensaje"],
@@ -324,11 +359,18 @@ export default async function handler(req, res) {
 
         const abrirEditor = toolUses.find(t => t.name === "abrir_editor");
         if (abrirEditor) {
-          const { slug, mensaje: msg } = abrirEditor.input;
+          const { slug, mensaje: msg, partes, fecha } = abrirEditor.input;
           const template = TEMPLATES_MAP[slug];
           return res.status(200).json({
             respuesta: msg,
-            accion: { tipo: "abrir_editor", slug, templateId: template?.id || null, nombre: template?.nombre || slug },
+            accion: {
+              tipo: "abrir_editor",
+              slug,
+              templateId: template?.id || null,
+              nombre: template?.nombre || slug,
+              partes: partes?.length ? partes : null,
+              fecha: fecha || null,
+            },
           });
         }
 

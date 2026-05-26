@@ -79,7 +79,33 @@ function Mensaje({ msg, onGo }) {
         </div>
         {!esUser && accion?.tipo === "abrir_editor" && (
           <button
-            onClick={() => onGo?.("editor", { templateSlug: accion.slug, templateId: accion.templateId })}
+            onClick={() => {
+              const partes = accion.partes?.map(p => ({
+                id:          Date.now() + Math.random(),
+                apellido:    p.apellido    || "",
+                nombre:      p.nombre      || "",
+                genero:      p.genero      || "F",
+                nacionalidad:p.nacionalidad|| "argentina",
+                tipoDoc:     p.tipo_doc    || "DNI",
+                nroDoc:      p.nro_doc     || "",
+                cuit:        p.cuit        || "",
+                fechaNac:    p.fecha_nac   || "",
+                estadoCivil: p.estado_civil|| "",
+                calle:       p.calle       || "",
+                numero:      p.numero      || "",
+                piso:        p.piso        || "",
+                dpto:        p.dpto        || "",
+                localidad:   p.localidad   || "",
+                departamento:p.departamento|| "Ciudad",
+                rol:         p.rol         || "",
+              }));
+              onGo?.("editor", {
+                templateSlug: accion.slug,
+                templateId:   accion.templateId,
+                partes:       partes?.length ? partes : undefined,
+                fecha:        accion.fecha  || undefined,
+              });
+            }}
             style={{
               marginTop: 8, display: "flex", alignItems: "center", gap: 6,
               background: C.cerulean, border: "none",

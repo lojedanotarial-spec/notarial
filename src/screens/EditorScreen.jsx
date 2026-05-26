@@ -75,7 +75,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const handleGenerarRef  = useRef(null);
   const generateAfterRef  = useRef(false);
 
-  const [partes,        setPartes]        = useState([PARTE_VACIA()]);
+  const [partes,        setPartes]        = useState(() => params?.partes?.length ? params.partes : [PARTE_VACIA()]);
   const [escribano,     setEscribano]     = useState(() => miUsuario ? {
     nombre:          miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
     caracter:        miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
@@ -86,7 +86,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const [templateId,    setTemplateId]    = useState(params?.templateId  || null);
   const [templateSlug,  setTemplateSlug]  = useState(params?.templateSlug || params?.templateKey || "cert_firma_f08");
   const [templateNombre,setTemplateNombre]= useState("");
-  const [fecha,         setFecha]         = useState(FECHA_HOY());
+  const [fecha,         setFecha]         = useState(() => params?.fecha ?? FECHA_HOY());
   const [protocolo,   setProtocolo]   = useState(PROTOCOLO_INI);
   const [instrumento, setInstrumento] = useState(INSTRUMENTO_INI);
 
