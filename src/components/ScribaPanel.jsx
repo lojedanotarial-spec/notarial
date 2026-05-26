@@ -11,23 +11,11 @@ function SparkleIcon({ size = 10, color = "#7ec8e3" }) {
 
 function ScribaAvatar({ size = 26 }) {
   return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: C.dark,
-      border: "1.5px solid rgba(201,169,97,.45)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      flexShrink: 0,
-    }}>
-      <span style={{
-        fontFamily: "'Carattere', cursive",
-        fontSize: Math.round(size * 0.68),
-        color: "#c9a961",
-        lineHeight: 1,
-        userSelect: "none",
-        transform: "translate(1px, 1px)",
-        display: "block",
-      }}>S</span>
-    </div>
+    <img
+      src="/Scriba-icon-1.png"
+      alt="Scriba"
+      style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, display: "block" }}
+    />
   );
 }
 

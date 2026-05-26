@@ -106,22 +106,12 @@ function AppRouter() {
         style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 199,
           width: 56, height: 56, borderRadius: "50%",
-          background: "#1a2332",
-          border: "2px solid " + (scribaOpen ? "rgba(201,169,97,.65)" : "rgba(201,169,97,.35)"),
-          cursor: "pointer",
+          background: "none", border: "none",
+          cursor: "pointer", padding: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          transition: "border-color .2s",
         }}
       >
-        <span style={{
-          fontFamily: "'Carattere', cursive",
-          fontSize: 32,
-          color: "#c9a961",
-          lineHeight: 1,
-          userSelect: "none",
-          transform: "translate(2px, 2px)",
-          display: "block",
-        }}>S</span>
+        <img src="/Scriba-icon-1.png" alt="Scriba" style={{ width: 44, height: 44, borderRadius: "50%" }} />
       </button>
 
       {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} />}
