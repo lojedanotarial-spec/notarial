@@ -133,7 +133,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mensaje, mensajes_anteriores = [] } = req.body;
+  const { mensaje, mensajes_anteriores = [], contexto = null } = req.body;
 
   if (!mensaje?.trim()) {
     return res.status(400).json({ error: "Mensaje requerido" });
@@ -145,6 +145,10 @@ export default async function handler(req, res) {
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+  const contextoNote = contexto
+    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}\nEl escribano está trabajando en este documento ahora mismo. Podés referenciarlo en tus respuestas cuando sea relevante.`
+    : "";
+
   const messages = [
     ...mensajes_anteriores.map(m => ({ role: m.role, content: m.content })),
     { role: "user", content: mensaje },
@@ -154,7 +158,7 @@ export default async function handler(req, res) {
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+      system: SYSTEM_PROMPT + contextoNote,
       messages,
     });
 

@@ -56,7 +56,7 @@ function PanelSection({ label, onClick, children, alerta }) {
 }
 
 
-export function EditorScreen({ onGo, params = {} }) {
+export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const { miUsuario, miembros, registroActivo } = useAuth();
   const [modal,        setModal]        = useState(null);
   const [estado,       setEstado]       = useState("borrador");
@@ -259,6 +259,12 @@ export function EditorScreen({ onGo, params = {} }) {
   const docTitle  = partesLabel
     ? tipoLabel + " - " + partesLabel + " - " + fechaStr
     : tipoLabel + " - nuevo documento";
+
+  useEffect(() => {
+    if (!onScribaContexto) return;
+    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado });
+    return () => onScribaContexto(null);
+  }, [tipoLabel, partesLabel, fechaStr, estado]);
 
   const { indicador, guardarAhora, hayPendiente } = useAutoguardado({
     titulo: docTitle,

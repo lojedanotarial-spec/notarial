@@ -87,7 +87,7 @@ const SUGERENCIAS_GENERAR = [
   "Generame el acta de requerimiento para certificación de firmas",
 ];
 
-export function ScribaPanel({ onClose }) {
+export function ScribaPanel({ onClose, contexto }) {
   const [mensajes,  setMensajes]  = useState([]);
   const [input,     setInput]     = useState("");
   const [cargando,  setCargando]  = useState(false);
@@ -120,6 +120,7 @@ export function ScribaPanel({ onClose }) {
         body: JSON.stringify({
           mensaje: pregunta,
           mensajes_anteriores: mensajes,
+          contexto: contexto || null,
         }),
       });
 
@@ -188,6 +189,16 @@ export function ScribaPanel({ onClose }) {
             <div style={{ color: "rgba(255,255,255,.4)", fontSize: 12, marginTop: 1 }}>
               Asistente notarial · Mendoza, Argentina
             </div>
+            {contexto && (
+              <div style={{
+                marginTop: 5, fontSize: 11,
+                color: "#c9a961",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                maxWidth: 260,
+              }}>
+                ✦ {contexto.tipoActo}{contexto.partes ? " · " + contexto.partes : ""}
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}

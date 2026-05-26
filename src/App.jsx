@@ -44,11 +44,11 @@ function AppRouter() {
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
   const [scribaOpen, setScribaOpen] = useState(false);
+  const [scribaContexto, setScribaContexto] = useState(null);
 
   const handleGo = (targetScreen, targetParams = {}) => {
-    if (targetParams.registroActivo) {
-      setRegistroActivo(targetParams.registroActivo);
-    }
+    if (targetParams.registroActivo) setRegistroActivo(targetParams.registroActivo);
+    if (targetScreen !== "editor") setScribaContexto(null);
     setParams(targetParams);
     setScreen(targetScreen);
   };
@@ -99,7 +99,7 @@ function AppRouter() {
     <>
       {screen === "home"     && <HomeScreen     onGo={handleGo} />}
       {screen === "selector" && <SelectorScreen onGo={handleGo} />}
-      {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} />}
+      {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} onScribaContexto={setScribaContexto} />}
       {screen === "bulk"     && <BulkScreen     onGo={handleGo} />}
       {screen === "admin"    && <AdminScreen    onGo={handleGo} />}
 
@@ -129,7 +129,7 @@ function AppRouter() {
         </button>
       </div>
 
-      {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} />}
+      {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} contexto={scribaContexto} />}
     </>
   );
 }
