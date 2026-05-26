@@ -49,7 +49,34 @@ function BtnCopiar({ texto }) {
   );
 }
 
-function Mensaje({ msg, onGo }) {
+function BtnInsertar({ texto }) {
+  const [insertado, setInsertado] = useState(false);
+
+  function insertar() {
+    window.dispatchEvent(new CustomEvent("scriba:insertar", { detail: { texto } }));
+    setInsertado(true);
+    setTimeout(() => setInsertado(false), 2000);
+  }
+
+  return (
+    <button onClick={insertar} style={{
+      marginTop: 4, display: "flex", alignItems: "center", gap: 5,
+      background: insertado ? "rgba(201,169,97,.12)" : "transparent",
+      border: "1px solid " + (insertado ? "rgba(201,169,97,.4)" : "rgba(26,35,50,.15)"),
+      borderRadius: 6, padding: "5px 10px",
+      fontSize: 11, fontWeight: 600, fontFamily: "'Montserrat', sans-serif",
+      color: insertado ? "#c9a961" : "rgba(26,35,50,.45)",
+      cursor: "pointer", transition: "all .15s",
+    }}>
+      {insertado
+        ? <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg> Insertado</>
+        : <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2v8M2 6h8" strokeLinecap="round"/></svg> Insertar en documento</>
+      }
+    </button>
+  );
+}
+
+function Mensaje({ msg, onGo, hayEditor }) {
   const esUser = msg.role === "user";
   const accion = msg.accion;
 
@@ -126,8 +153,8 @@ function Mensaje({ msg, onGo }) {
             Abrir en editor — {accion.nombre}
           </button>
         )}
-        {!esUser && !accion && <BtnCopiar texto={msg.content} />}
-        {!esUser && accion && <BtnCopiar texto={msg.content} />}
+        {!esUser && <BtnCopiar texto={msg.content} />}
+        {!esUser && hayEditor && !accion && <BtnInsertar texto={msg.content} />}
       </div>
     </div>
   );
@@ -417,7 +444,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             </div>
           )}
 
-          {mensajes.map((m, i) => <Mensaje key={i} msg={m} onGo={onGo} />)}
+          {mensajes.map((m, i) => <Mensaje key={i} msg={m} onGo={onGo} hayEditor={!!contexto} />)}
           {cargando && <LoadingDots />}
 
           {error && (

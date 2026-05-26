@@ -214,6 +214,18 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     return () => window.removeEventListener("notarial:openmodal", handler);
   }, []);
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (!pluginWindowRef.current) return;
+      pluginWindowRef.current.postMessage(
+        { type: "oo-plugin-data", action: "insertar", texto: e.detail.texto },
+        "*"
+      );
+    };
+    window.addEventListener("scriba:insertar", handler);
+    return () => window.removeEventListener("scriba:insertar", handler);
+  }, []);
+
   // Plugin: receive "ready" and "open-modal" messages
   useEffect(() => {
     const handler = (e) => {

@@ -55,6 +55,12 @@
 
     window.addEventListener("message", function(e) {
       if (!e.data || e.data.type !== "oo-plugin-data") return;
+      if (e.data.action === "insertar") {
+        if (window.Asc && window.Asc.plugin) {
+          window.Asc.plugin.executeMethod("InputText", [{ sText: e.data.texto || "" }]);
+        }
+        return;
+      }
       render(e.data);
       document.getElementById("loading").style.display = "none";
       document.getElementById("app").style.display = "flex";
