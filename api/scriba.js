@@ -286,6 +286,11 @@ export default async function handler(req, res) {
     : {}
   );
 
+  const ahora = new Date();
+  const fechaHoy = `${ahora.getDate().toString().padStart(2,"0")}/${(ahora.getMonth()+1).toString().padStart(2,"0")}/${ahora.getFullYear()}`;
+  const horaHoy  = `${ahora.getUTCHours()-3 < 0 ? ahora.getUTCHours()+21 : ahora.getUTCHours()-3}:${ahora.getUTCMinutes().toString().padStart(2,"0")} (Argentina)`;
+  const fechaNota = `\n\n[FECHA Y HORA ACTUAL: ${fechaHoy}, ${horaHoy}]`;
+
   const contextoNote = contexto
     ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}\nEl escribano está trabajando en este documento ahora mismo. Podés referenciarlo en tus respuestas cuando sea relevante.`
     : "";
@@ -344,7 +349,7 @@ export default async function handler(req, res) {
       const response = await client.messages.create({
         model: "claude-sonnet-4-6",
         max_tokens: 4096,
-        system: SYSTEM_PROMPT + contextoNote,
+        system: SYSTEM_PROMPT + fechaNota + contextoNote,
         tools,
         messages,
       });
