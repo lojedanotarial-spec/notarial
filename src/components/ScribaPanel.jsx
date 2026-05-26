@@ -47,8 +47,10 @@ function BtnCopiar({ texto }) {
   );
 }
 
-function Mensaje({ msg }) {
+function Mensaje({ msg, onGo }) {
   const esUser = msg.role === "user";
+  const accion = msg.accion;
+
   return (
     <div style={{
       display: "flex",
@@ -73,7 +75,31 @@ function Mensaje({ msg }) {
         }}>
           {msg.content}
         </div>
-        {!esUser && <BtnCopiar texto={msg.content} />}
+        {!esUser && accion?.tipo === "abrir_editor" && (
+          <button
+            onClick={() => onGo?.("editor", { templateSlug: accion.slug, templateId: accion.templateId })}
+            style={{
+              marginTop: 8, display: "flex", alignItems: "center", gap: 6,
+              background: C.cerulean, border: "none",
+              borderRadius: 8, padding: "8px 14px",
+              fontSize: 12, fontWeight: 700, fontFamily: "'Montserrat', sans-serif",
+              color: "#fff", cursor: "pointer",
+              alignSelf: "flex-start",
+              boxShadow: "0 2px 8px rgba(58,124,165,.3)",
+              transition: "opacity .15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = ".85"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="3" width="12" height="10" rx="1.5"/>
+              <path d="M5 3V2M11 3V2M2 7h12" strokeLinecap="round"/>
+            </svg>
+            Abrir en editor — {accion.nombre}
+          </button>
+        )}
+        {!esUser && !accion && <BtnCopiar texto={msg.content} />}
+        {!esUser && accion && <BtnCopiar texto={msg.content} />}
       </div>
     </div>
   );
@@ -117,7 +143,7 @@ const SUGERENCIAS_GENERAR = [
   "Generame el acta de requerimiento para certificación de firmas",
 ];
 
-export function ScribaPanel({ onClose, contexto }) {
+export function ScribaPanel({ onClose, contexto, onGo }) {
   const [mensajes,  setMensajes]  = useState([]);
   const [input,     setInput]     = useState("");
   const [cargando,  setCargando]  = useState(false);
@@ -157,7 +183,7 @@ export function ScribaPanel({ onClose, contexto }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error del servidor");
 
-      setMensajes(prev => [...prev, { role: "assistant", content: data.respuesta }]);
+      setMensajes(prev => [...prev, { role: "assistant", content: data.respuesta, accion: data.accion || null }]);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -300,7 +326,7 @@ export function ScribaPanel({ onClose, contexto }) {
             </div>
           )}
 
-          {mensajes.map((m, i) => <Mensaje key={i} msg={m} />)}
+          {mensajes.map((m, i) => <Mensaje key={i} msg={m} onGo={onGo} />)}
           {cargando && <LoadingDots />}
 
           {error && (

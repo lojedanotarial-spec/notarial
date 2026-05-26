@@ -1,5 +1,77 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+const TEMPLATES_MAP = {
+  acta_asamblea:          { id: "1540ea5b-53f2-4dd0-beab-80a3b1645271", nombre: "Acta de asamblea" },
+  acta_constatacion:      { id: "a6e4007a-2f90-4478-96fc-89bfa29a8e43", nombre: "Acta de constatación" },
+  acta_directorio:        { id: "16debb5a-ade1-44b9-a1ac-83dbb8c32ce8", nombre: "Acta de directorio" },
+  acta_entrega:           { id: "5a05cb52-53b3-4ba1-a061-85fe57d164a8", nombre: "Acta de entrega" },
+  acta_manifestacion:     { id: "b375d513-46a4-4e28-a8ff-d025a2d8176c", nombre: "Acta de manifestación" },
+  acta_notificacion:      { id: "9d055841-943e-4116-9c77-84ba258f5530", nombre: "Acta de notificación" },
+  autorizacion_viaje:     { id: "615ffb12-f96a-4afc-8f88-c4deae5d996a", nombre: "Autorización de viaje de menor" },
+  cert_copia:             { id: "c807c25e-7b69-4f82-9f70-45c3af3fea27", nombre: "Certificación de copia" },
+  cert_firma:             { id: "64d2c40c-5e62-4dad-bc56-ec653ca81c28", nombre: "Certificación de firma" },
+  cert_firma_f08:         { id: "5e9d4c55-2cdd-439a-87e4-65c6cedd38e9", nombre: "Certificación de firma - Formulario 08" },
+  fe_vida:                { id: "b797507d-62c1-4b7a-9749-51aa46b5938d", nombre: "Fe de vida" },
+  aceptacion_donacion:    { id: "eee80320-cfef-430b-aab7-5f95ad52d9ef", nombre: "Aceptación de donación" },
+  boleto_compraventa:     { id: "70cc60b5-e77e-4867-b151-4e75ee68ef08", nombre: "Boleto de compraventa" },
+  hipoteca_cancelacion:   { id: "5ce9c3d4-b4df-4a98-9b3e-06a0146c238c", nombre: "Cancelación de hipoteca" },
+  cesion_cuotas:          { id: "088e8c5b-d522-4aa7-b11a-8ccca415c917", nombre: "Cesión de cuotas sociales" },
+  compraventa_lote:       { id: "f5a9e19d-7e13-4c43-8933-9196a839ceac", nombre: "Compraventa de lote" },
+  compraventa_rural:      { id: "fda809dd-cbb8-485d-84a9-8d79ea76c5f8", nombre: "Compraventa inmueble rural" },
+  compraventa_urbana:     { id: "449e5acf-5484-4891-8b77-07ddddd90a2e", nombre: "Compraventa inmueble urbano" },
+  compraventa_ph:         { id: "44be6a84-4f37-495a-9e95-180298069c3c", nombre: "Compraventa propiedad horizontal" },
+  hipoteca_constitucion:  { id: "ee6a082c-ee20-4c54-9bd6-2d2b605f1737", nombre: "Constitución de hipoteca" },
+  servidumbre:            { id: "6331e40e-74e5-4c79-84c6-7ff19e19dbab", nombre: "Constitución de servidumbre" },
+  usufructo_constitucion: { id: "b492d973-2dfe-4e2f-a9f9-68ed73313a44", nombre: "Constitución de usufructo" },
+  locacion_comercial:     { id: "fa2f8dc2-5f1d-4589-acaa-5fb3a8956c8f", nombre: "Contrato de locación comercial" },
+  locacion_inmueble:      { id: "11dfbf54-1337-47cb-9664-fb5b926a818a", nombre: "Contrato de locación de inmueble" },
+  contrato_srl:           { id: "8e4f6649-1428-4df4-8e89-388d4bc85ad5", nombre: "Contrato de S.R.L." },
+  convenio_division:      { id: "6e8588fb-d3f5-4a85-9985-9c49d268f1a4", nombre: "Convenio de división de condominio" },
+  superficie:             { id: "269a4939-a6d1-4649-9c78-539fca6bf8d0", nombre: "Derecho de superficie" },
+  donacion_hijo:          { id: "8a21fc6a-8aff-4912-ab04-88de17ef30b6", nombre: "Donación a hijo con imputación" },
+  donacion_reserva_uso:   { id: "11693a0a-c479-4ebc-a1c6-d33559cdcef0", nombre: "Donación con reserva de usufructo" },
+  donacion_inmueble:      { id: "aa4ac498-344d-4235-8a03-12ce0230e4bc", nombre: "Donación de inmueble" },
+  estatuto_sa:            { id: "6db53aa4-2f49-4fd2-86cb-44cd22374699", nombre: "Estatuto de S.A." },
+  estatuto_sas:           { id: "e52441d9-ae22-446a-a5bf-4537a6bce8b4", nombre: "Estatuto de S.A.S." },
+  mutuo_hipotecario:      { id: "91cb7771-43f3-4b81-ac1b-83bf3ba9c915", nombre: "Mutuo hipotecario" },
+  mutuo_simple:           { id: "e2ceb656-67bf-4892-9fb8-ab4d7e5000c6", nombre: "Mutuo simple" },
+  particion_herencia:     { id: "83268587-7b51-4b6a-935c-2b634dee7513", nombre: "Partición de herencia" },
+  prenda_con_registro:    { id: "c14a5ae0-f4c0-44d4-88d9-5c46d762983c", nombre: "Prenda con registro" },
+  reconocimiento_deuda:   { id: "1a3ad6e3-ecb9-4776-961d-f560f8fe481f", nombre: "Reconocimiento de deuda" },
+  aumento_capital:        { id: "d7039c33-eab8-4adb-8b5e-acc8bf0affa4", nombre: "Reforma de estatuto — aumento de capital" },
+  poder_administracion:   { id: "f2daee86-3342-4e33-ab78-6fed407dabd4", nombre: "Poder de administración" },
+  poder_especial:         { id: "3620a796-69e8-4d67-b1d1-465b1bb3e130", nombre: "Poder especial" },
+  poder_general:          { id: "478a6523-32e9-40a0-bb31-eeba9bc1a9b6", nombre: "Poder general" },
+  poder_irrevocable:      { id: "9c884bc7-392c-41c9-aae5-f60229385f6e", nombre: "Poder irrevocable" },
+  revocacion_poder:       { id: "0fd875a8-3c3a-4f05-9ac3-d0b39325f96c", nombre: "Revocación de poder" },
+  cesion_herencia:        { id: "b77f1dd3-8f05-49e9-a0aa-14f873c5a107", nombre: "Cesión de derechos hereditarios" },
+  declaratoria_herederos: { id: "fccd0b8a-921c-46cd-877b-859b86038350", nombre: "Declaratoria de herederos" },
+  aprobacion_testamento:  { id: "abb1bf1c-9c5c-4f25-94d7-9e9df432292c", nombre: "Protocolización de testamento" },
+  renuncia_herencia:      { id: "3b6cc58c-ec22-456f-af65-dccd41be465e", nombre: "Renuncia a la herencia" },
+  copia_simple:           { id: "8d76cff8-e5db-4963-8806-17b873cd6c05", nombre: "Copia simple" },
+  primer_testimonio:      { id: "8395a96d-1995-426e-8080-40a4f64eaafd", nombre: "Primer testimonio" },
+  testimonio_posterior:   { id: "4e786137-9cf9-42cd-b1c0-736d8c917ecd", nombre: "Testimonios posteriores" },
+};
+
+const ABRIR_EDITOR_TOOL = [{
+  name: "abrir_editor",
+  description: "Abre el editor notarial con el template del instrumento indicado. Usá esta herramienta cuando el escribano pide crear, abrir o trabajar en un tipo específico de instrumento — por ejemplo 'quiero hacer una compraventa', 'abrí una certificación de firma', 'necesito un poder especial'.",
+  input_schema: {
+    type: "object",
+    properties: {
+      slug: {
+        type: "string",
+        description: "El slug exacto del template. Slugs disponibles: " + Object.keys(TEMPLATES_MAP).join(", "),
+      },
+      mensaje: {
+        type: "string",
+        description: "Mensaje breve y directo para mostrar al escribano antes de abrir el editor (ej: 'Perfecto, te abro la certificación de firma.')",
+      },
+    },
+    required: ["slug", "mensaje"],
+  },
+}];
+
 const SYSTEM_PROMPT = `Sos Scriba, el asistente de IA especializado en derecho notarial argentino, con conocimiento profundo de la normativa de la provincia de Mendoza.
 
 ## Tu rol
@@ -159,12 +231,28 @@ export default async function handler(req, res) {
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
       system: SYSTEM_PROMPT + contextoNote,
+      tools: ABRIR_EDITOR_TOOL,
       messages,
     });
 
-    return res.status(200).json({
-      respuesta: response.content[0].text,
-    });
+    if (response.stop_reason === "tool_use") {
+      const toolUse = response.content.find(c => c.type === "tool_use");
+      if (toolUse?.name === "abrir_editor") {
+        const { slug, mensaje } = toolUse.input;
+        const template = TEMPLATES_MAP[slug];
+        return res.status(200).json({
+          respuesta: mensaje,
+          accion: {
+            tipo: "abrir_editor",
+            slug,
+            templateId: template?.id || null,
+            nombre: template?.nombre || slug,
+          },
+        });
+      }
+    }
+
+    return res.status(200).json({ respuesta: response.content[0].text });
   } catch (e) {
     console.error("Scriba error:", e);
     return res.status(500).json({ error: e.message });

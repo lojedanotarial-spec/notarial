@@ -129,7 +129,13 @@ function AppRouter() {
         </button>
       </div>
 
-      {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} contexto={scribaContexto} />}
+      {scribaOpen && (
+        <ScribaPanel
+          onClose={() => setScribaOpen(false)}
+          contexto={scribaContexto}
+          onGo={(screen, params) => { setScribaOpen(false); handleGo(screen, params); }}
+        />
+      )}
     </>
   );
 }
