@@ -71,12 +71,20 @@ function LoadingDots() {
   );
 }
 
-const SUGERENCIAS = [
+const SUGERENCIAS_CONSULTA = [
   "¿Qué pasa con el ITI en una compraventa hoy?",
   "¿Cómo funciona la zona de frontera en Mendoza?",
   "¿Cuándo va el agua con el inmueble en Mendoza?",
   "¿Qué exige la UIF para una compraventa?",
   "¿Cuál es el impuesto de sellos en Mendoza en 2025?",
+];
+
+const SUGERENCIAS_GENERAR = [
+  "Generame un borrador de escritura de compraventa",
+  "Necesito un poder especial para venta de inmueble",
+  "Generame una escritura de donación entre padre e hijo",
+  "Borrador de constitución de hipoteca en primer grado",
+  "Generame el acta de requerimiento para certificación de firmas",
 ];
 
 export function ScribaPanel({ onClose }) {
@@ -200,16 +208,19 @@ export function ScribaPanel({ onClose }) {
         }}>
           {mensajes.length === 0 && (
             <div style={{ paddingBottom: 12 }}>
-              <div style={{
-                fontSize: 14, color: "rgba(26,35,50,.5)",
-                marginBottom: 16, lineHeight: 1.6,
-              }}>
-                Consultame sobre normativa notarial, requisitos de actos, impuestos o cualquier duda del ejercicio profesional.
+              <div style={{ fontSize: 14, color: "rgba(26,35,50,.5)", marginBottom: 18, lineHeight: 1.6 }}>
+                Consultame sobre normativa o pedime que genere un borrador de instrumento.
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {SUGERENCIAS.map((s, i) => (
-                  <button key={i} onClick={() => enviar(s)}
-                    style={{
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
+                  textTransform: "uppercase", color: "rgba(26,35,50,.35)",
+                  marginBottom: 8,
+                }}>Consultas</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {SUGERENCIAS_CONSULTA.map((s, i) => (
+                    <button key={i} onClick={() => enviar(s)} style={{
                       background: "#f8f6f2", border: "1px solid rgba(26,35,50,.1)",
                       borderRadius: 8, padding: "10px 14px",
                       textAlign: "left", fontSize: 13, color: C.dark,
@@ -218,10 +229,32 @@ export function ScribaPanel({ onClose }) {
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = "#f0ece3"}
                     onMouseLeave={e => e.currentTarget.style.background = "#f8f6f2"}
-                  >
-                    {s}
-                  </button>
-                ))}
+                    >{s}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
+                  textTransform: "uppercase", color: "rgba(201,169,97,.7)",
+                  marginBottom: 8,
+                }}>Generar borrador</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {SUGERENCIAS_GENERAR.map((s, i) => (
+                    <button key={i} onClick={() => enviar(s)} style={{
+                      background: "rgba(201,169,97,.06)",
+                      border: "1px solid rgba(201,169,97,.25)",
+                      borderRadius: 8, padding: "10px 14px",
+                      textAlign: "left", fontSize: 13, color: C.dark,
+                      fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                      transition: "background .1s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(201,169,97,.12)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(201,169,97,.06)"}
+                    >{s}</button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
