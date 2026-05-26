@@ -98,20 +98,24 @@ function AppRouter() {
         style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 199,
           width: 52, height: 52, borderRadius: "50%",
-          background: scribaOpen ? "#3a7ca5" : "#1a2332",
-          border: "2px solid " + (scribaOpen ? "rgba(126,200,227,.5)" : "rgba(255,255,255,.15)"),
-          color: "#fff", cursor: "pointer",
+          background: "#1a2332",
+          border: "2px solid " + (scribaOpen ? "rgba(201,169,97,.55)" : "rgba(201,169,97,.25)"),
+          cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 20px rgba(0,0,0,.35)",
           transition: "all .2s",
         }}
-        onMouseEnter={e => { if (!scribaOpen) e.currentTarget.style.background = "#3a7ca5"; }}
-        onMouseLeave={e => { if (!scribaOpen) e.currentTarget.style.background = "#1a2332"; }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,169,97,.7)"; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = scribaOpen ? "rgba(201,169,97,.55)" : "rgba(201,169,97,.25)"; }}
       >
-        <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
-          <path d="M3 12L5 7l3 3 3-5 2 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="8" cy="2.5" r="1.5" fill="currentColor" opacity=".8"/>
-        </svg>
+        <span style={{
+          fontFamily: "'Merriweather', serif",
+          fontStyle: "italic",
+          fontSize: 24,
+          color: "#c9a961",
+          lineHeight: 1,
+          userSelect: "none",
+        }}>S</span>
       </button>
 
       {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} />}

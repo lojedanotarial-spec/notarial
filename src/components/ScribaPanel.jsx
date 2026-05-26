@@ -1,12 +1,32 @@
 import { useState, useRef, useEffect } from "react";
 import { C } from "../constants";
 
-function IconScriba() {
+function SparkleIcon({ size = 10, color = "#7ec8e3" }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M3 12L5 7l3 3 3-5 2 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="8" cy="2.5" r="1.5" fill="currentColor" opacity=".7"/>
+    <svg width={size} height={size} viewBox="0 0 10 10" fill={color}>
+      <path d="M5 0L5.7 4.3 10 5 5.7 5.7 5 10 4.3 5.7 0 5 4.3 4.3 5 0Z"/>
     </svg>
+  );
+}
+
+function ScribaAvatar({ size = 26 }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%",
+      background: C.dark,
+      border: "1.5px solid rgba(201,169,97,.45)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      flexShrink: 0,
+    }}>
+      <span style={{
+        fontFamily: "'Merriweather', serif",
+        fontStyle: "italic",
+        fontSize: Math.round(size * 0.58),
+        color: "#c9a961",
+        lineHeight: 1,
+        userSelect: "none",
+      }}>S</span>
+    </div>
   );
 }
 
@@ -19,14 +39,8 @@ function Mensaje({ msg }) {
       marginBottom: 12,
     }}>
       {!esUser && (
-        <div style={{
-          width: 26, height: 26, borderRadius: "50%",
-          background: "linear-gradient(135deg, #3a7ca5, #1a2332)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0, marginRight: 8, marginTop: 2,
-          color: "#fff",
-        }}>
-          <IconScriba />
+        <div style={{ flexShrink: 0, marginRight: 8, marginTop: 2 }}>
+          <ScribaAvatar size={26} />
         </div>
       )}
       <div style={{
@@ -49,13 +63,8 @@ function Mensaje({ msg }) {
 function LoadingDots() {
   return (
     <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
-      <div style={{
-        width: 26, height: 26, borderRadius: "50%",
-        background: "linear-gradient(135deg, #3a7ca5, #1a2332)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0, marginRight: 8, marginTop: 2, color: "#fff",
-      }}>
-        <IconScriba />
+      <div style={{ flexShrink: 0, marginRight: 8, marginTop: 2 }}>
+        <ScribaAvatar size={26} />
       </div>
       <div style={{
         background: "#f8f6f2", borderRadius: "14px 14px 14px 4px",
@@ -157,7 +166,7 @@ export function ScribaPanel({ onClose }) {
       <div style={{
         position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 201,
         width: 420, maxWidth: "100vw",
-        background: "#fff",
+        background: "#FDFCFA",
         display: "flex", flexDirection: "column",
         boxShadow: "-8px 0 40px rgba(0,0,0,.18)",
       }}>
@@ -166,21 +175,20 @@ export function ScribaPanel({ onClose }) {
         <div style={{
           background: C.dark,
           padding: "14px 18px",
-          display: "flex", alignItems: "center", gap: 10,
+          display: "flex", alignItems: "center", gap: 12,
           flexShrink: 0,
+          borderBottom: "1px solid rgba(201,169,97,.12)",
         }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%",
-            background: "linear-gradient(135deg, #3a7ca5, #1a2332)",
-            border: "2px solid rgba(255,255,255,.2)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#fff", flexShrink: 0,
-          }}>
-            <IconScriba />
-          </div>
+          <ScribaAvatar size={36} />
           <div style={{ flex: 1 }}>
-            <div style={{ color: "#FDFCFA", fontSize: 14, fontWeight: 700 }}>Scriba</div>
-            <div style={{ color: "rgba(255,255,255,.4)", fontSize: 11 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{
+                color: "#FDFCFA", fontSize: 15,
+                fontFamily: "'Merriweather', serif", fontStyle: "italic", fontWeight: 700,
+              }}>Scriba</span>
+              <SparkleIcon size={8} color="#7ec8e3" />
+            </div>
+            <div style={{ color: "rgba(255,255,255,.4)", fontSize: 11, marginTop: 1 }}>
               Asistente notarial · Mendoza, Argentina
             </div>
           </div>
