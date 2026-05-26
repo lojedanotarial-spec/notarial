@@ -260,19 +260,34 @@ export default async function handler(req, res) {
 
   async function ejecutarTool(name, input) {
     if (name === "buscar_personas") {
-      let q = sb.from("personas")
-        .select("apellido, nombre, tipo_doc, nro_doc, cuit, fecha_nac, estado_civil, nacionalidad, calle, numero, piso, dpto, localidad, departamento, representaciones")
-        .limit(8);
-      if (registroId) q = q.eq("registro_id", registroId);
-      if (input.nombre) q = q.or(`apellido.ilike.%${input.nombre}%,nombre.ilike.%${input.nombre}%`);
-      if (input.nro_doc) {
-        const docNum      = input.nro_doc.replace(/[.\s-]/g, "");
-        const docFormated = docNum.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        q = q.or(`nro_doc.eq.${docNum},nro_doc.eq.${docFormated}`);
+      function buildPersonasQuery(withRegistro) {
+        let q = sb.from("personas")
+          .select("apellido, nombre, tipo_doc, nro_doc, cuit, fecha_nac, estado_civil, nacionalidad, calle, numero, piso, dpto, localidad, departamento, representaciones")
+          .limit(8);
+        if (withRegistro && registroId) q = q.eq("registro_id", String(registroId));
+        if (input.nro_doc) {
+          const digits = input.nro_doc.replace(/\D/g, "");
+          q = q.ilike("nro_doc", `%${digits}%`);
+        } else if (input.nombre) {
+          const partes = input.nombre.trim().split(/\s+/);
+          const conds = partes.flatMap(p => [`apellido.ilike.%${p}%`, `nombre.ilike.%${p}%`]).join(",");
+          q = q.or(conds);
+        }
+        return q;
       }
-      const { data, error } = await q;
-      if (error) return { error: error.message };
-      return { total: data?.length || 0, personas: data || [] };
+
+      const { data, error } = await buildPersonasQuery(true);
+      if (error) return { error: error.message, _debug: { registroId, input } };
+      if (data?.length > 0) return { total: data.length, personas: data };
+
+      // fallback sin filtro de registro (para debug y robustez)
+      const { data: d2, error: e2 } = await buildPersonasQuery(false);
+      if (e2) return { error: e2.message, _debug: { registroId, input } };
+      return {
+        total: d2?.length || 0,
+        personas: d2 || [],
+        _debug: { nota: registroId ? `sin resultados con registro_id=${registroId}, reintentado sin filtro` : "sin filtro de registro", registroId, input },
+      };
     }
     if (name === "buscar_documentos") {
       let q = sb.from("documentos")
