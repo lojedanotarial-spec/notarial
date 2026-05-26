@@ -111,7 +111,7 @@ function AppRouter() {
           display: "flex", alignItems: "center", justifyContent: "center",
         }}
       >
-        <img src="/Scriba-icon-1.png" alt="Scriba" style={{ width: 44, height: 44, borderRadius: "50%" }} />
+        <img src="/Scriba-icon-1.png" alt="Scriba" style={{ width: 56, height: 56, borderRadius: "50%", display: "block" }} />
       </button>
 
       {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} />}
