@@ -69,6 +69,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const [generating,   setGenerating]   = useState(false);
   const [pluginTick,   setPluginTick]   = useState(0);
   const pluginWindowRef   = useRef(null);
+  const pendingInsertRef  = useRef(null);
   const [isDirty,          setIsDirty]          = useState(false);
   const [showVarHighlight, setShowVarHighlight] = useState(true);
   const generatedOnceRef  = useRef(false);
@@ -216,14 +217,14 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   useEffect(() => {
     const handler = (e) => {
-      console.log("[editor] scriba:insertar recibido — pluginWindowRef:", !!pluginWindowRef.current, "texto:", e.detail.texto?.slice(0, 60));
+      const texto = e.detail.texto;
       if (!pluginWindowRef.current) {
-        console.warn("[editor] pluginWindowRef.current es null — OO plugin no inicializado");
+        console.warn("[editor] pluginWindowRef.current es null — encolando para cuando el plugin esté listo");
+        pendingInsertRef.current = texto;
         return;
       }
-      console.log("[editor] enviando postMessage al plugin OO");
       pluginWindowRef.current.postMessage(
-        { type: "oo-plugin-data", action: "insertar", texto: e.detail.texto },
+        { type: "oo-plugin-data", action: "insertar", texto },
         "*"
       );
     };
@@ -238,6 +239,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       if (e.data.action === "ready") {
         pluginWindowRef.current = e.source;
         setPluginTick(t => t + 1);
+        if (pendingInsertRef.current) {
+          const texto = pendingInsertRef.current;
+          pendingInsertRef.current = null;
+          e.source.postMessage({ type: "oo-plugin-data", action: "insertar", texto }, "*");
+        }
       } else if (e.data.action === "open-modal") {
         setModal(e.data.modal);
       } else if (e.data.action === "regenerar") {

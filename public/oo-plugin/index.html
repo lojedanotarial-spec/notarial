@@ -39,11 +39,20 @@
     </div>
   </div>
   <script>
-    function requestData() { window.top.postMessage({ type: "oo-plugin", action: "ready" }, "*"); }
+    var pluginInitialized = false;
+    function requestData() {
+      if (pluginInitialized) return;
+      pluginInitialized = true;
+      window.top.postMessage({ type: "oo-plugin", action: "ready" }, "*");
+    }
     if (window.Asc && window.Asc.plugin) {
       window.Asc.plugin.init = function() { requestData(); };
       window.Asc.plugin.button = function(id) {};
-    } else { setTimeout(requestData, 300); }
+      // Fallback: if OO never calls init (e.g. WebSocket failure), send ready anyway
+      setTimeout(requestData, 3000);
+    } else {
+      setTimeout(requestData, 300);
+    }
 
     var btnActualizar = document.getElementById("btn-actualizar");
     btnActualizar.addEventListener("click", function() {
