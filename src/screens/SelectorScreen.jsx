@@ -71,8 +71,9 @@ export function SelectorScreen({ onGo }) {
   const [cargando,   setCargando]   = useState(false);
   const [cargandoTpl,setCargandoTpl]= useState(true);
 
-  // Cargar todos los templates globales ordenados por frecuencia
+  // Cargar templates globales — espera a que haya sesión
   useEffect(() => {
+    if (!usuario) return;
     async function cargarTemplates() {
       const { data } = await supabase
         .from("templates")
@@ -80,12 +81,13 @@ export function SelectorScreen({ onGo }) {
         .is("registro_id", null)
         .eq("visible", true)
         .order("frecuencia", { ascending: true });
-      setTemplates(data || []);
-      if (data?.length) setSelected(data[0]);
+      const lista = data || [];
+      setTemplates(lista);
+      if (lista.length) setSelected(lista[0]);
       setCargandoTpl(false);
     }
     cargarTemplates();
-  }, []);
+  }, [usuario]);
 
   // Cargar documentos recientes
   useEffect(() => {
@@ -106,7 +108,8 @@ export function SelectorScreen({ onGo }) {
     cargar();
   }, [usuario, abierto]);
 
-  const frecuentes = templates.filter(t => t.frecuencia <= 5);
+  const frecuentes = templates.filter(t => t.frecuencia != null && t.frecuencia <= 5);
+  const top5       = frecuentes.length ? frecuentes : templates.slice(0, 5);
   const porFamilia = familia ? templates.filter(t => t.familia === familia) : [];
   const filtrados  = query.trim() === ""
     ? docs.slice(0, 5)
@@ -135,7 +138,7 @@ export function SelectorScreen({ onGo }) {
             <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
               {cargandoTpl ? (
                 <span style={{ fontSize:13, color:"rgba(26,35,50,.4)" }}>Cargando...</span>
-              ) : frecuentes.map(t => (
+              ) : top5.map(t => (
                 <button key={t.id}
                   onClick={() => setSelected(t)}
                   style={{
@@ -160,7 +163,12 @@ export function SelectorScreen({ onGo }) {
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <Fg label="Familia">
-                <select style={inp} value={familia} onChange={e => { setFamilia(e.target.value); }}>
+                <select style={inp} value={familia} onChange={e => {
+                  const f = e.target.value;
+                  setFamilia(f);
+                  const primero = templates.find(t => t.familia === f);
+                  if (primero) setSelected(primero);
+                }}>
                   <option value="">Seleccionar...</option>
                   {FAMILIAS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
                 </select>
@@ -245,7 +253,7 @@ export function SelectorScreen({ onGo }) {
       <div style={{ position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)" }}>
         <button
           disabled={!selected}
-          onClick={() => selected && onGo("editor", { templateId: selected.id, templateSlug: selected.slug })}
+          onClick={() => selected && onGo("editor", { templateId: selected.id, templateSlug: selected.slug || selected.nombre })}
           onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
           onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
           style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 24px",
