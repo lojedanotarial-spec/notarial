@@ -47,9 +47,9 @@ function Mensaje({ msg }) {
         background: esUser ? C.cerulean : "#f8f6f2",
         color: esUser ? "#fff" : C.dark,
         borderRadius: esUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-        padding: "10px 13px",
-        fontSize: 13,
-        lineHeight: 1.55,
+        padding: "11px 14px",
+        fontSize: 14,
+        lineHeight: 1.6,
         whiteSpace: "pre-wrap",
         wordBreak: "break-word",
       }}>
@@ -182,12 +182,12 @@ export function ScribaPanel({ onClose }) {
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{
-                color: "#FDFCFA", fontSize: 15,
+                color: "#FDFCFA", fontSize: 20,
                 fontFamily: "'Carattere', cursive", fontWeight: 400,
               }}>Scriba</span>
-              <SparkleIcon size={8} color="#7ec8e3" />
+              <SparkleIcon size={9} color="#7ec8e3" />
             </div>
-            <div style={{ color: "rgba(255,255,255,.4)", fontSize: 11, marginTop: 1 }}>
+            <div style={{ color: "rgba(255,255,255,.4)", fontSize: 12, marginTop: 1 }}>
               Asistente notarial · Mendoza, Argentina
             </div>
           </div>
@@ -211,18 +211,18 @@ export function ScribaPanel({ onClose }) {
           {mensajes.length === 0 && (
             <div style={{ paddingBottom: 12 }}>
               <div style={{
-                fontSize: 13, color: "rgba(26,35,50,.5)",
-                marginBottom: 14, lineHeight: 1.5,
+                fontSize: 14, color: "rgba(26,35,50,.5)",
+                marginBottom: 16, lineHeight: 1.6,
               }}>
                 Consultame sobre normativa notarial, requisitos de actos, impuestos o cualquier duda del ejercicio profesional.
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {SUGERENCIAS.map((s, i) => (
                   <button key={i} onClick={() => enviar(s)}
                     style={{
                       background: "#f8f6f2", border: "1px solid rgba(26,35,50,.1)",
-                      borderRadius: 8, padding: "9px 12px",
-                      textAlign: "left", fontSize: 12, color: C.dark,
+                      borderRadius: 8, padding: "10px 14px",
+                      textAlign: "left", fontSize: 13, color: C.dark,
                       fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
                       transition: "background .1s",
                     }}
