@@ -298,7 +298,26 @@ export default async function handler(req, res) {
     ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}\nEl escribano está trabajando en este documento ahora mismo. Podés referenciarlo en tus respuestas cuando sea relevante.`
     : "";
 
-  const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL];
+  const INSERTAR_TOOL = [{
+  name: "insertar_en_documento",
+  description: "Insertá texto en el documento notarial abierto en el editor. Usá esta herramienta cuando el escribano pide agregar, completar o insertar algo en el documento activo. El texto debe ser limpio, sin markdown, listo para aparecer en el documento.",
+  input_schema: {
+    type: "object",
+    properties: {
+      texto: {
+        type: "string",
+        description: "Texto exacto a insertar en el documento. Sin markdown, sin comillas, sin explicaciones. Solo el contenido notarial.",
+      },
+      mensaje: {
+        type: "string",
+        description: "Confirmación breve para mostrar al escribano (ej: 'Listo, insertá el cierre al final del documento.')",
+      },
+    },
+    required: ["texto", "mensaje"],
+  },
+}];
+
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL];
   let messages = [
     ...mensajes_anteriores.map(m => ({ role: m.role, content: m.content })),
     { role: "user", content: mensaje },
@@ -365,9 +384,18 @@ export default async function handler(req, res) {
       if (response.stop_reason === "tool_use") {
         const toolUses = response.content.filter(c => c.type === "tool_use");
 
-        // Si solo hay abrir_editor (sin otras herramientas pendientes), retornar ya
+        // Si solo hay abrir_editor o insertar_en_documento, retornar ya
+        const insertarDoc = toolUses.find(t => t.name === "insertar_en_documento");
+        if (insertarDoc && toolUses.length === 1) {
+          const { texto, mensaje: msg } = insertarDoc.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "insertar_texto", texto },
+          });
+        }
+
         const abrirEditor = toolUses.find(t => t.name === "abrir_editor");
-        const otrasHerramientas = toolUses.filter(t => t.name !== "abrir_editor");
+        const otrasHerramientas = toolUses.filter(t => t.name !== "abrir_editor" && t.name !== "insertar_en_documento");
 
         if (abrirEditor && otrasHerramientas.length === 0) {
           const { slug, mensaje: msg, partes, fecha } = abrirEditor.input;

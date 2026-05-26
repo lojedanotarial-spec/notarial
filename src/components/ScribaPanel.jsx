@@ -106,6 +106,22 @@ function Mensaje({ msg, onGo, hayEditor }) {
         }}>
           {msg.content}
         </div>
+        {!esUser && accion?.tipo === "insertar_texto" && (
+          <div style={{
+            marginTop: 8,
+            background: "rgba(201,169,97,.07)",
+            border: "1px solid rgba(201,169,97,.3)",
+            borderRadius: 8, padding: "10px 12px",
+          }}>
+            <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginBottom: 6, fontWeight: 600 }}>
+              Texto a insertar
+            </div>
+            <div style={{ fontSize: 13, color: C.dark, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+              {accion.texto}
+            </div>
+            <BtnInsertar texto={accion.texto} />
+          </div>
+        )}
         {!esUser && accion?.tipo === "abrir_editor" && (
           <button
             onClick={() => {
@@ -155,8 +171,7 @@ function Mensaje({ msg, onGo, hayEditor }) {
             Abrir en editor — {accion.nombre}
           </button>
         )}
-        {!esUser && <BtnCopiar texto={msg.content} />}
-        {!esUser && hayEditor && !accion && <BtnInsertar texto={msg.content} />}
+        {!esUser && <BtnCopiar texto={accion?.tipo === "insertar_texto" ? accion.texto : msg.content} />}
       </div>
     </div>
   );
