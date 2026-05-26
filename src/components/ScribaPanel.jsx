@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { C } from "../constants";
 
 function SparkleIcon({ size = 10, color = "#7ec8e3" }) {
@@ -19,6 +19,34 @@ function ScribaAvatar({ size = 26 }) {
   );
 }
 
+function BtnCopiar({ texto }) {
+  const [copiado, setCopiado] = useState(false);
+
+  function copiar() {
+    navigator.clipboard.writeText(texto).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    });
+  }
+
+  return (
+    <button onClick={copiar} style={{
+      marginTop: 7, display: "flex", alignItems: "center", gap: 5,
+      background: copiado ? "rgba(58,124,165,.12)" : "transparent",
+      border: "1px solid " + (copiado ? "rgba(58,124,165,.3)" : "rgba(26,35,50,.15)"),
+      borderRadius: 6, padding: "5px 10px",
+      fontSize: 11, fontWeight: 600, fontFamily: "'Montserrat', sans-serif",
+      color: copiado ? C.cerulean : "rgba(26,35,50,.45)",
+      cursor: "pointer", transition: "all .15s",
+    }}>
+      {copiado
+        ? <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg> Copiado</>
+        : <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="4" y="1" width="7" height="8" rx="1.5"/><rect x="1" y="3" width="7" height="8" rx="1.5" fill="none"/></svg> Copiar contenido</>
+      }
+    </button>
+  );
+}
+
 function Mensaje({ msg }) {
   const esUser = msg.role === "user";
   return (
@@ -32,18 +60,20 @@ function Mensaje({ msg }) {
           <ScribaAvatar size={26} />
         </div>
       )}
-      <div style={{
-        maxWidth: "80%",
-        background: esUser ? C.cerulean : "#f8f6f2",
-        color: esUser ? "#fff" : C.dark,
-        borderRadius: esUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-        padding: "11px 14px",
-        fontSize: 14,
-        lineHeight: 1.6,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-      }}>
-        {msg.content}
+      <div style={{ maxWidth: "80%", display: "flex", flexDirection: "column" }}>
+        <div style={{
+          background: esUser ? C.cerulean : "#f8f6f2",
+          color: esUser ? "#fff" : C.dark,
+          borderRadius: esUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+          padding: "11px 14px",
+          fontSize: 14,
+          lineHeight: 1.6,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        }}>
+          {msg.content}
+        </div>
+        {!esUser && <BtnCopiar texto={msg.content} />}
       </div>
     </div>
   );
