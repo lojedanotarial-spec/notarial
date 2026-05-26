@@ -56,15 +56,18 @@
     window.addEventListener("message", function(e) {
       if (!e.data || e.data.type !== "oo-plugin-data") return;
       if (e.data.action === "insertar") {
+        console.log("[oo-plugin] acción insertar recibida — Asc disponible:", !!(window.Asc && window.Asc.plugin), "texto:", (e.data.texto || "").slice(0, 60));
         if (window.Asc && window.Asc.plugin) {
           var lineas = (e.data.texto || "").split("\n");
-          // Embeber el texto en el cuerpo de la función (callCommand serializa con toString)
           var parrafosCodigo = lineas.map(function(l, i) {
             return "var p" + i + "=Api.CreateParagraph();p" + i + ".AddText(" + JSON.stringify(l) + ");arr.push(p" + i + ");";
           }).join("");
-          var fnStr = "(function(){var arr=[];" + parrafosCodigo + "Api.GetDocument().InsertContent(arr);})";
+          var fnStr = "(function(){var arr=[];" + parrafosCodigo + "console.log('[oo-plugin] callCommand ejecutando');Api.GetDocument().InsertContent(arr);})";
+          console.log("[oo-plugin] llamando callCommand");
           // eslint-disable-next-line no-eval
           window.Asc.plugin.callCommand(eval(fnStr), false);
+        } else {
+          console.warn("[oo-plugin] window.Asc o window.Asc.plugin no disponible");
         }
         return;
       }

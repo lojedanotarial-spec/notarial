@@ -216,7 +216,12 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   useEffect(() => {
     const handler = (e) => {
-      if (!pluginWindowRef.current) return;
+      console.log("[editor] scriba:insertar recibido — pluginWindowRef:", !!pluginWindowRef.current, "texto:", e.detail.texto?.slice(0, 60));
+      if (!pluginWindowRef.current) {
+        console.warn("[editor] pluginWindowRef.current es null — OO plugin no inicializado");
+        return;
+      }
+      console.log("[editor] enviando postMessage al plugin OO");
       pluginWindowRef.current.postMessage(
         { type: "oo-plugin-data", action: "insertar", texto: e.detail.texto },
         "*"

@@ -53,7 +53,7 @@ function BtnInsertar({ texto }) {
   const [insertado, setInsertado] = useState(false);
 
   function insertar() {
-    // Intenta insertar en OO; copia al portapapeles como fallback garantizado
+    console.log("[scriba] BtnInsertar click — texto:", texto?.slice(0, 60));
     window.dispatchEvent(new CustomEvent("scriba:insertar", { detail: { texto } }));
     navigator.clipboard.writeText(texto).catch(() => {});
     setInsertado(true);
