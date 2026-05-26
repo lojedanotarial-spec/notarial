@@ -1,4 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL      = "https://eueqluhhgvukovoyorrw.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1ZXFsdWhoZ3Z1a292b3lvcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjI3NjQsImV4cCI6MjA5MjE5ODc2NH0.RklZOhSt8DqUhRCqlLNQ0OyLNrUGKYXHaogOkRLCz6E";
 
 const TEMPLATES_MAP = {
   acta_asamblea:          { id: "1540ea5b-53f2-4dd0-beab-80a3b1645271", nombre: "Acta de asamblea" },
@@ -52,6 +56,32 @@ const TEMPLATES_MAP = {
   primer_testimonio:      { id: "8395a96d-1995-426e-8080-40a4f64eaafd", nombre: "Primer testimonio" },
   testimonio_posterior:   { id: "4e786137-9cf9-42cd-b1c0-736d8c917ecd", nombre: "Testimonios posteriores" },
 };
+
+const DB_TOOLS = [
+  {
+    name: "buscar_personas",
+    description: "Busca personas en el directorio del registro notarial. Usá esta herramienta para obtener datos completos de un requirente (nombre, DNI, CUIT, domicilio, estado civil, representaciones) antes de generar un instrumento o cuando el escribano pregunta por alguien.",
+    input_schema: {
+      type: "object",
+      properties: {
+        nombre: { type: "string", description: "Nombre o apellido a buscar (búsqueda parcial, case-insensitive)" },
+        nro_doc: { type: "string", description: "Número de DNI o documento exacto" },
+      },
+    },
+  },
+  {
+    name: "buscar_documentos",
+    description: "Busca documentos en el protocolo del registro. Usá esta herramienta para responder preguntas sobre actos anteriores, estadísticas, o verificar si existe un documento específico.",
+    input_schema: {
+      type: "object",
+      properties: {
+        tipo_acto: { type: "string", description: "Slug del tipo de acto (ej: compraventa_urbana, poder_especial)" },
+        estado:    { type: "string", description: "Estado del documento: borrador, revision, o completo" },
+        titulo:    { type: "string", description: "Texto a buscar en el título del documento" },
+      },
+    },
+  },
+];
 
 const ABRIR_EDITOR_TOOL = [{
   name: "abrir_editor",
@@ -205,7 +235,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mensaje, mensajes_anteriores = [], contexto = null } = req.body;
+  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null } = req.body;
 
   if (!mensaje?.trim()) {
     return res.status(400).json({ error: "Mensaje requerido" });
@@ -216,43 +246,95 @@ export default async function handler(req, res) {
   }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const contextoNote = contexto
     ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}\nEl escribano está trabajando en este documento ahora mismo. Podés referenciarlo en tus respuestas cuando sea relevante.`
     : "";
 
-  const messages = [
+  const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL];
+  let messages = [
     ...mensajes_anteriores.map(m => ({ role: m.role, content: m.content })),
     { role: "user", content: mensaje },
   ];
 
-  try {
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT + contextoNote,
-      tools: ABRIR_EDITOR_TOOL,
-      messages,
-    });
+  async function ejecutarTool(name, input) {
+    if (name === "buscar_personas") {
+      let q = sb.from("personas")
+        .select("apellido, nombre, tipo_doc, nro_doc, cuit, fecha_nac, estado_civil, nacionalidad, calle, numero, piso, dpto, localidad, departamento, representaciones")
+        .limit(8);
+      if (registroId) q = q.eq("registro_id", registroId);
+      if (input.nombre) q = q.ilike("apellido", `%${input.nombre}%`);
+      if (input.nro_doc) q = q.eq("nro_doc", input.nro_doc);
+      const { data, error } = await q;
+      if (error) return { error: error.message };
+      return { total: data?.length || 0, personas: data || [] };
+    }
+    if (name === "buscar_documentos") {
+      let q = sb.from("documentos")
+        .select("titulo, tipo_acto, estado, created_at, partes")
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (registroId) q = q.eq("registro_id", registroId);
+      if (input.tipo_acto) q = q.eq("tipo_acto", input.tipo_acto);
+      if (input.estado)    q = q.eq("estado", input.estado);
+      if (input.titulo)    q = q.ilike("titulo", `%${input.titulo}%`);
+      const { data, error } = await q;
+      if (error) return { error: error.message };
+      return { total: data?.length || 0, documentos: data || [] };
+    }
+    return { error: "Herramienta desconocida" };
+  }
 
-    if (response.stop_reason === "tool_use") {
-      const toolUse = response.content.find(c => c.type === "tool_use");
-      if (toolUse?.name === "abrir_editor") {
-        const { slug, mensaje } = toolUse.input;
-        const template = TEMPLATES_MAP[slug];
-        return res.status(200).json({
-          respuesta: mensaje,
-          accion: {
-            tipo: "abrir_editor",
-            slug,
-            templateId: template?.id || null,
-            nombre: template?.nombre || slug,
-          },
-        });
+  try {
+    for (let i = 0; i < 5; i++) {
+      const response = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 4096,
+        system: SYSTEM_PROMPT + contextoNote,
+        tools,
+        messages,
+      });
+
+      if (response.stop_reason === "end_turn") {
+        const text = response.content.find(c => c.type === "text");
+        return res.status(200).json({ respuesta: text?.text || "" });
       }
+
+      if (response.stop_reason === "tool_use") {
+        const toolUses = response.content.filter(c => c.type === "tool_use");
+
+        const abrirEditor = toolUses.find(t => t.name === "abrir_editor");
+        if (abrirEditor) {
+          const { slug, mensaje: msg } = abrirEditor.input;
+          const template = TEMPLATES_MAP[slug];
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "abrir_editor", slug, templateId: template?.id || null, nombre: template?.nombre || slug },
+          });
+        }
+
+        const toolResults = await Promise.all(
+          toolUses.map(async t => ({
+            type: "tool_result",
+            tool_use_id: t.id,
+            content: JSON.stringify(await ejecutarTool(t.name, t.input)),
+          }))
+        );
+
+        messages = [
+          ...messages,
+          { role: "assistant", content: response.content },
+          { role: "user",      content: toolResults },
+        ];
+        continue;
+      }
+
+      const text = response.content.find(c => c.type === "text");
+      return res.status(200).json({ respuesta: text?.text || "" });
     }
 
-    return res.status(200).json({ respuesta: response.content[0].text });
+    return res.status(200).json({ respuesta: "No pude completar la consulta. Intentá de nuevo." });
   } catch (e) {
     console.error("Scriba error:", e);
     return res.status(500).json({ error: e.message });

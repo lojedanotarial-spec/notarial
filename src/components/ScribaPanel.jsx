@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { C } from "../constants";
 import { useScribaConversacion } from "../hooks/useScribaConversacion";
+import { useAuth } from "../context/AuthContext";
 
 function SparkleIcon({ size = 10, color = "#7ec8e3" }) {
   return (
@@ -146,6 +147,7 @@ const SUGERENCIAS_GENERAR = [
 
 export function ScribaPanel({ onClose, contexto, onGo }) {
   const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion } = useScribaConversacion();
+  const { registroActivo } = useAuth();
   const [mensajes,  setMensajes]  = useState([]);
   const [input,     setInput]     = useState("");
   const [cargando,  setCargando]  = useState(false);
@@ -194,6 +196,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
           mensaje: pregunta,
           mensajes_anteriores: mensajes,
           contexto: contexto || null,
+          registroId: registroActivo?.id || null,
         }),
       });
 
