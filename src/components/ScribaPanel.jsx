@@ -147,7 +147,8 @@ const SUGERENCIAS_GENERAR = [
 
 export function ScribaPanel({ onClose, contexto, onGo }) {
   const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion } = useScribaConversacion();
-  const { registroActivo } = useAuth();
+  const { registroActivo, usuario } = useAuth();
+  const registroId = usuario?.registro_numero || registroActivo;
   const [mensajes,  setMensajes]  = useState([]);
   const [input,     setInput]     = useState("");
   const [cargando,  setCargando]  = useState(false);
@@ -196,7 +197,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
           mensaje: pregunta,
           mensajes_anteriores: mensajes,
           contexto: contexto || null,
-          registroId: registroActivo || null,
+          registroId: registroId || null,
         }),
       });
 

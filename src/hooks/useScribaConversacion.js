@@ -3,7 +3,8 @@ import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 
 export function useScribaConversacion() {
-  const { session, registroActivo } = useAuth();
+  const { session, registroActivo, usuario } = useAuth();
+  const registroId = usuario?.registro_numero || registroActivo || null;
   const [conversacionId, setConversacionId] = useState(null);
   const [historial,      setHistorial]      = useState([]);
   const [cargandoInicio, setCargandoInicio] = useState(true);
@@ -52,7 +53,7 @@ export function useScribaConversacion() {
           .from("scriba_conversaciones")
           .insert({
             usuario_id:  session.user.id,
-            registro_id: registroActivo?.id || null,
+            registro_id: registroId,
             mensajes,
             titulo,
             modo: "consulta",
