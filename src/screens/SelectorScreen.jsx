@@ -75,12 +75,14 @@ export function SelectorScreen({ onGo }) {
   useEffect(() => {
     if (!usuario) return;
     async function cargarTemplates() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("templates")
         .select("id, nombre, slug, familia, frecuencia, visible")
         .is("registro_id", null)
         .eq("visible", true)
         .order("frecuencia", { ascending: true });
+      if (error) console.error("Error cargando templates:", error);
+      console.log("Templates cargados:", data?.length, data);
       const lista = data || [];
       setTemplates(lista);
       if (lista.length) setSelected(lista[0]);
