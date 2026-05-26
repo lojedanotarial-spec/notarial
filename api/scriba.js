@@ -235,7 +235,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null } = req.body;
+  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, userToken = null } = req.body;
 
   if (!mensaje?.trim()) {
     return res.status(400).json({ error: "Mensaje requerido" });
@@ -246,7 +246,10 @@ export default async function handler(req, res) {
   }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, userToken
+    ? { global: { headers: { Authorization: `Bearer ${userToken}` } } }
+    : {}
+  );
 
   const contextoNote = contexto
     ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}\nEl escribano está trabajando en este documento ahora mismo. Podés referenciarlo en tus respuestas cuando sea relevante.`
@@ -262,7 +265,7 @@ export default async function handler(req, res) {
     if (name === "buscar_personas") {
       function buildPersonasQuery(withRegistro) {
         let q = sb.from("personas")
-          .select("*")
+          .select("apellido, nombre, tipo, genero, tipo_doc, nro_doc, cuit, fecha_nac, estado_civil, nacionalidad, calle, numero, piso, dpto, localidad, departamento, representaciones")
           .limit(8);
         if (withRegistro && registroId) q = q.eq("registro_id", String(registroId));
         if (input.nro_doc) {
@@ -277,19 +280,13 @@ export default async function handler(req, res) {
       }
 
       const { data, error } = await buildPersonasQuery(true);
-      console.log("[scriba] buscar_personas — registroId:", registroId, "input:", JSON.stringify(input), "resultado con filtro:", data?.length ?? "error", error?.message);
-      if (error) return { error: error.message, _debug: { registroId, input } };
+      if (error) return { error: error.message };
       if (data?.length > 0) return { total: data.length, personas: data };
 
-      // fallback sin filtro de registro
+      // fallback sin filtro de registro por si registroId no coincide
       const { data: d2, error: e2 } = await buildPersonasQuery(false);
-      console.log("[scriba] buscar_personas — fallback sin registro_id, resultado:", d2?.length ?? "error", e2?.message);
-      if (e2) return { error: e2.message, _debug: { registroId, input } };
-      return {
-        total: d2?.length || 0,
-        personas: d2 || [],
-        _debug: { nota: registroId ? `sin resultados con registro_id=${registroId}, reintentado sin filtro` : "sin filtro de registro", registroId, input },
-      };
+      if (e2) return { error: e2.message };
+      return { total: d2?.length || 0, personas: d2 || [] };
     }
     if (name === "buscar_documentos") {
       let q = sb.from("documentos")
