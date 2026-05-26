@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { C } from "../constants";
+import { useScribaConversacion } from "../hooks/useScribaConversacion";
 
 function SparkleIcon({ size = 10, color = "#7ec8e3" }) {
   return (
@@ -144,20 +145,36 @@ const SUGERENCIAS_GENERAR = [
 ];
 
 export function ScribaPanel({ onClose, contexto, onGo }) {
+  const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion } = useScribaConversacion();
   const [mensajes,  setMensajes]  = useState([]);
   const [input,     setInput]     = useState("");
   const [cargando,  setCargando]  = useState(false);
   const [error,     setError]     = useState(null);
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
+  const iniciadoRef = useRef(false);
+
+  useEffect(() => {
+    if (cargandoInicio || iniciadoRef.current) return;
+    iniciadoRef.current = true;
+    if (mensajesIniciales.length > 0) setMensajes(mensajesIniciales);
+  }, [cargandoInicio, mensajesIniciales]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensajes, cargando]);
 
   useEffect(() => {
+    if (!cargandoInicio) inputRef.current?.focus();
+  }, [cargandoInicio]);
+
+  async function handleNueva() {
+    iniciadoRef.current = false;
+    setMensajes([]);
+    setError(null);
+    await nueva();
     inputRef.current?.focus();
-  }, []);
+  }
 
   async function enviar(texto) {
     const pregunta = (texto || input).trim();
@@ -183,7 +200,9 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error del servidor");
 
-      setMensajes(prev => [...prev, { role: "assistant", content: data.respuesta, accion: data.accion || null }]);
+      const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
+      setMensajes(mensajesFinales);
+      guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -256,6 +275,16 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
               </div>
             )}
           </div>
+          {mensajes.length > 0 && (
+            <button onClick={handleNueva} style={{
+              background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 6, padding: "5px 10px",
+              color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 600,
+              fontFamily: "'Montserrat',sans-serif", cursor: "pointer", whiteSpace: "nowrap",
+            }}>
+              + Nueva
+            </button>
+          )}
           <button
             onClick={onClose}
             style={{
@@ -323,6 +352,37 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                   ))}
                 </div>
               </div>
+
+              {historial.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
+                    textTransform: "uppercase", color: "rgba(26,35,50,.35)",
+                    marginBottom: 8,
+                  }}>Retomar consulta</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {historial.slice(0, 5).map(c => (
+                      <button key={c.id} onClick={() => cargarConversacion(c)} style={{
+                        background: "transparent", border: "1px solid rgba(26,35,50,.1)",
+                        borderRadius: 8, padding: "8px 12px",
+                        textAlign: "left", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+                        transition: "background .1s",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#f8f6f2"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <span style={{ fontSize: 12, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {c.titulo || "Consulta anterior"}
+                        </span>
+                        <span style={{ fontSize: 10, color: "rgba(26,35,50,.35)", flexShrink: 0 }}>
+                          {new Date(c.updated_at).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
