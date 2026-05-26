@@ -32,13 +32,11 @@ const globalStyles = [
   ".scriba-fab { animation: scriba-pulse 3.5s ease-in-out infinite; }",
   ".scriba-fab.open { animation: none; }",
   ".scriba-fab:hover { animation: none !important; box-shadow: 0 4px 28px rgba(0,0,0,.5), 0 0 26px 8px rgba(201,169,97,.4) !important; }",
-  "@keyframes scriba-label {",
-  "  0%   { opacity: 0; transform: translateX(8px); }",
-  "  12%  { opacity: 1; transform: translateX(0);   }",
-  "  80%  { opacity: 1; transform: translateX(0);   }",
-  "  100% { opacity: 0; transform: translateX(8px); }",
+  "@keyframes dot-breathe {",
+  "  0%, 100% { transform: scale(1);   opacity: 1;  }",
+  "  50%       { transform: scale(1.3); opacity: .6; }",
   "}",
-  ".scriba-label { animation: scriba-label 4s ease forwards; pointer-events: none; }",
+  ".scriba-dot { animation: dot-breathe 2s ease-in-out infinite; }",
 ].join("\n");
 
 function AppRouter() {
@@ -46,12 +44,6 @@ function AppRouter() {
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
   const [scribaOpen, setScribaOpen] = useState(false);
-  const [scribaLabel, setScribaLabel] = useState(true);
-
-  useEffect(() => {
-    const t = setTimeout(() => setScribaLabel(false), 4000);
-    return () => clearTimeout(t);
-  }, []);
 
   const handleGo = (targetScreen, targetParams = {}) => {
     if (targetParams.registroActivo) {
@@ -111,41 +103,31 @@ function AppRouter() {
       {screen === "bulk"     && <BulkScreen     onGo={handleGo} />}
       {screen === "admin"    && <AdminScreen    onGo={handleGo} />}
 
-      {/* Label de descubrimiento */}
-      {scribaLabel && !scribaOpen && (
-        <div className="scriba-label no-print" style={{
-          position: "fixed", bottom: 37, right: 88, zIndex: 198,
-          background: "#1a2332",
-          border: "1px solid rgba(201,169,97,.35)",
-          color: "#FDFCFA", fontSize: 13, fontWeight: 600,
-          fontFamily: "'Montserrat', sans-serif",
-          padding: "7px 14px 7px 11px",
-          borderRadius: 20, whiteSpace: "nowrap",
-          boxShadow: "0 4px 16px rgba(0,0,0,.25)",
-          display: "flex", alignItems: "center", gap: 7,
-        }}>
-          <svg width="8" height="8" viewBox="0 0 10 10" fill="#7ec8e3">
-            <path d="M5 0L5.7 4.3 10 5 5.7 5.7 5 10 4.3 5.7 0 5 4.3 4.3 5 0Z"/>
-          </svg>
-          Scriba
-        </div>
-      )}
-
       {/* Botón flotante Scriba */}
-      <button
-        onClick={() => setScribaOpen(o => !o)}
-        className={"scriba-fab" + (scribaOpen ? " open" : "")}
-        title="Scriba — asistente notarial"
-        style={{
-          position: "fixed", bottom: 24, right: 24, zIndex: 199,
-          width: 56, height: 56, borderRadius: "50%",
-          background: "none", border: "none",
-          cursor: "pointer", padding: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}
-      >
-        <img src="/Scriba-icon-1.png" alt="Scriba" style={{ width: 56, height: 56, borderRadius: "50%", display: "block" }} />
-      </button>
+      <div className="no-print" style={{ position: "fixed", bottom: 24, right: 24, zIndex: 199 }}>
+        {!scribaOpen && (
+          <div className="scriba-dot" style={{
+            position: "absolute", top: 2, right: 2,
+            width: 11, height: 11, borderRadius: "50%",
+            background: "#22c55e",
+            border: "2px solid #f0ece3",
+            zIndex: 1,
+          }} />
+        )}
+        <button
+          onClick={() => setScribaOpen(o => !o)}
+          className={"scriba-fab" + (scribaOpen ? " open" : "")}
+          title="Scriba — asistente notarial"
+          style={{
+            width: 56, height: 56, borderRadius: "50%",
+            background: "none", border: "none",
+            cursor: "pointer", padding: 0,
+            display: "block",
+          }}
+        >
+          <img src="/Scriba-icon-1.png" alt="Scriba" style={{ width: 56, height: 56, borderRadius: "50%", display: "block" }} />
+        </button>
+      </div>
 
       {scribaOpen && <ScribaPanel onClose={() => setScribaOpen(false)} />}
     </>
