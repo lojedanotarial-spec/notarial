@@ -25,6 +25,13 @@ const globalStyles = [
   "  .print-page { box-shadow: none !important; margin: 0 !important; }",
   "  @page { size: A4; margin: 0; }",
   "}",
+  "@keyframes scriba-pulse {",
+  "  0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,.4), 0 0 0 0 rgba(201,169,97,0); }",
+  "  55% { box-shadow: 0 4px 24px rgba(0,0,0,.45), 0 0 20px 6px rgba(201,169,97,.28); }",
+  "}",
+  ".scriba-fab { animation: scriba-pulse 3.5s ease-in-out infinite; }",
+  ".scriba-fab.open { animation: none; }",
+  ".scriba-fab:hover { animation: none !important; box-shadow: 0 4px 28px rgba(0,0,0,.5), 0 0 26px 8px rgba(201,169,97,.4) !important; border-color: rgba(201,169,97,.8) !important; }",
 ].join("\n");
 
 function AppRouter() {
@@ -94,23 +101,21 @@ function AppRouter() {
       {/* Botón flotante Scriba */}
       <button
         onClick={() => setScribaOpen(o => !o)}
+        className={"scriba-fab" + (scribaOpen ? " open" : "")}
         title="Scriba — asistente notarial"
         style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 199,
-          width: 52, height: 52, borderRadius: "50%",
+          width: 56, height: 56, borderRadius: "50%",
           background: "#1a2332",
-          border: "2px solid " + (scribaOpen ? "rgba(201,169,97,.55)" : "rgba(201,169,97,.25)"),
+          border: "2px solid " + (scribaOpen ? "rgba(201,169,97,.65)" : "rgba(201,169,97,.35)"),
           cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 4px 20px rgba(0,0,0,.35)",
-          transition: "all .2s",
+          transition: "border-color .2s",
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,169,97,.7)"; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = scribaOpen ? "rgba(201,169,97,.55)" : "rgba(201,169,97,.25)"; }}
       >
         <span style={{
           fontFamily: "'Carattere', cursive",
-          fontSize: 26,
+          fontSize: 32,
           color: "#c9a961",
           lineHeight: 1,
           userSelect: "none",
