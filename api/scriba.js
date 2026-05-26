@@ -357,8 +357,11 @@ export default async function handler(req, res) {
       if (response.stop_reason === "tool_use") {
         const toolUses = response.content.filter(c => c.type === "tool_use");
 
+        // Si solo hay abrir_editor (sin otras herramientas pendientes), retornar ya
         const abrirEditor = toolUses.find(t => t.name === "abrir_editor");
-        if (abrirEditor) {
+        const otrasHerramientas = toolUses.filter(t => t.name !== "abrir_editor");
+
+        if (abrirEditor && otrasHerramientas.length === 0) {
           const { slug, mensaje: msg, partes, fecha } = abrirEditor.input;
           const template = TEMPLATES_MAP[slug];
           return res.status(200).json({
@@ -374,13 +377,27 @@ export default async function handler(req, res) {
           });
         }
 
+        // Ejecutar todas las herramientas excepto abrir_editor
+        // (si Claude llama ambas en el mismo turno, ejecutamos las DB tools primero
+        //  y le devolvemos los resultados para que llame abrir_editor en el siguiente turno)
+        const toolsAEjecutar = otrasHerramientas.length > 0 ? otrasHerramientas : toolUses;
         const toolResults = await Promise.all(
-          toolUses.map(async t => ({
+          toolsAEjecutar.map(async t => ({
             type: "tool_result",
             tool_use_id: t.id,
             content: JSON.stringify(await ejecutarTool(t.name, t.input)),
           }))
         );
+
+        // Si había abrir_editor junto a otras tools, agregar resultado vacío para que el
+        // mensaje de assistant sea válido (Anthropic requiere tool_result por cada tool_use)
+        if (abrirEditor && otrasHerramientas.length > 0) {
+          toolResults.push({
+            type: "tool_result",
+            tool_use_id: abrirEditor.id,
+            content: JSON.stringify({ pendiente: true }),
+          });
+        }
 
         messages = [
           ...messages,
