@@ -3,6 +3,63 @@ import { C } from "../constants";
 import { useScribaConversacion } from "../hooks/useScribaConversacion";
 import { useAuth } from "../context/AuthContext";
 
+function renderMarkdown(text) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const elements = [];
+  let key = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (/^---+$/.test(line.trim())) {
+      elements.push(<hr key={key++} style={{ border: "none", borderTop: "1px solid rgba(26,35,50,.1)", margin: "8px 0" }} />);
+      continue;
+    }
+
+    if (/^#{1,3}\s/.test(line)) {
+      const content = line.replace(/^#{1,3}\s/, "");
+      elements.push(<div key={key++} style={{ fontWeight: 700, fontSize: 13, marginTop: 8, marginBottom: 2 }}>{inlineFormat(content)}</div>);
+      continue;
+    }
+
+    const listMatch = line.match(/^(\s*)([-*]|\d+\.)\s+(.+)/);
+    if (listMatch) {
+      const indent = listMatch[1].length;
+      elements.push(
+        <div key={key++} style={{ display: "flex", gap: 6, paddingLeft: indent * 8, marginTop: 2 }}>
+          <span style={{ flexShrink: 0, color: C.muted }}>•</span>
+          <span>{inlineFormat(listMatch[3])}</span>
+        </div>
+      );
+      continue;
+    }
+
+    if (line.trim() === "") {
+      elements.push(<div key={key++} style={{ height: 6 }} />);
+      continue;
+    }
+
+    elements.push(<div key={key++}>{inlineFormat(line)}</div>);
+  }
+
+  return elements;
+}
+
+function inlineFormat(text) {
+  const parts = [];
+  const re = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let last = 0, match, key = 0;
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > last) parts.push(<span key={key++}>{text.slice(last, match.index)}</span>);
+    if (match[2]) parts.push(<strong key={key++}>{match[2]}</strong>);
+    else if (match[3]) parts.push(<em key={key++}>{match[3]}</em>);
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push(<span key={key++}>{text.slice(last)}</span>);
+  return parts.length ? parts : text;
+}
+
 function SparkleIcon({ size = 10, color = "#7ec8e3" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 10 10" fill={color}>
@@ -104,7 +161,7 @@ function Mensaje({ msg, onGo, hayEditor }) {
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
         }}>
-          {msg.content}
+          {esUser ? msg.content : renderMarkdown(msg.content)}
         </div>
         {!esUser && accion?.tipo === "insertar_texto" && (
           <div style={{
