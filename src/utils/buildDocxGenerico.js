@@ -4,8 +4,8 @@ import { buildVars, sustituirVars } from "./templateVars";
 const mm2twip = (mm) => Math.round(mm * 56.69);
 
 const MARGENES = {
-  protocolar:    { top: mm2twip(10), bottom: mm2twip(10), left: mm2twip(35), right: mm2twip(20) },
-  noProtocolar:  { top: mm2twip(20), bottom: mm2twip(20), left: mm2twip(25), right: mm2twip(25) },
+  protocolar:   { top: mm2twip(76), bottom: mm2twip(20), left: mm2twip(36), right: mm2twip(15) },
+  noProtocolar: { top: mm2twip(35), bottom: mm2twip(20), left: mm2twip(30), right: mm2twip(20) },
 };
 
 // Líneas que van centradas (títulos del instrumento)
