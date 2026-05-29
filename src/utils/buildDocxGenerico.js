@@ -17,11 +17,15 @@ export async function buildDocxGenerico({
   margenKey = "protocolar",
   fontSize = 11,
   fuente,
+  interlineado,
   datosExtra = {},
 }) {
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2;
   const margin = MARGENES[margenKey] || MARGENES.protocolar;
+
+  const lineSpacing = interlineado?.line || 276;
+  const lineRule   = interlineado?.rule || "auto";
 
   const vars = { ...buildVars({ partes, escribano, fecha, protocolo, instrumento }), ...datosExtra };
   const textoFinal = sustituirVars(contenido || "", vars);
@@ -34,7 +38,7 @@ export async function buildDocxGenerico({
 
     return new Paragraph({
       alignment: esTitulo ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
-      spacing: { line: 276, after: esTitulo ? 80 : 0 },
+      spacing: { line: lineSpacing, lineRule, after: esTitulo ? 80 : 0 },
       children: [
         new TextRun({
           text: texto,

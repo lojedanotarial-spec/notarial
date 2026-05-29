@@ -153,7 +153,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
           ? await buildDocxGenerico({
               contenido: templateContenido,
               partes, escribano, fecha, protocolo, instrumento,
-              margenKey, fontSize, fuente,
+              margenKey, fontSize, fuente, interlineado,
             })
           : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente });
 
