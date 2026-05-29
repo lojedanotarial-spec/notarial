@@ -14,6 +14,7 @@ import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato }  from "../components/modals/ModalFormato";
 import { buildDocxCertFirmaF08, buildDocxBlanco } from "../utils/buildDocx";
+import { buildDocxGenerico } from "../utils/buildDocxGenerico";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -119,14 +120,17 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       });
   }, [miUsuario?.is_admin, registroActivo]);
 
-  // Cargar nombre del template desde Supabase
+  const [templateContenido, setTemplateContenido] = useState("");
+
+  // Cargar nombre y contenido del template desde Supabase
   useEffect(() => {
     if (!templateId) return;
-    supabase.from("templates").select("nombre, slug").eq("id", templateId).single()
+    supabase.from("templates").select("nombre, slug, contenido").eq("id", templateId).single()
       .then(({ data }) => {
         if (data) {
           setTemplateNombre(data.nombre);
           setTemplateSlug(data.slug || "");
+          setTemplateContenido(data.contenido || "");
         }
       });
   }, [templateId]);
@@ -145,7 +149,13 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             margenKey, fontSize, fuente, interlineado,
             showVarHighlight,
           })
-        : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente });
+        : templateContenido
+          ? await buildDocxGenerico({
+              contenido: templateContenido,
+              partes, escribano, fecha, protocolo, instrumento,
+              margenKey, fontSize, fuente,
+            })
+          : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente });
 
       const key      = `doc-${Date.now()}`;
       const filePath = `${key}.docx`;
