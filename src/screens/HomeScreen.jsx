@@ -315,13 +315,14 @@ export function HomeScreen({ onGo }) {
           </SideSection>
 
           <SideSection label="Tipo">
-            {[["","Todos"], ["certFirma","Certificación"], ["certFirmaF08","Cert. F08"],
-              ["poderEspecial","Poder especial"], ["actaConst","Acta"], ["compraventa","Compraventa"]
-            ].map(([val, label]) => (
-              <FilterItem key={val} label={label}
-                          count={val === "" ? docs.length : docs.filter(d => d.template_key === val).length}
-                          active={fTipo === val}
-                          onClick={() => { setFTipo(val); resetPag(); }} />
+            <FilterItem label="Todos" count={docs.length} active={fTipo === ""}
+                        onClick={() => { setFTipo(""); resetPag(); }} />
+            {[...new Set(docs.map(d => d.template_key).filter(Boolean))].map(key => (
+              <FilterItem key={key}
+                          label={TIPO_LABEL[key] || key}
+                          count={docs.filter(d => d.template_key === key).length}
+                          active={fTipo === key}
+                          onClick={() => { setFTipo(key); resetPag(); }} />
             ))}
           </SideSection>
 
