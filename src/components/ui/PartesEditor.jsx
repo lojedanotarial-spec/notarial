@@ -11,6 +11,27 @@ const fmtDni = (v) => {
   return isNaN(n) ? "" : n.toLocaleString("es-AR");
 };
 
+function calcularCUIT(dni, genero) {
+  const dniStr = String(dni || "").replace(/\D/g, "").padStart(8, "0");
+  if (dniStr.length !== 8) return null;
+  const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const calcVer = (pre) => {
+    const num = String(pre) + dniStr;
+    const suma = num.split("").reduce((acc, d, i) => acc + parseInt(d) * mult[i], 0);
+    return 11 - (suma % 11);
+  };
+  const preBase = genero === "M" ? 20 : 27;
+  let ver = calcVer(preBase);
+  let pre = preBase;
+  if (ver === 11) { ver = 0; }
+  else if (ver === 10) {
+    pre = genero === "M" ? 23 : 24;
+    ver = calcVer(pre);
+    if (ver === 11) ver = 0;
+  }
+  return { prefijo: String(pre), verificador: String(ver) };
+}
+
 const REPR_TIPOS = [
   { key: "pj_representante", label: "Representante de persona jurídica" },
   { key: "pj_apoderado",     label: "Apoderado de persona jurídica" },
@@ -359,6 +380,10 @@ export function PartesEditor({ partes, onChange, showRol = true }) {
                     if (p.nacionalidad === "argentina" || p.nacionalidad === "argentino") {
                       fields.nacionalidad = g === "F" ? "argentina" : "argentino";
                     }
+                    if (p.tipoDoc === "DNI" && String(p.nroDoc || "").replace(/\D/g,"").length >= 7) {
+                      const c = calcularCUIT(p.nroDoc, g);
+                      if (c) fields.cuit = c.prefijo + "-" + String(p.nroDoc).replace(/\D/g,"") + "-" + c.verificador;
+                    }
                     upd(p.id, fields);
                   }}>
                     <option value="F">Femenino</option>
@@ -388,7 +413,10 @@ export function PartesEditor({ partes, onChange, showRol = true }) {
                     onChange={e => {
                       const v = e.target.value.replace(/\D/g, "").slice(0, 8);
                       const fields = { nroDoc: v };
-                      if (p.cuit) {
+                      if (p.tipoDoc === "DNI" && v.length >= 7) {
+                        const c = calcularCUIT(v, p.genero);
+                        if (c) fields.cuit = c.prefijo + "-" + v + "-" + c.verificador;
+                      } else if (p.cuit) {
                         const parts = p.cuit.split("-");
                         if (parts.length === 3) fields.cuit = parts[0] + "-" + v + "-" + parts[2];
                       }
