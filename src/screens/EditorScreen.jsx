@@ -13,7 +13,7 @@ import { Warn }    from "../components/ui/FormElements";
 import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato }  from "../components/modals/ModalFormato";
-import { buildDocxCertFirmaF08 } from "../utils/buildDocx";
+import { buildDocxCertFirmaF08, buildDocxBlanco } from "../utils/buildDocx";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -134,17 +134,18 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const SLUGS_CON_GENERADOR = ["cert_firma_f08", "certFirmaF08", "cert_firma", "certFirma"];
 
   const handleGenerar = useCallback(async () => {
-    if (!SLUGS_CON_GENERADOR.includes(templateSlug)) return;
     const instrTexto  = instrumento.descripcion || "el instrumento adjunto a la presente Actuación Notarial";
     const fechaLetras = diaLetras(fecha.dia) + " días del mes de " + MESES_LABEL[fecha.mes] + " de " + anioLetras(fecha.anio);
     setGenerating(true);
     try {
-      const blob = await buildDocxCertFirmaF08({
-        partes, escribano, fecha, protocolo, instrumento,
-        instrTexto, fechaLetras, gen,
-        margenKey, fontSize, fuente, interlineado,
-        showVarHighlight,
-      });
+      const blob = SLUGS_CON_GENERADOR.includes(templateSlug)
+        ? await buildDocxCertFirmaF08({
+            partes, escribano, fecha, protocolo, instrumento,
+            instrTexto, fechaLetras, gen,
+            margenKey, fontSize, fuente, interlineado,
+            showVarHighlight,
+          })
+        : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente });
 
       const key      = `doc-${Date.now()}`;
       const filePath = `${key}.docx`;
