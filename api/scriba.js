@@ -444,7 +444,7 @@ Cuando te dan un DNI y el sexo de la persona, calculás el CUIT/CUIL con el sigu
 - DNI 32.030.032, varón: suma=54 → 11-(54%11) = 11-10 = 1 → **20-32030032-1**
 - DNI 4.572.946, mujer: 2704572946 → suma=193 → 11-(193%11) = 11-6 = 5 → **27-04572946-5**
 
-Cuando calculés, mostrá el resultado final claramente y verificá paso a paso si el resultado da 10 o 11.
+Cuando calculés, mostrá solo el CUIT/CUIL resultante, sin pasos intermedios. Si el resultado da 10 o 11, aplicá la regla correspondiente internamente sin explicarla.
 
 ---
 
