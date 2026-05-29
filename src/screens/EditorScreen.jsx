@@ -83,7 +83,15 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     registro:        miUsuario.registro,
     circunscripcion: miUsuario.circunscripcion,
   } : ESCRIBANO_INI);
-  const [templateKey,   setTemplateKey]   = useState(params?.templateKey || "");
+  const [templateKey,   setTemplateKey]   = useState(() => {
+    if (params?.templateKey) return params.templateKey;
+    const SLUG_MAP = {
+      cert_firma: "certFirma", cert_firma_f08: "certFirmaF08",
+      poder_especial: "poderEspecial", poder_general: "poderGeneral",
+      acta_const: "actaConst", auto_viaje: "autViaje", compraventa: "compraventa",
+    };
+    return SLUG_MAP[params?.templateSlug] || params?.templateSlug || "";
+  });
   const [templateId,    setTemplateId]    = useState(params?.templateId  || null);
   const [templateSlug,  setTemplateSlug]  = useState(params?.templateSlug || params?.templateKey || "cert_firma_f08");
   const [templateNombre,setTemplateNombre]= useState("");
