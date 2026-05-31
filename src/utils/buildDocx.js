@@ -50,8 +50,8 @@ export async function buildDocxCertFirmaF08({
   const vRun = (label, value, bold = false) =>
     new TextRun({
       text: value ? String(value) : `{{${label}}}`,
-      bold: bold || (showVarHighlight && !value),
-      color: showVarHighlight && !value ? "c0392b" : "1A2332",
+      bold: bold || showVarHighlight,
+      color: showVarHighlight ? (value ? "2e86c1" : "c0392b") : "1A2332",
       size,
       font: fontName,
       language: lang,
