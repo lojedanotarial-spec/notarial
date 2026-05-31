@@ -52,7 +52,7 @@ export async function buildDocxCertFirmaF08({
       color: "1A2332",
       size,
       font: fontName,
-      ...(showVarHighlight ? { highlight: "darkYellow" } : {}),
+      ...(showVarHighlight && !value ? { highlight: "yellow" } : {}),
     });
 
   const r = (text, bold = false) =>
