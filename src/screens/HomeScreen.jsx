@@ -182,7 +182,7 @@ function FilaDoc({ doc, onOpen, onDelete, last }) {
           style={{ width:26, height:26, borderRadius:5, border:"1px solid transparent",
                    background:"transparent", cursor:"pointer", display:"flex",
                    alignItems:"center", justifyContent:"center",
-                   opacity: hover ? 1 : 0, transition:"opacity .1s" }}
+                   opacity: 1 }}
           onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
         >
