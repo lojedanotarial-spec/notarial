@@ -247,6 +247,39 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   useEffect(() => {
     const handler = (e) => {
+      const d = e.detail;
+      const nuevaParte = {
+        id:           Date.now() + Math.random(),
+        apellido:     d.apellido     || "",
+        nombre:       d.nombre       || "",
+        genero:       d.genero       || "F",
+        nacionalidad: d.nacionalidad || "argentina",
+        tipoDoc:      d.tipo_doc     || "DNI",
+        nroDoc:       (d.nro_doc     || "").replace(/\D/g, ""),
+        cuit:         d.cuit         || "",
+        fechaNac:     d.fecha_nac    || "",
+        estadoCivil:  d.estado_civil || "",
+        calle:        d.calle        || "",
+        numero:       d.numero       || "",
+        piso:         d.piso         || "",
+        dpto:         d.dpto         || "",
+        localidad:    d.localidad    || "",
+        departamento: d.departamento || "Ciudad",
+        rol:          "",
+        representaciones: [],
+      };
+      setPartes(prev => {
+        const tieneParcial = prev.length === 1 && !prev[0].apellido && !prev[0].nroDoc;
+        return tieneParcial ? [nuevaParte] : [...prev, nuevaParte];
+      });
+      setIsDirty(true);
+    };
+    window.addEventListener("scriba:completar_parte", handler);
+    return () => window.removeEventListener("scriba:completar_parte", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
       const texto = e.detail.texto;
       if (!pluginWindowRef.current) {
         console.warn("[editor] pluginWindowRef.current es null — encolando para cuando el plugin esté listo");

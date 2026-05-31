@@ -448,6 +448,20 @@ Cuando calculés, mostrá solo el CUIT/CUIL resultante, sin pasos intermedios. S
 
 ---
 
+## Lectura de documentos de identidad y civiles
+
+Cuando el escribano te comparte una imagen o PDF de un documento (DNI, licencia de conducir, partida de nacimiento, matrimonio, divorcio, defunción, pasaporte, etc.):
+
+1. Leé el documento con atención y extraé TODOS los datos visibles de las personas
+2. Usá la herramienta `completar_parte` para devolver los datos estructurados
+3. El DNI: solo los números sin puntos ni guiones (ej: "31645431")
+4. La fecha de nacimiento en formato dd/mm/aaaa
+5. El género: "M" para masculino, "F" para femenino
+6. Si el documento tiene datos de múltiples personas (ej: partida de matrimonio), extraé ambas
+7. Para documentos que no son de identidad (modelos, templates, otros): leelos, entendelos y usá la información como contexto para responder o redactar
+
+---
+
 ## Modificación del documento activo
 
 Cuando el editor tiene un documento abierto, el contexto incluye el CONTENIDO ACTUAL DEL DOCUMENTO con sus `{{VARIABLES}}`. Si el escribano pide modificar, reescribir, agregar o completar algo en el documento:
@@ -465,7 +479,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, userToken = null } = req.body;
+  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, userToken = null, imagen = null } = req.body;
 
   if (!mensaje?.trim()) {
     return res.status(400).json({ error: "Mensaje requerido" });
@@ -528,10 +542,53 @@ const MODIFICAR_TOOL = [{
   },
 }];
 
-const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL];
+const COMPLETAR_PARTE_TOOL = [{
+  name: "completar_parte",
+  description: "Usá esta herramienta cuando leés un documento de identidad, civil o cualquier documento que contenga datos de una persona. Devolvé los datos extraídos para que el escribano pueda agregarlos como parte en el editor.",
+  input_schema: {
+    type: "object",
+    properties: {
+      datos: {
+        type: "object",
+        description: "Datos extraídos del documento",
+        properties: {
+          apellido:     { type: "string" },
+          nombre:       { type: "string" },
+          nro_doc:      { type: "string", description: "Solo números, sin puntos ni guiones" },
+          tipo_doc:     { type: "string", description: "DNI, LE, LC, Pasaporte" },
+          genero:       { type: "string", description: "M o F" },
+          fecha_nac:    { type: "string", description: "dd/mm/aaaa" },
+          estado_civil: { type: "string" },
+          nacionalidad: { type: "string" },
+          cuit:         { type: "string" },
+          calle:        { type: "string" },
+          numero:       { type: "string" },
+          piso:         { type: "string" },
+          dpto:         { type: "string" },
+          localidad:    { type: "string" },
+          departamento: { type: "string", description: "Departamento de Mendoza si aplica" },
+        },
+      },
+      mensaje: { type: "string", description: "Resumen breve de lo que encontraste en el documento" },
+    },
+    required: ["datos", "mensaje"],
+  },
+}];
+
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL];
+  const ultimoMensaje = imagen
+    ? {
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: imagen.mediaType, data: imagen.data } },
+          { type: "text", text: mensaje || "Leé este documento y extraé todos los datos relevantes de las personas que aparecen." },
+        ],
+      }
+    : { role: "user", content: mensaje };
+
   let messages = [
     ...mensajes_anteriores.map(m => ({ role: m.role, content: m.content })),
-    { role: "user", content: mensaje },
+    ultimoMensaje,
   ];
 
   async function ejecutarTool(name, input) {
@@ -611,6 +668,15 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
           return res.status(200).json({
             respuesta: msg,
             accion: { tipo: "modificar_documento", contenido },
+          });
+        }
+
+        const completarParte = toolUses.find(t => t.name === "completar_parte");
+        if (completarParte && toolUses.length === 1) {
+          const { datos, mensaje: msg } = completarParte.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "completar_parte", datos },
           });
         }
 

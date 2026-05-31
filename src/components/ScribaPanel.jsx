@@ -190,6 +190,41 @@ function Mensaje({ msg, onGo, hayEditor }) {
         }}>
           {esUser ? msg.content : renderMarkdown(msg.content)}
         </div>
+        {msg.imagen && (
+          <div style={{ marginTop: 4, fontSize: 11, color: "rgba(26,35,50,.4)", display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="1" width="12" height="14" rx="1.5"/>
+            </svg>
+            {msg.imagen.nombre}
+          </div>
+        )}
+        {!esUser && accion?.tipo === "completar_parte" && (
+          <div style={{ marginTop: 8, background: "rgba(26,82,118,.05)", border: "1px solid rgba(26,82,118,.2)", borderRadius: 8, padding: "10px 12px" }}>
+            <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginBottom: 8, fontWeight: 600 }}>
+              Datos extraídos del documento
+            </div>
+            <div style={{ fontSize: 12, color: C.dark, lineHeight: 1.7, marginBottom: 8 }}>
+              {accion.datos?.apellido && <div><strong>Apellido:</strong> {accion.datos.apellido}</div>}
+              {accion.datos?.nombre && <div><strong>Nombre:</strong> {accion.datos.nombre}</div>}
+              {accion.datos?.nro_doc && <div><strong>DNI:</strong> {accion.datos.nro_doc}</div>}
+              {accion.datos?.fecha_nac && <div><strong>Fecha nac.:</strong> {accion.datos.fecha_nac}</div>}
+              {accion.datos?.genero && <div><strong>Género:</strong> {accion.datos.genero === "M" ? "Masculino" : "Femenino"}</div>}
+              {accion.datos?.estado_civil && <div><strong>Estado civil:</strong> {accion.datos.estado_civil}</div>}
+              {accion.datos?.nacionalidad && <div><strong>Nacionalidad:</strong> {accion.datos.nacionalidad}</div>}
+              {accion.datos?.calle && <div><strong>Domicilio:</strong> {[accion.datos.calle, accion.datos.numero, accion.datos.localidad].filter(Boolean).join(", ")}</div>}
+            </div>
+            <button onClick={() => window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: accion.datos }))}
+              style={{
+                display: "flex", alignItems: "center", gap: 5, padding: "5px 10px",
+                background: "#1a5276", border: "none", borderRadius: 6,
+                fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer",
+                fontFamily: "'Montserrat', sans-serif",
+              }}>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Agregar como parte
+            </button>
+          </div>
+        )}
         {!esUser && accion?.tipo === "modificar_documento" && (
           <div style={{
             marginTop: 8,
@@ -320,9 +355,23 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
   const [input,     setInput]     = useState("");
   const [cargando,  setCargando]  = useState(false);
   const [error,     setError]     = useState(null);
+  const [imagen,    setImagen]    = useState(null); // { data, mediaType, nombre }
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
+  const fileRef    = useRef(null);
   const iniciadoRef = useRef(false);
+
+  function handleFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target.result.split(",")[1];
+      setImagen({ data: base64, mediaType: file.type, nombre: file.name });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
 
   useEffect(() => {
     if (cargandoInicio || iniciadoRef.current) return;
@@ -348,11 +397,18 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
 
   async function enviar(texto) {
     const pregunta = (texto || input).trim();
-    if (!pregunta || cargando) return;
+    if ((!pregunta && !imagen) || cargando) return;
 
-    const nuevosMensajes = [...mensajes, { role: "user", content: pregunta }];
+    const textoFinal = pregunta || (imagen ? "Leé este documento." : "");
+    const imgActual = imagen;
+    const nuevosMensajes = [...mensajes, {
+      role: "user",
+      content: textoFinal,
+      ...(imgActual ? { imagen: { nombre: imgActual.nombre } } : {}),
+    }];
     setMensajes(nuevosMensajes);
     setInput("");
+    setImagen(null);
     setCargando(true);
     setError(null);
 
@@ -361,11 +417,12 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mensaje: pregunta,
+          mensaje: textoFinal,
           mensajes_anteriores: mensajes,
           contexto: contexto || null,
           registroId: registroId || null,
           userToken: session?.access_token || null,
+          imagen: imgActual || null,
         }),
       });
 
@@ -575,23 +632,50 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         </div>
 
         {/* Input */}
-        <div style={{
-          padding: "12px 14px",
-          borderTop: "1px solid rgba(26,35,50,.08)",
-          flexShrink: 0,
-        }}>
+        <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(26,35,50,.08)", flexShrink: 0 }}>
+          {imagen && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
+              background: "rgba(58,124,165,.06)", border: "1px solid rgba(58,124,165,.2)",
+              borderRadius: 8, padding: "6px 10px",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={C.cerulean} strokeWidth="1.5">
+                <rect x="2" y="1" width="12" height="14" rx="1.5"/>
+                <path d="M5 5h6M5 8h6M5 11h4" strokeLinecap="round"/>
+              </svg>
+              <span style={{ fontSize: 11, color: C.cerulean, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {imagen.nombre}
+              </span>
+              <button onClick={() => setImagen(null)} style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "rgba(26,35,50,.4)", fontSize: 16, lineHeight: 1, padding: "0 2px",
+              }}>×</button>
+            </div>
+          )}
           <div style={{
             display: "flex", gap: 8, alignItems: "flex-end",
-            background: "#f8f6f2",
-            border: "1px solid rgba(26,35,50,.14)",
+            background: "#f8f6f2", border: "1px solid rgba(26,35,50,.14)",
             borderRadius: 10, padding: "8px 10px",
           }}>
+            <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: "none" }} onChange={handleFile} />
+            <button onClick={() => fileRef.current?.click()} title="Adjuntar documento"
+              style={{
+                width: 28, height: 28, borderRadius: 6, border: "none",
+                background: imagen ? "rgba(58,124,165,.15)" : "transparent",
+                color: imagen ? C.cerulean : "rgba(26,35,50,.35)",
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, transition: "all .15s",
+              }}>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M13 9l-5 5a4 4 0 01-5.66-5.66l6-6a2.5 2.5 0 013.54 3.54l-6.01 6a1 1 0 01-1.41-1.41l5-5" strokeLinecap="round"/>
+              </svg>
+            </button>
             <textarea
               ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKey}
-              placeholder="Consultá sobre normativa, requisitos, impuestos..."
+              placeholder={imagen ? "Agregá instrucciones (opcional)..." : "Consultá sobre normativa, requisitos, impuestos..."}
               disabled={cargando}
               rows={1}
               style={{
@@ -599,21 +683,17 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 resize: "none", outline: "none",
                 fontSize: 13, color: C.dark, lineHeight: 1.5,
                 fontFamily: "'Montserrat',sans-serif",
-                minHeight: 22, maxHeight: 120,
-                overflowY: "auto",
+                minHeight: 22, maxHeight: 120, overflowY: "auto",
               }}
-              onInput={e => {
-                e.target.style.height = "auto";
-                e.target.style.height = e.target.scrollHeight + "px";
-              }}
+              onInput={e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
             />
             <button
               onClick={() => enviar()}
-              disabled={!input.trim() || cargando}
+              disabled={(!input.trim() && !imagen) || cargando}
               style={{
                 width: 32, height: 32, borderRadius: 8, border: "none",
-                background: input.trim() && !cargando ? C.cerulean : "rgba(26,35,50,.12)",
-                color: "#fff", cursor: input.trim() && !cargando ? "pointer" : "default",
+                background: (input.trim() || imagen) && !cargando ? C.cerulean : "rgba(26,35,50,.12)",
+                color: "#fff", cursor: (input.trim() || imagen) && !cargando ? "pointer" : "default",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, transition: "background .15s",
               }}
@@ -624,7 +704,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             </button>
           </div>
           <div style={{ fontSize: 10, color: "rgba(26,35,50,.3)", marginTop: 6, textAlign: "center" }}>
-            Enter para enviar · Shift+Enter para nueva línea
+            Enter para enviar · Shift+Enter para nueva línea · 📎 para adjuntar documento
           </div>
         </div>
 
