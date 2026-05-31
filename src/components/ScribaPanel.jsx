@@ -364,13 +364,34 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
   function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target.result.split(",")[1];
-      setImagen({ data: base64, mediaType: file.type, nombre: file.name });
-    };
-    reader.readAsDataURL(file);
     e.target.value = "";
+
+    // PDFs: enviar directo sin comprimir
+    if (file.type === "application/pdf") {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target.result.split(",")[1];
+        setImagen({ data: base64, mediaType: "application/pdf", nombre: file.name });
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // Imágenes: comprimir a máximo 1200px y calidad 0.8
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1200;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
+      setImagen({ data: base64, mediaType: "image/jpeg", nombre: file.name });
+    };
+    img.src = url;
   }
 
   useEffect(() => {
