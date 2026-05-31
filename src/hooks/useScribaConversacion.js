@@ -89,6 +89,15 @@ export function useScribaConversacion() {
     setHistorial([]);
   }
 
+  async function eliminarConversacion(id) {
+    await supabase.from("scriba_conversaciones").delete().eq("id", id);
+    if (conversacionId === id) {
+      setConversacionId(null);
+      setMensajesIniciales([]);
+    }
+    setHistorial(prev => prev.filter(c => c.id !== id));
+  }
+
   return {
     conversacionId,
     historial,
@@ -97,5 +106,6 @@ export function useScribaConversacion() {
     guardar,
     nueva,
     cargarConversacion,
+    eliminarConversacion,
   };
 }

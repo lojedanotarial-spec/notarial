@@ -344,24 +344,14 @@ function LoadingDots() {
   );
 }
 
-const SUGERENCIAS_CONSULTA = [
-  "¿Qué pasa con el ITI en una compraventa hoy?",
-  "¿Cómo funciona la zona de frontera en Mendoza?",
-  "¿Cuándo va el agua con el inmueble en Mendoza?",
+const SUGERENCIAS = [
+  "¿Cuánto es el impuesto de sellos en Mendoza?",
+  "Generame un poder especial",
   "¿Qué exige la UIF para una compraventa?",
-  "¿Cuál es el impuesto de sellos en Mendoza en 2025?",
-];
-
-const SUGERENCIAS_GENERAR = [
-  "Generame un borrador de escritura de compraventa",
-  "Necesito un poder especial para venta de inmueble",
-  "Generame una escritura de donación entre padre e hijo",
-  "Borrador de constitución de hipoteca en primer grado",
-  "Generame el acta de requerimiento para certificación de firmas",
 ];
 
 export function ScribaPanel({ onClose, contexto, onGo }) {
-  const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion } = useScribaConversacion();
+  const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion, eliminarConversacion } = useScribaConversacion();
   const { registroActivo, usuario, session } = useAuth();
   const registroId = usuario?.registro_numero || registroActivo;
   const [mensajes,  setMensajes]  = useState([]);
@@ -601,53 +591,22 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         }}>
           {mensajes.length === 0 && (
             <div style={{ paddingBottom: 12 }}>
-              <div style={{ fontSize: 14, color: "rgba(26,35,50,.5)", marginBottom: 18, lineHeight: 1.6 }}>
-                Consultame sobre normativa o pedime que genere un borrador de instrumento.
+              <div style={{ fontSize: 13, color: "rgba(26,35,50,.45)", marginBottom: 16, lineHeight: 1.6 }}>
+                Consultame normativa, pedime un borrador o adjuntá un documento para leerlo.
               </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <div style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
-                  textTransform: "uppercase", color: "rgba(26,35,50,.35)",
-                  marginBottom: 8,
-                }}>Consultas</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                  {SUGERENCIAS_CONSULTA.map((s, i) => (
-                    <button key={i} onClick={() => enviar(s)} style={{
-                      background: "#f8f6f2", border: "1px solid rgba(26,35,50,.1)",
-                      borderRadius: 8, padding: "10px 14px",
-                      textAlign: "left", fontSize: 13, color: C.dark,
-                      fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
-                      transition: "background .1s",
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = "#f0ece3"}
-                    onMouseLeave={e => e.currentTarget.style.background = "#f8f6f2"}
-                    >{s}</button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
-                  textTransform: "uppercase", color: "rgba(201,169,97,.7)",
-                  marginBottom: 8,
-                }}>Generar borrador</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                  {SUGERENCIAS_GENERAR.map((s, i) => (
-                    <button key={i} onClick={() => enviar(s)} style={{
-                      background: "rgba(201,169,97,.06)",
-                      border: "1px solid rgba(201,169,97,.25)",
-                      borderRadius: 8, padding: "10px 14px",
-                      textAlign: "left", fontSize: 13, color: C.dark,
-                      fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
-                      transition: "background .1s",
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(201,169,97,.12)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "rgba(201,169,97,.06)"}
-                    >{s}</button>
-                  ))}
-                </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {SUGERENCIAS.map((s, i) => (
+                  <button key={i} onClick={() => enviar(s)} style={{
+                    background: "#f0ece3", border: "1px solid rgba(26,35,50,.1)",
+                    borderRadius: 20, padding: "6px 12px",
+                    fontSize: 12, color: "rgba(26,35,50,.7)",
+                    fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                    transition: "background .1s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#e8e2d8"}
+                  onMouseLeave={e => e.currentTarget.style.background = "#f0ece3"}
+                  >{s}</button>
+                ))}
               </div>
 
               {historial.length > 0 && (
@@ -659,23 +618,36 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                   }}>Retomar consulta</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {historial.slice(0, 5).map(c => (
-                      <button key={c.id} onClick={() => cargarConversacion(c)} style={{
-                        background: "transparent", border: "1px solid rgba(26,35,50,.1)",
-                        borderRadius: 8, padding: "8px 12px",
-                        textAlign: "left", cursor: "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-                        transition: "background .1s",
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#f8f6f2"}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                      >
-                        <span style={{ fontSize: 12, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {c.titulo || "Consulta anterior"}
-                        </span>
-                        <span style={{ fontSize: 10, color: "rgba(26,35,50,.35)", flexShrink: 0 }}>
-                          {new Date(c.updated_at).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
-                        </span>
-                      </button>
+                      <div key={c.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <button onClick={() => cargarConversacion(c)} style={{
+                          flex: 1, background: "transparent", border: "1px solid rgba(26,35,50,.1)",
+                          borderRadius: 8, padding: "8px 12px",
+                          textAlign: "left", cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+                          transition: "background .1s", minWidth: 0,
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#f8f6f2"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                        >
+                          <span style={{ fontSize: 12, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {c.titulo || "Consulta anterior"}
+                          </span>
+                          <span style={{ fontSize: 10, color: "rgba(26,35,50,.35)", flexShrink: 0 }}>
+                            {new Date(c.updated_at).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                          </span>
+                        </button>
+                        <button onClick={() => eliminarConversacion(c.id)}
+                          title="Borrar"
+                          style={{
+                            width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+                            background: "transparent", border: "1px solid transparent",
+                            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                            color: "rgba(26,35,50,.3)", fontSize: 14, transition: "all .15s",
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; e.currentTarget.style.color = "#c0392b"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; e.currentTarget.style.color = "rgba(26,35,50,.3)"; }}
+                        >×</button>
+                      </div>
                     ))}
                   </div>
                 </div>
