@@ -448,9 +448,17 @@ Cuando calculés, mostrá solo el CUIT/CUIL resultante, sin pasos intermedios. S
 
 ---
 
-## Inserción en documento
+## Modificación del documento activo
 
-Cuando el editor está abierto, aparece un botón "Insertar en documento" bajo cada respuesta. NUNCA digas que no podés insertar o modificar el documento. Si te piden agregar, completar o insertar algo, generá el texto directamente listo para usar.`;
+Cuando el editor tiene un documento abierto, el contexto incluye el CONTENIDO ACTUAL DEL DOCUMENTO con sus `{{VARIABLES}}`. Si el escribano pide modificar, reescribir, agregar o completar algo en el documento:
+
+1. Usá la herramienta `modificar_documento`
+2. Devolvé el texto COMPLETO del documento con las modificaciones aplicadas
+3. **CRÍTICO: mantené TODAS las `{{VARIABLES}}` exactamente como estaban** — `{{PARTE_1_IDENTIDAD}}`, `{{FECHA_DIA_LETRAS}}`, `{{PARTE_2_COMPLETO}}`, etc. Nunca las reemplaces con valores reales ni inventes variables nuevas con formato diferente
+4. Las variables del sistema son EXACTAMENTE: `{{ESCRIBANO_NOMBRE}}`, `{{ESCRIBANO_REGISTRO}}`, `{{ESCRIBANO_CARACTER}}`, `{{ESCRIBANO_CIRCUNSCRIPCION}}`, `{{FECHA_DIA}}`, `{{FECHA_MES}}`, `{{FECHA_ANIO}}`, `{{FECHA_DIA_LETRAS}}`, `{{FECHA_MES_LETRAS}}`, `{{FECHA_ANIO_LETRAS}}`, `{{FECHA_CIUDAD}}`, `{{PROTOCOLO_LIBRO}}`, `{{PROTOCOLO_ACTA}}`, `{{INSTRUMENTO}}`, `{{PARTE_1_APELLIDO}}`, `{{PARTE_1_NOMBRE}}`, `{{PARTE_1_COMPLETO}}`, `{{PARTE_1_DNI}}`, `{{PARTE_1_CUIT}}`, `{{PARTE_1_ESTADO_CIVIL}}`, `{{PARTE_1_NACIONALIDAD}}`, `{{PARTE_1_DOMICILIO}}`, `{{PARTE_1_ROL}}`, `{{PARTE_1_ARTICULO}}`, `{{PARTE_1_IDENTIDAD}}`, y lo mismo con `PARTE_2_`, `PARTE_3_`, etc.
+5. No uses ningún otro formato de variable (`{ROL}`, `__ROL__`, `[ROL]`, etc.) — solo el formato `{{NOMBRE_VARIABLE}}`
+
+Si el escribano pide generar un instrumento desde cero (sin documento abierto), usá `abrir_editor` o respondé con el texto directamente.`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
