@@ -135,7 +135,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       });
   }, [templateId]);
 
-  const SLUGS_CON_GENERADOR = ["cert_firma_f08", "certFirmaF08"];
+  const SLUGS_CON_GENERADOR = ["cert_firma_f08", "certFirmaF08", "cert_firma", "certFirma"];
 
   const handleGenerar = useCallback(async () => {
     const instrTexto  = instrumento.descripcion || "el instrumento adjunto a la presente Actuación Notarial";
