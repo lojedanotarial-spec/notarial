@@ -45,10 +45,15 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_ARTICULO`]      = genArticulo;
 
     // Identidad completa — la fórmula notarial estándar
-    vars[`PARTE_${n}_IDENTIDAD`] =
-      `${genArticulo} ${apellidoNombre}, de nacionalidad ${p.nacionalidad || ""}, ` +
-      `estado civil ${p.estadoCivil || ""}, con domicilio en ${domicilio || ""}, ` +
-      `DNI Nro. ${dni}, CUIL/CUIT ${p.cuit || ""}`;
+    const identidadPartes = [
+      `${genArticulo} ${apellidoNombre}`,
+      p.nacionalidad ? `de nacionalidad ${p.nacionalidad}` : null,
+      p.estadoCivil  ? `estado civil ${p.estadoCivil}` : null,
+      domicilio      ? `con domicilio en ${domicilio}` : null,
+      dni            ? `DNI Nro. ${dni}` : null,
+      p.cuit         ? `CUIL/CUIT ${p.cuit}` : null,
+    ].filter(Boolean);
+    vars[`PARTE_${n}_IDENTIDAD`] = identidadPartes.join(", ");
   });
 
   return vars;
