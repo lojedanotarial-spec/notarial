@@ -162,7 +162,7 @@ function BtnInsertar({ texto }) {
   );
 }
 
-function Mensaje({ msg, onGo, hayEditor }) {
+function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
   const esUser = msg.role === "user";
   const accion = msg.accion;
 
@@ -213,7 +213,11 @@ function Mensaje({ msg, onGo, hayEditor }) {
               {accion.datos?.nacionalidad && <div><strong>Nacionalidad:</strong> {accion.datos.nacionalidad}</div>}
               {accion.datos?.calle && <div><strong>Domicilio:</strong> {[accion.datos.calle, accion.datos.numero, accion.datos.localidad].filter(Boolean).join(", ")}</div>}
             </div>
-            <button onClick={() => window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: accion.datos }))}
+            <button onClick={() => {
+                window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: accion.datos }));
+                const nombre = [accion.datos?.apellido, accion.datos?.nombre].filter(Boolean).join(", ");
+                onConfirmarAccion?.(`Listo, agregué a **${nombre || "la persona"}** como parte al documento.`);
+              }}
               style={{
                 display: "flex", alignItems: "center", gap: 5, padding: "5px 10px",
                 background: "#1a5276", border: "none", borderRadius: 6,
@@ -670,7 +674,18 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             </div>
           )}
 
-          {mensajes.map((m, i) => <Mensaje key={i} msg={m} onGo={onGo} hayEditor={!!contexto} />)}
+          {mensajes.map((m, i) => (
+            <Mensaje key={i} msg={m} onGo={onGo} hayEditor={!!contexto}
+              onConfirmarAccion={(texto) => {
+                const confirmacion = { role: "assistant", content: texto };
+                setMensajes(prev => {
+                  const nuevos = [...prev, confirmacion];
+                  guardar(nuevos.map(({ role, content }) => ({ role, content })));
+                  return nuevos;
+                });
+              }}
+            />
+          ))}
           {cargando && <LoadingDots />}
 
           {error && (
