@@ -48,11 +48,10 @@ export async function buildDocxCertFirmaF08({
   const vRun = (label, value, bold = false) =>
     new TextRun({
       text: value ? String(value) : `{{${label}}}`,
-      bold,
-      color: "1A2332",
+      bold: bold || showVarHighlight,
+      color: showVarHighlight ? "3a7ca5" : "1A2332",
       size,
       font: fontName,
-      ...(showVarHighlight && !value ? { highlight: "yellow" } : {}),
     });
 
   const r = (text, bold = false) =>
@@ -124,11 +123,11 @@ export async function buildDocxCertFirmaF08({
   const mainRuns = [
     vRun("ESCRIBANO", escribano.nombre, true),
     r(", "),
-    vRun("CARÁCTER", escribano.caracter),
+    r(escribano.caracter || "Notario/a"),
     r(" " + al_del + " Registro Notarial número "),
-    vRun("N° REGISTRO", escribano.registro),
+    r(escribano.registro || ""),
     r(" de la "),
-    vRun("CIRCUNSCRIPCIÓN", escribano.circunscripcion ? escribano.circunscripcion + " circunscripción" : ""),
+    r(escribano.circunscripcion ? escribano.circunscripcion + " circunscripción" : ""),
     r(", "),
     r("CERTIFICO:-", true),
     r(" Que la firma que se encuentra inserta en "),
