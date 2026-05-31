@@ -416,41 +416,74 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     inputRef.current?.focus();
   }
 
+  async function procesarImagen(imgActual) {
+    const res = await fetch("/api/vision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imagen: imgActual }),
+    });
+    let data;
+    try { data = await res.json(); } catch { throw new Error(`Error del servidor (${res.status})`); }
+    if (!res.ok) throw new Error(data.error || "Error procesando documento");
+    return data;
+  }
+
   async function enviar(texto) {
     const pregunta = (texto || input).trim();
     if ((!pregunta && !imagen) || cargando) return;
 
-    const textoFinal = pregunta || (imagen ? "Leé este documento." : "");
     const imgActual = imagen;
-    const nuevosMensajes = [...mensajes, {
-      role: "user",
-      content: textoFinal,
-      ...(imgActual ? { imagen: { nombre: imgActual.nombre } } : {}),
-    }];
-    setMensajes(nuevosMensajes);
     setInput("");
     setImagen(null);
     setCargando(true);
     setError(null);
 
+    // Si hay imagen, procesarla con el endpoint de visión dedicado
+    if (imgActual) {
+      const textoUsuario = pregunta || `Leé este documento: ${imgActual.nombre}`;
+      const nuevosMensajes = [...mensajes, { role: "user", content: textoUsuario, imagen: { nombre: imgActual.nombre } }];
+      setMensajes(nuevosMensajes);
+      try {
+        const datos = await procesarImagen(imgActual);
+        const personas = datos.personas || [];
+        const resumen = personas.length
+          ? personas.map(p => `**${p.apellido || ""} ${p.nombre || ""}** — DNI ${p.nro_doc || ""}${p.fecha_nac ? `, nacido/a ${p.fecha_nac}` : ""}${p.estado_civil ? `, ${p.estado_civil}` : ""}`).join("\n")
+          : "No encontré datos de personas en el documento.";
+        const respuesta = `Documento leído: ${datos.tipo_documento || "documento"}.\n\n${resumen}${datos.notas ? `\n\n${datos.notas}` : ""}`;
+        const accion = personas.length === 1
+          ? { tipo: "completar_parte", datos: personas[0] }
+          : personas.length > 1
+          ? { tipo: "completar_parte", datos: personas[0], personas_adicionales: personas.slice(1) }
+          : null;
+        const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
+        setMensajes(mensajesFinales);
+        guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setCargando(false);
+      }
+      return;
+    }
+
+    // Sin imagen: flujo normal de Scriba
+    const nuevosMensajes = [...mensajes, { role: "user", content: pregunta }];
+    setMensajes(nuevosMensajes);
     try {
       const res = await fetch("/api/scriba", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mensaje: textoFinal,
+          mensaje: pregunta,
           mensajes_anteriores: mensajes,
           contexto: contexto || null,
           registroId: registroId || null,
           userToken: session?.access_token || null,
-          imagen: imgActual || null,
         }),
       });
-
       let data;
       try { data = await res.json(); } catch { throw new Error(`Error del servidor (${res.status})`); }
       if (!res.ok) throw new Error(data.error || "Error del servidor");
-
       const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
       setMensajes(mensajesFinales);
       guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
