@@ -447,7 +447,8 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         }),
       });
 
-      const data = await res.json();
+      let data;
+      try { data = await res.json(); } catch { throw new Error(`Error del servidor (${res.status})`); }
       if (!res.ok) throw new Error(data.error || "Error del servidor");
 
       const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];

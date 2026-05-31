@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/scriba.js": {
+      "maxDuration": 60
+    }
+  }
+}
