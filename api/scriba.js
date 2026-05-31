@@ -501,7 +501,7 @@ export default async function handler(req, res) {
   const fechaNota = `\n\n[FECHA Y HORA ACTUAL: ${fechaHoy}, ${horaHoy}]`;
 
   const contextoNote = contexto
-    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables):\n${contexto.templateContenido}` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
+    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables — ESTE ES EL ÚNICO DOCUMENTO QUE PODÉS MODIFICAR):\n${contexto.templateContenido}\n\nATENCIÓN: Si te piden modificar el documento, usá ESTE texto como base. No generes un instrumento diferente. No cambies el tipo de acto.` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
     : "";
 
   const INSERTAR_TOOL = [{

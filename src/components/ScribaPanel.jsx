@@ -203,30 +203,39 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
             <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginBottom: 8, fontWeight: 600 }}>
               Datos extraídos del documento
             </div>
-            <div style={{ fontSize: 12, color: C.dark, lineHeight: 1.7, marginBottom: 8 }}>
-              {accion.datos?.apellido && <div><strong>Apellido:</strong> {accion.datos.apellido}</div>}
-              {accion.datos?.nombre && <div><strong>Nombre:</strong> {accion.datos.nombre}</div>}
-              {accion.datos?.nro_doc && <div><strong>DNI:</strong> {accion.datos.nro_doc}</div>}
-              {accion.datos?.fecha_nac && <div><strong>Fecha nac.:</strong> {accion.datos.fecha_nac}</div>}
-              {accion.datos?.genero && <div><strong>Género:</strong> {accion.datos.genero === "M" ? "Masculino" : "Femenino"}</div>}
-              {accion.datos?.estado_civil && <div><strong>Estado civil:</strong> {accion.datos.estado_civil}</div>}
-              {accion.datos?.nacionalidad && <div><strong>Nacionalidad:</strong> {accion.datos.nacionalidad}</div>}
-              {accion.datos?.calle && <div><strong>Domicilio:</strong> {[accion.datos.calle, accion.datos.numero, accion.datos.localidad].filter(Boolean).join(", ")}</div>}
-            </div>
-            <button onClick={() => {
-                window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: accion.datos }));
-                const nombre = [accion.datos?.apellido, accion.datos?.nombre].filter(Boolean).join(", ");
-                onConfirmarAccion?.(`Listo, agregué a **${nombre || "la persona"}** como parte al documento.`);
-              }}
-              style={{
-                display: "flex", alignItems: "center", gap: 5, padding: "5px 10px",
-                background: "#1a5276", border: "none", borderRadius: 6,
-                fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer",
-                fontFamily: "'Montserrat', sans-serif",
-              }}>
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              Agregar como parte
-            </button>
+            {[accion.datos, ...(accion.personas_adicionales || [])].filter(Boolean).map((persona, idx) => (
+              <div key={idx} style={{ marginBottom: idx < (accion.personas_adicionales?.length || 0) ? 12 : 0 }}>
+                {(accion.personas_adicionales?.length > 0) && (
+                  <div style={{ fontSize: 11, fontWeight: 700, color: C.cerulean, marginBottom: 4 }}>
+                    Persona {idx + 1}
+                  </div>
+                )}
+                <div style={{ fontSize: 12, color: C.dark, lineHeight: 1.7, marginBottom: 6 }}>
+                  {persona.apellido && <div><strong>Apellido:</strong> {persona.apellido}</div>}
+                  {persona.nombre && <div><strong>Nombre:</strong> {persona.nombre}</div>}
+                  {persona.nro_doc && <div><strong>DNI:</strong> {persona.nro_doc}</div>}
+                  {persona.fecha_nac && <div><strong>Fecha nac.:</strong> {persona.fecha_nac}</div>}
+                  {persona.genero && <div><strong>Género:</strong> {persona.genero === "M" ? "Masculino" : "Femenino"}</div>}
+                  {persona.estado_civil && <div><strong>Estado civil:</strong> {persona.estado_civil}</div>}
+                  {persona.nacionalidad && <div><strong>Nacionalidad:</strong> {persona.nacionalidad}</div>}
+                  {persona.calle && <div><strong>Domicilio:</strong> {[persona.calle, persona.numero, persona.localidad].filter(Boolean).join(", ")}</div>}
+                </div>
+                <button onClick={() => {
+                    window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: persona }));
+                    const nombre = [persona.apellido, persona.nombre].filter(Boolean).join(", ");
+                    onConfirmarAccion?.(`Listo, agregué a **${nombre || "la persona"}** como parte al documento.`);
+                  }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5, padding: "5px 10px",
+                    background: "#1a5276", border: "none", borderRadius: 6,
+                    fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer",
+                    fontFamily: "'Montserrat', sans-serif",
+                  }}>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Agregar como parte
+                </button>
+              </div>
+            ))}
           </div>
         )}
         {!esUser && accion?.tipo === "modificar_documento" && (
