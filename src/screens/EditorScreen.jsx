@@ -272,6 +272,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         const tieneParcial = prev.length === 1 && !prev[0].apellido && !prev[0].nroDoc;
         return tieneParcial ? [nuevaParte] : [...prev, nuevaParte];
       });
+      generateAfterRef.current = true;
       setIsDirty(true);
     };
     window.addEventListener("scriba:completar_parte", handler);
