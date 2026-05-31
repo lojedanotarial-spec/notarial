@@ -349,8 +349,8 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
                           style={{ padding: "4px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Montserrat',sans-serif" }}
                           onMouseEnter={e => { e.currentTarget.style.color = "#c0392b"; e.currentTarget.style.borderColor = "#c0392b"; }}
                           onMouseLeave={e => { e.currentTarget.style.color = "#1a2332"; e.currentTarget.style.borderColor = "rgba(26,35,50,.15)"; }}>
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
-                            <path d="M3 5h10M6 5V3h4v2M6 8v5M10 8v5" strokeLinecap="round"/>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
                           </svg>
                         </button>
                       </div>
@@ -428,8 +428,8 @@ function FilaBarrio({ b, idx, total, onSeleccionar, onConfirmEliminar }) {
                    opacity: hover ? 1 : 0, transition:"opacity .1s" }}
           onMouseEnter={e => { e.currentTarget.style.background="#fdf0f0"; e.currentTarget.style.borderColor="#e07070"; }}
           onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderColor="transparent"; }}>
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#c0392b" strokeWidth="1.6">
-            <path d="M3 5h10M6 5V3h4v2M6 8v5M10 8v5" strokeLinecap="round"/>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c0392b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
           </svg>
         </button>
       </div>
