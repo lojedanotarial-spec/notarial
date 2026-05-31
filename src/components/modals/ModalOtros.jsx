@@ -90,12 +90,6 @@ export function ModalInstrumento({ instrumento, onApply, onClose }) {
         <input style={inp} value={d.fojas} onChange={e => upd("fojas", e.target.value)}
                placeholder="constante de dos (2) fojas útiles"/>
       </Fg>
-      <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, fontWeight:500,
-                      color:C.dark, fontFamily:"'Montserrat',sans-serif", cursor:"pointer" }}>
-        <input type="checkbox" checked={d.esF08} onChange={e => upd("esF08", e.target.checked)}
-               style={{ accentColor:C.cerulean }}/>
-        Formulario 08 — automotor
-      </label>
     </Modal>
   );
 }
