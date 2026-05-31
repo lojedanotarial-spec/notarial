@@ -453,7 +453,7 @@ Cuando calculés, mostrá solo el CUIT/CUIL resultante, sin pasos intermedios. S
 Cuando el escribano te comparte una imagen o PDF de un documento (DNI, licencia de conducir, partida de nacimiento, matrimonio, divorcio, defunción, pasaporte, etc.):
 
 1. Leé el documento con atención y extraé TODOS los datos visibles de las personas
-2. Usá la herramienta `completar_parte` para devolver los datos estructurados
+2. Usá la herramienta 'completar_parte' para devolver los datos estructurados
 3. El DNI: solo los números sin puntos ni guiones (ej: "31645431")
 4. La fecha de nacimiento en formato dd/mm/aaaa
 5. El género: "M" para masculino, "F" para femenino
@@ -464,15 +464,15 @@ Cuando el escribano te comparte una imagen o PDF de un documento (DNI, licencia 
 
 ## Modificación del documento activo
 
-Cuando el editor tiene un documento abierto, el contexto incluye el CONTENIDO ACTUAL DEL DOCUMENTO con sus `{{VARIABLES}}`. Si el escribano pide modificar, reescribir, agregar o completar algo en el documento:
+Cuando el editor tiene un documento abierto, el contexto incluye el CONTENIDO ACTUAL DEL DOCUMENTO con sus {{VARIABLES}}. Si el escribano pide modificar, reescribir, agregar o completar algo en el documento:
 
-1. Usá la herramienta `modificar_documento`
+1. Usá la herramienta 'modificar_documento'
 2. Devolvé el texto COMPLETO del documento con las modificaciones aplicadas
-3. **CRÍTICO: mantené TODAS las `{{VARIABLES}}` exactamente como estaban** — `{{PARTE_1_IDENTIDAD}}`, `{{FECHA_DIA_LETRAS}}`, `{{PARTE_2_COMPLETO}}`, etc. Nunca las reemplaces con valores reales ni inventes variables nuevas con formato diferente
-4. Las variables del sistema son EXACTAMENTE: `{{ESCRIBANO_NOMBRE}}`, `{{ESCRIBANO_REGISTRO}}`, `{{ESCRIBANO_CARACTER}}`, `{{ESCRIBANO_CIRCUNSCRIPCION}}`, `{{FECHA_DIA}}`, `{{FECHA_MES}}`, `{{FECHA_ANIO}}`, `{{FECHA_DIA_LETRAS}}`, `{{FECHA_MES_LETRAS}}`, `{{FECHA_ANIO_LETRAS}}`, `{{FECHA_CIUDAD}}`, `{{PROTOCOLO_LIBRO}}`, `{{PROTOCOLO_ACTA}}`, `{{INSTRUMENTO}}`, `{{PARTE_1_APELLIDO}}`, `{{PARTE_1_NOMBRE}}`, `{{PARTE_1_COMPLETO}}`, `{{PARTE_1_DNI}}`, `{{PARTE_1_CUIT}}`, `{{PARTE_1_ESTADO_CIVIL}}`, `{{PARTE_1_NACIONALIDAD}}`, `{{PARTE_1_DOMICILIO}}`, `{{PARTE_1_ROL}}`, `{{PARTE_1_ARTICULO}}`, `{{PARTE_1_IDENTIDAD}}`, y lo mismo con `PARTE_2_`, `PARTE_3_`, etc.
-5. No uses ningún otro formato de variable (`{ROL}`, `__ROL__`, `[ROL]`, etc.) — solo el formato `{{NOMBRE_VARIABLE}}`
+3. CRÍTICO: mantené TODAS las {{VARIABLES}} exactamente como estaban — {{PARTE_1_IDENTIDAD}}, {{FECHA_DIA_LETRAS}}, {{PARTE_2_COMPLETO}}, etc. Nunca las reemplaces con valores reales ni inventes variables nuevas con formato diferente
+4. Las variables del sistema son EXACTAMENTE: {{ESCRIBANO_NOMBRE}}, {{ESCRIBANO_REGISTRO}}, {{ESCRIBANO_CARACTER}}, {{FECHA_DIA_LETRAS}}, {{FECHA_MES_LETRAS}}, {{FECHA_ANIO_LETRAS}}, {{FECHA_CIUDAD}}, {{PROTOCOLO_LIBRO}}, {{PROTOCOLO_ACTA}}, {{INSTRUMENTO}}, {{PARTE_1_IDENTIDAD}}, {{PARTE_1_COMPLETO}}, {{PARTE_1_DNI}}, {{PARTE_1_ROL}}, y lo mismo con PARTE_2_, PARTE_3_, etc.
+5. No uses ningún otro formato de variable ({ROL}, __ROL__, [ROL], etc.) — solo el formato {{NOMBRE_VARIABLE}}
 
-Si el escribano pide generar un instrumento desde cero (sin documento abierto), usá `abrir_editor` o respondé con el texto directamente.`;
+Si el escribano pide generar un instrumento desde cero (sin documento abierto), usá 'abrir_editor' o respondé con el texto directamente.`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
