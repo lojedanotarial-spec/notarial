@@ -236,6 +236,17 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   useEffect(() => {
     const handler = (e) => {
+      const nuevoContenido = e.detail.contenido;
+      setTemplateContenido(nuevoContenido);
+      generateAfterRef.current = true;
+      setIsDirty(true);
+    };
+    window.addEventListener("scriba:modificar", handler);
+    return () => window.removeEventListener("scriba:modificar", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
       const texto = e.detail.texto;
       if (!pluginWindowRef.current) {
         console.warn("[editor] pluginWindowRef.current es null — encolando para cuando el plugin esté listo");
@@ -304,9 +315,9 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   useEffect(() => {
     if (!onScribaContexto) return;
-    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado });
+    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido });
     return () => onScribaContexto(null);
-  }, [tipoLabel, partesLabel, fechaStr, estado]);
+  }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido]);
 
   const { indicador, guardarAhora, hayPendiente } = useAutoguardado({
     titulo: docTitle,

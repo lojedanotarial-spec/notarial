@@ -479,7 +479,7 @@ export default async function handler(req, res) {
   const fechaNota = `\n\n[FECHA Y HORA ACTUAL: ${fechaHoy}, ${horaHoy}]`;
 
   const contextoNote = contexto
-    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}\nEl escribano está trabajando en este documento ahora mismo. Podés referenciarlo en tus respuestas cuando sea relevante.`
+    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables):\n${contexto.templateContenido}` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
     : "";
 
   const INSERTAR_TOOL = [{
@@ -501,7 +501,26 @@ export default async function handler(req, res) {
   },
 }];
 
-const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL];
+const MODIFICAR_TOOL = [{
+  name: "modificar_documento",
+  description: "Modifica el contenido del documento notarial activo en el editor. Usá esta herramienta cuando el escribano pide cambiar, agregar, reescribir o completar partes del documento. Devolvé el texto COMPLETO del documento con las modificaciones aplicadas. CRÍTICO: mantené todas las {{VARIABLES}} exactamente como estaban (ej: {{PARTE_1_IDENTIDAD}}, {{FECHA_DIA_LETRAS}}, etc.). No las reemplaces con valores reales.",
+  input_schema: {
+    type: "object",
+    properties: {
+      contenido: {
+        type: "string",
+        description: "Texto completo del documento modificado. Párrafos separados por salto de línea. Las {{VARIABLES}} deben quedar intactas.",
+      },
+      mensaje: {
+        type: "string",
+        description: "Explicación breve de qué modificaste.",
+      },
+    },
+    required: ["contenido", "mensaje"],
+  },
+}];
+
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL];
   let messages = [
     ...mensajes_anteriores.map(m => ({ role: m.role, content: m.content })),
     { role: "user", content: mensaje },
@@ -575,6 +594,15 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL];
           return res.status(200).json({
             respuesta: msg,
             accion: { tipo: "insertar_texto", texto },
+          });
+        }
+
+        const modificarDoc = toolUses.find(t => t.name === "modificar_documento");
+        if (modificarDoc && toolUses.length === 1) {
+          const { contenido, mensaje: msg } = modificarDoc.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "modificar_documento", contenido },
           });
         }
 
