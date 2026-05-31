@@ -45,6 +45,8 @@ export async function buildDocxCertFirmaF08({
     return parts[0] + "-" + (parts[1] ? Number(parts[1]).toLocaleString("es-AR") : "") + "-" + (parts[2] || "");
   };
 
+  const lang = { value: "es-AR", eastAsia: "es-AR", bidi: "es-AR" };
+
   const vRun = (label, value, bold = false) =>
     new TextRun({
       text: value ? String(value) : `{{${label}}}`,
@@ -52,10 +54,11 @@ export async function buildDocxCertFirmaF08({
       color: showVarHighlight ? "3a7ca5" : "1A2332",
       size,
       font: fontName,
+      language: lang,
     });
 
   const r = (text, bold = false) =>
-    new TextRun({ text: String(text), bold, size, font: fontName });
+    new TextRun({ text: String(text), bold, size, font: fontName, language: lang });
 
   const al_del = escribano.caracter?.toLowerCase().includes("titular") ? "del" : "al";
 

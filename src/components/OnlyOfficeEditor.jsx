@@ -31,7 +31,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       documentType: "word",
       editorConfig: {
         mode: "edit",
-        lang: "es",
+        lang: "es-AR",
         plugins: {
           autostart:   [],
           pluginsData: [`${serverUrl}/sdkjs-plugins/notarial-plugin/config.json`],

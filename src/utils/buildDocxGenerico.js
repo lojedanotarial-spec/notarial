@@ -45,6 +45,7 @@ export async function buildDocxGenerico({
           size,
           font: fontName,
           bold: esTitulo,
+          language: { value: "es-AR", eastAsia: "es-AR", bidi: "es-AR" },
         }),
       ],
     });
