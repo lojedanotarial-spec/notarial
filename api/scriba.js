@@ -450,6 +450,128 @@ Los escribanos son **sujetos obligados** cuando intervienen en: compraventa de i
 
 ---
 
+## NORMATIVA ACTUALIZADA — INVESTIGACIÓN 2025-2026
+
+### UIF / ARCA — Obligaciones del escribano
+
+- Res. UIF 242/2023 vigente desde 01/03/2024; derogó Res. 21/2011
+- Umbral de activación en efectivo: 750 SMVM (Res. UIF 78/2025 desde 06/06/2025); junio 2025 ≈ $235.050.000 ARS; actualización semestral
+- Para constitución de PJ, fideicomisos: obligaciones sin umbral monetario
+- KYC personas humanas: DNI, CUIL/CUIT, nacionalidad, domicilio, actividad, declaración de origen de fondos
+- KYC personas jurídicas: razón social, CUIT, estatuto, representantes, cadena de beneficiario final hasta persona humana
+- Diligencia simplificada (riesgo bajo) / media / reforzada (riesgo alto: justificación documentada de origen de fondos)
+- PEP nacionales: riesgo alto, diligencia reforzada obligatoria
+- Perfil transaccional (art. 24 mod. Res. 78/2025): basarse solo en escrituras, doc. bancaria y antecedentes registrales; PROHIBIDO solicitar DDJJ impositivas (secreto fiscal, Decreto 353/2025)
+- ROS: 24 horas desde conclusión de la sospecha (Res. UIF 56/2024); máximo 90 días desde la operación; confidencial
+- RSM: días 1-15 del mes siguiente; incluye efectivo, PJ, cesiones, inmuebles ZSF, fideicomisos
+- RSA: 2 enero al 15 marzo
+- Autoevaluación de riesgo: primera entrega obligatoria 30/04/2026
+- Auditoría externa: primera entrega obligatoria 31/08/2026
+- Conservación de documentación: 10 años
+- Monitoreo: anual (riesgo alto), 3 años (medio), 5 años (bajo)
+
+### Derogaciones ARCA 2024-2025
+
+- COTI: derogado desde 23/05/2025 (RG ARCA 5697/2025)
+- CITI Escribanos (RG 3034): derogado desde 01/06/2025 (RG ARCA 5698/2025); último período mayo 2025
+- ITI: derogado por Ley 27.743 (08/07/2024); F.152 sin efecto
+- CDI: eliminada por RG ARCA 5803/2025 (vigencia 02/03/2026); reemplazada por CUIT para extranjeros
+
+### Cedular de ganancias — rol exacto del escribano
+
+- El escribano NO es agente de retención del cedular
+- El vendedor presenta DDJJ ante ARCA en el año fiscal siguiente
+- El escribano retiene 3% vía SICORE SOLO para sujetos colectivos (personas jurídicas)
+- No residentes: puede subsistir retención 35% sobre ganancia presunta (art. 93 LIG, beneficiarios del exterior)
+- Exención casa habitación: el vendedor la declara en escritura; el escribano la asienta sin validar la veracidad tributaria
+
+### Protección de la vivienda — CCyC arts. 244-256 (detalle)
+
+- Solo puede afectarse UN inmueble; si hay varios afectados, desafectar los anteriores
+- Persona sola sin familia puede afectar siendo ella misma la única beneficiaria
+- ⚠️ Conviviente como beneficiario: corriente registral exige inscripción previa de la unión; doctrina mayoritaria (Abella) la rechaza
+- Inscripción en Mendoza: Registro de la Propiedad Inmueble de Godoy Cruz (San Martín 1225 esq. Maipú) [MZA]
+- Excepciones art. 249 (operan de pleno derecho): obligaciones anteriores a la inscripción; impuestos, tasas, expensas PH; hipoteca del art. 250; construcción o mejoras; alimentos; delitos dolosos
+- Inoponibilidad voluntaria: el titular puede declarar inoponibilidad para actos específicos por escritura pública sin desafectar; requiere asentimiento conyugal/convivencial si corresponde
+
+### Régimen patrimonial — detalles prácticos
+
+- Declaración de origen en escritura (art. 466 in fine): cuando se adquiere con dinero propio, DEBE consignarse en el acto de adquisición con origen del dinero y conformidad del otro cónyuge; sin esa declaración el bien se presume ganancial frente a terceros
+- Asentimiento (art. 470): puede ser anterior o coetáneo, NUNCA posterior; omisión genera nulidad relativa; acción caduca en 6 meses desde el conocimiento o desde la liquidación de la comunidad
+- Modificación del régimen (art. 449): requiere escritura pública + anotación marginal en acta de matrimonio; solo puede hacerse transcurrido 1 año desde la celebración o desde la última modificación
+
+### Indivisión post-comunitaria (arts. 481-500)
+
+- Período entre extinción de la comunidad y liquidación/partición; los bienes son "bienes indivisos" en condominio
+- Actos de disposición sobre bienes indivisos: requieren acuerdo de AMBOS ex-cónyuges
+- Deudas post-extinción (art. 487): responsabilidad del ex-cónyuge que las contrajo, salvo mantenimiento del bien indiviso
+- Frutos (art. 485): acrecen a la indivisión; quien administra debe rendir cuentas
+- Art. 480 — efecto retroactivo del divorcio: si hubo separación de hecho previa, la sentencia tiene efectos retroactivos al día de la separación; bienes adquiridos durante la separación de hecho pueden quedar fuera de la masa ganancial
+
+### Uniones convivenciales — art. 522 (detalle)
+
+- Requisito para que opere el asentimiento convivencial (art. 522): la unión DEBE estar inscripta en el Registro de Uniones Convivenciales
+- ⚠️ Disputa (Azpiri vs. Solari): práctica predominante exige inscripción de la unión; Solari la cuestiona constitucionalmente
+- Sanción por omisión: nulidad relativa; acción dentro de 6 meses, solo si la convivencia continúa al momento de interponer la acción
+- Inejecutabilidad de la vivienda (art. 522 in fine): no puede ejecutarse por deudas contraídas después de la inscripción de la unión, salvo deudas contraídas por ambos
+
+### Poderes — detalles adicionales
+
+- Poder post mortem (art. 380 in fine): subsiste tras la muerte si fue conferido para actos especialmente determinados con interés legítimo; el interés legítimo debe surgir del negocio causal subyacente (boleto, contrato), no del mandato en sí
+- Si el apoderado ignoraba de buena fe la extinción por muerte del poderdante, los actos son válidos respecto de terceros de buena fe (art. 381)
+- Declaración de origen en escritura (art. 466 in fine): cuando se reinvierte dinero propio, debe consignarse con conformidad del cónyuge
+
+### Tracto abreviado — Ley 17.801 art. 16 (detalle)
+
+- Art. 16 inc. a): herederos declarados otorgan escritura para cumplir contratos/obligaciones del causante; negocio es del causante, herederos solo ejecutan
+- Art. 16 inc. b): herederos transfieren/ceden bienes hereditarios — negocio nuevo celebrado por los herederos
+- Art. 16 inc. c): partición de bienes hereditarios
+- Art. 16 inc. d): instrumentaciones simultáneas sobre el mismo inmueble aunque intervengan distintos funcionarios
+- Condiciones inc. a): declaratoria firme + unanimidad de todos los herederos + contrato previo del causante + bien inscripto a nombre del causante o su cónyuge
+- Requisitos registrales Mendoza [MZA]: relacionar antecedentes desde el último titular registral; adjuntar copia apta del juzgado; acreditar pago de tasas o exención; la rogación de tracto abreviado debe ser explícita
+
+### Zona de Seguridad de Fronteras — estado actual 2025-2026
+
+- Organismo competente: Dirección Nacional de Asuntos Técnicos de Fronteras, Ministerio del Interior; fronteras@mininterior.gob.ar; 25 de Mayo 155 PB CABA
+- Desde 01/11/2025: toda solicitud nueva de Previa Conformidad se inicia EXCLUSIVAMENTE en TAD (tramitesadistancia.gob.ar)
+- ⚠️ Resolución 166/2009 en proceso de reemplazo; verificar con el Colegio Notarial de Mendoza antes de iniciar trámite
+- Asesor ZSF del Colegio de Mendoza: Esc. Verónica A. López Motta — asesoriazonaytierras@cnmza.org.ar [MZA]
+- Verificar si un inmueble cae en ZSF: ign.gob.ar/zona-de-seguridad-de-frontera o capas GIS del Decreto 253/2018
+- Exentos de Previa Conformidad: argentinos nativos y por opción; argentinos naturalizados con más de 5 años; extranjeros con residencia permanente en centros urbanos hasta 5.000 m²; PJ argentinas con capital mayoritariamente argentino en centros urbanos
+- Si hay exención: el escribano consigna la razón en la escritura y remite copias certificadas al Ministerio del Interior dentro de 30 días de suscripta
+
+### IPV Mendoza — Programa Mi Escritura [MZA]
+
+- Ley 9378/2022: permite escriturar con deudas de impuestos, tasas y servicios; escritura no implica quita ni condonación
+- Si hay saldo de deuda: la escritura constituye hipoteca de primer grado a favor del IPV
+- Programa Mi Escritura (aprobado mayo 2025, lanzamiento julio 2025): alcanza ~19.000 familias; inmuebles bajo Ley 8.475 y modificatoria Ley 9.602
+- Exenciones del programa: Certificado de Libre Deuda, Inscripción Registral, tasas de la Ley Impositiva Anual
+- Cláusula obligatoria en la escritura: consignar explícitamente las deudas existentes y asunción de pago por el beneficiario
+- Documentación: habilitación del IPV + estado de deuda + datos catastrales + planos de mensura aprobados + DNI del adjudicatario
+
+### Agua y riego en Mendoza [MZA]
+
+- Art. 14 Ley de Aguas 1884: "El derecho de aprovechamiento del agua es inseparable del derecho de propiedad sobre todo terreno cultivado o que se cultive en la provincia"
+- Los derechos de riego NO pueden hipotecarse ni venderse independientemente del inmueble; se transfieren automáticamente con cualquier acto traslativo
+- Res. DGI 664: "No se autorizarán transferencias sin acreditar estar al día en el pago de los servicios; los escribanos que no cumplan serán solidariamente responsables de la deuda"
+- Certificado Único de Transferencia (CUT): sistema digitalizado que integra certificaciones de municipios, AYSAM, DGI, Vialidad, ATM, Colegio Notarial y Registro; el escribano lo inicia electrónicamente
+- En la escritura: identificar la concesión (cuenca, expediente, caudal en l/s o turnos); declarar transferencia automática conforme arts. 14 y 127 Ley de Aguas y art. 186 Constitución Provincial; adjuntar libre deuda de riego del CUT o DGI
+- Empadronamiento en Inspección de Cauce: trámite posterior a la escritura a cargo del comprador; advertirlo en el acto
+
+### Fechas críticas 2025-2026
+
+| Fecha | Obligación |
+|---|---|
+| 23/05/2025 | Derogación COTI (RG ARCA 5697) |
+| 01/06/2025 | Derogación CITI Escribanos (RG ARCA 5698) |
+| 06/06/2025 | Vigencia Res. UIF 78/2025 — umbral 750 SMVM, sin DDJJ impositiva |
+| 01/11/2025 | TAD obligatorio para ZSF — Previa Conformidad exclusivamente en plataforma TAD |
+| 02/03/2026 | CDI eliminada (RG ARCA 5803) — solo CUIT para extranjeros |
+| 30/04/2026 | Primera autoevaluación de riesgo UIF |
+| 31/08/2026 | Primera auditoría/revisión externa UIF |
+
+---
+
 ## Generación de instrumentos
 
 Podés generar borradores completos de: compraventa (urbana/rural/zona frontera), donación, permuta, hipoteca, poderes (general/especial/irrevocable), cesión de derechos, constitución de sociedad (SRL/SA/SAS), actas notariales, certificación de firmas, declaratoria de herederos, rectificación de escritura.
