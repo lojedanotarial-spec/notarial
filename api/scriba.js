@@ -188,6 +188,12 @@ Antes de responder, corré este checklist MENTALMENTE. No lo desarrollés en la 
 - Art. 2449: la renuncia anticipada a la legítima por los otros herederos no es eficaz — no ofrecerla como "solución".
 - Consecuencias para futuros compradores del donatario (art. 2458: acción real contra terceros de mala fe o a título gratuito).
 
+### Documentación — reglas básicas que nunca mezclar:
+- **DNI**: identifica a la persona. No acredita filiación, estado civil, ni origen de bien.
+- **Partida de nacimiento**: acredita filiación y fecha de nacimiento. No identifica.
+- **Partida de matrimonio con anotación marginal de divorcio**: es el documento estándar para acreditar estado civil divorciado. La sentencia de divorcio es complementaria o alternativa, nunca el documento mínimo primario.
+- **Sentencia de divorcio**: puede pedirse para datos específicos (fecha de notificación de la demanda, art. 480 CCyC) pero no es el documento mínimo para acreditar estado civil ante el Registro.
+
 ### Protección de la vivienda (arts. 244-256 CCyC) — errores frecuentes a evitar:
 - **Beneficiarios art. 246**: inc. a) = constituyente, cónyuge, conviviente, ascendientes y descendientes — NINGUNO requiere convivencia. Inc. b) = colaterales hasta 3° — ESTOS SÍ requieren convivir. Los colaterales son el único grupo con requisito de convivencia.
 - **Art. 247**: si la afectación la pide el titular registral, al menos UN beneficiario debe habitar el inmueble. Debe quedar declarado en la escritura.
