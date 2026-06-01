@@ -90,8 +90,8 @@ function StatCard({ num, label, color }) {
 function SideSection({ label, children }) {
   return (
     <div>
-      <div style={{ fontSize:10, fontWeight:700, letterSpacing:".08em", textTransform:"uppercase",
-                    color:"rgba(26,35,50,.5)", marginBottom:6 }}>{label}</div>
+      <div style={{ fontSize:11, fontWeight:600,
+                    color:"rgba(26,35,50,.6)", marginBottom:6 }}>{label}</div>
       <div style={{ background:C.porcelain, borderRadius:R.md, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
         {children}
       </div>
@@ -298,7 +298,7 @@ export function HomeScreen({ onGo }) {
 
         {/* ── SIDEBAR ─────────────────────────────────────────────────────── */}
         <div style={{ width:210, flexShrink:0, overflowY:"auto", padding:"20px 14px",
-                      borderRight:"1px solid rgba(26,35,50,.08)", background:"#faf8f4",
+                      borderRight:"1px solid rgba(26,35,50,.1)", background:C.warm,
                       display:"flex", flexDirection:"column", gap:14 }}>
 
           <SideSection label="Estado">
@@ -456,8 +456,8 @@ export function HomeScreen({ onGo }) {
               <div style={{ display:"grid", gridTemplateColumns:"2fr 100px 110px 80px 90px 32px",
                             padding:"8px 16px", borderBottom:"2px solid rgba(26,35,50,.07)", background:C.warm }}>
                 {["Documento","Tipo","Escribano","Fecha","Estado",""].map(h => (
-                  <div key={h} style={{ fontSize:10, fontWeight:700, letterSpacing:".06em",
-                                        textTransform:"uppercase", color:"rgba(26,35,50,.4)" }}>{h}</div>
+                  <div key={h} style={{ fontSize:11, fontWeight:600,
+                                        color:"rgba(26,35,50,.55)" }}>{h}</div>
                 ))}
               </div>
 

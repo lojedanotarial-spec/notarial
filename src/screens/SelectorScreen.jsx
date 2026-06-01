@@ -117,7 +117,7 @@ export function SelectorScreen({ onGo }) {
 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
-                  background:"#f0ece3", fontFamily:"'Inter', sans-serif", overflow:"hidden" }}>
+                  background:C.warm, fontFamily:"'Inter', sans-serif", overflow:"hidden" }}>
 
       <NavBar onGo={onGo} screenTitle="Seleccionar instrumento" />
 
@@ -125,7 +125,7 @@ export function SelectorScreen({ onGo }) {
         <div style={{ maxWidth:900, margin:"0 auto", display:"flex", flexDirection:"column", gap:14 }}>
 
           {/* Frecuentes */}
-          <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
+          <div style={{ background:C.porcelain, borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
             <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:12 }}>
               <svg width="12" height="12" viewBox="0 0 16 16" fill="#c9a961">
                 <path d="M8 1l1.8 3.6L14 5.6l-3 2.9.7 4.1L8 10.5l-3.7 2.1.7-4.1-3-2.9 4.2-.6z"/>
@@ -156,7 +156,7 @@ export function SelectorScreen({ onGo }) {
           </div>
 
           {/* Buscar por familia */}
-          <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
+          <div style={{ background:C.porcelain, borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
             <div style={{ fontSize:11, fontWeight:600, letterSpacing:".07em", textTransform:"uppercase",
                           color:"rgba(26,35,50,1)", marginBottom:12 }}>
               O busca por familia
@@ -185,7 +185,7 @@ export function SelectorScreen({ onGo }) {
           </div>
 
           {/* Documentos recientes */}
-          <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
+          <div style={{ background:C.porcelain, borderRadius:12, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
             <button onClick={() => setAbierto(!abierto)}
               style={{ width:"100%", padding:"13px 16px", display:"flex", alignItems:"center",
                        justifyContent:"space-between", background:"none", border:"none",

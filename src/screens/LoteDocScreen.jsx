@@ -39,7 +39,7 @@ function VistaDocumento({ html, fuente, fontSize, zoom, hojaOn, showVars }) {
       }}>
         <div style={{
           position:"relative", width:A4W, height:A4H,
-          background:"#fff", boxShadow:"0 2px 16px rgba(26,35,50,.13)",
+          background:C.porcelain, boxShadow:"0 2px 16px rgba(26,35,50,.13)",
           overflow:"hidden",
         }}>
           {hojaOn && (
@@ -395,7 +395,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 {/* VISTA DEL DOCUMENTO */}
         <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
           <div style={{
-            flexShrink:0, background:"#fff", borderBottom:"1px solid rgba(26,35,50,.1)",
+            flexShrink:0, background:C.porcelain, borderBottom:"1px solid rgba(26,35,50,.1)",
             padding:"0 16px", height:40, display:"flex", alignItems:"center", gap:6,
           }}>
             <button onClick={() => setZoomIdx(Math.max(0, zoomIdx-1))}
@@ -429,7 +429,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
         </div>
 
         {/* PANEL LATERAL */}
-        <div style={{ width:240, flexShrink:0, background:"#fff",
+        <div style={{ width:240, flexShrink:0, background:C.porcelain,
                       borderLeft:"1px solid rgba(26,35,50,.15)",
                       display:"flex", flexDirection:"column", overflow:"hidden" }}>
           <div style={{ padding:"12px 14px", borderBottom:"1px solid rgba(26,35,50,.1)",

@@ -63,7 +63,7 @@ export function AdminScreen({ onGo }) {
               }}
               placeholder="Buscar por número o nombre..."
               style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:8,
-                       border:"1px solid rgba(26,35,50,.12)", background:"#fff", fontSize:13,
+                       border:"1px solid rgba(26,35,50,.12)", background:C.porcelain, fontSize:13,
                        color:C.dark, fontFamily:"'Inter', sans-serif",
                        boxSizing:"border-box", outline:"none" }}
             />
@@ -75,7 +75,7 @@ export function AdminScreen({ onGo }) {
               Cargando registros...
             </div>
           ) : (
-            <div style={{ background:"#fff", borderRadius:12, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
+            <div style={{ background:C.porcelain, borderRadius:12, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
               {filtrados.length === 0 ? (
                 <div style={{ padding:"24px", textAlign:"center", fontSize:13, color:"rgba(26,35,50,.4)" }}>
                   No se encontraron registros.
