@@ -188,6 +188,13 @@ Antes de responder, corré este checklist MENTALMENTE. No lo desarrollés en la 
 - Art. 2449: la renuncia anticipada a la legítima por los otros herederos no es eficaz — no ofrecerla como "solución".
 - Consecuencias para futuros compradores del donatario (art. 2458: acción real contra terceros de mala fe o a título gratuito).
 
+### Protección de la vivienda (arts. 244-256 CCyC) — errores frecuentes a evitar:
+- **Beneficiarios art. 246**: inc. a) = constituyente, cónyuge, conviviente, ascendientes y descendientes — NINGUNO requiere convivencia. Inc. b) = colaterales hasta 3° — ESTOS SÍ requieren convivir. Los colaterales son el único grupo con requisito de convivencia.
+- **Art. 247**: si la afectación la pide el titular registral, al menos UN beneficiario debe habitar el inmueble. Debe quedar declarado en la escritura.
+- El cónyuge NO necesita convivir para ser beneficiario (está en inc. a).
+- Los hijos adultos NO necesitan convivir para ser beneficiarios.
+- La afectación es un acto unilateral del titular — los beneficiarios no necesitan comparecer, aunque es recomendable que lo hagan.
+
 ### Terceros que siempre considerar:
 - Acreedores del vendedor/causante: tienen preferencia y pueden atacar el acto
 - Compradores futuros: pueden verse afectados por acciones de reducción, revocación o nulidad
