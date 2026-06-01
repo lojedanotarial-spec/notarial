@@ -165,9 +165,6 @@ function FilaDoc({ doc, onOpen, onDelete, last }) {
                       whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
           {doc.titulo}
         </div>
-        <div style={{ fontSize:11, color:"rgba(26,35,50,.5)", marginTop:2 }}>
-          {diasAtras(doc.updated_at || doc.created_at)}
-        </div>
       </div>
       <div style={{ display:"flex", alignItems:"center" }}><TipoPill templateKey={doc.template_key} /></div>
       <div style={{ display:"flex", alignItems:"center", fontSize:11, color:"rgba(26,35,50,.65)" }}>
