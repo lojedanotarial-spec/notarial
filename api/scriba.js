@@ -1091,6 +1091,63 @@ ARTICULO 2461.- Transmisión de bienes a legitimarios. Si por acto entre vivos a
 - Solicitudes de traba de cautelares sobre "derechos y acciones" son DEVUELTAS (art. 91 Ley 8236)
 - Solicitudes de traba sobre el 50% del cónyuge no titular son DEVUELTAS (art. 91 Ley 8236)
 
+### ATM MENDOZA — Ley Impositiva 2026 (Ley 9680) y Ley de Avalúos 2026 (Ley 9679) [MZA]
+
+**IMPUESTO DE SELLOS — Alícuotas 2026 (Art. 6° y 7° Ley 9680):**
+
+Programa de reducción plurianual hasta llegar a 0% en 2030:
+
+| Ejercicio | 2026 | 2027 | 2028 | 2029 | 2030 |
+|---|---|---|---|---|---|
+| Alícuota general | 1% | 0,75% | 0,50% | 0,25% | 0% |
+
+Alícuotas especiales (Art. 7°):
+- **Operaciones sobre inmuebles radicados en Mendoza** (incluso constitución de derechos reales y compromisos de venta): **2%** en 2026 → 1,75% en 2027
+- Operaciones financieras: 1,5% en 2026
+- Inscripción vehículos 0km: 1,5% en 2026; más de 4.000 kg: 0,5%
+- Transferencia vehículos usados (agencias habilitadas): 0,50%
+- Maquinaria agrícola/vial/industrial: 0,25% en 2026 → 0% en 2027
+- Locaciones comerciales: **exentas** hasta $62.000.000 anuales; más de esa suma: alícuota general 1%
+- **Adquisición en remate público judicial o extrajudicial** (inmuebles y rodados): **4,25%**
+- Contratos de obra pública Ley 4416 (más de $620.000.000): 1%
+
+⚠️ **Error frecuente a corregir**: la tasa de sellos para transferencias inmobiliarias en Mendoza NO es 1% ni 1,25% — es **2%** para el año 2026.
+
+**VALOR INMOBILIARIO DE REFERENCIA (Art. 8° Ley 9680):**
+- Inmuebles **urbanos e interfaz**: 3 veces el avalúo fiscal vigente
+- Inmuebles **rurales y de secano**: 4 veces el avalúo fiscal vigente
+Este valor se usa para calcular la base imponible del impuesto de sellos cuando el precio declarado es inferior.
+
+**IMPUESTO INMOBILIARIO 2026 — Escala progresiva urbanos (Art. 2° Ley 9680):**
+
+| Categoría | Avalúo fiscal | Fijo $ | Alícuota | Sobre excedente |
+|---|---|---|---|---|
+| I | 0 a $6.235.000 | 0 | 0,70% | 0 |
+| II | $6.235.000 a $10.150.000 | $43.645 | 1,20% | $6.235.000 |
+| III | $10.150.000 a $14.500.000 | $90.625 | 1,30% | $10.150.000 |
+| IV | $14.500.000 a $21.750.000 | $147.175 | 1,40% | $14.500.000 |
+| V | $21.750.000 a $36.250.000 | $248.675 | 1,50% | $21.750.000 |
+| VI | $36.250.000 a $72.500.000 | $466.175 | 1,60% | $36.250.000 |
+| VII | $72.500.000 a $290.000.000 | $1.046.175 | 1,65% | $72.500.000 |
+| VIII | Más de $290.000.000 | $4.634.925 | 1,70% | $290.000.000 |
+
+Mínimo inmobiliario: **$43.645** — Art. 12 Ley Avalúos: si precio escritura > avalúo fiscal, el nuevo avalúo se fija en 50% del precio declarado.
+
+**IMPUESTO INMOBILIARIO 2026 — Inmuebles rurales y secano:**
+Escala separada, alícuotas más bajas (0,53% a 1,28%).
+
+**SITUACIONES ESPECIALES Y EXENCIONES RELEVANTES:**
+- **Programa Mi Escritura (Ley 9632):** Art. 40 Ley 9680 — los escribanos que otorguen escrituras en el marco de este programa quedan **relevados de la obligación del art. 30 inc. 1 y 160 del Código Fiscal** respecto del impuesto inmobiliario adeudado. Deben dejar constancia de las deudas existentes, su reconocimiento y la asunción de pago por el beneficiario.
+- Alojamiento turístico certificado EMETUR: 50% del inmobiliario 2026
+- Asociaciones mutuales, sindicales, fundaciones, obras sociales (inmuebles destinados a sede, obra social o camping): 50% del inmobiliario 2026
+- Adicional al baldío: 600% sobre inmueble en zona densificada sin construcción; 300% en otros casos
+- Parques Industriales (Santa Rosa, Lavalle, La Paz): exentos IIBB, automotor, inmobiliario y sellos en bienes vinculados a la actividad
+
+**LEY DE AVALÚOS 2026 (Ley 9679):**
+- Valor unitario de construcción vivienda tipo 72 puntos: **$87.021/m²** (ATM puede ajustar hasta +10% por valores de mercado)
+- Art. 12: cuando precio escritura > avalúo fiscal, el avalúo se ajusta al **50% del precio escriturado**
+- Vigencia: desde 1 de enero de 2026
+
 ### Fechas críticas 2025-2026
 
 | Fecha | Obligación |
