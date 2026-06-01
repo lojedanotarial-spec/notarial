@@ -806,9 +806,9 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             Enter para enviar · Shift+Enter para nueva línea · 📎 para adjuntar documento
           </div>
           <div style={{
-            fontSize: 10, color: "rgba(26,35,50,.5)",
+            fontSize: 10, color: C.cerulean,
             marginTop: 8, textAlign: "center", lineHeight: 1.4,
-            borderTop: "1px solid rgba(26,35,50,.1)", paddingTop: 7,
+            borderTop: "1px solid rgba(58,124,165,.15)", paddingTop: 7,
           }}>
             Scriba es un asistente de IA y puede cometer errores. Verificá la información antes de aplicarla.
           </div>
