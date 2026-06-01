@@ -82,13 +82,13 @@ function AppRouter() {
         <p style={{ margin: 0, fontFamily: "'Merriweather', serif", fontSize: 18,
           fontWeight: 400, color: "#fdfcfa" }}>Sin acceso</p>
         <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 13,
-          color: "rgba(253,252,250,0.55)", maxWidth: 300, lineHeight: 1.5 }}>
+          color: "rgba(253,252,250,0.75)", maxWidth: 300, lineHeight: 1.5 }}>
           Tu cuenta no tiene acceso al sistema notarial. Contactá al administrador.
         </p>
       </div>
       <button onClick={logout} style={{
         marginTop: 8, padding: "10px 24px", borderRadius: 8, border: "none",
-        background: "rgba(253,252,250,0.1)", color: "rgba(253,252,250,0.7)",
+        background: "rgba(253,252,250,0.12)", color: "rgba(253,252,250,0.85)",
         fontFamily: "'Montserrat', sans-serif", fontSize: 13, fontWeight: 600,
         cursor: "pointer",
       }}>Cerrar sesión</button>
@@ -109,7 +109,7 @@ function AppRouter() {
           <div className="scriba-dot" style={{
             position: "absolute", top: 2, right: 2,
             width: 11, height: 11, borderRadius: "50%",
-            background: "#22c55e",
+            background: "#3a7ca5",
             border: "2px solid #f0ece3",
             zIndex: 1,
           }} />

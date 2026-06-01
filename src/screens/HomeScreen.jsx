@@ -10,8 +10,8 @@ const POR_PAG = 8;
 
 const ESTADO_STYLE = {
   borrador: { bg:"rgba(26,35,50,.06)", color:"rgba(26,35,50,.8)",  border:"1px solid rgba(26,35,50,.12)" },
-  revision: { bg:"#e8f2f8",           color:"#1f4862",             border:"1px solid #bdd9ec" },
-  completo: { bg:"#f5edcc",           color:"#4e3d21",             border:"1px solid rgba(201,169,97,.35)" },
+  revision: { bg:"rgba(58,124,165,.1)", color:"#3a7ca5",           border:"1px solid rgba(58,124,165,.3)" },
+  completo: { bg:"rgba(201,169,97,.15)", color:"#1a2332",          border:"1px solid rgba(201,169,97,.35)" },
 };
 
 const TIPO_LABEL = {
@@ -78,7 +78,7 @@ function TipoPill({ templateKey }) {
 
 function StatCard({ num, label, color }) {
   return (
-    <div style={{ background:"#fff", borderRadius:R.md, border:"1px solid rgba(26,35,50,.08)",
+    <div style={{ background:C.porcelain, borderRadius:R.md, border:"1px solid rgba(26,35,50,.08)",
                   padding:"10px 14px", flex:1 }}>
       <div style={{ fontSize:20, fontWeight:700, color: color || C.dark }}>{num}</div>
       <div style={{ fontSize:10, fontWeight:700, letterSpacing:".05em", textTransform:"uppercase",
@@ -91,8 +91,8 @@ function SideSection({ label, children }) {
   return (
     <div>
       <div style={{ fontSize:10, fontWeight:700, letterSpacing:".08em", textTransform:"uppercase",
-                    color:"rgba(26,35,50,.45)", marginBottom:6 }}>{label}</div>
-      <div style={{ background:"#fff", borderRadius:R.md, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
+                    color:"rgba(26,35,50,.5)", marginBottom:6 }}>{label}</div>
+      <div style={{ background:C.porcelain, borderRadius:R.md, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
         {children}
       </div>
     </div>
@@ -105,9 +105,9 @@ function FilterItem({ label, count, active, onClick }) {
          onMouseEnter={e => !active && (e.currentTarget.style.background = "rgba(26,35,50,.03)")}
          onMouseLeave={e => !active && (e.currentTarget.style.background = "transparent")}
          style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 12px", cursor:"pointer",
-                  background: active ? C.ceruleanLight : "transparent", transition:"background .1s" }}>
+                  background: active ? "rgba(58,124,165,.1)" : "transparent", transition:"background .1s" }}>
       <span style={{ flex:1, fontSize:12, fontWeight: active ? 600 : 400,
-                     color: active ? "#1f4862" : C.dark }}>{label}</span>
+                     color: active ? C.cerulean : C.dark }}>{label}</span>
       {count != null && (
         <span style={{ fontSize:11, color:"rgba(26,35,50,.4)", fontWeight:600 }}>{count}</span>
       )}
@@ -119,7 +119,7 @@ function ConfirmDelete({ titulo, onConfirm, onCancel }) {
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.45)", zIndex:1000,
                   display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ background:"#fff", borderRadius:R.lg, padding:"28px 28px 20px",
+      <div style={{ background:C.porcelain, borderRadius:R.lg, padding:"28px 28px 20px",
                     width:360, boxShadow:"0 8px 32px rgba(26,35,50,.18)" }}>
         <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:8 }}>
           Eliminar documento
@@ -165,7 +165,7 @@ function FilaDoc({ doc, onOpen, onDelete, last }) {
                       whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
           {doc.titulo}
         </div>
-        <div style={{ fontSize:11, color:"rgba(26,35,50,.45)", marginTop:2 }}>
+        <div style={{ fontSize:11, color:"rgba(26,35,50,.5)", marginTop:2 }}>
           {diasAtras(doc.updated_at || doc.created_at)}
         </div>
       </div>
@@ -373,7 +373,7 @@ export function HomeScreen({ onGo }) {
                 {esAdmin && (
                   <button onClick={() => onGo("admin")}
                           style={{ padding:"8px 14px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
-                                   background:"#fff", fontSize:13, fontWeight:600, color:C.dark,
+                                   background:C.porcelain, fontSize:13, fontWeight:600, color:C.dark,
                                    cursor:"pointer", fontFamily:"'Montserrat',sans-serif",
                                    display:"flex", alignItems:"center", gap:6 }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -384,9 +384,9 @@ export function HomeScreen({ onGo }) {
                 )}
                 <button onClick={() => onGo("bulk")}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+                        onMouseLeave={e => e.currentTarget.style.background = C.porcelain}
                         style={{ padding:"8px 16px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
-                                 background:"#fff", fontSize:13, fontWeight:600, color:C.dark,
+                                 background:C.porcelain, fontSize:13, fontWeight:600, color:C.dark,
                                  cursor:"pointer", fontFamily:"'Montserrat',sans-serif", transition:"background .12s" }}>
                   Carga masiva
                 </button>
@@ -420,7 +420,7 @@ export function HomeScreen({ onGo }) {
                 <input value={query} onChange={e => { setQuery(e.target.value); resetPag(); }}
                        placeholder="Buscar por nombre del documento..."
                        style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:R.md,
-                                border:"1px solid " + C.border, background:"#fff", fontSize:13,
+                                border:"1px solid " + C.border, background:C.porcelain, fontSize:13,
                                 color:C.dark, fontFamily:"'Montserrat',sans-serif",
                                 boxSizing:"border-box", outline:"none" }} />
                 {query && (
@@ -439,7 +439,7 @@ export function HomeScreen({ onGo }) {
                 <input value={queryDni} onChange={e => { setQueryDni(e.target.value.replace(/\D/g,"")); resetPag(); }}
                        placeholder="DNI de parte..."
                        style={{ width:150, padding:"8px 10px 8px 30px", borderRadius:R.md,
-                                border:"1px solid " + C.border, background:"#fff", fontSize:13,
+                                border:"1px solid " + C.border, background:C.porcelain, fontSize:13,
                                 color:C.dark, fontFamily:"'Montserrat',sans-serif", outline:"none" }} />
               </div>
               {hayFiltros && (
@@ -453,11 +453,11 @@ export function HomeScreen({ onGo }) {
             </div>
 
             {/* Tabla */}
-            <div style={{ background:"#fff", borderRadius:R.lg, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
+            <div style={{ background:C.porcelain, borderRadius:R.lg, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
 
               {/* Header tabla */}
               <div style={{ display:"grid", gridTemplateColumns:"2fr 100px 110px 80px 90px 32px",
-                            padding:"8px 16px", borderBottom:"2px solid rgba(26,35,50,.07)", background:"#faf8f4" }}>
+                            padding:"8px 16px", borderBottom:"2px solid rgba(26,35,50,.07)", background:C.warm }}>
                 {["Documento","Tipo","Escribano","Fecha","Estado",""].map(h => (
                   <div key={h} style={{ fontSize:10, fontWeight:700, letterSpacing:".06em",
                                         textTransform:"uppercase", color:"rgba(26,35,50,.4)" }}>{h}</div>
@@ -481,8 +481,8 @@ export function HomeScreen({ onGo }) {
               {/* Paginación */}
               {lista.length > POR_PAG && (
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                              padding:"10px 16px", borderTop:"1px solid rgba(26,35,50,.07)", background:"#faf8f4" }}>
-                  <span style={{ fontSize:12, color:"rgba(26,35,50,.45)" }}>
+                              padding:"10px 16px", borderTop:"1px solid rgba(26,35,50,.07)", background:C.warm }}>
+                  <span style={{ fontSize:12, color:"rgba(26,35,50,.5)" }}>
                     {(paginaReal-1)*POR_PAG+1}–{Math.min(paginaReal*POR_PAG, lista.length)} de {lista.length}
                   </span>
                   <div style={{ display:"flex", gap:4 }}>

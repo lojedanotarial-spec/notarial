@@ -110,7 +110,7 @@ export function AdminScreen({ onGo }) {
                                          marginLeft:8 }}>titular</span>
                         </div>
                         {resto.length > 0 && (
-                          <div style={{ fontSize:12, color:"rgba(26,35,50,.45)", marginTop:2 }}>
+                          <div style={{ fontSize:12, color:"rgba(26,35,50,.5)", marginTop:2 }}>
                             {resto.map(m => `${m.nombre} ${m.apellido}`).join(" · ")}
                           </div>
                         )}

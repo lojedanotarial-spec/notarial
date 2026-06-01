@@ -4,9 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { Modal } from "./Modal";
 
 const ESTADO_COLORS = {
-  borrador: { bg: "rgba(255,255,255,.08)", color: "rgba(255, 138, 138, 0.6)",  border: "rgba(255,255,255,.15)" },
+  borrador: { bg: "rgba(255,255,255,.1)",  color: "rgba(255,138,138,0.85)",    border: "rgba(255,255,255,.2)"  },
   revision: { bg: "rgba(201,169,97,.15)",  color: "#c9a961",                   border: "rgba(201,169,97,.4)"   },
-  completo: { bg: "rgba(58,124,165,.2)",   color: "#7ec8e3",                   border: "rgba(58,124,165,.5)"   },
+  completo: { bg: "rgba(58,124,165,.2)",   color: "#3a7ca5",                   border: "rgba(58,124,165,.5)"   },
 };
 
 const ROL_LABEL = { titular: "Titular", adscripta: "Adscripta", adscripto: "Adscripto" };
@@ -142,7 +142,7 @@ function UserDropdown({ onClose, onPreferencias }) {
         <div style={{ color: "#FDFCFA", fontSize: 13, fontWeight: 600 }}>
           {miUsuario?.nombre} {miUsuario?.apellido}
         </div>
-        <div style={{ color: "rgba(255,255,255,.4)", fontSize: 11, marginTop: 2 }}>
+        <div style={{ color: "rgba(255,255,255,.75)", fontSize: 11, marginTop: 2 }}>
           {ROL_LABEL[miUsuario?.rol]} · Registro {miUsuario?.registro}
         </div>
       </div>
@@ -152,7 +152,7 @@ function UserDropdown({ onClose, onPreferencias }) {
         style={{
           width: "100%", padding: "11px 16px",
           background: "transparent", border: "none",
-          color: "rgba(255,255,255,.7)", fontSize: 13,
+          color: "rgba(255,255,255,.85)", fontSize: 13,
           fontFamily: "'Montserrat', sans-serif",
           cursor: "pointer", textAlign: "left",
         }}
@@ -167,8 +167,8 @@ function UserDropdown({ onClose, onPreferencias }) {
         style={{
           width: "100%", padding: "11px 16px",
           background: "transparent",
-          borderTop: "1px solid rgba(255,255,255,.07)",
-          color: "rgba(255,120,120,.7)", fontSize: 13,
+          borderTop: "1px solid rgba(255,255,255,.14)",
+          color: "rgba(255,120,120,.9)", fontSize: 13,
           fontFamily: "'Montserrat', sans-serif",
           cursor: "pointer", textAlign: "left",
         }}
@@ -212,7 +212,7 @@ export function NavBar({
         <div style={{
           height: 44, display: "flex", alignItems: "center",
           padding: "0 20px", gap: 10,
-          borderBottom: tieneSegundaFila ? "1px solid rgba(255,255,255,.06)" : "none",
+          borderBottom: tieneSegundaFila ? "1px solid rgba(255,255,255,.12)" : "none",
         }}>
           <button
             onClick={() => onGo && onGo("home")}
@@ -224,8 +224,8 @@ export function NavBar({
               Notarial
             </span>
           </button>
-          <span style={{ color: "rgba(253,252,250,.3)", fontSize: 12 }}>|</span>
-          <span style={{ color: "rgba(255,255,255,.45)", fontSize: 10, fontWeight: 600, letterSpacing: ".12em", textTransform: "uppercase" }}>Fe pública digital</span>
+          <span style={{ color: "rgba(253,252,250,.5)", fontSize: 12 }}>|</span>
+          <span style={{ color: "rgba(255,255,255,.75)", fontSize: 10, fontWeight: 600, letterSpacing: ".12em", textTransform: "uppercase" }}>Fe pública digital</span>
 
           <div style={{ position: "relative", marginLeft: "auto" }}>
             <button
@@ -265,11 +265,11 @@ export function NavBar({
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
                   background: "none", border: "none", cursor: "pointer",
-                  color: "rgba(255,255,255,.5)", fontSize: 13,
+                  color: "rgba(255,255,255,.75)", fontSize: 13,
                   fontFamily: "'Montserrat',sans-serif", padding: 0, flexShrink: 0,
                 }}
-                onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,.8)"}
-                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.5)"}
+                onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,1)"}
+                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.75)"}
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M10 3L5 8l5 5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -292,7 +292,7 @@ export function NavBar({
 
             {indicadorGuardado && (
               <span style={{
-                fontSize: 11, color: "rgba(255,255,255,.35)",
+                fontSize: 11, color: "rgba(255,255,255,.75)",
                 whiteSpace: "nowrap", flexShrink: 0,
               }}>
                 {indicadorGuardado}
@@ -304,7 +304,7 @@ export function NavBar({
                 border: "1px solid " + (showVarHighlight ? "rgba(201,169,97,.5)" : "rgba(255,255,255,.2)"),
                 borderRadius: 6,
                 background: showVarHighlight ? "rgba(201,169,97,.15)" : "transparent",
-                color: showVarHighlight ? "#c9a961" : "rgba(255,255,255,.45)",
+                color: showVarHighlight ? "#c9a961" : "rgba(255,255,255,.75)",
                 fontSize: 12, fontWeight: 600, padding: "5px 12px",
                 fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
                 flexShrink: 0,

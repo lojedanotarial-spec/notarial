@@ -50,7 +50,7 @@ export function ModalEscribano({ escribano, onApply, onClose }) {
               background: sel === i ? C.cerulean : C.ceruleanLight,
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 11, fontWeight: 700,
-              color: sel === i ? "#fff" : "#1f4862",
+              color: sel === i ? "#FDFCFA" : C.cerulean,
             }}>
               {iniciales}
             </div>

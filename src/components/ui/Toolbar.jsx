@@ -15,7 +15,7 @@ export function TbBtn({ children, active, onClick, title }) {
         border: "1px solid " + (on ? C.cerulean : C.borderStrong),
         borderRadius: 5,
         background: on ? C.ceruleanLight : "transparent",
-        color: on ? "#1f4862" : C.dark,
+        color: on ? C.cerulean : C.dark,
         fontSize: 13, fontWeight: 500,
         fontFamily: "'Montserrat',sans-serif",
         display: "flex", alignItems: "center", gap: 4,

@@ -60,7 +60,7 @@ function inlineFormat(text) {
   return parts.length ? parts : text;
 }
 
-function SparkleIcon({ size = 10, color = "#7ec8e3" }) {
+function SparkleIcon({ size = 10, color = "#3a7ca5" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 10 10" fill={color}>
       <path d="M5 0L5.7 4.3 10 5 5.7 5.7 5 10 4.3 5.7 0 5 4.3 4.3 5 0Z"/>
@@ -95,7 +95,7 @@ function BtnCopiar({ texto }) {
       border: "1px solid " + (copiado ? "rgba(58,124,165,.3)" : "rgba(26,35,50,.15)"),
       borderRadius: 6, padding: "5px 10px",
       fontSize: 11, fontWeight: 600, fontFamily: "'Montserrat', sans-serif",
-      color: copiado ? C.cerulean : "rgba(26,35,50,.45)",
+      color: copiado ? C.cerulean : "rgba(26,35,50,.5)",
       cursor: "pointer", transition: "all .15s",
     }}>
       {copiado
@@ -118,8 +118,8 @@ function BtnAplicar({ contenido }) {
   return (
     <button onClick={aplicar} style={{
       marginTop: 4, display: "flex", alignItems: "center", gap: 5,
-      background: aplicado ? "rgba(58,124,165,.12)" : "#1a5276",
-      border: "1px solid " + (aplicado ? "rgba(58,124,165,.4)" : "#1a5276"),
+      background: aplicado ? "rgba(58,124,165,.12)" : C.cerulean,
+      border: "1px solid " + (aplicado ? "rgba(58,124,165,.4)" : C.cerulean),
       borderRadius: 6, padding: "5px 10px",
       fontSize: 11, fontWeight: 700, fontFamily: "'Montserrat', sans-serif",
       color: aplicado ? C.cerulean : "#fff",
@@ -151,7 +151,7 @@ function BtnInsertar({ texto }) {
       border: "1px solid " + (insertado ? "rgba(201,169,97,.4)" : "rgba(26,35,50,.15)"),
       borderRadius: 6, padding: "5px 10px",
       fontSize: 11, fontWeight: 600, fontFamily: "'Montserrat', sans-serif",
-      color: insertado ? "#c9a961" : "rgba(26,35,50,.45)",
+      color: insertado ? "#c9a961" : "rgba(26,35,50,.5)",
       cursor: "pointer", transition: "all .15s",
     }}>
       {insertado
@@ -224,7 +224,7 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
           </div>
         )}
         {!esUser && accion?.tipo === "completar_parte" && (
-          <div style={{ marginTop: 8, background: "rgba(26,82,118,.05)", border: "1px solid rgba(26,82,118,.2)", borderRadius: 8, padding: "10px 12px" }}>
+          <div style={{ marginTop: 8, background: "rgba(58,124,165,.06)", border: "1px solid rgba(58,124,165,.2)", borderRadius: 8, padding: "10px 12px" }}>
             <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginBottom: 8, fontWeight: 600 }}>
               Datos extraídos del documento
             </div>
@@ -252,8 +252,8 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
                   }}
                   style={{
                     display: "flex", alignItems: "center", gap: 5, padding: "5px 10px",
-                    background: "#1a5276", border: "none", borderRadius: 6,
-                    fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer",
+                    background: C.cerulean, border: "none", borderRadius: 6,
+                    fontSize: 11, fontWeight: 700, color: "#FDFCFA", cursor: "pointer",
                     fontFamily: "'Montserrat', sans-serif",
                   }}>
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -266,8 +266,8 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
         {!esUser && accion?.tipo === "modificar_documento" && (
           <div style={{
             marginTop: 8,
-            background: "rgba(26,82,118,.05)",
-            border: "1px solid rgba(26,82,118,.2)",
+            background: "rgba(58,124,165,.06)",
+            border: "1px solid rgba(58,124,165,.2)",
             borderRadius: 8, padding: "10px 12px",
           }}>
             <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginBottom: 6, fontWeight: 600 }}>
@@ -573,9 +573,9 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 color: "#FDFCFA", fontSize: 20,
                 fontFamily: "'Carattere', cursive", fontWeight: 400,
               }}>Scriba</span>
-              <SparkleIcon size={9} color="#7ec8e3" />
+              <SparkleIcon size={9} color="#3a7ca5" />
             </div>
-            <div style={{ color: "rgba(255,255,255,.4)", fontSize: 12, marginTop: 1 }}>
+            <div style={{ color: "rgba(255,255,255,.75)", fontSize: 12, marginTop: 1 }}>
               Asistente notarial · Mendoza, Argentina
             </div>
             {contexto && (
@@ -592,9 +592,9 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
           {mensajes.length > 0 && (
             <>
               <button onClick={() => { setMensajes([]); cargarHistorial?.(); }} title="Volver" style={{
-                background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)",
+                background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)",
                 borderRadius: 6, width: 28, height: 28,
-                color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 600,
+                color: "rgba(255,255,255,.85)", fontSize: 11, fontWeight: 600,
                 fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
@@ -603,9 +603,9 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 </svg>
               </button>
               <button onClick={handleNueva} style={{
-                background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)",
+                background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)",
                 borderRadius: 6, padding: "5px 10px",
-                color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 600,
+                color: "rgba(255,255,255,.85)", fontSize: 11, fontWeight: 600,
                 fontFamily: "'Montserrat',sans-serif", cursor: "pointer", whiteSpace: "nowrap",
               }}>
                 + Nueva
@@ -613,9 +613,9 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             </>
           )}
           <button onClick={() => setExpandido(e => !e)} title={expandido ? "Reducir" : "Expandir"} style={{
-            background: "rgba(255,255,255,.07)", border: "none",
+            background: "rgba(255,255,255,.1)", border: "none",
             borderRadius: 6, width: 28, height: 28,
-            color: "rgba(255,255,255,.5)", fontSize: 14,
+            color: "rgba(255,255,255,.85)", fontSize: 14,
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             {expandido
@@ -624,9 +624,9 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             }
           </button>
           <button onClick={onClose} style={{
-            background: "rgba(255,255,255,.08)", border: "none",
+            background: "rgba(255,255,255,.1)", border: "none",
             borderRadius: 6, width: 28, height: 28,
-            color: "rgba(255,255,255,.6)", fontSize: 16,
+            color: "rgba(255,255,255,.85)", fontSize: 16,
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: "'Montserrat',sans-serif",
           }}>×</button>
@@ -639,7 +639,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         }}>
           {mensajes.length === 0 && (
             <div style={{ paddingBottom: 12 }}>
-              <div style={{ fontSize: 13, color: "rgba(26,35,50,.45)", marginBottom: 16, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 13, color: "rgba(26,35,50,.65)", marginBottom: 16, lineHeight: 1.6 }}>
                 Consultame normativa, pedime un borrador o adjuntá un documento para leerlo.
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>

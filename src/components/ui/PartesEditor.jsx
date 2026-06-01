@@ -313,7 +313,7 @@ export function PartesEditor({ partes, onChange, showRol = true }) {
                     width:26, height:26, borderRadius:"50%", flexShrink:0,
                     background: activo ? C.cerulean : C.ceruleanLight,
                     display:"flex", alignItems:"center", justifyContent:"center",
-                    fontSize:9, fontWeight:700, color: activo ? "#fff" : "#1f4862",
+                    fontSize:9, fontWeight:700, color: activo ? "#FDFCFA" : C.cerulean,
                   }}>{ini}</div>
                   <div style={{ minWidth:0 }}>
                     <div style={{ fontSize:13, fontWeight:600, color:C.dark,

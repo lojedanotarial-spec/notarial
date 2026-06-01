@@ -442,9 +442,9 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                   return (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3, minWidth: 0 }}>
                       <div style={{
-                        width: 22, height: 22, borderRadius: "50%", background: "#ddeef7",
+                        width: 22, height: 22, borderRadius: "50%", background: "rgba(58,124,165,.12)",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 9, fontWeight: 700, color: "#1f4862", flexShrink: 0,
+                        fontSize: 9, fontWeight: 700, color: C.cerulean, flexShrink: 0,
                       }}>{a0 + n0}</div>
                       <span style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {p.apellido || "Sin nombre"}{p.nombre ? ", " + p.nombre : ""}
@@ -485,7 +485,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                   disabled={generating}
                   style={{
                     width: "100%", padding: "8px", borderRadius: 7, border: "none",
-                    background: "#1a5276", color: "#fff", cursor: generating ? "default" : "pointer",
+                    background: C.cerulean, color: "#FDFCFA", cursor: generating ? "default" : "pointer",
                     fontFamily: "'Montserrat',sans-serif", fontSize: 12, fontWeight: 700,
                     opacity: generating ? 0.6 : 1,
                   }}

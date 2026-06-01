@@ -166,7 +166,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
             onClick={() => { setReconnecting(false); createEditor(); }}
             style={{
               marginTop: 8, padding: "6px 18px", borderRadius: 7, border: "none",
-              background: "#1a5276", color: "#fff", cursor: "pointer",
+              background: "#3a7ca5", color: "#FDFCFA", cursor: "pointer",
               fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 13,
             }}
           >

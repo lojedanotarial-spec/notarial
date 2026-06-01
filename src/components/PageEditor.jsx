@@ -37,9 +37,9 @@ export const schemaWithLists = new Schema({
   }),
   marks: basicSchema.spec.marks.append({
     highlight: {
-      attrs: { color: { default: "#fef9c3" } },
+      attrs: { color: { default: "rgba(201,169,97,.2)" } },
       toDOM(mark) { return ["mark", { style: `background-color:${mark.attrs.color};` }]; },
-      parseDOM: [{ tag: "mark", getAttrs: dom => ({ color: dom.style.backgroundColor || "#fef9c3" }) }],
+      parseDOM: [{ tag: "mark", getAttrs: dom => ({ color: dom.style.backgroundColor || "rgba(201,169,97,.2)" }) }],
     },
     fontFamily: {
       attrs: { family: { default: "" } },

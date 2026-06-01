@@ -38,13 +38,13 @@ function BadgeEstado({ completo }) {
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 5,
       padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-      background: completo ? "#e8f5e9" : "#fff3e0",
-      color: completo ? "#2e7d32" : "#e65100",
-      border: "1px solid " + (completo ? "#a5d6a7" : "#ffcc80"),
+      background: completo ? "rgba(58,124,165,.12)" : "rgba(201,169,97,.15)",
+      color: completo ? "#3a7ca5" : "#1a2332",
+      border: "1px solid " + (completo ? "rgba(58,124,165,.3)" : "rgba(201,169,97,.4)"),
       whiteSpace: "nowrap",
     }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%",
-                    background: completo ? "#43a047" : "#fb8c00", flexShrink: 0 }}/>
+                    background: completo ? "#3a7ca5" : "#c9a961", flexShrink: 0 }}/>
       {completo ? "Completo" : "Incompleto"}
     </div>
   );
@@ -79,8 +79,8 @@ function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".07em",
-                    textTransform: "uppercase", color: "rgba(3, 8, 16, 0.8)",
-                    background: C.ceruleanLight, padding: "5px 10px",
+                    textTransform: "uppercase", color: C.dark,
+                    background: "rgba(58,124,165,.08)", padding: "5px 10px",
                     marginBottom: 10, paddingBottom: 6,
                     borderBottom: "1px solid rgba(26,35,50,.07)" }}>
         {title}
@@ -150,7 +150,7 @@ function ModalLote({ lote, onSave, onClose }) {
                       background: "transparent",
                     }}>
                       <div style={{ fontWeight: 600 }}>{p.apellido || "?"}{p.nombre ? ", " + p.nombre : ""}</div>
-                      <div style={{ color: "rgb(5, 28, 68)" }}>DNI {p.nroDoc || "-"}</div>
+                      <div style={{ color: C.dark }}>DNI {p.nroDoc || "-"}</div>
                       <div style={{ color: C.cerulean, fontWeight: 600, fontSize: 11 }}>{p.rol || ""}</div>
                     </div>
                   ))}
@@ -162,8 +162,8 @@ function ModalLote({ lote, onSave, onClose }) {
               )}
               <button onClick={() => setPartesAbierto(true)} style={{
                 padding: "5px 14px", borderRadius: 6, cursor: "pointer",
-                border: "1px solid rgba(26,35,50,.20)", background: "rgb(109, 158, 255)",
-                fontSize: 12, fontWeight: 600, color: "#ffffff",
+                border: "1px solid " + C.cerulean, background: C.cerulean,
+                fontSize: 12, fontWeight: 600, color: "#FDFCFA",
                 fontFamily: "'Montserrat',sans-serif",
               }}>
                 {d.partes.length === 0 ? "+ Agregar adquirentes" : "Editar adquirentes"}
@@ -332,7 +332,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
                     <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(26,35,50,.05)", fontSize: 12, color: "#1a2332" }}>{l.escribano || "-"}</td>
                     <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(26,35,50,.05)" }}>
                       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        <button onClick={() => setEditandoLote(l.id)} style={{ padding: "4px 10px", borderRadius: 6, cursor: "pointer", border: "1px solid " + C.cerulean, background: C.ceruleanLight, fontSize: 11, fontWeight: 600, color: "#1f4862", fontFamily: "'Montserrat',sans-serif", display:"flex", alignItems:"center", gap:5 }}>
+                        <button onClick={() => setEditandoLote(l.id)} style={{ padding: "4px 10px", borderRadius: 6, cursor: "pointer", border: "1px solid " + C.cerulean, background: "rgba(58,124,165,.1)", fontSize: 11, fontWeight: 600, color: C.cerulean, fontFamily: "'Montserrat',sans-serif", display:"flex", alignItems:"center", gap:5 }}>
                           <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
                             <path d="M11 2l3 3-9 9H2v-3L11 2z" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
@@ -409,14 +409,14 @@ function FilaBarrio({ b, idx, total, onSeleccionar, onConfirmEliminar }) {
       onClick={() => onSeleccionar(b.id)}>
       <div>
         <div style={{ fontSize:14, fontWeight:600, color:C.dark }}>{b.nombre || "Sin nombre"}</div>
-        {b.transmitente && <div style={{ fontSize:11, color:"rgba(26,35,50,.45)", marginTop:2 }}>{b.transmitente}</div>}
+        {b.transmitente && <div style={{ fontSize:11, color:"rgba(26,35,50,.5)", marginTop:2 }}>{b.transmitente}</div>}
       </div>
       <div style={{ fontSize:13, color:"rgba(26,35,50,.6)" }}>{b.lotes.length}</div>
       <div style={{ fontSize:13, color:"rgba(26,35,50,.6)" }}>{completosCount}</div>
       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
         <div style={{ flex:1, height:5, borderRadius:3, background:"rgba(26,35,50,.08)" }}>
           <div style={{ width:pct+"%", height:"100%", borderRadius:3,
-                        background: pct===100 ? "#43a047" : C.cerulean, transition:"width .3s" }}/>
+                        background: pct===100 ? C.cerulean : C.cerulean, transition:"width .3s" }}/>
         </div>
         <span style={{ fontSize:11, color:"rgba(26,35,50,.4)", minWidth:28 }}>{pct}%</span>
       </div>
@@ -547,9 +547,9 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
                 const barrio  = match?.[3] || doc.titulo || "—";
                 const fecha   = doc.updated_at ? new Date(doc.updated_at).toLocaleDateString("es-AR") : "—";
                 const estadoStyle = {
-                  borrador: { bg:"rgba(26,35,50,.06)", color:"rgba(26,35,50,.7)" },
-                  revision: { bg:"#e8f2f8", color:"#1f4862" },
-                  completo: { bg:"#f5edcc", color:"#4e3d21" },
+                  borrador: { bg:"rgba(26,35,50,.06)", color:"rgba(26,35,50,.65)" },
+                  revision: { bg:"rgba(58,124,165,.1)", color:"#3a7ca5" },
+                  completo: { bg:"rgba(201,169,97,.15)", color:"#1a2332" },
                 };
                 const es = estadoStyle[doc.estado] || estadoStyle.borrador;
                 return (

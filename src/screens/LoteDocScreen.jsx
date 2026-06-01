@@ -166,7 +166,7 @@ function PanelLote({ lote, barrio, escribano, fecha, miembros, onChange }) {
                             whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {p.apellido}{p.nombre ? ", "+p.nombre : ""}
               </div>
-              <div style={{ fontSize:10, color:"rgba(26,35,50,.45)" }}>DNI {p.nroDoc || "-"}</div>
+              <div style={{ fontSize:10, color:"rgba(26,35,50,.5)" }}>DNI {p.nroDoc || "-"}</div>
             </div>
           </div>
         ))}

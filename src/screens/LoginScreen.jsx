@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { C } from "../constants.js";
 
-const CARD_BG = "rgba(38, 52, 76, 0.72)";
+const CARD_BG = "rgba(26,35,50,.75)";
 
 function Field({ id, label, type, value, onChange, autoComplete, rightSlot }) {
   const [focused, setFocused] = useState(false);
@@ -10,7 +10,7 @@ function Field({ id, label, type, value, onChange, autoComplete, rightSlot }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <label htmlFor={id} style={{
         fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 600,
-        letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(253,252,250,0.72)"
+        letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(253,252,250,0.75)"
       }}>{label}</label>
       <div style={{
         position: "relative", display: "flex", alignItems: "center",
@@ -128,7 +128,7 @@ export function LoginScreen() {
             <h2 style={{ margin: 0, fontFamily: "'Merriweather', Georgia, serif", fontWeight: 400,
               fontSize: 19, color: C.porcelain }}>Bienvenido</h2>
             <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 13,
-              color: "rgba(253,252,250,0.62)", lineHeight: 1.45 }}>
+              color: "rgba(253,252,250,0.75)", lineHeight: 1.45 }}>
               Ingresá a tu cuenta para acceder al sistema notarial.
             </p>
           </div>
@@ -144,7 +144,7 @@ export function LoginScreen() {
           {/* Acciones deshabilitadas */}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 12.5,
-              color: "rgba(253,252,250,0.3)", cursor: "not-allowed" }}>
+              color: "rgba(253,252,250,0.5)", cursor: "not-allowed" }}>
               ¿Olvidaste tu contraseña?
             </span>
           </div>
@@ -167,7 +167,7 @@ export function LoginScreen() {
           }}>{loading ? "Verificando…" : "Ingresar"}</button>
 
           {/* Divider */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgba(253,252,250,0.35)",
+          <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgba(253,252,250,0.5)",
             fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase" }}>
             <span style={{ flex: 1, height: 1, background: "rgba(253,252,250,0.10)" }} />
             <span>o</span>
@@ -195,14 +195,14 @@ export function LoginScreen() {
 
         {/* Footer */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 12, color: "rgba(253,252,250,0.5)" }}>
+          <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 12, color: "rgba(253,252,250,0.75)" }}>
             ¿No tenés cuenta?{" "}
-            <span style={{ color: "rgba(201,169,97,0.4)", cursor: "not-allowed", fontWeight: 600 }}>
+            <span style={{ color: "rgba(201,169,97,0.75)", cursor: "not-allowed", fontWeight: 600 }}>
               Solicitar acceso
             </span>
           </p>
           <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 10.5,
-            letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(253,252,250,0.32)" }}>
+            letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(253,252,250,0.5)" }}>
             © 2026 NOTARIAL · ARGENTINA
           </p>
         </div>

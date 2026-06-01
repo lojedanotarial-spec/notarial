@@ -16,8 +16,8 @@ const FAMILIAS = [
 
 const ESTADO_STYLE = {
   borrador: { bg:"rgba(26,35,50,.06)", color:"rgba(26,35,50,.8)",  border:"1px solid rgba(26,35,50,.12)" },
-  revision: { bg:"#e8f2f8",           color:"#1f4862",             border:"1px solid #bdd9ec" },
-  completo: { bg:"#f5edcc",           color:"#4e3d21",             border:"1px solid rgba(201,169,97,.35)" },
+  revision: { bg:"rgba(58,124,165,.1)", color:"#3a7ca5",           border:"1px solid rgba(58,124,165,.3)" },
+  completo: { bg:"rgba(201,169,97,.15)", color:"#1a2332",          border:"1px solid rgba(201,169,97,.35)" },
 };
 
 function diasAtras(fechaStr) {
@@ -145,7 +145,7 @@ export function SelectorScreen({ onGo }) {
                     padding:"7px 14px", borderRadius:20, cursor:"pointer",
                     border: "1px solid " + (selected?.id === t.id ? C.cerulean : "rgba(26,35,50,.18)"),
                     background: selected?.id === t.id ? C.ceruleanLight : "transparent",
-                    color: selected?.id === t.id ? "#1f4862" : "#1a2332",
+                    color: selected?.id === t.id ? C.cerulean : "#1a2332",
                     fontSize:13, fontWeight: selected?.id === t.id ? 600 : 400,
                     fontFamily:"'Montserrat',sans-serif", transition:"all .12s",
                   }}>

@@ -18,7 +18,15 @@
       "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 root@192.168.100.7 \"echo connected\")",
       "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 florencia@192.168.100.7 \"echo connected\")",
       "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 admin@192.168.100.7 \"echo connected\")",
-      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 notarial@192.168.100.7 \"echo connected\")"
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=5 notarial@192.168.100.7 \"echo connected\")",
+      "Bash(npx vite *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(git commit *)",
+      "Bash(python -c ' *)"
     ]
   }
 }
