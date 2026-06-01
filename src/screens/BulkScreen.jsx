@@ -54,7 +54,7 @@ function ConfirmEliminar({ titulo, onConfirm, onCancel }) {
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.45)", zIndex:1000,
                   display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ background:"#fff", borderRadius:12, padding:"24px 24px 18px",
+      <div style={{ background:C.porcelain, borderRadius:12, padding:"24px 24px 18px",
                     width:340, boxShadow:"0 8px 32px rgba(26,35,50,.18)" }}>
         <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:8 }}>Eliminar</div>
         <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20, lineHeight:1.5 }}>
@@ -242,7 +242,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
   const [progreso, setProgreso] = useState(null);
   const loteEditar = editandoLote ? barrio.lotes.find(l => l.id === editandoLote) : null;
   const completosCount = barrio.lotes.filter(estaCompleto).length;
-  const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: "#fff", fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" };
+  const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: C.porcelain, fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" };
   const { miUsuario, usuario, registroActivo } = useAuth();
   const [verDocLote, setVerDocLote] = useState(null);
     useEffect(() => {
@@ -293,7 +293,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
         }}
       />
       <div style={{ flex: 1, overflow: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid rgba(26,35,50,.08)", padding: 16 }}>
+        <div style={{ background: C.porcelain, borderRadius: 10, border: "1px solid rgba(26,35,50,.08)", padding: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: "#1a2332", marginBottom: 12 }}>Datos del transmitente</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 10 }}>
             {[["Transmitente","transmitente","Cooperativa / union vecinal"],["CUIT","cuit","ej: 33-54516418-9"],["Matricula SIRC","matricula","ej: 700062588"],["Plano de mensura","plano","ej: 03-51952"]].map(([label, campo, ph]) => (
@@ -302,7 +302,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
           </div>
         </div>
 
-        <div style={{ background: "#fff", borderRadius: 10, border: "1px solid rgba(26,35,50,.08)", overflow: "hidden" }}>
+        <div style={{ background: C.porcelain, borderRadius: 10, border: "1px solid rgba(26,35,50,.08)", overflow: "hidden" }}>
           <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(26,35,50,.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#1a2332" }}>
               Lotes <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,35,50,.4)" }}>{completosCount}/{barrio.lotes.length} completos</span>
@@ -368,7 +368,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
       )}
       {exportando && progreso && (
         <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.55)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <div style={{ background:"#fff", borderRadius:14, padding:"28px 32px", minWidth:320, boxShadow:"0 8px 40px rgba(26,35,50,.2)", textAlign:"center", fontFamily:"'Inter', sans-serif" }}>
+          <div style={{ background:C.porcelain, borderRadius:14, padding:"28px 32px", minWidth:320, boxShadow:"0 8px 40px rgba(26,35,50,.2)", textAlign:"center", fontFamily:"'Inter', sans-serif" }}>
             <div style={{ fontSize:15, fontWeight:700, color:"#1a2332", marginBottom:8 }}>Generando escrituras...</div>
             <div style={{ fontSize:13, color:"rgba(26,35,50,.5)", marginBottom:16 }}>
               {progreso.lote ? `Mz ${progreso.lote.manzana || "?"} · Lote ${progreso.lote.lote || "?"}` : "Iniciando..."}
@@ -477,7 +477,7 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Buscar barrio..."
                 style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:8,
-                         border:"1px solid rgba(26,35,50,.12)", background:"#fff", fontSize:13,
+                         border:"1px solid rgba(26,35,50,.12)", background:C.porcelain, fontSize:13,
                          color:C.dark, fontFamily:"'Inter', sans-serif",
                          boxSizing:"border-box", outline:"none" }}
               />

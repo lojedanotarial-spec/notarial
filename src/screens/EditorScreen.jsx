@@ -406,7 +406,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         {/* Panel de propiedades */}
         <div style={{
             width: 240, flexShrink: 0, display: "flex", flexDirection: "column",
-            borderLeft: "1px solid rgba(26,35,50,.1)", background: "#fff", overflow: "hidden",
+            borderLeft: "1px solid rgba(26,35,50,.1)", background: C.porcelain, overflow: "hidden",
           }}>
             <div style={{
               padding: "10px 14px 8px", borderBottom: "1px solid rgba(26,35,50,.08)",

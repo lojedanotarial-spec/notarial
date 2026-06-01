@@ -12,7 +12,7 @@ export function Modal({ title, onClose, children, footer }) {
       }}
     >
       <div style={{
-        background: "#fff", borderRadius: 12,
+        background: C.porcelain, borderRadius: 12,
         border: "1px solid " + C.border,
         width: 680, maxWidth: "94vw", maxHeight: "92vh",
         display: "flex", flexDirection: "column",

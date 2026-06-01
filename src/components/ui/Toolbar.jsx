@@ -36,7 +36,7 @@ export function Dropdown({ open, children }) {
   return (
     <div style={{
       position: "absolute", top: "calc(100% + 5px)", left: 0,
-      background: "#fff", border: "1px solid " + C.border,
+      background: C.porcelain, border: "1px solid " + C.border,
       borderRadius: 9, minWidth: 220, zIndex: 200,
       overflow: "hidden", boxShadow: "0 4px 20px rgba(26,35,50,.1)",
     }}>

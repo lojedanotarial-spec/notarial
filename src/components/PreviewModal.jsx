@@ -162,7 +162,7 @@ export function PreviewModal({ html, margenKey, hojaOn, fuente, fontSize, onClos
     }}>
       <div style={{
         height: 52, flexShrink: 0,
-        background: "#fff", borderBottom: "1px solid rgba(26,35,50,.12)",
+        background: C.porcelain, borderBottom: "1px solid rgba(26,35,50,.12)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 20px",
       }}>

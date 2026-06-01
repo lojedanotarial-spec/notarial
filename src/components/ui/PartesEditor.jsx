@@ -53,7 +53,7 @@ function ConfirmQuitarParte({ nombre, onConfirm, onCancel }) {
       zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center",
     }}>
       <div style={{
-        background:"#fff", borderRadius:12, padding:"24px 24px 18px",
+        background:C.porcelain, borderRadius:12, padding:"24px 24px 18px",
         width:320, boxShadow:"0 8px 32px rgba(26,35,50,.18)",
       }}>
         <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:8 }}>
@@ -125,7 +125,7 @@ function BuscadorDNI({ registroNumero, onSelect }) {
       {resultados.length > 0 && (
         <div style={{
           position:"absolute", top:"100%", left:0, right:0, zIndex:50,
-          background:"#fff", border:"1px solid " + C.border,
+          background:C.porcelain, border:"1px solid " + C.border,
           borderRadius:8, boxShadow:"0 4px 16px rgba(26,35,50,.12)",
           overflow:"hidden", marginTop:4,
         }}>
