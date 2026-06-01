@@ -1081,6 +1081,77 @@ ARTICULO 2460.- Constitución de usufructo, uso, habitación o renta vitalicia. 
 
 ARTICULO 2461.- Transmisión de bienes a legitimarios. Si por acto entre vivos a título oneroso el causante transmite a alguno de los legitimarios la propiedad de bienes con reserva de usufructo, uso o habitación, o con la contraprestación de una renta vitalicia, se presume sin admitir prueba en contrario la gratuidad del acto y la intención de mejorar al beneficiario. Sin embargo, se deben deducir del valor de lo donado las sumas que el adquirente demuestre haber efectivamente pagado. El valor de los bienes debe ser imputado a la porción disponible y el excedente es objeto de colación. Esta imputación y esta colación no pueden ser demandadas por los legitimarios que consintieron en la enajenación, sea onerosa o gratuita, con algunas de las modalidades indicadas.
 
+### DISPOSICIONES TÉCNICO REGISTRALES (DTR) — MENDOZA [MZA]
+
+**DTR N°2/2014 — UIF: modificación DTR N°1.** Desde 01/10/2014, la Declaración Jurada UIF es exigible para TODAS las operaciones inmobiliarias (compraventas y usufructos vitalicios) cualquiera sea su valor, no solo las que superen el umbral. La Constancia de Inscripción ante la UIF se presenta anualmente en octubre en el Registro.
+
+**DTR N°3/2017 — Hipoteca: cómputo plazo de caducidad.**
+- Hipotecas inscriptas ANTES de la vigencia de Ley 27.271: plazo de caducidad = **20 años** (art. 2210 CCyC versión original).
+- Hipotecas inscriptas DESPUÉS de la vigencia de Ley 27.271: plazo de caducidad = **35 años** (art. 2210 mod. por Ley 27.271).
+- La Ley 27.271 no tiene efecto retroactivo. Se aplica analógicamente el art. 2537 CCyC para hipotecas en curso.
+
+**DTR N°4/2020 — Inscripción provisional y medidas cautelares: plazos máximos de antelación.**
+- Prórroga de inscripción provisional: presentar **hasta 30 días antes** del vencimiento. Si se presenta antes de ese plazo, se devuelve con nota "continúa la inscripción provisional".
+- Prórroga de devolución con reserva de prioridad: **hasta 30 días antes** del vencimiento.
+- Reinscripción de medidas cautelares: **hasta 6 meses antes** de la caducidad.
+- Reinscripción de hipoteca: **hasta 1 año antes** de la caducidad.
+- Presentada con mayor antelación: se devuelve sin tomar razón.
+
+**DTR N°5/2023 — UIF Beneficiarios finales.** Firmada digitalmente en abril 2023. El PDF tiene fuente propietaria no extraíble; verificar directamente en el portal del Registro.
+
+### ÓRDENES DE SERVICIO CONJUNTAS (OSC) — MENDOZA [MZA]
+
+**OSC N°526/2019 — Caja Forense en indivisión postcomunitaria.**
+NO debe exigirse constancia de pago de Caja Forense (art. 47 Ley 8236) en escrituras en que ex cónyuges transfieren un inmueble durante indivisión postcomunitaria, SIEMPRE QUE la transferencia no se haya realizado en el marco de un juicio de disolución de la sociedad conyugal, separación de bienes, u homologación de convenio de partición.
+Los supuestos del art. 50 Ley 8236 (escrituras de adjudicación en juicio sucesorio, art. 2369 CCyC) SÍ exigen verificar los aportes a la Caja.
+
+**OSC N°575/2022 — Particiones sucesorias: inscripción parcial.**
+Cuando se fracciona un inmueble en una partición sucesoria y solo uno o algunos herederos solicitan inscripción de su porcentaje, el Registro inscribe las fracciones rogadas y trae al causante como antecedente de dominio para las fracciones no rogadas, SIN formular observación. No rechaza la inscripción por el hecho de que la parte no rogada figure a nombre de un fallecido.
+
+**OSC N°576/2022 — Identidad de género (Ley 26743).**
+El asiento de rectificación de nombre por identidad de género NO debe mencionar la Ley 26743. El título causa es simplemente "rectificación de nombre". Se rectifica tanto el folio real (casillero A) como la base de inhibiciones. Los trámites son gratuitos y prioritarios (se realizan el mismo día de ingreso). Se mantiene confidencialidad (art. 10 Ley 25326). El CUIL del titular es el dato relevante por sobre el nombre de pila.
+
+**OSC N°2-24/2024 — Fideicomiso: calificación registral.**
+Criterios clave:
+- El Registro califica la FORMA del acto fideicomisario, no el contrato en sí.
+- Si el contrato no se transcribe íntegramente ni se relacionan sus datos: **inscripción provisional**.
+- Si el contrato no fija plazo: **inscripción provisional** (art. 1668 CCyC).
+- Si fiduciante y fiduciario son la misma persona: **devolución con reserva** (art. 1666 CCyC).
+- Si fiduciario y fideicomisario son la misma persona: **devolución con reserva** (art. 1672 CCyC).
+- Contratos entre cónyuges bajo régimen de comunidad: **devolución** (art. 1002 inc. d CCyC).
+- Las modificaciones al contrato después del CCyC deben ser por escritura pública; las de instrumento privado: **devolución**.
+- Medidas cautelares sobre dominio fiduciario: el juez debe meritar la calidad de fiduciario; si no lo hace: **inscripción provisional**.
+- Extinción del contrato NO extingue el dominio fiduciario — se requiere acto de transferencia posterior.
+
+**OSC N°3-24/2024 — Ley de Tierras Rurales (Ley 26737): DEROGADA.**
+El DNU 70/2023 (art. 154, vigente desde 30/12/2023) derogó la Ley 26737 de Protección al Dominio Nacional sobre Tierras Rurales. Aunque existe una declaración de inconstitucionalidad no firme, el Registro de Mendoza resolvió no calificar la Ley 26737 en escrituras autorizadas desde el 30/12/2023, ni en reingresos de escrituras anteriores que habían quedado con inscripción provisional por esa ley. ⚠️ Verificar si la declaración de inconstitucionalidad fue confirmada antes de aplicar este criterio.
+
+**OSC N°14-25/2025 — Mandatos: nueva calificación registral vía SAYGES.**
+Desde 13/08/2025 (OSA 87-25), los mandatos se inscriben exclusivamente por el módulo SAYGES del sistema digital. El Registro de Mandatos es de enlegajamiento, no constitutivo.
+Causas de devolución de instrumento público: falta de lugar u hora de otorgamiento, fecha errónea, ausencia de nombres/DNI/CUIT/CUIL de otorgantes, enmiendas no salvadas, falta de firma de otorgantes/escribano/testigos, incompetencia del notario, falta de legalización si es de extraña jurisdicción, falta de pago de tasa.
+Causas de devolución de instrumento privado: además de los anteriores, si otorga facultades para actos sobre inmuebles (requiere escritura pública, art. 1017 CCyC).
+Instrumentos de país extranjero: requieren Apostilla (países Convenio La Haya 1961) o legalización + traducción por traductor público matriculado.
+Poderes consulares argentinos con firma digital son autosuficientes, no requieren intervención del Ministerio de RREE.
+Plazo de observación previa: 24 horas para que el presentante corrija defectos subsanables antes de la devolución.
+
+**OSC N°15-25/2025 — Protección de la vivienda: criterios de calificación completos.**
+Criterios más relevantes:
+- Inmuebles bajo Ley 14.394 (bien de familia) ya están bajo el nuevo régimen sin necesidad de adecuación.
+- Afectación parcial del valor: debe indicarse el monto o fracción; si se omite → **provisional**.
+- Declaración de único inmueble afectado: obligatoria bajo juramento; omisión → **provisional**.
+- Afectación en PH: debe incluir unidades complementarias, relacionando ambas matrículas; omisión → **provisional**.
+- Habitación efectiva (art. 247): colaterales hasta 3° grado deben habitar CON el constituyente (no solo ser beneficiarios); omisión de declaración → **provisional**.
+- Valuación fiscal: NO se toma en consideración (ni urbano ni rural).
+- Hipoteca sobre el inmueble: NO impide la afectación ni requiere consentimiento del acreedor.
+- Medidas cautelares: solo la prohibición de innovar impide la afectación → en ese caso: **devolución con reserva 180 días**.
+- Titular casado/conviviente inscripto: requiere asentimiento del cónyuge/conviviente para transmitir O desafectar, aunque sea bien propio.
+- Desafectación por divorciado: si es bien propio → solo el titular; si es ganancial → requiere asentimiento del excónyuge o adjudicación en liquidación.
+- Subrogación real: solo sobre inmueble del mismo titular; no procede a nombre de cónyuge aunque sea del mismo matrimonio.
+- No se califica inhibición del constituyente para la inscripción de afectación.
+
+**OSC N°17-25/2025 — Particiones extrajudiciales por divorcio: no exigencia Caja Forense.**
+Ampliación de OSC 526: tampoco se exige Caja Forense (art. 50 Ley 8236) en escrituras de adjudicación extrajudicial entre ex cónyuges derivadas de divorcio, siempre que el notario califique expresamente que no hubo intervención de profesionales en tareas jurisdiccionales. La Sala Administrativa de la SCJ resolvió que el art. 50 solo aplica a particiones en el marco de un proceso judicial.
+
 ### REGISTRO DE LA PROPIEDAD INMUEBLE — MENDOZA [MZA] — Criterios y plazos vigentes (Leyes 17.801 y 8.236)
 
 **Plazos críticos:**
