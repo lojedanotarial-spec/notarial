@@ -162,9 +162,14 @@ function BtnInsertar({ texto }) {
   );
 }
 
+const LINEAS_MAX = 25;
+
 function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
   const esUser = msg.role === "user";
   const accion = msg.accion;
+  const lineas = (msg.content || "").split("\n").length;
+  const esLargo = !esUser && lineas > LINEAS_MAX;
+  const [expandidoMsg, setExpandidoMsg] = useState(false);
 
   return (
     <div style={{
@@ -187,9 +192,29 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
           lineHeight: 1.6,
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
+          position: "relative",
+          overflow: "hidden",
+          maxHeight: esLargo && !expandidoMsg ? 380 : "none",
         }}>
           {esUser ? msg.content : renderMarkdown(msg.content)}
+          {esLargo && !expandidoMsg && (
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              height: 60, background: "linear-gradient(transparent, #f8f6f2)",
+              pointerEvents: "none",
+            }}/>
+          )}
         </div>
+        {esLargo && (
+          <button onClick={() => setExpandidoMsg(e => !e)} style={{
+            alignSelf: "flex-start", marginTop: 4,
+            background: "transparent", border: "none",
+            fontSize: 11, fontWeight: 600, color: C.cerulean,
+            cursor: "pointer", fontFamily: "'Montserrat',sans-serif", padding: "2px 0",
+          }}>
+            {expandidoMsg ? "▲ Ver menos" : "▼ Ver más"}
+          </button>
+        )}
         {msg.imagen && (
           <div style={{ marginTop: 4, fontSize: 11, color: "rgba(26,35,50,.4)", display: "flex", alignItems: "center", gap: 4 }}>
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -359,6 +384,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
   const [cargando,  setCargando]  = useState(false);
   const [error,     setError]     = useState(null);
   const [imagen,    setImagen]    = useState(null); // { data, mediaType, nombre }
+  const [expandido, setExpandido] = useState(false);
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
   const fileRef    = useRef(null);
@@ -525,7 +551,8 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       {/* Panel */}
       <div style={{
         position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 201,
-        width: 420, maxWidth: "100vw",
+        width: expandido ? "75vw" : 420, maxWidth: "100vw",
+        transition: "width .2s ease",
         background: "#FDFCFA",
         display: "flex", flexDirection: "column",
         boxShadow: "-8px 0 40px rgba(0,0,0,.18)",
@@ -563,25 +590,46 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             )}
           </div>
           {mensajes.length > 0 && (
-            <button onClick={handleNueva} style={{
-              background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)",
-              borderRadius: 6, padding: "5px 10px",
-              color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 600,
-              fontFamily: "'Montserrat',sans-serif", cursor: "pointer", whiteSpace: "nowrap",
-            }}>
-              + Nueva
-            </button>
+            <>
+              <button onClick={() => { setMensajes([]); cargarHistorial?.(); }} title="Volver" style={{
+                background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)",
+                borderRadius: 6, width: 28, height: 28,
+                color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 600,
+                fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M10 3L5 8l5 5"/>
+                </svg>
+              </button>
+              <button onClick={handleNueva} style={{
+                background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)",
+                borderRadius: 6, padding: "5px 10px",
+                color: "rgba(255,255,255,.55)", fontSize: 11, fontWeight: 600,
+                fontFamily: "'Montserrat',sans-serif", cursor: "pointer", whiteSpace: "nowrap",
+              }}>
+                + Nueva
+              </button>
+            </>
           )}
-          <button
-            onClick={onClose}
-            style={{
-              background: "rgba(255,255,255,.08)", border: "none",
-              borderRadius: 6, width: 28, height: 28,
-              color: "rgba(255,255,255,.6)", fontSize: 16,
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "'Montserrat',sans-serif",
-            }}
-          >×</button>
+          <button onClick={() => setExpandido(e => !e)} title={expandido ? "Reducir" : "Expandir"} style={{
+            background: "rgba(255,255,255,.07)", border: "none",
+            borderRadius: 6, width: 28, height: 28,
+            color: "rgba(255,255,255,.5)", fontSize: 14,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {expandido
+              ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 6l-4 4M6 2v4H2M10 14v-4h4"/></svg>
+              : <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 10l-4 4M2 10v4h4M10 6l4-4M14 6V2h-4"/></svg>
+            }
+          </button>
+          <button onClick={onClose} style={{
+            background: "rgba(255,255,255,.08)", border: "none",
+            borderRadius: 6, width: 28, height: 28,
+            color: "rgba(255,255,255,.6)", fontSize: 16,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'Montserrat',sans-serif",
+          }}>×</button>
         </div>
 
         {/* Mensajes */}
