@@ -169,12 +169,12 @@ function FilaDoc({ doc, onOpen, onDelete, last }) {
           {diasAtras(doc.updated_at || doc.created_at)}
         </div>
       </div>
-      <div><TipoPill templateKey={doc.template_key} /></div>
-      <div style={{ fontSize:11, color:"rgba(26,35,50,.55)" }}>
+      <div style={{ display:"flex", alignItems:"center" }}><TipoPill templateKey={doc.template_key} /></div>
+      <div style={{ display:"flex", alignItems:"center", fontSize:11, color:"rgba(26,35,50,.65)" }}>
         {doc.contenido?.escribano?.nombre || "—"}
       </div>
-      <div style={{ fontSize:11, color:"rgba(26,35,50,.55)" }}>{fmtFecha(doc.updated_at)}</div>
-      <div><Badge estado={doc.estado} /></div>
+      <div style={{ display:"flex", alignItems:"center", fontSize:11, color:"rgba(26,35,50,.65)" }}>{fmtFecha(doc.updated_at)}</div>
+      <div style={{ display:"flex", alignItems:"center" }}><Badge estado={doc.estado} /></div>
       <div>
         <button
           onClick={e => { e.stopPropagation(); onDelete(doc); }}
