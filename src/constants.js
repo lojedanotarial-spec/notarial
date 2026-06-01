@@ -2,7 +2,7 @@
 export const C = {
   dark:          "#1a2332",
   porcelain:     "#FDFCFA",
-  warm:          "#f0ece3",
+  warm:          "#d9d0c0",
   cerulean:      "#3a7ca5",
   ceruleanLight: "rgba(58,124,165,.08)",
   ceruleanMid:   "rgba(58,124,165,.2)",
