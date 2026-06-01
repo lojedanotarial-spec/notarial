@@ -1097,7 +1097,13 @@ ARTICULO 2461.- Transmisión de bienes a legitimarios. Si por acto entre vivos a
 - Reinscripción de hipoteca: **hasta 1 año antes** de la caducidad.
 - Presentada con mayor antelación: se devuelve sin tomar razón.
 
-**DTR N°5/2023 — UIF Beneficiarios finales.** Firmada digitalmente en abril 2023. El PDF tiene fuente propietaria no extraíble; verificar directamente en el portal del Registro.
+**DTR N°5/2023 — UIF Beneficiarios finales** (Mendoza, 10/04/2023. Firmada: Giménez y Alfonso).
+
+Obligación: cuando se ingresa al Registro una escritura de **compraventa de inmueble o constitución de usufructo** en la que el adquirente o usufructuario sea una **persona jurídica, titular fiduciario o cualquier otra estructura jurídica**, el notario debe informar a la Dirección los datos personales de la/s persona/s humana/s que resulten **beneficiarios finales**, conforme Resolución UIF N° 112/2021.
+
+Beneficiario final (Res. UIF 112/2021, arts. 2° y 8°): toda persona humana que posea al menos el **10% del capital o derechos a voto** de una PJ, fideicomiso, fondo de inversión, patrimonio de afectación u otra estructura jurídica, o que por otros medios ejerza el **control final** de esas entidades.
+
+El Registro NO fiscaliza a los otorgantes del acto — solo recaba del autorizante (notario, sujeto obligado por art. 20 inc. 12 Ley 25246) la información disponible. Se aprobó formulario de declaración de beneficiario final (Anexo I de la DTR). Cada Dirección establece el procedimiento en su jurisdicción.
 
 ### ÓRDENES DE SERVICIO CONJUNTAS (OSC) — MENDOZA [MZA]
 
