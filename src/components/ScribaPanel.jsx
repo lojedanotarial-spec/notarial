@@ -210,7 +210,7 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
             alignSelf: "flex-start", marginTop: 4,
             background: "transparent", border: "none",
             fontSize: 11, fontWeight: 600, color: C.cerulean,
-            cursor: "pointer", fontFamily: "'Montserrat',sans-serif", padding: "2px 0",
+            cursor: "pointer", fontFamily: "'Inter', sans-serif", padding: "2px 0",
           }}>
             {expandidoMsg ? "▲ Ver menos" : "▼ Ver más"}
           </button>
@@ -595,7 +595,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)",
                 borderRadius: 6, width: 28, height: 28,
                 color: "rgba(255,255,255,.85)", fontSize: 11, fontWeight: 600,
-                fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -606,7 +606,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)",
                 borderRadius: 6, padding: "5px 10px",
                 color: "rgba(255,255,255,.85)", fontSize: 11, fontWeight: 600,
-                fontFamily: "'Montserrat',sans-serif", cursor: "pointer", whiteSpace: "nowrap",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer", whiteSpace: "nowrap",
               }}>
                 + Nueva
               </button>
@@ -628,7 +628,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             borderRadius: 6, width: 28, height: 28,
             color: "rgba(255,255,255,.85)", fontSize: 16,
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'Montserrat',sans-serif",
+            fontFamily: "'Inter', sans-serif",
           }}>×</button>
         </div>
 
@@ -648,7 +648,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                     background: "#f0ece3", border: "1px solid rgba(26,35,50,.1)",
                     borderRadius: 20, padding: "6px 12px",
                     fontSize: 12, color: "rgba(26,35,50,.7)",
-                    fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif", cursor: "pointer",
                     transition: "background .1s",
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = "#e8e2d8"}
@@ -781,7 +781,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 flex: 1, border: "none", background: "transparent",
                 resize: "none", outline: "none",
                 fontSize: 13, color: C.dark, lineHeight: 1.5,
-                fontFamily: "'Montserrat',sans-serif",
+                fontFamily: "'Inter', sans-serif",
                 minHeight: 22, maxHeight: 120, overflowY: "auto",
               }}
               onInput={e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}

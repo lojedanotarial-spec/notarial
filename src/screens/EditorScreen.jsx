@@ -376,7 +376,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   return (
     <div style={{
       height: "100vh", display: "flex", flexDirection: "column",
-      fontFamily: "'Montserrat',sans-serif", overflow: "hidden",
+      fontFamily: "'Inter', sans-serif", overflow: "hidden",
     }}>
 
       <NavBar
@@ -486,7 +486,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                   style={{
                     width: "100%", padding: "8px", borderRadius: 7, border: "none",
                     background: C.cerulean, color: "#FDFCFA", cursor: generating ? "default" : "pointer",
-                    fontFamily: "'Montserrat',sans-serif", fontSize: 12, fontWeight: 700,
+                    fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 700,
                     opacity: generating ? 0.6 : 1,
                   }}
                 >
@@ -524,7 +524,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                      padding: "10px 12px",
                      border: "1px solid " + (estado === v2 ? C.cerulean : "rgba(26,35,50,.12)"),
                      borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 500,
-                     color: C.dark, fontFamily: "'Montserrat',sans-serif",
+                     color: C.dark, fontFamily: "'Inter', sans-serif",
                      background: estado === v2 ? C.ceruleanLight : "transparent",
                    }}>
               <input type="radio" name="est" checked={estado === v2}

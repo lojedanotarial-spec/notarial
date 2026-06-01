@@ -117,7 +117,7 @@ export function SelectorScreen({ onGo }) {
 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
-                  background:"#f0ece3", fontFamily:"'Montserrat',sans-serif", overflow:"hidden" }}>
+                  background:"#f0ece3", fontFamily:"'Inter', sans-serif", overflow:"hidden" }}>
 
       <NavBar onGo={onGo} screenTitle="Seleccionar instrumento" />
 
@@ -147,7 +147,7 @@ export function SelectorScreen({ onGo }) {
                     background: selected?.id === t.id ? C.ceruleanLight : "transparent",
                     color: selected?.id === t.id ? C.cerulean : "#1a2332",
                     fontSize:13, fontWeight: selected?.id === t.id ? 600 : 400,
-                    fontFamily:"'Montserrat',sans-serif", transition:"all .12s",
+                    fontFamily:"'Inter', sans-serif", transition:"all .12s",
                   }}>
                   {t.nombre}
                 </button>
@@ -189,7 +189,7 @@ export function SelectorScreen({ onGo }) {
             <button onClick={() => setAbierto(!abierto)}
               style={{ width:"100%", padding:"13px 16px", display:"flex", alignItems:"center",
                        justifyContent:"space-between", background:"none", border:"none",
-                       cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>
+                       cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#3a7ca5" strokeWidth="1.4">
                   <rect x="2" y="1" width="12" height="14" rx="2"/>
@@ -217,7 +217,7 @@ export function SelectorScreen({ onGo }) {
                     placeholder="Buscar por nombre..."
                     style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:8,
                              border:"1px solid rgba(26,35,50,.14)", background:"#FDFCFA",
-                             fontSize:13, color:"#1a2332", fontFamily:"'Montserrat',sans-serif",
+                             fontSize:13, color:"#1a2332", fontFamily:"'Inter', sans-serif",
                              boxSizing:"border-box", outline:"none" }}/>
                   {query && (
                     <button onClick={() => setQuery("")}
@@ -259,7 +259,7 @@ export function SelectorScreen({ onGo }) {
           style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 24px",
                    background: selected ? C.cerulean : "rgba(26,35,50,.2)",
                    color:"#fff", border:"none", borderRadius:28,
-                   fontSize:14, fontWeight:700, fontFamily:"'Montserrat',sans-serif",
+                   fontSize:14, fontWeight:700, fontFamily:"'Inter', sans-serif",
                    cursor: selected ? "pointer" : "not-allowed",
                    boxShadow: selected ? "0 4px 20px rgba(58,124,165,.45)" : "none",
                    transition:"transform .1s" }}>

@@ -132,13 +132,13 @@ function ConfirmDelete({ titulo, onConfirm, onCancel }) {
           <button onClick={onCancel}
                   style={{ padding:"7px 16px", borderRadius:7, border:"1px solid rgba(26,35,50,.14)",
                            background:"transparent", fontSize:13, fontWeight:600, color:C.dark,
-                           cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>
+                           cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>
             Cancelar
           </button>
           <button onClick={onConfirm}
                   style={{ padding:"7px 16px", borderRadius:7, border:"1px solid #e07070",
                            background:"#fdf0f0", fontSize:13, fontWeight:700, color:"#c0392b",
-                           cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>
+                           cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>
             Eliminar
           </button>
         </div>
@@ -294,7 +294,7 @@ export function HomeScreen({ onGo }) {
 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
-                  background:C.warm, fontFamily:"'Montserrat',sans-serif", overflow:"hidden" }}>
+                  background:C.warm, fontFamily:"'Inter', sans-serif", overflow:"hidden" }}>
       <NavBar onGo={onGo} />
 
       <div style={{ flex:1, overflow:"hidden", display:"flex" }}>
@@ -342,14 +342,14 @@ export function HomeScreen({ onGo }) {
                          onChange={e => { setter(e.target.value); resetPag(); }}
                          style={{ flex:1, padding:"4px 6px", border:"1px solid rgba(26,35,50,.14)",
                                   borderRadius:5, fontSize:11, color:C.dark,
-                                  fontFamily:"'Montserrat',sans-serif", background:"#FDFCFA", outline:"none" }} />
+                                  fontFamily:"'Inter', sans-serif", background:"#FDFCFA", outline:"none" }} />
                 </div>
               ))}
               {(fDesde || fHasta) && (
                 <button onClick={() => { setFDesde(""); setFHasta(""); resetPag(); }}
                         style={{ fontSize:11, color:"rgba(26,35,50,.4)", background:"none",
                                  border:"none", cursor:"pointer", textAlign:"left",
-                                 fontFamily:"'Montserrat',sans-serif", padding:0 }}>
+                                 fontFamily:"'Inter', sans-serif", padding:0 }}>
                   Limpiar fechas
                 </button>
               )}
@@ -374,7 +374,7 @@ export function HomeScreen({ onGo }) {
                   <button onClick={() => onGo("admin")}
                           style={{ padding:"8px 14px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
                                    background:C.porcelain, fontSize:13, fontWeight:600, color:C.dark,
-                                   cursor:"pointer", fontFamily:"'Montserrat',sans-serif",
+                                   cursor:"pointer", fontFamily:"'Inter', sans-serif",
                                    display:"flex", alignItems:"center", gap:6 }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                       <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -387,7 +387,7 @@ export function HomeScreen({ onGo }) {
                         onMouseLeave={e => e.currentTarget.style.background = C.porcelain}
                         style={{ padding:"8px 16px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
                                  background:C.porcelain, fontSize:13, fontWeight:600, color:C.dark,
-                                 cursor:"pointer", fontFamily:"'Montserrat',sans-serif", transition:"background .12s" }}>
+                                 cursor:"pointer", fontFamily:"'Inter', sans-serif", transition:"background .12s" }}>
                   Carga masiva
                 </button>
                 <button onClick={() => onGo("selector")}
@@ -395,7 +395,7 @@ export function HomeScreen({ onGo }) {
                         onMouseLeave={e => e.currentTarget.style.opacity = ".88"}
                         style={{ padding:"8px 16px", borderRadius:8, border:"none",
                                  background:C.cerulean, fontSize:13, fontWeight:600, color:"#fff",
-                                 cursor:"pointer", fontFamily:"'Montserrat',sans-serif",
+                                 cursor:"pointer", fontFamily:"'Inter', sans-serif",
                                  opacity:.88, transition:"opacity .12s" }}>
                   + Documento
                 </button>
@@ -421,7 +421,7 @@ export function HomeScreen({ onGo }) {
                        placeholder="Buscar por nombre del documento..."
                        style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:R.md,
                                 border:"1px solid " + C.border, background:C.porcelain, fontSize:13,
-                                color:C.dark, fontFamily:"'Montserrat',sans-serif",
+                                color:C.dark, fontFamily:"'Inter', sans-serif",
                                 boxSizing:"border-box", outline:"none" }} />
                 {query && (
                   <button onClick={() => { setQuery(""); resetPag(); }}
@@ -440,13 +440,13 @@ export function HomeScreen({ onGo }) {
                        placeholder="DNI de parte..."
                        style={{ width:150, padding:"8px 10px 8px 30px", borderRadius:R.md,
                                 border:"1px solid " + C.border, background:C.porcelain, fontSize:13,
-                                color:C.dark, fontFamily:"'Montserrat',sans-serif", outline:"none" }} />
+                                color:C.dark, fontFamily:"'Inter', sans-serif", outline:"none" }} />
               </div>
               {hayFiltros && (
                 <button onClick={() => { setQuery(""); setQueryDni(""); setFEstado(""); setFTipo(""); setFEscribano(""); setFDesde(""); setFHasta(""); resetPag(); }}
                         style={{ padding:"8px 12px", borderRadius:R.md, border:"1px solid rgba(26,35,50,.12)",
                                  background:"transparent", fontSize:12, fontWeight:600, color:"rgba(26,35,50,.5)",
-                                 cursor:"pointer", fontFamily:"'Montserrat',sans-serif", whiteSpace:"nowrap" }}>
+                                 cursor:"pointer", fontFamily:"'Inter', sans-serif", whiteSpace:"nowrap" }}>
                   Limpiar todo
                 </button>
               )}
@@ -489,11 +489,11 @@ export function HomeScreen({ onGo }) {
                     <button disabled={paginaReal === 1} onClick={() => setPagina(p => p - 1)}
                             style={{ padding:"4px 10px", borderRadius:5, border:"1px solid rgba(26,35,50,.14)",
                                      background:"transparent", fontSize:12, color:C.dark, cursor:"pointer",
-                                     fontFamily:"'Montserrat',sans-serif", opacity: paginaReal===1 ? .35 : 1 }}>←</button>
+                                     fontFamily:"'Inter', sans-serif", opacity: paginaReal===1 ? .35 : 1 }}>←</button>
                     {Array.from({length: totalPags}, (_,i) => i+1).map(n => (
                       <button key={n} onClick={() => setPagina(n)}
                               style={{ padding:"4px 10px", borderRadius:5, fontSize:12, cursor:"pointer",
-                                       fontFamily:"'Montserrat',sans-serif",
+                                       fontFamily:"'Inter', sans-serif",
                                        border: n === paginaReal ? "none" : "1px solid rgba(26,35,50,.14)",
                                        background: n === paginaReal ? C.cerulean : "transparent",
                                        color: n === paginaReal ? "#fff" : C.dark }}>
@@ -503,7 +503,7 @@ export function HomeScreen({ onGo }) {
                     <button disabled={paginaReal === totalPags} onClick={() => setPagina(p => p + 1)}
                             style={{ padding:"4px 10px", borderRadius:5, border:"1px solid rgba(26,35,50,.14)",
                                      background:"transparent", fontSize:12, color:C.dark, cursor:"pointer",
-                                     fontFamily:"'Montserrat',sans-serif", opacity: paginaReal===totalPags ? .35 : 1 }}>→</button>
+                                     fontFamily:"'Inter', sans-serif", opacity: paginaReal===totalPags ? .35 : 1 }}>→</button>
                   </div>
                 </div>
               )}

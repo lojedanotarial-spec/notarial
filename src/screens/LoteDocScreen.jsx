@@ -372,7 +372,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
   if (cargando) {
     return (
       <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
-                    fontFamily:"'Montserrat',sans-serif", color:"rgba(26,35,50,.5)" }}>
+                    fontFamily:"'Inter', sans-serif", color:"rgba(26,35,50,.5)" }}>
         Cargando documento...
       </div>
     );
@@ -380,7 +380,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
-                  fontFamily:"'Montserrat',sans-serif", overflow:"hidden" }}>
+                  fontFamily:"'Inter', sans-serif", overflow:"hidden" }}>
       <NavBar
         screenTitle={`Mz ${lote.manzana || "?"} · Lote ${lote.lote || "?"} · ${barrio.nombre}`}
         estado={estado}
@@ -410,13 +410,13 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
             <div style={{ width:1, height:18, background:"rgba(26,35,50,.12)", margin:"0 4px" }}/>
             <button onClick={() => setHojaOn(!hojaOn)} style={{
               padding:"2px 10px", borderRadius:6, fontSize:14, cursor:"pointer",
-              border:"1px solid rgba(26,35,50,.14)", fontFamily:"'Montserrat',sans-serif",
+              border:"1px solid rgba(26,35,50,.14)", fontFamily:"'Inter', sans-serif",
               background: hojaOn ? C.ceruleanLight : "transparent",
               color: hojaOn ? C.cerulean : C.dark,
             }}>Fondo</button>
             <button onClick={() => setShowVars(!showVars)} style={{
               padding:"2px 10px", borderRadius:6, fontSize:14, cursor:"pointer",
-              border:"1px solid rgba(26,35,50,.14)", fontFamily:"'Montserrat',sans-serif",
+              border:"1px solid rgba(26,35,50,.14)", fontFamily:"'Inter', sans-serif",
               background: showVars ? C.ceruleanLight : "transparent",
               color: showVars ? C.cerulean : C.dark,
             }}>Variables</button>

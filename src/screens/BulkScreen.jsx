@@ -64,11 +64,11 @@ function ConfirmEliminar({ titulo, onConfirm, onCancel }) {
           <button onClick={onCancel}
                   style={{ padding:"7px 16px", borderRadius:7, border:"1px solid rgba(26,35,50,.14)",
                            background:"transparent", fontSize:13, fontWeight:600, color:C.dark,
-                           cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>Cancelar</button>
+                           cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>Cancelar</button>
           <button onClick={onConfirm}
                   style={{ padding:"7px 16px", borderRadius:7, border:"1px solid #e07070",
                            background:"#fdf0f0", fontSize:13, fontWeight:700, color:"#c0392b",
-                           cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>Eliminar</button>
+                           cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>Eliminar</button>
         </div>
       </div>
     </div>
@@ -99,7 +99,7 @@ function ModalLote({ lote, onSave, onClose }) {
   const inp = {
     width: "100%", padding: "7px 9px", borderRadius: 6,
     border: "1px solid rgba(26,35,50,.14)", background: "#FDFCFA",
-    fontSize: 12, color: "#1a2332", fontFamily: "'Montserrat',sans-serif",
+    fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif",
     outline: "none", boxSizing: "border-box",
   };
 
@@ -164,7 +164,7 @@ function ModalLote({ lote, onSave, onClose }) {
                 padding: "5px 14px", borderRadius: 6, cursor: "pointer",
                 border: "1px solid " + C.cerulean, background: C.cerulean,
                 fontSize: 12, fontWeight: 600, color: "#FDFCFA",
-                fontFamily: "'Montserrat',sans-serif",
+                fontFamily: "'Inter', sans-serif",
               }}>
                 {d.partes.length === 0 ? "+ Agregar adquirentes" : "Editar adquirentes"}
               </button>
@@ -242,14 +242,14 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
   const [progreso, setProgreso] = useState(null);
   const loteEditar = editandoLote ? barrio.lotes.find(l => l.id === editandoLote) : null;
   const completosCount = barrio.lotes.filter(estaCompleto).length;
-  const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: "#fff", fontSize: 12, color: "#1a2332", fontFamily: "'Montserrat',sans-serif", outline: "none", boxSizing: "border-box" };
+  const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: "#fff", fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" };
   const { miUsuario, usuario, registroActivo } = useAuth();
   const [verDocLote, setVerDocLote] = useState(null);
     useEffect(() => {
       if (verDocLote) { onVerDoc(verDocLote); setVerDocLote(null); }
     }, [verDocLote]);
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Montserrat',sans-serif", overflow: "hidden", background: C.warm }}>
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", fontFamily: "'Inter', sans-serif", overflow: "hidden", background: C.warm }}>
 <NavBar
         onGo={onGo}
         screenTitle={barrio.nombre}
@@ -307,7 +307,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
             <span style={{ fontSize: 13, fontWeight: 700, color: "#1a2332" }}>
               Lotes <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,35,50,.4)" }}>{completosCount}/{barrio.lotes.length} completos</span>
             </span>
-            <button onClick={() => onAgregarLote(barrio.id)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px dashed rgba(26,35,50,.25)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1a2332", fontFamily: "'Montserrat',sans-serif", cursor: "pointer" }}>+ Agregar lote</button>
+            <button onClick={() => onAgregarLote(barrio.id)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px dashed rgba(26,35,50,.25)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1a2332", fontFamily: "'Inter', sans-serif", cursor: "pointer" }}>+ Agregar lote</button>
           </div>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
@@ -332,13 +332,13 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
                     <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(26,35,50,.05)", fontSize: 12, color: "#1a2332" }}>{l.escribano || "-"}</td>
                     <td style={{ padding: "10px 12px", borderBottom: "1px solid rgba(26,35,50,.05)" }}>
                       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        <button onClick={() => setEditandoLote(l.id)} style={{ padding: "4px 10px", borderRadius: 6, cursor: "pointer", border: "1px solid " + C.cerulean, background: "rgba(58,124,165,.1)", fontSize: 11, fontWeight: 600, color: C.cerulean, fontFamily: "'Montserrat',sans-serif", display:"flex", alignItems:"center", gap:5 }}>
+                        <button onClick={() => setEditandoLote(l.id)} style={{ padding: "4px 10px", borderRadius: 6, cursor: "pointer", border: "1px solid " + C.cerulean, background: "rgba(58,124,165,.1)", fontSize: 11, fontWeight: 600, color: C.cerulean, fontFamily: "'Inter', sans-serif", display:"flex", alignItems:"center", gap:5 }}>
                           <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
                             <path d="M11 2l3 3-9 9H2v-3L11 2z" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                           Editar datos
                         </button>
-                        <button onClick={() => onVerDoc(l)} style={{ padding: "4px 10px", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(26,35,50,.2)", background: "transparent", fontSize: 11, fontWeight: 600, color: "#1a2332", fontFamily: "'Montserrat',sans-serif", display:"flex", alignItems:"center", gap:5 }}>
+                        <button onClick={() => onVerDoc(l)} style={{ padding: "4px 10px", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(26,35,50,.2)", background: "transparent", fontSize: 11, fontWeight: 600, color: "#1a2332", fontFamily: "'Inter', sans-serif", display:"flex", alignItems:"center", gap:5 }}>
                           <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
                             <rect x="2" y="1" width="12" height="14" rx="2"/>
                             <path d="M5 6h6M5 9h6M5 12h4" strokeLinecap="round"/>
@@ -346,7 +346,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
                           Ver documento
                         </button>
                         <button onClick={() => setConfirmLote(l)}
-                          style={{ padding: "4px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Montserrat',sans-serif" }}
+                          style={{ padding: "4px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Inter', sans-serif" }}
                           onMouseEnter={e => { e.currentTarget.style.color = "#c0392b"; e.currentTarget.style.borderColor = "#c0392b"; }}
                           onMouseLeave={e => { e.currentTarget.style.color = "#1a2332"; e.currentTarget.style.borderColor = "rgba(26,35,50,.15)"; }}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -368,7 +368,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
       )}
       {exportando && progreso && (
         <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.55)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <div style={{ background:"#fff", borderRadius:14, padding:"28px 32px", minWidth:320, boxShadow:"0 8px 40px rgba(26,35,50,.2)", textAlign:"center", fontFamily:"'Montserrat',sans-serif" }}>
+          <div style={{ background:"#fff", borderRadius:14, padding:"28px 32px", minWidth:320, boxShadow:"0 8px 40px rgba(26,35,50,.2)", textAlign:"center", fontFamily:"'Inter', sans-serif" }}>
             <div style={{ fontSize:15, fontWeight:700, color:"#1a2332", marginBottom:8 }}>Generando escrituras...</div>
             <div style={{ fontSize:13, color:"rgba(26,35,50,.5)", marginBottom:16 }}>
               {progreso.lote ? `Mz ${progreso.lote.manzana || "?"} · Lote ${progreso.lote.lote || "?"}` : "Iniciando..."}
@@ -448,7 +448,7 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
   const ultimos5 = historial.slice(0, 5);
 
   return (
-    <div style={{ height:"100vh", display:"flex", flexDirection:"column", fontFamily:"'Montserrat',sans-serif", overflow:"hidden", background:C.warm }}>
+    <div style={{ height:"100vh", display:"flex", flexDirection:"column", fontFamily:"'Inter', sans-serif", overflow:"hidden", background:C.warm }}>
       <NavBar onGo={onGo} screenTitle="Carga masiva" />
 
       <div style={{ flex:1, overflow:"hidden", display:"flex", gap:0 }}>
@@ -462,7 +462,7 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
               <button onClick={onAgregar} style={{
                 display:"flex", alignItems:"center", gap:8, padding:"8px 18px",
                 background:C.cerulean, color:"#fff", border:"none", borderRadius:8,
-                fontSize:13, fontWeight:600, fontFamily:"'Montserrat',sans-serif", cursor:"pointer",
+                fontSize:13, fontWeight:600, fontFamily:"'Inter', sans-serif", cursor:"pointer",
               }}>+ Nuevo barrio</button>
             </div>
 
@@ -478,7 +478,7 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
                 placeholder="Buscar barrio..."
                 style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:8,
                          border:"1px solid rgba(26,35,50,.12)", background:"#fff", fontSize:13,
-                         color:C.dark, fontFamily:"'Montserrat',sans-serif",
+                         color:C.dark, fontFamily:"'Inter', sans-serif",
                          boxSizing:"border-box", outline:"none" }}
               />
               {query && (
@@ -502,7 +502,7 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
                     <div style={{ fontSize:40, marginBottom:12 }}>🏘</div>
                     <div style={{ fontSize:16, fontWeight:600, color:"#1a2332", marginBottom:6 }}>No hay barrios cargados</div>
                     <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20 }}>Creá un nuevo barrio para empezar</div>
-                    <button onClick={onAgregar} style={{ padding:"8px 20px", borderRadius:8, border:"none", background:C.cerulean, color:"#fff", fontSize:13, fontWeight:700, fontFamily:"'Montserrat',sans-serif", cursor:"pointer" }}>+ Nuevo barrio</button>
+                    <button onClick={onAgregar} style={{ padding:"8px 20px", borderRadius:8, border:"none", background:C.cerulean, color:"#fff", fontSize:13, fontWeight:700, fontFamily:"'Inter', sans-serif", cursor:"pointer" }}>+ Nuevo barrio</button>
                   </>
                 )}
               </div>
@@ -733,7 +733,7 @@ export function BulkScreen({ onGo }) {
             <input autoFocus value={nombreNuevo} onChange={e => setNombreNuevo(e.target.value)}
               onKeyDown={e => e.key === "Enter" && confirmarNuevoBarrio()}
               placeholder="ej: Barrio Portal del Algarrobal"
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "#FDFCFA", fontSize: 14, color: "#1a2332", fontFamily: "'Montserrat',sans-serif", outline: "none", boxSizing: "border-box" }}/>
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "#FDFCFA", fontSize: 14, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" }}/>
           </Fg>
         </Modal>
       )}

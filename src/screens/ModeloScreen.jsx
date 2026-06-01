@@ -76,7 +76,7 @@ function EditorModelo({ barrio, templateId: initTemplateId, htmlInicial, onVolve
 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
-                  fontFamily:"'Montserrat',sans-serif", overflow:"hidden" }}>
+                  fontFamily:"'Inter', sans-serif", overflow:"hidden" }}>
       <NavBar
         screenTitle={"Modelo — " + (barrio?.nombre || "")}
         indicadorGuardado={indicador}
@@ -122,7 +122,7 @@ function EditorModelo({ barrio, templateId: initTemplateId, htmlInicial, onVolve
         <select value={fontSize} onChange={e => setFontSize(Number(e.target.value))}
           style={{ padding:"3px 4px", border:"1px solid rgba(26,35,50,.2)", borderRadius:5,
                    fontSize:13, background:"#f8f6f2", color:C.dark,
-                   fontFamily:"'Montserrat',sans-serif", width:48 }}>
+                   fontFamily:"'Inter', sans-serif", width:48 }}>
           {[8,9,10,11,12,13,14,16,18].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <TbSep/>
@@ -197,7 +197,7 @@ export function ModeloScreen({ barrio, onVolver, onGo }) {
   if (estado.cargando) {
     return (
       <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
-                    fontFamily:"'Montserrat',sans-serif", color:"rgba(26,35,50,.5)" }}>
+                    fontFamily:"'Inter', sans-serif", color:"rgba(26,35,50,.5)" }}>
         Cargando modelo...
       </div>
     );

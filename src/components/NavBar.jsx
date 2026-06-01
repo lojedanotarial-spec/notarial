@@ -266,7 +266,7 @@ export function NavBar({
                   display: "flex", alignItems: "center", gap: 6,
                   background: "none", border: "none", cursor: "pointer",
                   color: "rgba(255,255,255,.75)", fontSize: 13,
-                  fontFamily: "'Montserrat',sans-serif", padding: 0, flexShrink: 0,
+                  fontFamily: "'Inter', sans-serif", padding: 0, flexShrink: 0,
                 }}
                 onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,1)"}
                 onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.75)"}
@@ -306,7 +306,7 @@ export function NavBar({
                 background: showVarHighlight ? "rgba(201,169,97,.15)" : "transparent",
                 color: showVarHighlight ? "#c9a961" : "rgba(255,255,255,.75)",
                 fontSize: 12, fontWeight: 600, padding: "5px 12px",
-                fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer",
                 flexShrink: 0,
               }}>
                 Variables
@@ -318,7 +318,7 @@ export function NavBar({
                 border: "1px solid rgba(255,255,255,.25)", borderRadius: 6,
                 background: "transparent", color: "rgba(255,255,255,.75)",
                 fontSize: 12, fontWeight: 600, padding: "5px 12px",
-                fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer",
                 flexShrink: 0,
               }}>
                 Guardar
@@ -330,7 +330,7 @@ export function NavBar({
                 border: "1px solid " + ec.border, borderRadius: 6,
                 background: ec.bg, color: ec.color,
                 fontSize: 12, fontWeight: 600, padding: "5px 12px",
-                fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer",
                 letterSpacing: ".04em", textTransform: "uppercase", flexShrink: 0,
               }}>
                 {ELABELS[estado]}
@@ -342,7 +342,7 @@ export function NavBar({
                 border: "1px solid rgba(255,255,255,.25)", borderRadius: 6,
                 background: "transparent", color: "rgba(255,255,255,.75)",
                 fontSize: 12, fontWeight: 600, padding: "5px 12px",
-                fontFamily: "'Montserrat',sans-serif", cursor: "pointer",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer",
                 flexShrink: 0,
               }}>
                 {modeloLabel || "Modelo"}

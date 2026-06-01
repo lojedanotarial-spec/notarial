@@ -66,13 +66,13 @@ function ConfirmQuitarParte({ nombre, onConfirm, onCancel }) {
           <button onClick={onCancel}
                   style={{ padding:"7px 16px", borderRadius:7, border:"1px solid rgba(26,35,50,.14)",
                            background:"transparent", fontSize:13, fontWeight:600, color:C.dark,
-                           cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>
+                           cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>
             Cancelar
           </button>
           <button onClick={onConfirm}
                   style={{ padding:"7px 16px", borderRadius:7, border:"1px solid #e07070",
                            background:"#fdf0f0", fontSize:13, fontWeight:700, color:"#c0392b",
-                           cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>
+                           cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>
             Quitar
           </button>
         </div>
@@ -350,7 +350,7 @@ export function PartesEditor({ partes, onChange, showRol = true }) {
             style={{
               padding:"7px 10px", border:"1px dashed rgba(26,35,50,.2)", borderRadius:8,
               fontSize:13, color:C.dark, background:"transparent",
-              fontFamily:"'Montserrat',sans-serif", cursor:"pointer", textAlign:"center",
+              fontFamily:"'Inter', sans-serif", cursor:"pointer", textAlign:"center",
             }}>
             + Agregar
           </button>
@@ -507,7 +507,7 @@ export function PartesEditor({ partes, onChange, showRol = true }) {
                       fontSize:11, fontWeight:600, color:C.cerulean,
                       background:"none", border:"1px solid rgba(58,124,165,.3)",
                       borderRadius:6, padding:"3px 10px", cursor:"pointer",
-                      fontFamily:"'Montserrat',sans-serif",
+                      fontFamily:"'Inter', sans-serif",
                     }}>
                     + Agregar
                   </button>

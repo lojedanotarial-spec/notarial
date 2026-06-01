@@ -53,7 +53,7 @@ export const inp = {
   fontSize:     T.l2.fontSize,
   background:   "#FDFCFA",
   color:        "#1a2332",
-  fontFamily:   "'Montserrat',sans-serif",
+  fontFamily:   "'Inter', sans-serif",
   width:        "100%",
   boxSizing:    "border-box",
 };

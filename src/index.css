@@ -1,5 +1,15 @@
-/* estilos globales — agregar aqui si es necesario */
+/* fuente base — Inter para UI, Montserrat queda para marca/títulos */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Montserrat', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 ::placeholder {
-  color: rgba(80, 80, 80, 0.438) !important;
-  font-style: italic !important;
+  color: rgba(26, 35, 50, 0.38);
+  font-style: italic;
 }

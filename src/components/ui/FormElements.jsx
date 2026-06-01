@@ -3,7 +3,7 @@
 export function Fg({ label, children, full }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:4, gridColumn:full?"1/-1":undefined }}>
-      <label style={{ fontSize:11, fontWeight:500, color:C.dark, fontFamily:"'Montserrat',sans-serif" }}>
+      <label style={{ fontSize:11, fontWeight:500, color:C.dark, fontFamily:"'Inter', sans-serif" }}>
         {label}
       </label>
       {children}
@@ -15,7 +15,7 @@ export function Warn({ children }) {
   return (
     <div style={{ display:"flex", gap:8, padding:"10px 12px", background:C.fawn50,
                   borderRadius:7, border:"1px solid rgba(201,169,97,.3)",
-                  fontSize:13, color:"#1a2332", fontFamily:"'Montserrat',sans-serif" }}>
+                  fontSize:13, color:"#1a2332", fontFamily:"'Inter', sans-serif" }}>
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink:0, marginTop:1 }}>
         <path d="M6.5 1.5L12 11H1L6.5 1.5z" stroke="#a6864a" strokeWidth="1.3" fill="none"/>
         <path d="M6.5 5v2.5" stroke="#a6864a" strokeWidth="1.3" strokeLinecap="round"/>

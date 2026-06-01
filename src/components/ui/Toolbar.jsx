@@ -17,7 +17,7 @@ export function TbBtn({ children, active, onClick, title }) {
         background: on ? C.ceruleanLight : "transparent",
         color: on ? C.cerulean : C.dark,
         fontSize: 13, fontWeight: 500,
-        fontFamily: "'Montserrat',sans-serif",
+        fontFamily: "'Inter', sans-serif",
         display: "flex", alignItems: "center", gap: 4,
         whiteSpace: "nowrap", transition: "all .12s", cursor: "pointer",
       }}
@@ -51,7 +51,7 @@ export function DdSection({ label, children }) {
       {label && (
         <div style={{ padding: "6px 13px 3px", fontSize: 9, fontWeight: 600,
                       letterSpacing: ".08em", textTransform: "uppercase",
-                      color: C.faint, fontFamily: "'Montserrat',sans-serif" }}>
+                      color: C.faint, fontFamily: "'Inter', sans-serif" }}>
           {label}
         </div>
       )}
@@ -72,7 +72,7 @@ export function DdItem({ children, active, onClick, meta }) {
         padding: "8px 13px", fontSize: 13, fontWeight: active ? 600 : 400,
         cursor: "pointer", color: C.dark,
         background: hover ? "rgba(26,35,50,.04)" : "transparent",
-        fontFamily: "'Montserrat',sans-serif", gap: 8,
+        fontFamily: "'Inter', sans-serif", gap: 8,
       }}
     >
       <span>{children}</span>

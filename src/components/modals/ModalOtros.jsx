@@ -153,7 +153,7 @@ export function ModalFecha({ fecha, onApply, onClose }) {
           <button onClick={hoy} style={{
             padding:"6px 10px", border:"1px solid rgba(26,35,50,.2)", borderRadius:6,
             fontSize:13, fontWeight:500, background:"#FDFCFA", color:"#1a2332",
-            fontFamily:"'Montserrat',sans-serif", whiteSpace:"nowrap", cursor:"pointer",
+            fontFamily:"'Inter', sans-serif", whiteSpace:"nowrap", cursor:"pointer",
           }}>
             ↺ Hoy
           </button>

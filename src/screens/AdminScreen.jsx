@@ -36,7 +36,7 @@ export function AdminScreen({ onGo }) {
 
   return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column",
-                  fontFamily:"'Montserrat',sans-serif", overflow:"hidden", background:C.warm }}>
+                  fontFamily:"'Inter', sans-serif", overflow:"hidden", background:C.warm }}>
       <NavBar onGo={onGo} screenTitle="Seleccionar registro" />
 
       <div style={{ flex:1, overflowY:"auto", padding:"24px 20px" }}>
@@ -64,7 +64,7 @@ export function AdminScreen({ onGo }) {
               placeholder="Buscar por número o nombre..."
               style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:8,
                        border:"1px solid rgba(26,35,50,.12)", background:"#fff", fontSize:13,
-                       color:C.dark, fontFamily:"'Montserrat',sans-serif",
+                       color:C.dark, fontFamily:"'Inter', sans-serif",
                        boxSizing:"border-box", outline:"none" }}
             />
           </div>

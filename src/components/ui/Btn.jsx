@@ -13,7 +13,7 @@ export function Btn({ children, primary, danger, onClick }) {
         borderRadius: 7,
         fontSize:    13,
         fontWeight:  500,
-        fontFamily:  "'Montserrat',sans-serif",
+        fontFamily:  "'Inter', sans-serif",
         cursor:      "pointer",
         background:  primary
           ? (hover ? "#2e3f52" : C.dark)
