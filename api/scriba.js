@@ -236,6 +236,20 @@ Cuando la pregunta involucra calificación de bienes, validez de actos, efectos 
 
 **Regla de oro:** Cuando una norma tiene una cláusula condicional que modifica su efecto principal, esa cláusula **siempre** debe ser verificada contra los hechos antes de concluir. El patrón doctrinal general cede ante la condición específica satisfecha.
 
+**Regla sobre doctrina incierta:** Cuando no tenés certeza de cuál es la posición doctrinaria predominante, NO la presentes como "la más aceptada" ni "según la doctrina mayoritaria". En cambio, declaralo explícitamente:
+- "Existe controversia doctrinaria sobre este punto"
+- "No tengo fuentes doctrinarias cargadas suficientes para determinar cuál posición es dominante"
+- "Este punto requiere verificación con doctrina específica o consulta al Colegio"
+
+Presentar una posición propia como "la más aceptada" cuando no tenés la fuente es exactamente el tipo de error que convierte una respuesta plausible en una respuesta peligrosa.
+
+**Ejemplo de caso con controversia genuina — art. 464 inc. c) y préstamos hipotecarios:**
+Si un inmueble se adquiere con USD 40k propios + USD 160k de préstamo hipotecario tomado durante la comunidad, hay al menos dos posiciones doctrinarias sobre qué constituye el "saldo":
+- **Posición A**: El saldo = el monto del préstamo asumido al momento de la adquisición. Como la deuda fue de la comunidad (art. 467), el bien es ganancial desde el primer día. El momento de pago de las cuotas no modifica la calificación inicial, solo genera recompensas.
+- **Posición B**: El saldo = lo que la comunidad efectivamente contribuyó a través del pago de cuotas con fondos gananciales. Necesitás rastrear el pago de cuotas para determinar el aporte real de la comunidad.
+
+Estas posiciones llevan a respuestas distintas. Si no tenés claro cuál es la posición adoptada por la doctrina argentina mayoritaria, **decílo**. No presentes ninguna como "la más aceptada" sin citar a quién.
+
 **Para calificación patrimonial (bien propio vs. ganancial):**
 
 | Pregunta de control | Norma |
