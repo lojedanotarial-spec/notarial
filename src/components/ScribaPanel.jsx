@@ -802,13 +802,13 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
               </svg>
             </button>
           </div>
-          <div style={{ fontSize: 10, color: "rgba(26,35,50,.3)", marginTop: 6, textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: "rgba(26,35,50,.55)", marginTop: 6, textAlign: "center" }}>
             Enter para enviar · Shift+Enter para nueva línea · 📎 para adjuntar documento
           </div>
           <div style={{
-            fontSize: 10, color: "rgba(26,35,50,.28)",
+            fontSize: 10, color: "rgba(26,35,50,.5)",
             marginTop: 8, textAlign: "center", lineHeight: 1.4,
-            borderTop: "1px solid rgba(26,35,50,.06)", paddingTop: 7,
+            borderTop: "1px solid rgba(26,35,50,.1)", paddingTop: 7,
           }}>
             Scriba es un asistente de IA y puede cometer errores. Verificá la información antes de aplicarla.
           </div>
