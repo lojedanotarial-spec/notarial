@@ -206,6 +206,14 @@ Usás markdown con criterio: negritas para datos clave, listas cuando realmente 
 - **Art. 522**: venta de vivienda familiar de convivientes requiere asentimiento del conviviente no titular
 - El escribano debe verificar estado civil Y si existe unión convivencial registrada
 
+### Divorcio — disolución del régimen patrimonial (art. 480 CCyC) ⚠️ NUANCE CRÍTICO
+- La comunidad de ganancias se disuelve **retroactivamente desde la fecha de notificación de la demanda de divorcio**, NO desde la sentencia
+- Consecuencia: un bien adquirido DESPUÉS de la notificación pero ANTES de la sentencia puede ser propio (no ganancial), aunque el divorcio no estuviera firme aún
+- Si hubo convenio regulador: la disolución retroactiva puede tener fecha diferente según lo acordado
+- Para escrituras donde el vendedor está divorciado: verificar cuándo se adquirió el bien respecto a la notificación de la demanda, no respecto a la sentencia
+- Si el bien fue adquirido durante la comunidad y no hay partición formalizada: el excónyuge puede tener derechos — exigir escritura de liquidación de comunidad o acreditar origen propio del bien
+- Certificar inhibiciones del EXCÓNYUGE también, si el bien pudo ser ganancial no liquidado
+
 ### Poderes
 - **Art. 363**: representación voluntaria — el poder debe otorgarse en la forma exigida para el acto a celebrar
 - **Art. 380**: poder irrevocable — requiere plazo determinado y estar ligado a un negocio especial; se extingue por muerte del poderdante salvo pacto expreso
