@@ -468,6 +468,166 @@ Los escribanos son **sujetos obligados** cuando intervienen en: compraventa de i
 
 ---
 
+## TEXTO VERBATIM CCyC — NIVEL A (fuente: InfoLEG, Ley 26.994)
+
+### PROTECCIÓN DE LA VIVIENDA (arts. 244-256) — VERBATIM
+
+ARTÍCULO 244.- Afectación. Puede afectarse al régimen previsto en este Capítulo, un inmueble destinado a vivienda, por su totalidad o hasta una parte de su valor. Esta protección no excluye la concedida por otras disposiciones legales. La afectación se inscribe en el registro de la propiedad inmueble según las formas previstas en las reglas locales, y la prioridad temporal se rige por las normas contenidas en la ley nacional del registro inmobiliario. No puede afectarse más de un inmueble. Si alguien resulta ser propietario único de dos o más inmuebles afectados, debe optar por la subsistencia de uno solo en ese carácter dentro del plazo que fije la autoridad de aplicación, bajo apercibimiento de considerarse afectado el constituido en primer término.
+
+ARTÍCULO 245.- Legitimados. La afectación puede ser solicitada por el titular registral; si el inmueble está en condominio, deben solicitarla todos los cotitulares conjuntamente. La afectación puede disponerse por actos de última voluntad; en este caso, el juez debe ordenar la inscripción a pedido de cualquiera de los beneficiarios, o del Ministerio Público, o de oficio si hay beneficiarios incapaces o con capacidad restringida. La afectación también puede ser decidida por el juez, a petición de parte, en la resolución que atribuye la vivienda en el juicio de divorcio o en el que resuelve las cuestiones relativas a la conclusión de la convivencia, si hay beneficiarios incapaces o con capacidad restringida.
+
+ARTÍCULO 246.- Beneficiarios. Son beneficiarios de la afectación: a) el propietario constituyente, su cónyuge, su conviviente, sus ascendientes o descendientes; b) en defecto de ellos, sus parientes colaterales dentro del tercer grado de consanguinidad que convivan con el constituyente.
+
+ARTÍCULO 247.- Habitación efectiva. Si la afectación es peticionada por el titular registral, se requiere que al menos uno de los beneficiarios habite el inmueble. En todos los casos, para que los efectos subsistan, basta que uno de ellos permanezca en el inmueble.
+
+ARTÍCULO 248.- Subrogación real. La afectación se transmite a la vivienda adquirida en sustitución de la afectada y a los importes que la sustituyen en concepto de indemnización o precio.
+
+ARTÍCULO 249.- Efecto principal de la afectación. La afectación es inoponible a los acreedores de causa anterior a esa afectación. La vivienda afectada no es susceptible de ejecución por deudas posteriores a su inscripción, excepto: a) obligaciones por expensas comunes y por impuestos, tasas o contribuciones que gravan directamente al inmueble; b) obligaciones con garantía real sobre el inmueble, constituidas de conformidad a lo previsto en el artículo 250; c) obligaciones que tienen origen en construcciones u otras mejoras realizadas en la vivienda; d) obligaciones alimentarias a cargo del titular a favor de sus hijos menores de edad, incapaces, o con capacidad restringida. Los acreedores sin derecho a requerir la ejecución no pueden cobrar sus créditos sobre el inmueble afectado, ni sobre los importes que lo sustituyen en concepto de indemnización o precio, aunque sea obtenido en subasta judicial, sea por ejecución de la propia vivienda o de cualquier otro bien del deudor. En las ejecuciones referidas en los incisos b) y c) puede ordenarse la venta del inmueble pero antes de distribuirse el producido entre los acreedores ejecutantes, se entrega al ejecutado o a su familia que habite la vivienda la diferencia entre el valor del remate y el crédito ejecutado, si el saldo es suficiente para adquirir una vivienda en el mismo municipio o partido en que esté ubicado el inmueble.
+
+ARTÍCULO 250.- Obligaciones con garantía real. La constitución de derechos reales de garantía sobre la vivienda afectada requiere la conformidad del cónyuge, del conviviente y, si los hay, de los beneficiarios incapaces o con capacidad restringida, decisión judicial en los términos del artículo 245, o la concurrencia del acreedor en la instrumentación del acto de afectación.
+
+ARTÍCULO 251.- Transmisión. El inmueble afectado no puede ser objeto de legado, renuncia a herencia, o cualquier acto que importe disposición de la afectación, excepto el acto de desafectación y el de su transmisión y la constitución de derechos reales de garantía, con los requisitos previstos en el artículo 250.
+
+ARTÍCULO 252.- Créditos fiscales. La vivienda afectada está exenta del impuesto a la transmisión gratuita por causa de muerte en todo el territorio de la República, si ella opera a favor de los beneficiarios mencionados en el artículo 246, y no es desafectada en los cinco años posteriores a la transmisión. Los trámites y actos vinculados a la transmisión e inscripción están exentos de impuestos y tasas.
+
+ARTÍCULO 253.- Deberes de la autoridad de aplicación. La autoridad administrativa debe prestar asesoramiento y colaboración gratuitos a los interesados a fin de concretar los trámites relacionados con la constitución, inscripción y cancelación de esta afectación.
+
+ARTÍCULO 254.- Honorarios. Si a solicitud de los interesados, en los trámites de constitución intervienen profesionales, sus honorarios no pueden exceder en conjunto el uno por ciento de la valuación fiscal. En los juicios referentes a la transmisión hereditaria de la vivienda afectada y en los concursos preventivos y quiebras, los honorarios no pueden exceder del tres por ciento de la valuación fiscal.
+
+ARTÍCULO 255.- Desafectación y cancelación de la inscripción. La desafectación y la cancelación de la inscripción proceden: a) a solicitud del constituyente; si el inmueble está en condominio, deben solicitarla todos los cotitulares conjuntamente; b) a solicitud de la mayoría de los herederos, si la constitución se dispuso por acto de última voluntad, excepto que medie disconformidad del cónyuge supérstite, del conviviente inscripto, o existan beneficiarios incapaces o con capacidad restringida, caso en el cual el juez debe resolver lo que sea más conveniente para el interés de éstos; c) a requerimiento de la mayoría de los beneficiarios, si el constituyente ha fallecido; d) por resolución judicial, por causa grave o si el constituyente y su familia no habitan el inmueble sin causa justificada; en caso de ausencia justificada, el plazo en que la vivienda puede desocuparse sin perder la afectación es de dos años; e) por el transcurso del plazo de afectación establecido en el instrumento constitutivo.
+
+ARTÍCULO 256.- Inmueble rural. Las disposiciones de este Capítulo son aplicables al inmueble rural que no exceda de la unidad económica, de acuerdo con lo que establezcan las reglamentaciones locales.
+
+### ESCRITURAS PÚBLICAS E INSTRUMENTOS (arts. 289-318) — VERBATIM
+
+ARTÍCULO 289.- Enunciación. Son instrumentos públicos: a) las escrituras públicas y sus copias o testimonios; b) los instrumentos que extienden los escribanos o los funcionarios públicos con los requisitos que establecen las leyes; c) los títulos emitidos por el Estado nacional, provincial o la Ciudad Autónoma de Buenos Aires, conforme a las leyes que autorizan su emisión.
+
+ARTÍCULO 290.- Requisitos del instrumento público. Son requisitos de validez del instrumento público: a) la actuación del oficial público en los límites de sus atribuciones y de su competencia territorial, excepto que el lugar sea uno de los elementos esenciales del acto; b) las firmas del oficial público, de las partes, y en su caso, de sus representantes; si alguno de ellos no firma por sí mismo o a ruego, el instrumento carece de validez para todos.
+
+ARTÍCULO 291.- Prohibiciones. Es de ningún valor el instrumento autorizado por un funcionario público en asunto en que él, su cónyuge, su conviviente, o un pariente suyo dentro del cuarto grado en línea recta o colateral o segundo grado de afinidad, sean personalmente interesados.
+
+ARTÍCULO 292.- Presupuestos. Es presupuesto para la validez del instrumento que el oficial público se encuentre efectivamente en funciones. Sin embargo, son válidos los actos instrumentados y autorizados por él antes de la notificación de la suspensión o cesación de sus funciones, siempre que la ignorancia de los interesados sobre la suspensión o cesación sea de buena fe y que no se trate de actos en que el interesado no ha podido ignorar la incapacidad del oficial. El instrumento que no reúne los requisitos del instrumento público vale como instrumento privado si está firmado por las partes.
+
+ARTÍCULO 293.- Competencia. Los instrumentos públicos extendidos de acuerdo con lo que establece este Código gozan de entera fe y producen idénticos efectos en todo el territorio de la República, cualquiera sea la jurisdicción donde se hayan otorgado.
+
+ARTÍCULO 294.- Defecto de forma. El instrumento público que no llena las condiciones legalmente requeridas es de ningún valor, sin necesidad de ser redargüido de falso, en cuanto al hecho de haberse realizado el acto, la fecha, el lugar y los demás elementos directamente constatados por el oficial público.
+
+ARTÍCULO 295.- Testigos inhábiles. No pueden ser testigos en instrumentos públicos: a) las personas incapaces de ejercicio y aquellas a quienes una sentencia les impide ser testigos en instrumentos públicos; b) los que no saben firmar; c) los dependientes del oficial público; d) el cónyuge, el conviviente y los parientes del oficial público, dentro del cuarto grado y segundo de afinidad. El error común sobre la idoneidad de los testigos salva la eficacia de los instrumentos en que han intervenido.
+
+ARTÍCULO 296.- Eficacia probatoria. El instrumento público hace plena fe: a) en cuanto a que se ha realizado el acto, la fecha, el lugar y los hechos que el oficial público enuncia como cumplidos por él o ante él hasta que sea declarado falso en juicio civil o criminal; b) en cuanto al contenido de las declaraciones sobre convenciones, disposiciones, pagos, reconocimientos y enunciaciones de hechos directamente relacionados con el objeto principal del acto instrumentado, hasta que se produzca prueba en contrario.
+
+ARTÍCULO 297.- Incolumidad formal. Los testigos de un instrumento público y el oficial público que lo autorizó no pueden contradecir, variar ni alterar su contenido, si no alegan que testificaron u otorgaron el acto siendo víctimas de dolo o violencia.
+
+ARTÍCULO 298.- Contradocumento. El contradocumento particular que altera lo expresado en un instrumento público puede invocarse por las partes, pero es inoponible respecto a terceros interesados de buena fe.
+
+ARTÍCULO 299.- Escritura pública. Definición. La escritura pública es el instrumento matriz extendido en el protocolo de un escribano público o de otro funcionario autorizado para ejercer las mismas funciones, que contienen uno o más actos jurídicos. La copia o testimonio de las escrituras públicas que expiden los escribanos es instrumento público y hace plena fe como la escritura matriz. Si hay alguna variación entre la escritura y la copia o testimonio, se debe estar al contenido de la escritura.
+
+ARTÍCULO 300.- Protocolo. El protocolo se forma con los folios habilitados para el uso de cada registro, numerados correlativamente en cada año calendario, y con los documentos que se incorporan por exigencia legal o a requerimiento de las partes del acto. Corresponde a la ley local reglamentar lo relativo a las características de los folios, su expedición, así como los demás recaudos relativos al protocolo, forma y modo de su colección en volúmenes o tomos, su conservación y archivo.
+
+ARTÍCULO 301.- Requisitos. El escribano debe recibir por sí mismo las declaraciones de los comparecientes, sean las partes, sus representantes, testigos, cónyuges u otros intervinientes. Debe calificar los presupuestos y elementos del acto, y configurarlo técnicamente. Las escrituras públicas, que deben extenderse en un único acto, pueden ser manuscritas o mecanografiadas, pudiendo utilizarse mecanismos electrónicos de procesamiento de textos, siempre que en definitiva la redacción resulte estampada en el soporte exigido por las reglamentaciones locales antes de ser suscripta. Las escrituras, los testamentos por acto público y los actos de reconocimiento de filiación, deben otorgarse como acto único y no pueden ser el resultado de múltiples o sucesivas actuaciones.
+
+ARTÍCULO 302.- Idioma. La escritura pública debe redactarse en idioma nacional. Si alguno de los otorgantes declara ignorarlo, la escritura debe redactarse conforme a una minuta firmada, que debe ser traducida por traductor público y, si no lo hay, por intérprete que el escribano acepte. Ambos documentos deben quedar agregados al protocolo. Los otorgantes pueden requerir al escribano la protocolización de un instrumento original en otro idioma, siempre que conste de traducción efectuada por traductor público, o intérprete que aquél acepte. En tal caso, el escribano debe dejar constancia de que ambos instrumentos concuerdan entre sí, y los documentos quedan incorporados al protocolo.
+
+ARTÍCULO 303.- Abreviaturas y números. No se deben dejar espacios en blanco, ni utilizar abreviaturas, o iniciales, excepto que estas dos últimas consten en documentos que se transcriben, se trate de constancias de otros registros o sean signos o contraseñas que la técnica ha impuesto en ciertas áreas. Los números deben consignarse en letras y números, excepto en los casos que la reglamentación local disponga que sólo se utilicen números.
+
+ARTÍCULO 304.- Otorgante con discapacidad auditiva. Si alguna de las personas otorgantes del acto tiene discapacidad auditiva, deben intervenir dos testigos que puedan dar cuenta del conocimiento y comprensión del acto por la persona otorgante. Si es alfabeta, además, la escritura debe hacerse en caracteres normales y en sistema Braille. Si el otorgante no sabe el idioma nacional, se debe proceder de acuerdo a lo previsto en el artículo 302.
+
+ARTÍCULO 305.- Contenido. La escritura debe contener: a) lugar y fecha de su otorgamiento; si el acto es otorgado en distintas fechas, debe expresarse en cada una de ellas; b) los nombres y apellidos de los comparecientes, su documento identificatorio, estado de familia, domicilio real y especial si lo hubiera; c) la naturaleza del acto y la individualización de los bienes que constituyen su objeto; d) la constancia instrumental de la lectura que el escribano debe hacer en el acto del otorgamiento de la escritura; e) las enmiendas, testados, borraduras, entrelíneas, u otras modificaciones efectuadas al instrumento en partes esenciales, que deben ser realizadas antes de la firma; f) la firma de los otorgantes, del escribano y de los testigos si los hubiera.
+
+ARTÍCULO 306.- Justificación de identidad. La identidad de los comparecientes debe justificarse por alguno de los siguientes medios: a) por exhibición que se haga al escribano de documento idóneo; en este caso, se debe individualizar el documento y agregar al protocolo reproducción certificada de sus partes pertinentes; b) por afirmación del conocimiento por parte del escribano.
+
+ARTÍCULO 307.- Documentos habilitantes. Si el otorgante de la escritura es un representante, el escribano debe exigir la presentación del documento original que lo acredite, el que ha de quedar archivado en el protocolo, excepto que se trate de poderes para más de un asunto o de otros documentos habilitantes que hagan necesaria la devolución, supuesto en el que se debe agregar copia certificada del documento. No es aplicable a los documentos habilitantes la exigencia de protocolización simultánea establecida por la ley local, siendo suficiente la indicación de su procedencia por el escribano en la escritura.
+
+ARTÍCULO 308.- Copias o testimonios. El escribano debe dar copia o testimonio de la escritura a las partes. Ese instrumento puede ser obtenido por cualquier medio de reproducción que asegure su permanencia. El escribano autorizante, y los que le sigan en el cargo, pueden dar estas copias en cualquier tiempo. Los terceros interesados pueden requerirlas, con citación de las partes del acto; y estas partes pueden oponerse por causa legítima, en cuyo caso el juez resolverá el pedido.
+
+ARTÍCULO 309.- Nulidad. Son nulas las escrituras que no tengan la designación del tiempo y lugar en que sean hechas, el nombre de los otorgantes, la firma del escribano y de las partes, la firma a ruego de ellas cuando no saben o no pueden escribir, y la firma de los dos testigos del acto en los casos en que su presencia se requiere. La inobservancia de las otras formalidades no anula las escrituras, pero los escribanos o funcionarios públicos pueden ser sancionados.
+
+ARTÍCULO 310.- Actas. Se denominan actas los documentos notariales que tienen por objeto la comprobación de hechos.
+
+ARTÍCULO 311.- Requisitos de las actas notariales. Las actas están sujetas a los requisitos de las escrituras públicas, con las siguientes modificaciones: a) se debe hacer constar el requerimiento que motiva la intervención del notario y, en su caso, la manifestación del requirente respecto a la identidad de las personas que se nombran en el acta; b) no es necesaria la acreditación de personería ni la del interés de terceros que alegan un derecho. Sin embargo, cuando el requirente requiera la comprobación de un hecho que debe llevarse a cabo por terceros, el notario debe verificar la identidad de las personas cuya participación resulte necesaria para la comprobación; c) no es necesario que el notario conozca o identifique a las personas con quienes trata cuando la actuación notarial sea de mera comprobación de hechos; d) las personas requeridas o notificadas, en su caso, pueden hacer constar sus manifestaciones; e) el notario puede practicar las diligencias sin la concurrencia del requirente cuando por su naturaleza no sea necesaria; f) no requieren unidad de acto ni de redacción; pueden extenderse simultáneamente o con posterioridad a los hechos que se narran, pero en el mismo día, y pueden separarse en dos o más partes o diligencias, siguiendo el orden cronológico; g) pueden autorizarse aunque alguno de los interesados rehúse firmar, de lo cual debe dejarse constancia.
+
+ARTÍCULO 312.- Valor probatorio. El valor probatorio de las actas se circunscribe a los hechos que el notario tiene a la vista, a la verificación de su existencia y su estado. En cuanto a las personas, se circunscribe a su identificación si existe, y es meramente enunciativo en cuanto a su estado y otras cualidades. Las declaraciones e interpretaciones de los otorgantes tienen el valor de simples manifestaciones.
+
+ARTÍCULO 313.- Firma de los instrumentos privados. Si alguno de los firmantes de un instrumento privado no sabe o no puede firmar, puede dejarse constancia de la impresión digital o mediante la presencia de dos testigos que deben suscribir también el instrumento.
+
+ARTÍCULO 314.- Reconocimiento de la firma. Todo aquel contra quien se presente un instrumento cuya firma se le atribuye debe manifestar si la firma es o no suya. Los herederos pueden limitarse a manifestar que ignoran si la firma es o no de su causante. La autenticidad de la firma puede probarse por cualquier medio. El reconocimiento de la firma importa el reconocimiento del cuerpo del instrumento privado. El instrumento privado reconocido, o declarado auténtico por sentencia, o cuya firma está certificada por escribano, no puede ser impugnado por quienes lo hayan reconocido, excepto por vicios en el acto del reconocimiento. La prueba resultante es indivisible. Si el documento contiene la firma de una de las partes, la parte que lo presenta puede exigir a la otra que lo reconozca.
+
+ARTÍCULO 315.- Documento firmado en blanco. El firmante de un documento en blanco puede impugnar su contenido mediante la prueba de que no responde a sus instrucciones, pero no puede prevalerse de esto para eludir las obligaciones contraídas con terceros de buena fe. Cuando el documento firmado en blanco es sustraído contra la voluntad de la persona que lo guarda, esas circunstancias pueden probarse por cualquier medio. En tal caso, el contenido del instrumento no puede oponerse al firmante excepto por los terceros que acrediten su buena fe si han adquirido derechos a título oneroso en base al instrumento.
+
+ARTÍCULO 316.- Enunciaciones. Las declaraciones enunciativas que no tienen relación directa con el objeto principal del acto pueden ser probadas por otros medios.
+
+ARTÍCULO 317.- Fecha cierta. La eficacia probatoria de los instrumentos privados reconocidos se extiende a los terceros desde su fecha cierta. Adquieren fecha cierta el día en que acontece un hecho del que resulta como consecuencia ineludible que el documento ya estaba firmado o no podía no haber sido firmado. La prueba puede producirse por cualquier medio, y debe ser apreciada rigurosamente por el juez.
+
+ARTÍCULO 318.- Correspondencia. La correspondencia, cualquiera sea el medio empleado para crearla o transmitirla, puede presentarse como prueba por el destinatario, pero la que es confidencial no puede ser utilizada sin consentimiento del remitente. Los terceros no pueden valerse de la correspondencia sin asentimiento del destinatario, y del remitente si es confidencial.
+
+### DONACIÓN (arts. 1542-1573) — VERBATIM
+
+ARTÍCULO 1542.- Concepto. Hay donación cuando una parte se obliga a transferir gratuitamente una cosa a otra, y esta lo acepta.
+
+ARTÍCULO 1543.- Aplicación subsidiaria. Las normas de este Capítulo se aplican subsidiariamente a los demás actos jurídicos a título gratuito.
+
+ARTÍCULO 1544.- Actos mixtos. Los actos mixtos, en parte onerosos y en parte gratuitos, se rigen en cuanto a su forma por las disposiciones de este Capítulo; en cuanto a su contenido, por estas en la parte gratuita y por las correspondientes a la naturaleza aparente del acto en la parte onerosa.
+
+ARTÍCULO 1545.- Aceptación. La aceptación puede ser expresa o tácita, pero es de interpretación restrictiva y está sujeta a las reglas establecidas respecto a la forma de las donaciones. Debe producirse en vida del donante y del donatario.
+
+ARTÍCULO 1546.- Donación bajo condición. Están prohibidas las donaciones hechas bajo la condición suspensiva de producir efectos a partir del fallecimiento del donante.
+
+ARTÍCULO 1547.- Oferta conjunta. Si la donación es hecha a varias personas solidariamente, la aceptación de uno o algunos de los donatarios se aplica a la donación entera. Si la aceptación de unos se hace imposible por su muerte, o por revocación del donante respecto de ellos, la donación entera se debe aplicar a los que la aceptaron.
+
+ARTÍCULO 1548.- Capacidad para donar. Pueden donar solamente las personas que tienen plena capacidad de disponer de sus bienes. Las personas menores emancipadas pueden hacerlo con la limitación del inciso b) del artículo 28.
+
+ARTÍCULO 1549.- Capacidad para aceptar donaciones. Para aceptar donaciones se requiere ser capaz. Si la donación es a una persona incapaz, la aceptación debe ser hecha por su representante legal; si la donación del tercero o del representante es con cargo, se requiere autorización judicial.
+
+ARTÍCULO 1550.- Tutores y curadores. Los tutores y curadores no pueden recibir donaciones de quienes han estado bajo su tutela o curatela antes de la rendición de cuentas y pago de cualquier suma que hayan quedado adeudándoles.
+
+ARTÍCULO 1551.- Objeto. La donación no puede tener por objeto la totalidad del patrimonio del donante, ni una alícuota de él, ni cosas determinadas de las que no tenga el dominio al tiempo de contratar. Si comprende cosas que forman todo el patrimonio del donante o una parte sustancial de este, solo es válida si el donante se reserva su usufructo, o si cuenta con otros medios suficientes para su subsistencia.
+
+ARTÍCULO 1552.- Forma. Deben ser hechas en escritura pública, bajo pena de nulidad, las donaciones de cosas inmuebles, las de cosas muebles registrables y las de prestaciones periódicas o vitalicias.
+
+ARTÍCULO 1553.- Donaciones al Estado. Las donaciones al Estado pueden ser acreditadas con las actuaciones administrativas.
+
+ARTÍCULO 1554.- Donación manual. Las donaciones de cosas muebles no registrables y de títulos al portador deben hacerse por la tradición del objeto donado.
+
+ARTÍCULO 1555.- Entrega. El donante debe entregar la cosa desde que ha sido constituido en mora. En caso de incumplimiento o mora, solo responde por dolo.
+
+ARTÍCULO 1556.- Garantía por evicción. El donante solo responde por evicción en los siguientes casos: a) si expresamente ha asumido esa obligación; b) si la donación se ha hecho de mala fe, sabiendo el donante que la cosa donada no era suya e ignorándolo el donatario; c) si la evicción se produce por causa del donante; d) si las donaciones son mutuas, remuneratorias o con cargo.
+
+ARTÍCULO 1557.- Alcance de la garantía. La responsabilidad por la evicción obliga al donante a indemnizar al donatario los gastos en que este ha incurrido por causa de la donación. Si esta es mutua, remuneratoria o con cargo, el donante debe reembolsarle además el valor de la cosa por él recibida, lo gastado en el cumplimiento del cargo, o retribuir los servicios recibidos, respectivamente. Si la evicción proviene de un hecho posterior a la donación imputable al donante, este debe indemnizar al donatario los daños ocasionados. Cuando la evicción es parcial, el resarcimiento se reduce proporcionalmente.
+
+ARTÍCULO 1558.- Vicios ocultos. El donante solo responde por los vicios ocultos de la cosa donada si hubo dolo de su parte, caso en el cual debe reparar al donatario los daños ocasionados.
+
+ARTÍCULO 1559.- Obligación de alimentos. Excepto que la donación sea onerosa, el donatario debe prestar alimentos al donante que no tenga medios de subsistencia. Puede liberarse de esa obligación restituyendo las cosas donadas o su valor si las ha enajenado.
+
+ARTÍCULO 1560.- Donaciones mutuas. En las donaciones mutuas, la nulidad de una de ellas afecta a la otra, pero la ingratitud o el incumplimiento de los cargos solo perjudican al donatario culpable.
+
+ARTÍCULO 1561.- Donaciones remuneratorias. Son donaciones remuneratorias las realizadas en recompensa de servicios prestados al donante por el donatario, apreciables en dinero y por los cuales el segundo podría exigir judicialmente el pago. La donación se juzga gratuita si no consta en el instrumento lo que se tiene en mira remunerar.
+
+ARTÍCULO 1562.- Donaciones con cargos. En las donaciones se pueden imponer cargos a favor del donante o de un tercero, sean ellos relativos al empleo o al destino de la cosa donada, o que consistan en una o más prestaciones. Si el cargo se ha estipulado en favor de un tercero, este, el donante y sus herederos pueden demandar su ejecución; pero solo el donante y sus herederos pueden revocar la donación por inejecución del cargo. Si el tercero ha aceptado el beneficio representado por el cargo, en caso de revocarse el contrato tiene derecho para reclamar del donante o, en su caso, de sus herederos, el cumplimiento del cargo, sin perjuicio de sus derechos contra el donatario.
+
+ARTÍCULO 1563.- Responsabilidad del donatario por los cargos. El donatario solo responde por el cumplimiento de los cargos con la cosa donada, y hasta su valor si la ha enajenado o ha perecido por hecho suyo. Queda liberado si la cosa ha perecido sin su culpa. Puede también sustraerse a esa responsabilidad restituyendo la cosa donada, o su valor si ello es imposible.
+
+ARTÍCULO 1564.- Alcance de la onerosidad. Las donaciones remuneratorias o con cargo se consideran como actos a título oneroso en la medida en que se limiten a una equitativa retribución de los servicios recibidos o en que exista equivalencia de valores entre la cosa donada y los cargos impuestos. Por el excedente se les aplican las normas de las donaciones.
+
+ARTÍCULO 1565.- Donaciones inoficiosas. Se considera inoficiosa la donación cuyo valor excede la parte disponible del patrimonio del donante. A este respecto, se aplican los preceptos de este Código sobre la porción legítima.
+
+ARTÍCULO 1566.- Pacto de reversión. En la donación se puede convenir la reversión de las cosas donadas, sujetando el contrato a la condición resolutoria de que el donatario, o el donatario, su cónyuge y sus descendientes, o el donatario sin hijos, fallezcan antes que el donante. Esta cláusula debe ser expresa y solo puede estipularse en favor del donante. Si se la incluye en favor de él y de sus herederos o de terceros, solo vale respecto de aquél. Si la reversión se ha pactado para el caso de muerte del donatario sin hijos, la existencia de estos en el momento del deceso de su padre extingue el derecho del donante, que no renace aunque este les sobreviva.
+
+ARTÍCULO 1567.- Efectos. Cumplida la condición prevista para la reversión, el donante puede exigir la restitución de las cosas transferidas conforme a las reglas del dominio revocable.
+
+ARTÍCULO 1568.- Renuncia. La conformidad del donante para la enajenación de las cosas donadas importa la renuncia del derecho de reversión. Pero la conformidad para que se los grave con derechos reales solo beneficia a los titulares de estos derechos.
+
+ARTÍCULO 1569.- Revocación. La donación aceptada solo puede ser revocada por inejecución de los cargos, por ingratitud del donatario, y, en caso de habérselo estipulado expresamente, por supernacencia de hijos del donante. Si la donación es onerosa, el donante debe reembolsar el valor de los cargos satisfechos o de los servicios prestados por el donatario.
+
+ARTÍCULO 1570.- Incumplimiento de los cargos. La donación puede ser revocada por incumplimiento de los cargos. La revocación no perjudica a los terceros en cuyo beneficio se establecen los cargos. Los terceros a quienes el donatario transmite bienes gravados con cargos solo deben restituirlos al donante, al revocarse la donación, si son de mala fe; pero pueden impedir los efectos de la revocación ofreciendo ejecutar las obligaciones impuestas al donatario si las prestaciones que constituyen los cargos no deben ser ejecutadas precisa y personalmente por aquél. El donatario que enajena los bienes donados, o imposibilita su devolución por su culpa, debe resarcir al donante el valor de las cosas donadas al tiempo de promoverse la acción de revocación, con sus intereses.
+
+ARTÍCULO 1571.- Ingratitud. Las donaciones pueden ser revocadas por ingratitud del donatario en los siguientes casos: a) si el donatario atenta contra la vida o la persona del donante, su cónyuge o conviviente, sus ascendientes o descendientes; b) si injuria gravemente a las mismas personas o las afecta en su honor; c) si las priva injustamente de bienes que integran su patrimonio; d) si rehúsa alimentos al donante. En todos los supuestos enunciados, basta la prueba de que al donatario le es imputable el hecho lesivo, sin necesidad de condena penal.
+
+ARTÍCULO 1572.- Negación de alimentos. La revocación de la donación por negación de la prestación de alimentos solo puede tener lugar cuando el donante no puede obtenerlos de las personas obligadas por las relaciones de familia.
+
+ARTÍCULO 1573.- Legitimación activa. La revocación de la donación por ingratitud solo puede ser demandada por el donante contra el donatario, y no por los herederos de aquél ni contra los herederos de este. Fallecido el donante que promueve la demanda, la acción puede ser continuada por sus herederos; y fallecido el demandado, puede también ser continuada contra sus herederos. La acción se extingue si el donante, con conocimiento de causa, perdona al donatario o no la promueve dentro del plazo de caducidad de un año de haber sabido del hecho tipificador de la ingratitud.
+
+---
+
 ## NORMATIVA ACTUALIZADA — INVESTIGACIÓN 2025-2026
 
 ### UIF / ARCA — Obligaciones del escribano
