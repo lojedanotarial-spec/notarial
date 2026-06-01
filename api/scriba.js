@@ -564,6 +564,48 @@ Los escribanos son **sujetos obligados** cuando intervienen en: compraventa de i
 - En la escritura: identificar la concesión (cuenca, expediente, caudal en l/s o turnos); declarar transferencia automática conforme arts. 14 y 127 Ley de Aguas y art. 186 Constitución Provincial; adjuntar libre deuda de riego del CUT o DGI
 - Empadronamiento en Inspección de Cauce: trámite posterior a la escritura a cargo del comprador; advertirlo en el acto
 
+### REGISTRO DE LA PROPIEDAD INMUEBLE — MENDOZA [MZA] — Criterios y plazos vigentes (Leyes 17.801 y 8.236)
+
+**Plazos críticos:**
+- Retroprioridad de escritura: **45 días** desde el otorgamiento (art. 5° Ley 17.801)
+- Expedición de certificados: **2 días hábiles** (general) / **5 días hábiles** (PH, loteo, callejón comunero, con documentos pendientes) — art. 25 Ley 8236
+- Validez del certificado: **15 días** (ciudad sede del Registro) / **25 días** (interior provincia) / **30 días** (fuera de provincia) — art. 24 Ley 17.801
+- Plazo de calificación registral: **20 días hábiles** administrativos — art. 125 Ley 8236
+- Inscripción provisional por defecto subsanable: **180 días** (prorrogable) — art. 126 Ley 8236
+- Devolución con reserva de prioridad: **180 días** — art. 126 Ley 8236
+- Caducidad de embargos y medidas cautelares: **5 años** — arts. 37 Ley 17.801 / 124 Ley 8236
+- Caducidad de inhibiciones ordinarias: **5 años** — art. 108 Ley 8236
+- Inhibiciones especiales (quiebra, insania, inhabilitación art. 12 CP): **NO caducan**, hasta cancelación por oficio — art. 108 Ley 8236
+- Caducidad de anotaciones de litis / publicidades noticia: **5 años** (excepto lesa humanidad) — art. 59 Ley 8236
+
+**Documentos NO registrables en Mendoza** (art. 3° Ley 8236):
+- Cesiones de derechos y acciones posesorias
+- Contratos de locación (salvo Ley 13.246)
+- Boletos de compraventa (salvo Leyes 14.005 y 19.724)
+- Declaratorias de herederos (excepción: por oficio/testimonio Ley 22.172)
+- Cesiones de derechos hereditarios
+- Derechos de sepulcros
+- Documentos portantes de derechos personales
+
+**Requisitos específicos Mendoza:**
+- Certificado catastral obligatorio en toda mutación de titularidad dominial; omisión → inscripción provisional — art. 49 Ley 8236
+- Tracto abreviado (art. 44 Ley 8236): no puede aplicarse sin tener previa o simultáneamente inscripto el Reglamento de Copropiedad en PH
+- En escrituras por tracto abreviado: dejar constancia del pago a la Caja de Jubilaciones y Pensiones de Abogados y Procuradores de Mendoza (Leyes 5059, 3641 y 8100) — art. 47 Ley 8236
+- PH: no se inscriben títulos de dominio sobre unidades sin tener inscripto previo o simultáneo el Reglamento de Copropiedad — art. 80 Ley 8236
+- Art. 3° bis Ley 17.801: no se inscribe sin CUIT/CUIL de las partes en derechos reales
+
+**Rogación estricta desde 01/06/2026 (RA 04/26):** A partir del 01/06/2026, el Registro solo toma razón de los actos EXPRESAMENTE incluidos en la rogatoria y sobre los inmuebles EXPRESAMENTE denunciados. El nuevo Formulario Rogatoria incluye: datos del notario, datos de la escritura, matrículas afectadas, tipo de acto, datos de otorgantes y aceptantes, certificados (ley y catastral), y datos UIF (monto, origen de fondos, beneficiario final). Sin rogatoria completa: el acto no se inscribe.
+
+**Digitalización obligatoria desde 2026 [MZA]:**
+- Informes de titularidad, inhibición y estado jurídico: desde 01/06/2026 solo por **Mi Registro on line — Sayges DRP** (RA 05/26) — excepción: particulares sin categoría profesional, que deben acreditar interés legítimo presencialmente
+- Cancelaciones de inhibición con oficio de firma digital: desde 01/05/2026 solo vía Sayges DRP (RA 03/26)
+
+**Inhibiciones — criterios prácticos:**
+- Se pueden cancelar al solo efecto de otorgar un acto determinado consignando la nota de inscripción del inmueble (art. 112 Ley 8236)
+- El notario puede calificar la inhibición informada en el certificado y transcribir el resolutivo judicial explicando por qué no afecta al disponente (art. 113 Ley 8236)
+- Solicitudes de traba de cautelares sobre "derechos y acciones" son DEVUELTAS (art. 91 Ley 8236)
+- Solicitudes de traba sobre el 50% del cónyuge no titular son DEVUELTAS (art. 91 Ley 8236)
+
 ### Fechas críticas 2025-2026
 
 | Fecha | Obligación |
