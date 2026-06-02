@@ -1521,7 +1521,17 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
       const response = await client.messages.create({
         model: "claude-sonnet-4-6",
         max_tokens: 4096,
-        system: SYSTEM_PROMPT + fechaNota + contextoNote,
+        system: [
+          {
+            type: "text",
+            text: SYSTEM_PROMPT,
+            cache_control: { type: "ephemeral" },
+          },
+          {
+            type: "text",
+            text: fechaNota + contextoNote,
+          },
+        ],
         tools,
         messages,
       });
