@@ -735,7 +735,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
           )}
           <div style={{
             display: "flex", gap: 8, alignItems: "flex-end",
-            background: "#f8f6f2", border: "1px solid rgba(26,35,50,.14)",
+            background: "#fff", border: "1.5px solid rgba(26,35,50,.22)",
             borderRadius: 10, padding: "8px 10px",
           }}>
             <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: "none" }} onChange={handleFile} />
@@ -765,6 +765,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 fontSize: 13, color: C.dark, lineHeight: 1.5,
                 fontFamily: "'Inter', sans-serif",
                 minHeight: 22, maxHeight: 120, overflowY: "auto",
+                caretColor: C.cerulean,
               }}
               onInput={e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
             />
