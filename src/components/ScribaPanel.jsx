@@ -457,9 +457,57 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     return data;
   }
 
+  // Manejar localmente actualizaciones simples de datos de partes sin llamar a la API
+  function manejarActualizacionLocal(pregunta) {
+    // Buscar la última acción de completar_parte en el historial
+    const ultimoConAccion = [...mensajes].reverse().find(m => m.accion?.tipo === "completar_parte");
+    if (!ultimoConAccion) return false;
+
+    const datos = { ...ultimoConAccion.accion.datos };
+    let actualizado = false;
+    let confirmacion = "";
+
+    // Patrones: "añad* estado civil X", "X es soltero/casado/etc"
+    const matchEC = pregunta.match(/(?:añad[ae]?(?:mos)?|agrega[r]?|pon[e]?(?:mos)?|es(?:\s+de\s+estado\s+civil)?)\s+(?:estado\s+civil\s+)?(?:de\s+)?(soltero|casado|divorciado|viudo|separado|conviviente|unión\s+convivencial)/i);
+    if (matchEC) {
+      datos.estado_civil = matchEC[1].toLowerCase();
+      actualizado = true;
+      confirmacion = `Estado civil actualizado: **${datos.estado_civil}**.`;
+    }
+
+    // Patrones: "añad* rol X", "su rol es X", "es vendedor/comprador/etc"
+    const matchRol = pregunta.match(/(?:añad[ae]?(?:mos)?|agrega[r]?|pon[e]?(?:mos)?|su\s+rol\s+es|es)\s+(?:el\s+)?(?:rol\s+(?:de\s+|es\s+)?)?(vendedor|comprador|donante|donatario|fiduciante|fiduciario|mandante|mandatario|cedente|cesionario|locador|locatario|deudor|acreedor|garante|hipotecante)/i);
+    if (matchRol) {
+      datos.rol = matchRol[1].toLowerCase();
+      actualizado = true;
+      confirmacion = `Rol actualizado: **${datos.rol}**.`;
+    }
+
+    if (!actualizado) return false;
+
+    // Despachar con los datos actualizados
+    window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: datos }));
+    const nombre = [datos.apellido, datos.nombre].filter(Boolean).join(", ");
+    const confirm = `${confirmacion} ${nombre} listo para agregar.`;
+
+    const nuevos = [...mensajes,
+      { role: "user", content: pregunta },
+      { role: "assistant", content: confirm, accion: { tipo: "completar_parte", datos } }
+    ];
+    setMensajes(nuevos);
+    guardar(nuevos.map(({ role, content }) => ({ role, content })));
+    return true;
+  }
+
   async function enviar(texto) {
     const pregunta = (texto || input).trim();
     if ((!pregunta && !imagen) || cargando) return;
+
+    // Intentar manejar localmente antes de llamar a la API
+    if (!imagen && manejarActualizacionLocal(pregunta)) {
+      setInput("");
+      return;
+    }
 
     const imgActual = imagen;
     setInput("");
