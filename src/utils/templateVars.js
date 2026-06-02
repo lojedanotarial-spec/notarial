@@ -2,14 +2,31 @@ import { diaLetras, anioLetras } from "../utils";
 
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 
+const fmtFechaNac = (v) => {
+  if (!v) return "";
+  // acepta "1949-12-22" o "22/12/1949"
+  const parts = v.includes("-") ? v.split("-") : v.split("/").reverse();
+  const [anio, mes, dia] = parts;
+  return `${Number(dia)} de ${MESES[Number(mes)-1] || ""} de ${anio}`;
+};
+
 const fmtDni = (v) => v ? Number(String(v).replace(/\D/g,"")).toLocaleString("es-AR") : "";
 const fmtDomicilio = (p) => [p.calle, p.numero, p.piso && `piso ${p.piso}`, p.dpto && `dpto. ${p.dpto}`, p.localidad, p.departamento].filter(Boolean).join(", ");
 
-export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {} }) {
+export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {} }) {
+  const esTitular = (escribano.caracter || "").toLowerCase().includes("titular");
+  const esFemenino = (escribano.nombre || "").match(/\b(dra|dra\.|doctora|notaria)\b/i);
+  const escribanoTitulo = esFemenino ? "Notaria" : "Notario";
+  const escribanoCaracterTexto = esTitular
+    ? `${escribanoTitulo} Titular`
+    : `${escribanoTitulo} Adscripta/o`;
+
   const vars = {
     ESCRIBANO_NOMBRE:           escribano.nombre || "",
     ESCRIBANO_REGISTRO:         escribano.registro || "",
     ESCRIBANO_CARACTER:         escribano.caracter || "",
+    ESCRIBANO_CARACTER_TEXTO:   escribanoCaracterTexto,
+    ESCRIBANO_TITULO:           escribanoTitulo,
     ESCRIBANO_CIRCUNSCRIPCION:  escribano.circunscripcion || "primera",
 
     FECHA_DIA:          String(fecha.dia || 1).padStart(2, "0"),
@@ -33,16 +50,20 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     const domicilio = fmtDomicilio(p);
     const genArticulo = p.genero === "M" ? "el señor" : "la señora";
 
-    vars[`PARTE_${n}_APELLIDO`]      = p.apellido     || "";
-    vars[`PARTE_${n}_NOMBRE`]        = p.nombre       || "";
-    vars[`PARTE_${n}_COMPLETO`]      = apellidoNombre;
-    vars[`PARTE_${n}_DNI`]           = dni;
-    vars[`PARTE_${n}_CUIT`]          = p.cuit         || "";
-    vars[`PARTE_${n}_ESTADO_CIVIL`]  = p.estadoCivil  || "";
-    vars[`PARTE_${n}_NACIONALIDAD`]  = p.nacionalidad || "";
-    vars[`PARTE_${n}_DOMICILIO`]     = domicilio;
-    vars[`PARTE_${n}_ROL`]           = p.rol          || "";
-    vars[`PARTE_${n}_ARTICULO`]      = genArticulo;
+    const esF = p.genero !== "M";
+    vars[`PARTE_${n}_APELLIDO`]        = p.apellido     || "";
+    vars[`PARTE_${n}_NOMBRE`]          = p.nombre       || "";
+    vars[`PARTE_${n}_COMPLETO`]        = apellidoNombre;
+    vars[`PARTE_${n}_DNI`]             = dni;
+    vars[`PARTE_${n}_CUIT`]            = p.cuit         || "";
+    vars[`PARTE_${n}_ESTADO_CIVIL`]    = p.estadoCivil  || "";
+    vars[`PARTE_${n}_NACIONALIDAD`]    = p.nacionalidad || "";
+    vars[`PARTE_${n}_DOMICILIO`]       = domicilio;
+    vars[`PARTE_${n}_ROL`]             = p.rol          || "";
+    vars[`PARTE_${n}_ARTICULO`]        = genArticulo;
+    vars[`PARTE_${n}_FECHA_NAC`]       = fmtFechaNac(p.fechaNac || "");
+    vars[`PARTE_${n}_ARTICULO_LA_EL`]  = esF ? "La" : "El";
+    vars[`PARTE_${n}_NACIDO_A`]        = esF ? "nacida" : "nacido";
 
     // Identidad completa — la fórmula notarial estándar
     const identidadPartes = [
@@ -54,7 +75,22 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
       p.cuit         ? `CUIL/CUIT ${p.cuit}` : null,
     ].filter(Boolean);
     vars[`PARTE_${n}_IDENTIDAD`] = identidadPartes.join(", ");
+
+    // Identidad en formato acta notarial (estructura de Fatima)
+    const identidadActa = [
+      apellidoNombre,
+      p.nacionalidad || null,
+      dni ? `Documento Nacional de Identidad número ${dni}` : null,
+      p.cuit ? `CUIT/CUIL ${p.cuit}` : null,
+      vars[`PARTE_${n}_FECHA_NAC`] ? `${vars[`PARTE_${n}_NACIDO_A`]} el día ${vars[`PARTE_${n}_FECHA_NAC`]}` : null,
+      p.estadoCivil ? `quien manifiesta ser de estado de familia ${p.estadoCivil}` : null,
+      domicilio ? `con domicilio en ${domicilio}` : null,
+    ].filter(Boolean).join(", ");
+    vars[`PARTE_${n}_IDENTIDAD_ACTA`] = identidadActa;
   });
+
+  // Variables extra del template (inyectadas desde el editor)
+  Object.assign(vars, extravars);
 
   return vars;
 }
