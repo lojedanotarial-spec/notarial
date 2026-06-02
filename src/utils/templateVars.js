@@ -57,7 +57,26 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_DNI`]             = dni;
     vars[`PARTE_${n}_CUIT`]            = p.cuit         || "";
     vars[`PARTE_${n}_ESTADO_CIVIL`]    = p.estadoCivil  || "";
-    vars[`PARTE_${n}_NACIONALIDAD`]    = p.nacionalidad || "";
+    // Concordancia de género en la nacionalidad
+    const fmtNacionalidad = (nac, genero) => {
+      if (!nac) return "";
+      const n = nac.toLowerCase().trim();
+      if (genero === "M") {
+        if (n === "argentina")  return "argentino";
+        if (n === "uruguaya")   return "uruguayo";
+        if (n === "chilena")    return "chileno";
+        if (n === "boliviana")  return "boliviano";
+        if (n === "peruana")    return "peruano";
+        if (n === "paraguaya")  return "paraguayo";
+        if (n === "brasileña")  return "brasileño";
+        if (n === "venezolana") return "venezolano";
+        if (n === "colombiana") return "colombiano";
+        // si ya está en masculino o no reconocemos, devolver tal cual
+        return nac;
+      }
+      return nac; // femenino: devolver tal cual
+    };
+    vars[`PARTE_${n}_NACIONALIDAD`]    = fmtNacionalidad(p.nacionalidad, p.genero);
     vars[`PARTE_${n}_DOMICILIO`]       = domicilio;
     vars[`PARTE_${n}_ROL`]             = p.rol          || "";
     vars[`PARTE_${n}_ARTICULO`]        = genArticulo;

@@ -93,7 +93,16 @@ export async function buildDocxCertFirmaF08({
         : (p.nombre || "");
       partesRuns.push(vRun("APELLIDO Y NOMBRE", nombreCompleto, true));
       partesRuns.push(r(", "));
-      partesRuns.push(vRun("NACIONALIDAD", p.nacionalidad));
+      const nacGenero = (nac, g) => {
+        if (!nac) return "";
+        const n = nac.toLowerCase().trim();
+        if (g === "M") {
+          const map = { argentina:"argentino", uruguaya:"uruguayo", chilena:"chileno", boliviana:"boliviano", peruana:"peruano", paraguaya:"paraguayo", "brasileña":"brasileño", venezolana:"venezolano", colombiana:"colombiano" };
+          return map[n] || nac;
+        }
+        return nac;
+      };
+      partesRuns.push(vRun("NACIONALIDAD", nacGenero(p.nacionalidad, p.genero)));
       partesRuns.push(r(", con "));
       partesRuns.push(vRun("TIPO DOC", p.tipoDoc));
       partesRuns.push(r(" número "));

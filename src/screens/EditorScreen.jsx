@@ -258,6 +258,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   useEffect(() => {
     const handler = (e) => {
       const d = e.detail;
+      const dniNuevo = (d.nro_doc || "").replace(/\D/g, "");
       const nuevaParte = {
         id:           Date.now() + Math.random(),
         apellido:     d.apellido     || "",
@@ -265,7 +266,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         genero:       d.genero       || "F",
         nacionalidad: d.nacionalidad || "argentina",
         tipoDoc:      d.tipo_doc     || "DNI",
-        nroDoc:       (d.nro_doc     || "").replace(/\D/g, ""),
+        nroDoc:       dniNuevo,
         cuit:         d.cuit         || "",
         fechaNac:     d.fecha_nac    || "",
         estadoCivil:  d.estado_civil || "",
@@ -275,10 +276,24 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         dpto:         d.dpto         || "",
         localidad:    d.localidad    || "",
         departamento: d.departamento || "Ciudad",
-        rol:          "",
+        rol:          d.rol          || "",
         representaciones: [],
       };
       setPartes(prev => {
+        // Si ya existe una parte con el mismo DNI, actualizarla (merge)
+        const idx = dniNuevo ? prev.findIndex(p => p.nroDoc === dniNuevo) : -1;
+        if (idx >= 0) {
+          const actualizada = { ...prev[idx] };
+          if (d.rol)          actualizada.rol         = d.rol;
+          if (d.estado_civil) actualizada.estadoCivil = d.estado_civil;
+          if (d.apellido)     actualizada.apellido    = d.apellido;
+          if (d.nombre)       actualizada.nombre      = d.nombre;
+          if (d.cuit)         actualizada.cuit        = d.cuit;
+          if (d.calle)        actualizada.calle       = d.calle;
+          const updated = [...prev];
+          updated[idx] = actualizada;
+          return updated;
+        }
         const tieneParcial = prev.length === 1 && !prev[0].apellido && !prev[0].nroDoc;
         return tieneParcial ? [nuevaParte] : [...prev, nuevaParte];
       });
