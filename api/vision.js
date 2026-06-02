@@ -25,6 +25,8 @@ INSTRUCCIONES CRÍTICAS:
 4. La foto, el fondo y los colores del documento indican el género cuando no hay texto explícito.
 5. El nro_doc: solo números, sin puntos ni guiones.
 6. Fecha de nacimiento en formato dd/mm/aaaa.
+7. Si un texto no es legible con certeza, dejá el campo vacío. NO inventes ni completes apellidos o nombres que no podés leer claramente.
+8. El campo "notas" solo si hay algo jurídicamente relevante (ej: "DNI vencido", "menor de edad"). NUNCA describas colores, fondos, fotos ni el aspecto visual del documento.
 
 Respondé SOLO con un JSON válido, sin texto adicional:
 {
@@ -48,7 +50,7 @@ Respondé SOLO con un JSON válido, sin texto adicional:
       "departamento": ""
     }
   ],
-  "notas": "info adicional relevante del documento"
+  "notas": "solo si hay algo jurídicamente relevante (ej: documento vencido, DNI de menor, restricción de capacidad). NO describir colores, fondos, fotos ni elementos visuales"
 }
 Solo incluí los campos que efectivamente aparecen en el documento.` }
         ]
