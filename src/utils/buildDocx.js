@@ -103,8 +103,15 @@ export async function buildDocxCertFirmaF08({
         partesRuns.push(vRun("CUIT/CUIL", fmtCuit(p.cuit)));
       }
       if (p.fechaNac) {
+        const MESES_NAC = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+        const fmtNac = (v) => {
+          if (!v) return v;
+          const parts = v.includes("-") ? v.split("-") : v.split("/").reverse();
+          const [anio, mes, dia] = parts;
+          return `${Number(dia)} de ${MESES_NAC[Number(mes)-1] || ""} de ${anio}`;
+        };
         partesRuns.push(r(", nacid" + gen(p, "a", "o") + " el "));
-        partesRuns.push(vRun("FECHA NAC", p.fechaNac));
+        partesRuns.push(vRun("FECHA NAC", fmtNac(p.fechaNac)));
       }
       partesRuns.push(r(", quien manifiesta ser de estado de familia "));
       partesRuns.push(vRun("ESTADO CIVIL", p.estadoCivil));
@@ -153,9 +160,9 @@ export async function buildDocxCertFirmaF08({
     r(" número "),
     vRun("N° LIBRO", protocolo.nroLibro),
     r(".- En "),
-    vRun("CIUDAD", fecha.ciudad ? fecha.ciudad.toUpperCase() : ""),
+    vRun("CIUDAD", fecha.ciudad ? fecha.ciudad.toUpperCase() : "", true),
     r(", Provincia de Mendoza, República Argentina, a los "),
-    vRun("FECHA", fechaLetras),
+    vRun("FECHA", fechaLetras, true),
     r(".-"),
   ].filter(Boolean);
 
