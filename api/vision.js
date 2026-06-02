@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-sonnet-4-6",
       max_tokens: 1024,
       messages: [{
         role: "user",
@@ -19,7 +19,8 @@ export default async function handler(req, res) {
           { type: "text", text: `Leé este documento argentino con atención y extraé los datos de TODAS las personas que aparecen.
 
 INSTRUCCIONES CRÍTICAS:
-1. El documento tiene etiquetas impresas (ej: "Apellido", "Nombre", "Sexo", "Fecha de nacimiento"). LEÉ ESAS ETIQUETAS para identificar cada campo correctamente — no asumas el orden.
+0. El documento puede estar fotografiado en cualquier orientación (rotado 90°, 180°, de costado). Rotá mentalmente la imagen hasta leerla correctamente antes de extraer datos.
+1. El documento tiene etiquetas impresas bilingües (ej: "Apellido / Surname", "Nombre / Name", "Sexo / Sex", "Fecha de nacimiento / Date of birth"). LEÉ ESAS ETIQUETAS para identificar cada campo — no asumas el orden por posición.
 2. En el DNI argentino: el campo "Apellido" contiene el apellido, el campo "Nombre" contiene el/los nombre/s. No los inviertas.
 3. El campo "Sexo" o "Sex" en el DNI indica el género: "M" o "F". Es un campo crítico — extraelo siempre.
 4. La foto, el fondo y los colores del documento indican el género cuando no hay texto explícito.

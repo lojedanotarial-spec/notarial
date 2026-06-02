@@ -2,6 +2,9 @@
   "functions": {
     "api/scriba.js": {
       "maxDuration": 60
+    },
+    "api/vision.js": {
+      "maxDuration": 30
     }
   }
 }
