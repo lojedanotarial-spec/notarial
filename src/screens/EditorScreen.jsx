@@ -284,6 +284,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       });
       generateAfterRef.current = true;
       setIsDirty(true);
+      // Forzar generación aunque el documento no haya sido generado previamente
+      setTimeout(() => {
+        generateAfterRef.current = false;
+        handleGenerarRef.current?.();
+      }, 120);
     };
     window.addEventListener("scriba:completar_parte", handler);
     return () => window.removeEventListener("scriba:completar_parte", handler);
