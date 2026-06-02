@@ -91,7 +91,7 @@ export async function buildDocxCertFirmaF08({
       const nombreCompleto = p.apellido
         ? p.apellido + (p.nombre ? ", " + p.nombre : "")
         : (p.nombre || "");
-      partesRuns.push(vRun("APELLIDO Y NOMBRE", nombreCompleto));
+      partesRuns.push(vRun("APELLIDO Y NOMBRE", nombreCompleto, true));
       partesRuns.push(r(", "));
       partesRuns.push(vRun("NACIONALIDAD", p.nacionalidad));
       partesRuns.push(r(", con "));
@@ -125,7 +125,7 @@ export async function buildDocxCertFirmaF08({
       if (showRol) {
         partesRuns.push(r("; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, "));
         partesRuns.push(r(gen(p, "la que", "el que") + " firma en su carácter de "));
-        partesRuns.push(vRun("ROL", p.rol));
+        partesRuns.push(vRun("ROL", p.rol, true));
       } else {
         partesRuns.push(r("; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto"));
       }
