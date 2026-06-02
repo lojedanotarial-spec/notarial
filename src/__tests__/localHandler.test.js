@@ -16,7 +16,7 @@ function matchEC(texto) {
 function matchRol(texto) {
   return texto.match(
     new RegExp(
-      `(?:(?:${VERBOS})\\s+(?:el\\s+|de\\s+)?(?:rol\\s+(?:de\\s+|es\\s+)?)?|(?:su|el)\\s+rol\\s+es\\s+|rol\\s+es\\s+)(${ROLES})`,
+      `(?:(?:${VERBOS})\\s+(?:el\\s+|de\\s+)?(?:rol\\s+(?:de\\s+|es\\s+)?)?|(?:su|el)\\s+rol\\s+(?:es|de)\\s+|rol\\s+(?:es|de)\\s+)(${ROLES})`,
       "i"
     )
   );
@@ -58,6 +58,9 @@ describe("regex rol", () => {
   });
   it("ponle rol locatario", () => {
     expect(matchRol("ponle rol locatario")?.[1]).toBe("locatario");
+  });
+  it("rol de vendedor (bare, sin verbo)", () => {
+    expect(matchRol("rol de vendedor")?.[1]).toBe("vendedor");
   });
   it("no matchea texto sin rol", () => {
     expect(matchRol("estado civil soltero")).toBeNull();

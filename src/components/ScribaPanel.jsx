@@ -164,7 +164,7 @@ function BtnInsertar({ texto }) {
 
 const LINEAS_MAX = 25;
 
-function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
+function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte }) {
   const esUser = msg.role === "user";
   const accion = msg.accion;
   const lineas = (msg.content || "").split("\n").length;
@@ -257,7 +257,7 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion }) {
                     fontFamily: "'Montserrat', sans-serif",
                   }}>
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  Agregar como parte
+                  {yaEsParte ? "Actualizar datos" : "Agregar como parte"}
                 </button>
               </div>
             ))}
@@ -437,6 +437,13 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     if (!cargandoInicio) inputRef.current?.focus();
   }, [cargandoInicio]);
 
+  // Recuperar foco cuando OO termina de cargar (evita que OO robe el cursor)
+  useEffect(() => {
+    const handler = () => inputRef.current?.focus();
+    window.addEventListener("oo:document-ready", handler);
+    return () => window.removeEventListener("oo:document-ready", handler);
+  }, []);
+
   async function handleNueva() {
     iniciadoRef.current = false;
     setMensajes([]);
@@ -486,7 +493,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     // "su rol es / el rol es / rol es X" O verbo + (el/de) + (rol de/es) + X
     const matchRol = pregunta.match(
       new RegExp(
-        `(?:(?:${VERBOS})\\s+(?:el\\s+|de\\s+)?(?:rol\\s+(?:de\\s+|es\\s+)?)?|(?:su|el)\\s+rol\\s+es\\s+|rol\\s+es\\s+)(${ROLES})`,
+        `(?:(?:${VERBOS})\\s+(?:el\\s+|de\\s+)?(?:rol\\s+(?:de\\s+|es\\s+)?)?|(?:su|el)\\s+rol\\s+(?:es|de)\\s+|rol\\s+(?:es|de)\\s+)(${ROLES})`,
         "i"
       )
     );
@@ -747,8 +754,14 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             </div>
           )}
 
-          {mensajes.map((m, i) => (
-            <Mensaje key={i} msg={m} onGo={onGo} hayEditor={!!contexto}
+          {mensajes.map((m, i) => {
+            const yaEsParte = m.accion?.tipo === "completar_parte" &&
+              mensajes.slice(0, i).some(prev =>
+                prev.accion?.tipo === "completar_parte" &&
+                prev.accion.datos?.nro_doc && prev.accion.datos.nro_doc === m.accion.datos?.nro_doc
+              );
+            return (
+            <Mensaje key={i} msg={m} onGo={onGo} hayEditor={!!contexto} yaEsParte={yaEsParte}
               onConfirmarAccion={(texto) => {
                 const confirmacion = { role: "assistant", content: texto };
                 setMensajes(prev => {
@@ -758,7 +771,8 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 });
               }}
             />
-          ))}
+            );
+          })}
           {cargando && <LoadingDots />}
 
           {error && (
