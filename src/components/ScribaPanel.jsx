@@ -561,75 +561,57 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         {/* Header */}
         <div style={{
           background: C.dark,
-          padding: "14px 18px",
-          display: "flex", alignItems: "center", gap: 12,
+          padding: "12px 14px",
+          display: "flex", alignItems: "center", gap: 10,
           flexShrink: 0,
           borderBottom: "1px solid rgba(201,169,97,.12)",
+          minHeight: 60,
         }}>
-          <ScribaAvatar size={36} />
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{
-                color: "#FDFCFA", fontSize: 20,
-                fontFamily: "'Carattere', cursive", fontWeight: 400,
-              }}>Scriba</span>
-              <SparkleIcon size={9} color="#3a7ca5" />
+          {/* Avatar */}
+          <ScribaAvatar size={32} />
+
+          {/* Título — flex:1 con minWidth:0 para que trunque correctamente */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ color: "#FDFCFA", fontSize: 18, fontFamily: "'Carattere', cursive", fontWeight: 400, lineHeight: 1 }}>Scriba</span>
+              <SparkleIcon size={8} color="#3a7ca5" />
             </div>
-            <div style={{ color: "rgba(255,255,255,.75)", fontSize: 12, marginTop: 1 }}>
+            <div style={{ color: "rgba(255,255,255,.65)", fontSize: 11, marginTop: 1 }}>
               Asistente notarial · Mendoza, Argentina
             </div>
             {contexto && (
-              <div style={{
-                marginTop: 5, fontSize: 11,
-                color: "#c9a961",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                maxWidth: 260,
-              }}>
+              <div style={{ marginTop: 3, fontSize: 10, color: "#c9a961", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 ✦ {contexto.tipoActo}{contexto.partes ? " · " + contexto.partes : ""}
               </div>
             )}
           </div>
-          {mensajes.length > 0 && (
-            <>
-              <button onClick={() => { setMensajes([]); cargarHistorial?.(); }} title="Volver" style={{
-                background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)",
-                borderRadius: 6, width: 28, height: 28,
-                color: "rgba(255,255,255,.85)", fontSize: 11, fontWeight: 600,
-                fontFamily: "'Inter', sans-serif", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M10 3L5 8l5 5"/>
-                </svg>
+
+          {/* Botonera — siempre en un contenedor de ancho fijo, sin layout shifts */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            {mensajes.length > 0 && (
+              <button onClick={() => { setMensajes([]); cargarHistorial?.(); }} title="Volver"
+                style={{ background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)", borderRadius: 6, width: 28, height: 28, color: "rgba(255,255,255,.85)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 3L5 8l5 5"/></svg>
               </button>
-              <button onClick={handleNueva} style={{
-                background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)",
-                borderRadius: 6, padding: "5px 10px",
-                color: "rgba(255,255,255,.85)", fontSize: 11, fontWeight: 600,
-                fontFamily: "'Inter', sans-serif", cursor: "pointer", whiteSpace: "nowrap",
-              }}>
+            )}
+            {mensajes.length > 0 && (
+              <button onClick={handleNueva}
+                style={{ background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)", borderRadius: 6, padding: "4px 9px", color: "rgba(255,255,255,.85)", fontSize: 11, fontWeight: 600, fontFamily: "'Inter', sans-serif", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, height: 28 }}>
                 + Nueva
               </button>
-            </>
-          )}
-          <button onClick={() => setExpandido(e => !e)} title={expandido ? "Reducir" : "Expandir"} style={{
-            background: "rgba(255,255,255,.1)", border: "none",
-            borderRadius: 6, width: 28, height: 28,
-            color: "rgba(255,255,255,.85)", fontSize: 14,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {expandido
-              ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 6l-4 4M6 2v4H2M10 14v-4h4"/></svg>
-              : <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 10l-4 4M2 10v4h4M10 6l4-4M14 6V2h-4"/></svg>
-            }
-          </button>
-          <button onClick={onClose} style={{
-            background: "rgba(255,255,255,.1)", border: "none",
-            borderRadius: 6, width: 28, height: 28,
-            color: "rgba(255,255,255,.85)", fontSize: 16,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'Inter', sans-serif",
-          }}>×</button>
+            )}
+            <button onClick={() => setExpandido(e => !e)} title={expandido ? "Reducir" : "Expandir"}
+              style={{ background: "rgba(255,255,255,.1)", border: "none", borderRadius: 6, width: 28, height: 28, color: "rgba(255,255,255,.85)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {expandido
+                ? <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 6l-4 4M6 2v4H2M10 14v-4h4"/></svg>
+                : <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 10l-4 4M2 10v4h4M10 6l4-4M14 6V2h-4"/></svg>
+              }
+            </button>
+            <button onClick={onClose}
+              style={{ background: "rgba(255,255,255,.1)", border: "none", borderRadius: 6, width: 28, height: 28, color: "rgba(255,255,255,.85)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif", flexShrink: 0 }}>
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Mensajes */}
