@@ -467,21 +467,26 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     let actualizado = false;
     let confirmacion = "";
 
-    // Patrones: "añad* estado civil X", "X es soltero/casado/etc"
-    const matchEC = pregunta.match(/(?:añad[ae]?(?:mos)?|agrega[r]?|pon[e]?(?:mos)?|es(?:\s+de\s+estado\s+civil)?)\s+(?:estado\s+civil\s+)?(?:de\s+)?(soltero|casado|divorciado|viudo|separado|conviviente|unión\s+convivencial)/i);
+    const confirmaciones = [];
+
+    // Patrones: "añad* (el/la) estado civil X", "X es soltero/casado/etc"
+    const matchEC = pregunta.match(/(?:añad[ae]?(?:mos)?|agrega[r]?|pon[e]?(?:mos)?|es(?:\s+de\s+estado\s+civil)?)\s+(?:el\s+|la\s+)?(?:estado\s+civil\s+)?(?:de\s+)?(soltero|casada?|divorciada?|viuda?|separada?|conviviente|uni[oó]n\s+convivencial)/i);
     if (matchEC) {
-      datos.estado_civil = matchEC[1].toLowerCase();
+      datos.estado_civil = matchEC[1].toLowerCase().replace(/a$/, "o").replace(/a\b/, "o");
+      // normalizar al masculino base si aplica según género
       actualizado = true;
-      confirmacion = `Estado civil actualizado: **${datos.estado_civil}**.`;
+      confirmaciones.push(`estado civil: **${datos.estado_civil}**`);
     }
 
-    // Patrones: "añad* rol X", "su rol es X", "es vendedor/comprador/etc"
-    const matchRol = pregunta.match(/(?:añad[ae]?(?:mos)?|agrega[r]?|pon[e]?(?:mos)?|su\s+rol\s+es|es)\s+(?:el\s+)?(?:rol\s+(?:de\s+|es\s+)?)?(vendedor|comprador|donante|donatario|fiduciante|fiduciario|mandante|mandatario|cedente|cesionario|locador|locatario|deudor|acreedor|garante|hipotecante)/i);
+    // Patrones: "añad* (el) rol (de) X", "su rol es X", "es vendedor/comprador/etc"
+    const matchRol = pregunta.match(/(?:añad[ae]?(?:mos)?|agrega[r]?|pon[e]?(?:mos)?|su\s+rol\s+es|el\s+rol\s+es|rol\s+es)\s+(?:el\s+|de\s+)?(?:rol\s+(?:de\s+|es\s+)?)?(vendedor|comprador|donante|donatario|fiduciante|fiduciario|mandante|mandatario|cedente|cesionario|locador|locatario|deudor|acreedor|garante|hipotecante)/i);
     if (matchRol) {
-      datos.rol = matchRol[1].toLowerCase();
+      datos.rol = matchRol[1].toUpperCase();
       actualizado = true;
-      confirmacion = `Rol actualizado: **${datos.rol}**.`;
+      confirmaciones.push(`rol: **${datos.rol}**`);
     }
+
+    const confirmacion = confirmaciones.length ? confirmaciones.join(", ") + "." : "";
 
     if (!actualizado) return false;
 
