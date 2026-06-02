@@ -16,15 +16,24 @@ export default async function handler(req, res) {
         role: "user",
         content: [
           { type: "image", source: { type: "base64", media_type: imagen.mediaType, data: imagen.data } },
-          { type: "text", text: `Leé este documento argentino y extraé los datos de TODAS las personas que aparecen.
-Respondé SOLO con un JSON válido, sin texto adicional, con este formato:
+          { type: "text", text: `Leé este documento argentino con atención y extraé los datos de TODAS las personas que aparecen.
+
+INSTRUCCIONES CRÍTICAS:
+1. El documento tiene etiquetas impresas (ej: "Apellido", "Nombre", "Sexo", "Fecha de nacimiento"). LEÉ ESAS ETIQUETAS para identificar cada campo correctamente — no asumas el orden.
+2. En el DNI argentino: el campo "Apellido" contiene el apellido, el campo "Nombre" contiene el/los nombre/s. No los inviertas.
+3. El campo "Sexo" o "Sex" en el DNI indica el género: "M" o "F". Es un campo crítico — extraelo siempre.
+4. La foto, el fondo y los colores del documento indican el género cuando no hay texto explícito.
+5. El nro_doc: solo números, sin puntos ni guiones.
+6. Fecha de nacimiento en formato dd/mm/aaaa.
+
+Respondé SOLO con un JSON válido, sin texto adicional:
 {
   "tipo_documento": "DNI|licencia|partida_nacimiento|partida_matrimonio|partida_divorcio|defuncion|otro",
   "personas": [
     {
-      "apellido": "",
-      "nombre": "",
-      "nro_doc": "",
+      "apellido": "extraído del campo Apellido del documento",
+      "nombre": "extraído del campo Nombre del documento",
+      "nro_doc": "solo números",
       "tipo_doc": "DNI|LE|LC|Pasaporte",
       "genero": "M|F",
       "fecha_nac": "dd/mm/aaaa",
@@ -41,7 +50,7 @@ Respondé SOLO con un JSON válido, sin texto adicional, con este formato:
   ],
   "notas": "info adicional relevante del documento"
 }
-Solo incluí los campos que efectivamente aparecen en el documento. El nro_doc solo números sin puntos ni guiones.` }
+Solo incluí los campos que efectivamente aparecen en el documento.` }
         ]
       }],
     });
