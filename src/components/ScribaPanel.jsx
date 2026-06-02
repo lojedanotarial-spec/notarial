@@ -486,14 +486,14 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       confirmaciones.push(`rol: **${datos.rol}**`);
     }
 
-    const confirmacion = confirmaciones.length ? confirmaciones.join(", ") + "." : "";
+    const resumen = confirmaciones.length ? confirmaciones.join(", ") + "." : "";
 
     if (!actualizado) return false;
 
     // Despachar con los datos actualizados
     window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: datos }));
     const nombre = [datos.apellido, datos.nombre].filter(Boolean).join(", ");
-    const confirm = `${confirmacion} ${nombre} listo para agregar.`;
+    const confirm = `${resumen} ${nombre} listo para agregar.`;
 
     const nuevos = [...mensajes,
       { role: "user", content: pregunta },
