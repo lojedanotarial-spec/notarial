@@ -78,7 +78,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     };
     vars[`PARTE_${n}_NACIONALIDAD`]    = fmtNacionalidad(p.nacionalidad, p.genero);
     vars[`PARTE_${n}_DOMICILIO`]       = domicilio;
-    vars[`PARTE_${n}_ROL`]             = p.rol          || "";
+    vars[`PARTE_${n}_ROL`]             = (p.rol || "").toUpperCase();
     vars[`PARTE_${n}_ARTICULO`]        = genArticulo;
     vars[`PARTE_${n}_FECHA_NAC`]       = fmtFechaNac(p.fechaNac || "");
     vars[`PARTE_${n}_ARTICULO_LA_EL`]  = esF ? "La" : "El";

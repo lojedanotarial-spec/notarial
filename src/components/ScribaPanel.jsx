@@ -472,7 +472,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     // "añadí/sumá/ponele (el) estado civil soltero" O bare "estado civil soltero"
     const matchEC = pregunta.match(
       new RegExp(
-        `(?:(?:${VERBOS})\\s+(?:el\\s+|la\\s+)?(?:estado\\s+civil\\s+)?(?:de\\s+)?|estado\\s+civil\\s+)(soltero|casada?|divorciada?|viuda?|separada?|conviviente)`,
+        `(?:(?:${VERBOS})\\s+(?:el\\s+|la\\s+)?(?:estado\\s+civil\\s+)?(?:de\\s+)?|estado\\s+civil\\s+)(soltero|casad[ao]|divorciad[ao]|viud[ao]|separad[ao]|conviviente)`,
         "i"
       )
     );
