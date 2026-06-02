@@ -19,6 +19,7 @@ export async function buildDocxGenerico({
   fuente,
   interlineado,
   datosExtra = {},
+  extravars = {},
 }) {
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2;
@@ -27,7 +28,10 @@ export async function buildDocxGenerico({
   const lineSpacing = interlineado?.line || 276;
   const lineRule   = interlineado?.rule || "auto";
 
-  const vars = { ...buildVars({ partes, escribano, fecha, protocolo, instrumento }), ...datosExtra };
+  const vars = {
+    ...buildVars({ partes, escribano, fecha, protocolo, instrumento, extravars }),
+    ...datosExtra,
+  };
   const textoFinal = sustituirVars(contenido || "", vars);
 
   const lineas = textoFinal.split("\n");

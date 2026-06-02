@@ -121,16 +121,24 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   }, [miUsuario?.is_admin, registroActivo]);
 
   const [templateContenido, setTemplateContenido] = useState("");
+  const [templateVarsSchema, setTemplateVarsSchema] = useState([]); // [{name,label,type,placeholder,required}]
+  const [extravars, setExtravars] = useState({});                   // {VARIABLE_NAME: valor}
 
-  // Cargar nombre y contenido del template desde Supabase
+  // Cargar nombre, contenido y variables_json del template desde Supabase
   useEffect(() => {
     if (!templateId) return;
-    supabase.from("templates").select("nombre, slug, contenido").eq("id", templateId).single()
+    supabase.from("templates").select("nombre, slug, contenido, variables_json").eq("id", templateId).single()
       .then(({ data }) => {
         if (data) {
           setTemplateNombre(data.nombre);
           setTemplateSlug(data.slug || "");
           setTemplateContenido(data.contenido || "");
+          const schema = Array.isArray(data.variables_json) ? data.variables_json : [];
+          setTemplateVarsSchema(schema);
+          // inicializar extravars vacíos
+          const init = {};
+          schema.forEach(v => { init[v.name] = ""; });
+          setExtravars(init);
         }
       });
   }, [templateId]);
@@ -154,6 +162,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               contenido: templateContenido,
               partes, escribano, fecha, protocolo, instrumento,
               margenKey, fontSize, fuente, interlineado,
+              extravars,
             })
           : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente });
 
@@ -467,6 +476,49 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                   {instrumento.descripcion || "Sin especificar"}
                 </div>
               </PanelSection>
+
+              {/* Variables extra del template */}
+              {templateVarsSchema.length > 0 && (
+                <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(26,35,50,.45)", marginBottom: 8 }}>
+                    Datos del instrumento
+                  </div>
+                  {templateVarsSchema.map(v => (
+                    <div key={v.name} style={{ marginBottom: 10 }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: C.dark, display: "block", marginBottom: 3 }}>
+                        {v.label}{v.required && <span style={{ color: "#c0392b" }}> *</span>}
+                      </label>
+                      {v.type === "texto_largo" ? (
+                        <textarea
+                          value={extravars[v.name] || ""}
+                          placeholder={v.placeholder || ""}
+                          rows={5}
+                          onChange={e => setExtravars(prev => ({ ...prev, [v.name]: e.target.value }))}
+                          style={{
+                            width: "100%", padding: "6px 8px", borderRadius: 6, fontSize: 12,
+                            border: "1px solid rgba(26,35,50,.18)", background: "C.porcelain",
+                            fontFamily: "'Inter', sans-serif", color: C.dark, resize: "vertical",
+                            boxSizing: "border-box", lineHeight: 1.5,
+                          }}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={extravars[v.name] || ""}
+                          placeholder={v.placeholder || ""}
+                          onChange={e => setExtravars(prev => ({ ...prev, [v.name]: e.target.value }))}
+                          style={{
+                            width: "100%", padding: "6px 8px", borderRadius: 6, fontSize: 12,
+                            border: "1px solid rgba(26,35,50,.18)", background: "C.porcelain",
+                            fontFamily: "'Inter', sans-serif", color: C.dark,
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <PanelSection label="Formato" onClick={() => setModal("formato")}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>
