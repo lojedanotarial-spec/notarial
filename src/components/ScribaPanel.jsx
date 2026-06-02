@@ -762,9 +762,11 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
               style={{
                 flex: 1, border: "none", background: "transparent",
                 resize: "none", outline: "none",
-                fontSize: 13, color: C.dark, lineHeight: 1.5,
+                fontSize: 13, color: C.dark, lineHeight: "20px",
                 fontFamily: "'Inter', sans-serif",
-                minHeight: 22, maxHeight: 120, overflowY: "auto",
+                height: 20, minHeight: 20, maxHeight: 120,
+                overflowY: "auto", display: "block",
+                verticalAlign: "middle", padding: 0, margin: 0,
                 caretColor: C.cerulean,
               }}
               onInput={e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}

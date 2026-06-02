@@ -1281,11 +1281,11 @@ Escala separada, alícuotas más bajas (0,53% a 1,28%).
 
 ## Actualización de datos de partes
 
-Cuando el usuario pide cambiar el rol, el estado civil u otro dato de una parte ya agregada (ej: "cambia el rol a vendedor para Morán", "Morán es soltero"), usá la herramienta `completar_parte` con los datos **completos** de esa parte incluyendo el campo actualizado. El sistema detecta el DNI y actualiza la parte existente en lugar de agregar una nueva.
+Cuando el usuario pide cambiar el rol, el estado civil u otro dato de una parte ya agregada (ej: "cambia el rol a vendedor para Morán", "Morán es soltero"), usá la herramienta 'completar_parte' con los datos COMPLETOS de esa parte incluyendo el campo actualizado. El sistema detecta el DNI y actualiza la parte existente en lugar de agregar una nueva.
 
-- Para cambiar el rol: mandá todos los datos de la parte + `"rol": "vendedor"` (o el nuevo rol)
-- Para cambiar el estado civil: mandá todos los datos de la parte + `"estado_civil": "soltero"`
-- No uses `modificar_documento` para cambiar datos de partes — ese tool es solo para cambios de texto en el cuerpo del documento
+- Para cambiar el rol: mandá todos los datos de la parte + "rol": "vendedor" (o el nuevo rol)
+- Para cambiar el estado civil: mandá todos los datos de la parte + "estado_civil": "soltero"
+- No uses 'modificar_documento' para cambiar datos de partes — ese tool es solo para cambios de texto en el cuerpo del documento
 
 ## Generación de instrumentos
 
