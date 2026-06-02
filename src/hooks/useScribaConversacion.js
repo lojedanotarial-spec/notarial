@@ -39,17 +39,23 @@ export function useScribaConversacion() {
   }
 
   async function guardar(mensajes) {
-    if (!session || guardandoRef.current) return;
+    if (!session) return;
+    // Si hay un save en curso, programar otro al terminar en lugar de descartar
+    if (guardandoRef.current) {
+      setTimeout(() => guardar(mensajes), 400);
+      return;
+    }
     guardandoRef.current = true;
     try {
       const titulo = mensajes.find(m => m.role === "user")?.content?.slice(0, 60) || "Consulta";
       if (conversacionId) {
-        await supabase
+        const { error } = await supabase
           .from("scriba_conversaciones")
           .update({ mensajes, updated_at: new Date().toISOString() })
           .eq("id", conversacionId);
+        if (error) console.error("[scriba] Error guardando conversación:", error.message);
       } else {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("scriba_conversaciones")
           .insert({
             usuario_id:  session.user.id,
@@ -60,8 +66,11 @@ export function useScribaConversacion() {
           })
           .select("id")
           .single();
+        if (error) console.error("[scriba] Error creando conversación:", error.message);
         if (data) setConversacionId(data.id);
       }
+    } catch(e) {
+      console.error("[scriba] Error inesperado en guardar:", e.message);
     } finally {
       guardandoRef.current = false;
     }
