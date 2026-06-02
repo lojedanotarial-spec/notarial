@@ -284,7 +284,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         const idx = dniNuevo ? prev.findIndex(p => p.nroDoc === dniNuevo) : -1;
         if (idx >= 0) {
           const actualizada = { ...prev[idx] };
-          if (d.rol)          actualizada.rol         = d.rol;
+          if (d.rol)          actualizada.rol         = String(d.rol).toUpperCase();
           if (d.estado_civil) actualizada.estadoCivil = d.estado_civil;
           if (d.apellido)     actualizada.apellido    = d.apellido;
           if (d.nombre)       actualizada.nombre      = d.nombre;

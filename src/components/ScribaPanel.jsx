@@ -465,35 +465,44 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
 
     const datos = { ...ultimoConAccion.accion.datos };
     let actualizado = false;
-    let confirmacion = "";
-
     const confirmaciones = [];
 
-    // Patrones: "añad* (el/la) estado civil X", "X es soltero/casado/etc"
-    const matchEC = pregunta.match(/(?:añad[ae]?(?:mos)?|agrega[r]?|pon[e]?(?:mos)?|es(?:\s+de\s+estado\s+civil)?)\s+(?:el\s+|la\s+)?(?:estado\s+civil\s+)?(?:de\s+)?(soltero|casada?|divorciada?|viuda?|separada?|conviviente|uni[oó]n\s+convivencial)/i);
+    const VERBOS = "añad[ae]?(?:mos)?|sumar?|sum[aé]le?|agrega[r]?|pon[e]?(?:mos)?|ponle|coloca[r]?";
+
+    // "añadí/sumá/ponele (el) estado civil soltero" O bare "estado civil soltero"
+    const matchEC = pregunta.match(
+      new RegExp(
+        `(?:(?:${VERBOS})\\s+(?:el\\s+|la\\s+)?(?:estado\\s+civil\\s+)?(?:de\\s+)?|estado\\s+civil\\s+)(soltero|casada?|divorciada?|viuda?|separada?|conviviente)`,
+        "i"
+      )
+    );
     if (matchEC) {
-      datos.estado_civil = matchEC[1].toLowerCase().replace(/a$/, "o").replace(/a\b/, "o");
-      // normalizar al masculino base si aplica según género
+      datos.estado_civil = matchEC[1].toLowerCase().replace(/a$/, "o");
       actualizado = true;
-      confirmaciones.push(`estado civil: **${datos.estado_civil}**`);
+      confirmaciones.push(`estado civil **${datos.estado_civil}**`);
     }
 
-    // Patrones: "añad* (el) rol (de) X", "su rol es X", "es vendedor/comprador/etc"
-    const matchRol = pregunta.match(/(?:añad[ae]?(?:mos)?|agrega[r]?|pon[e]?(?:mos)?|su\s+rol\s+es|el\s+rol\s+es|rol\s+es)\s+(?:el\s+|de\s+)?(?:rol\s+(?:de\s+|es\s+)?)?(vendedor|comprador|donante|donatario|fiduciante|fiduciario|mandante|mandatario|cedente|cesionario|locador|locatario|deudor|acreedor|garante|hipotecante)/i);
+    const ROLES = "vendedor|comprador|donante|donatario|fiduciante|fiduciario|mandante|mandatario|cedente|cesionario|locador|locatario|deudor|acreedor|garante|hipotecante";
+    // "su rol es / el rol es / rol es X" O verbo + (el/de) + (rol de/es) + X
+    const matchRol = pregunta.match(
+      new RegExp(
+        `(?:(?:${VERBOS})\\s+(?:el\\s+|de\\s+)?(?:rol\\s+(?:de\\s+|es\\s+)?)?|(?:su|el)\\s+rol\\s+es\\s+|rol\\s+es\\s+)(${ROLES})`,
+        "i"
+      )
+    );
     if (matchRol) {
       datos.rol = matchRol[1].toUpperCase();
       actualizado = true;
-      confirmaciones.push(`rol: **${datos.rol}**`);
+      confirmaciones.push(`rol **${datos.rol}**`);
     }
-
-    const resumen = confirmaciones.length ? confirmaciones.join(", ") + "." : "";
 
     if (!actualizado) return false;
 
-    // Despachar con los datos actualizados
     window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: datos }));
     const nombre = [datos.apellido, datos.nombre].filter(Boolean).join(", ");
-    const confirm = `${resumen} ${nombre} listo para agregar.`;
+    const confirm = confirmaciones.length === 1
+      ? `Listo, actualicé ${confirmaciones[0]} para ${nombre}.`
+      : `Listo, actualicé ${confirmaciones.join(" y ")} para ${nombre}.`;
 
     const nuevos = [...mensajes,
       { role: "user", content: pregunta },
