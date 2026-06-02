@@ -27,6 +27,7 @@ export async function buildDocxBlanco({ escribano, margenKey = "protocolar", fon
 export async function buildDocxCertFirmaF08({
   partes, escribano, fecha, protocolo, instrumento,
   instrTexto, fechaLetras, gen,
+  showRol = true,
   margenKey = "protocolar",
   fontSize = 11,
   fuente,
@@ -112,8 +113,10 @@ export async function buildDocxCertFirmaF08({
         partesRuns.push(r(", de esta Provincia de Mendoza"));
       }
       partesRuns.push(r("; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, "));
-      partesRuns.push(r(gen(p, "la que", "el que") + " firma en su carácter de "));
-      partesRuns.push(vRun("ROL", p.rol));
+      if (showRol) {
+        partesRuns.push(r(gen(p, "la que", "el que") + " firma en su carácter de "));
+        partesRuns.push(vRun("ROL", p.rol));
+      }
     });
 
     partesRuns.push(r(fraseIdentidad + fraseCapacidad));

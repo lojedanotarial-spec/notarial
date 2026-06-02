@@ -154,6 +154,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         ? await buildDocxCertFirmaF08({
             partes, escribano, fecha, protocolo, instrumento,
             instrTexto, fechaLetras, gen,
+            showRol: ["cert_firma_f08", "certFirmaF08"].includes(templateSlug),
             margenKey, fontSize, fuente, interlineado,
             showVarHighlight,
           })
