@@ -9,12 +9,6 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
 
   documentTitleRef.current = documentTitle;
 
-  // Suprimir el beforeunload nativo que OO registra cuando autosave:false
-  useEffect(() => {
-    const suppress = (e) => { delete e.returnValue; };
-    window.addEventListener("beforeunload", suppress, { capture: true });
-    return () => window.removeEventListener("beforeunload", suppress, { capture: true });
-  }, []);
 
   const createEditor = useCallback(() => {
     if (!window.DocsAPI || !documentUrl) return;
