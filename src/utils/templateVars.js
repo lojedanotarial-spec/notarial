@@ -96,6 +96,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_COMPLETO`]        = apellidoNombre;
     vars[`PARTE_${n}_DNI`]             = dni;
     vars[`PARTE_${n}_CUIT`]            = p.cuit         || "";
+    vars[`PARTE_${n}_CUIT_LABEL`]      = p.cuit ? `, C.U.I.T./L. ${p.cuit}` : "";
     vars[`PARTE_${n}_ESTADO_CIVIL`]    = p.estadoCivil  || "";
     // Concordancia de género en la nacionalidad
     const fmtNacionalidad = (nac, genero) => {
