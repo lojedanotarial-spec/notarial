@@ -93,8 +93,8 @@ export function LoginScreen() {
   return (
     <div style={{
       minHeight: "100vh", position: "relative", display: "flex",
-      alignItems: "center", justifyContent: "center", padding: "48px 20px",
-      background: C.dark, overflow: "hidden"
+      alignItems: "center", justifyContent: "center", padding: "24px 20px",
+      background: C.dark, overflow: "auto"
     }}>
       {/* Glow */}
       <div aria-hidden style={{ position: "absolute", bottom: "-30%", right: "-10%", width: 600, height: 600,
@@ -102,16 +102,16 @@ export function LoginScreen() {
       <div aria-hidden style={{ position: "absolute", inset: 0,
         background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.28) 100%)", pointerEvents: "none" }} />
 
-      <div style={{ position: "relative", width: "100%", maxWidth: 420,
-        display: "flex", flexDirection: "column", alignItems: "center", gap: 28 }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: 380,
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
 
         {/* Brand */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
-          <img src="/logo-pen-transparent.png" alt="Notarial" style={{ width: 120, height: 120, objectFit: "contain" }} />
-          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <img src="/logo-pen-transparent.png" alt="Notarial" style={{ width: 72, height: 72, objectFit: "contain" }} />
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 4 }}>
             <h1 style={{ margin: 0, fontFamily: "'Merriweather', Georgia, serif", fontWeight: 300,
-              fontSize: 30, letterSpacing: "0.01em", color: C.porcelain }}>Notarial</h1>
-            <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 11, fontWeight: 500,
+              fontSize: 24, letterSpacing: "0.01em", color: C.porcelain }}>Notarial</h1>
+            <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 10, fontWeight: 500,
               letterSpacing: "0.32em", textTransform: "uppercase", color: C.gold }}>Fe pública digital</p>
           </div>
         </div>
@@ -119,14 +119,14 @@ export function LoginScreen() {
         {/* Card */}
         <form onSubmit={handleSubmit} style={{
           width: "100%", background: CARD_BG, border: "1px solid rgba(253,252,250,.10)",
-          borderRadius: 12, padding: "32px 30px 28px",
+          borderRadius: 12, padding: "24px 24px 20px",
           backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
           boxShadow: "0 30px 60px -28px rgba(0,0,0,0.55), 0 8px 20px -12px rgba(0,0,0,0.35)",
           display: "flex", flexDirection: "column", gap: 18
         }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 4 }}>
             <h2 style={{ margin: 0, fontFamily: "'Merriweather', Georgia, serif", fontWeight: 400,
-              fontSize: 19, color: C.porcelain }}>Bienvenido</h2>
+              fontSize: 17, color: C.porcelain }}>Bienvenido</h2>
             <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 13,
               color: "rgba(253,252,250,0.75)", lineHeight: 1.45 }}>
               Ingresá a tu cuenta para acceder al sistema notarial.
