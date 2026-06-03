@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { C, DEPARTAMENTOS, PARTE_VACIA, inp } from "../../constants";
+import { aplicarTildesNombre } from "../../utils/tildesNombres";
 
 async function escanearDocumento(archivo) {
   return new Promise((resolve, reject) => {
@@ -340,7 +341,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
 
     upd(openId, {
       apellido:         (persona.apellido || "").toUpperCase(),
-      nombre:           (persona.nombre   || "").toUpperCase(),
+      nombre:           aplicarTildesNombre((persona.nombre || "").toUpperCase()),
       genero,
       nacionalidad:     nac,
       tipoDoc:          persona.tipo_doc      || "DNI",

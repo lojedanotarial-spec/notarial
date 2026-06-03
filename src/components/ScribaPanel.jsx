@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { C } from "../constants";
+import { aplicarTildesNombre } from "../utils/tildesNombres";
 import { useScribaConversacion } from "../hooks/useScribaConversacion";
 import { useAuth } from "../context/AuthContext";
 
@@ -324,8 +325,8 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
             onClick={() => {
               const partes = accion.partes?.map(p => ({
                 id:          Date.now() + Math.random(),
-                apellido:    p.apellido    || "",
-                nombre:      p.nombre      || "",
+                apellido:    (p.apellido || "").toUpperCase(),
+                nombre:      aplicarTildesNombre((p.nombre || "").toUpperCase()),
                 genero:      p.genero      || "F",
                 nacionalidad:p.nacionalidad|| "argentina",
                 tipoDoc:     p.tipo_doc    || "DNI",
