@@ -164,11 +164,12 @@ function BtnInsertar({ texto }) {
 
 const LINEAS_MAX = 25;
 
-function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte }) {
+function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPartes }) {
   const esUser = msg.role === "user";
   const accion = msg.accion;
   const lineas = (msg.content || "").split("\n").length;
   const esLargo = !esUser && lineas > LINEAS_MAX;
+  const [rolesSeleccionados, setRolesSeleccionados] = useState({});
   const [expandidoMsg, setExpandidoMsg] = useState(false);
 
   return (
@@ -245,8 +246,34 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte }) {
                   {persona.nacionalidad && <div><strong>Nacionalidad:</strong> {persona.nacionalidad}</div>}
                   {persona.calle && <div><strong>Domicilio:</strong> {[persona.calle, persona.numero, persona.localidad].filter(Boolean).join(", ")}</div>}
                 </div>
+                {rolesPartes?.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: "rgba(26,35,50,.5)", fontWeight: 600, marginBottom: 4 }}>
+                      Función en el acto *
+                    </div>
+                    <select
+                      value={rolesSeleccionados[idx] ?? (persona.rol || "")}
+                      onChange={e => setRolesSeleccionados(prev => ({ ...prev, [idx]: e.target.value }))}
+                      style={{
+                        width: "100%", padding: "5px 8px", borderRadius: 6, fontSize: 12,
+                        border: "1px solid rgba(26,35,50,.2)", background: "#fff",
+                        fontFamily: "'Montserrat', sans-serif", color: "#1a2332",
+                      }}>
+                      <option value="">— seleccioná el rol —</option>
+                      {rolesPartes.filter(Boolean).map(r => (
+                        <option key={r} value={r.toUpperCase().split("/")[0].trim()}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <button onClick={() => {
-                    window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: persona }));
+                    const rolFinal = rolesSeleccionados[idx] ?? (persona.rol || "");
+                    if (rolesPartes?.length > 0 && !rolFinal) {
+                      alert("Seleccioná la función de esta persona en el acto antes de agregarla.");
+                      return;
+                    }
+                    const detalle = { ...persona, rol: rolFinal || persona.rol || "" };
+                    window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: detalle }));
                     const nombre = [persona.apellido, persona.nombre].filter(Boolean).join(", ");
                     onConfirmarAccion?.(`Listo, agregué a **${nombre || "la persona"}** como parte al documento.`);
                   }}
@@ -813,7 +840,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 prev.accion.datos?.nro_doc && prev.accion.datos.nro_doc === m.accion.datos?.nro_doc
               );
             return (
-            <Mensaje key={i} msg={m} onGo={onGo} hayEditor={!!contexto} yaEsParte={yaEsParte}
+            <Mensaje key={i} msg={m} onGo={onGo} hayEditor={!!contexto} yaEsParte={yaEsParte} rolesPartes={contexto?.rolesPartes}
               onConfirmarAccion={(texto) => {
                 const confirmacion = { role: "assistant", content: texto };
                 setMensajes(prev => {

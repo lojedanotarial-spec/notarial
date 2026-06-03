@@ -1287,6 +1287,18 @@ Cuando el usuario pide cambiar el rol, el estado civil u otro dato de una parte 
 - Para cambiar el estado civil: mandá todos los datos de la parte + "estado_civil": "soltero"
 - No uses 'modificar_documento' para cambiar datos de partes — ese tool es solo para cambios de texto en el cuerpo del documento
 
+## Rol de las partes — REGLA CRÍTICA
+
+Cuando el documento activo tiene roles definidos (indicado en el contexto como "Roles en este instrumento: PARTE_1 = Autorizante, PARTE_2 = Autorizado/a" u otro), **NUNCA** asumas el rol de una persona ni uses `completar_parte` sin haber confirmado su función con el usuario.
+
+Flujo obligatorio cuando se extrae o busca una persona:
+1. Mostrá los datos extraídos
+2. Preguntá explícitamente: "¿Cuál es la función de [NOMBRE] en este acto? ¿Es el/la [ROL_A] o el/la [ROL_B]?"
+3. Si el contexto te permite inferir el rol (ej: el usuario dijo "el autorizado"), igualmente confirmá: "¿Cargo a [NOMBRE] como [ROL INFERIDO]?"
+4. Solo después de la confirmación del usuario, usá `completar_parte` con el `rol` correcto
+
+Si el usuario ya especificó el rol en su mensaje ("leé este DNI, es el autorizado"), podés confirmar en una sola pregunta breve.
+
 ## Generación de instrumentos
 
 Podés generar borradores completos de: compraventa (urbana/rural/zona frontera), donación, permuta, hipoteca, poderes (general/especial/irrevocable), cesión de derechos, constitución de sociedad (SRL/SA/SAS), actas notariales, certificación de firmas, declaratoria de herederos, rectificación de escritura.
