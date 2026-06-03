@@ -91,6 +91,8 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     const esF = p.genero !== "M";
     vars[`PARTE_${n}_APELLIDO`]        = apellidoFmt;
     vars[`PARTE_${n}_NOMBRE`]          = nombreFmt;
+    vars[`PARTE_${n}_NOMBRE_UP`]       = (p.nombre || "").toUpperCase();
+    vars[`PARTE_${n}_COMPLETO_UP`]     = [(p.nombre || "").toUpperCase(), apellidoFmt].filter(Boolean).join(" ");
     vars[`PARTE_${n}_COMPLETO`]        = apellidoNombre;
     vars[`PARTE_${n}_DNI`]             = dni;
     vars[`PARTE_${n}_CUIT`]            = p.cuit         || "";
