@@ -16,16 +16,41 @@ export default async function handler(req, res) {
         role: "user",
         content: [
           { type: "image", source: { type: "base64", media_type: imagen.mediaType, data: imagen.data } },
-          { type: "text", text: `Analizá este documento argentino y determiná su tipo. Puede ser:
-- Documento de identidad (DNI, LE, LC, pasaporte)
-- Tarjeta verde / título automotor / cédula del automotor (documentos de vehículo)
-- Otro documento
+          { type: "text", text: `Analizá este documento argentino.
+
+PASO 1 — IDENTIFICAR EL TIPO:
+¿El documento contiene datos de un VEHÍCULO (dominio/patente, chasis, motor, marca, modelo)?
+Documentos de vehículo incluyen: tarjeta verde, cédula verde, cédula azul, título automotor, Cédula de Identificación del Automotor, Cédula de Identificación de Vehículos (DNRPA), cualquier documento con dominio/patente y datos técnicos del rodado.
+
+Si SÍ → usá el formato VEHÍCULO.
+Si NO → usá el formato PERSONA.
 
 INSTRUCCIONES GENERALES:
-- El documento puede estar fotografiado en cualquier orientación. Rotalo mentalmente.
-- Si un campo no está visible o legible, dejá el campo vacío — NO inventes datos.
+- El documento puede estar fotografiado en cualquier orientación. Rotalo mentalmente hasta leerlo.
+- Si un campo no está visible o legible, dejá el campo vacío — NUNCA inventes datos.
 
-Si es un DOCUMENTO DE IDENTIDAD, respondé:
+FORMATO VEHÍCULO (cuando el documento tiene dominio, chasis, motor, marca):
+{
+  "tipo_documento": "tarjeta_verde",
+  "vehiculo": {
+    "marca": "MARCA EN MAYÚSCULAS",
+    "modelo": "modelo completo con versión",
+    "tipo_desc": "SEDAN 5 PTAS | HATCHBACK | SUV | MOTOCICLETA | etc.",
+    "dominio": "patente sin espacios ni guiones",
+    "chasis": "número de chasis o VIN completo",
+    "motor": "número de motor completo",
+    "anio": "año si figura",
+    "color": "color si figura"
+  },
+  "titular": {
+    "apellido": "",
+    "nombre": "",
+    "nro_doc": "solo números"
+  },
+  "notas": ""
+}
+
+FORMATO PERSONA (DNI, LE, LC, pasaporte, partidas, licencias):
 {
   "tipo_documento": "DNI|licencia|partida_nacimiento|partida_matrimonio|otro",
   "personas": [{
@@ -48,28 +73,7 @@ Si es un DOCUMENTO DE IDENTIDAD, respondé:
   "notas": ""
 }
 
-Si es una TARJETA VERDE, TÍTULO AUTOMOTOR o CÉDULA DEL AUTOMOTOR, respondé:
-{
-  "tipo_documento": "tarjeta_verde|titulo_automotor",
-  "vehiculo": {
-    "marca": "marca del vehículo en mayúsculas",
-    "modelo": "modelo completo incluyendo versión",
-    "tipo_desc": "tipo/carrocería (SEDAN, HATCHBACK, SUV, MOTOCICLETA, etc.)",
-    "dominio": "patente sin espacios ni guiones",
-    "chasis": "número de chasis/VIN completo",
-    "motor": "número de motor",
-    "anio": "año del modelo si figura",
-    "color": ""
-  },
-  "titular": {
-    "apellido": "",
-    "nombre": "",
-    "nro_doc": "solo números"
-  },
-  "notas": ""
-}
-
-Respondé SOLO con el JSON válido correspondiente, sin texto adicional.` }
+Respondé SOLO con el JSON válido, sin texto adicional.` }
         ]
       }],
     });
