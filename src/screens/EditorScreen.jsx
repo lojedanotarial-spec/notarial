@@ -21,6 +21,34 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
+// Etiquetas contextuales por template — se muestran en el panel de partes cuando no hay rol asignado
+const ROLES_CONTEXTUALES = {
+  autorizacion_vehiculo:  ["Autorizante", "Autorizado/a"],
+  autorizacion_viaje:     ["Autorizante", "Menor"],
+  compraventa_urbana:     ["Vendedor/a",  "Comprador/a"],
+  compraventa_rural:      ["Vendedor/a",  "Comprador/a"],
+  compraventa_ph:         ["Vendedor/a",  "Comprador/a"],
+  compraventa_lote:       ["Vendedor/a",  "Comprador/a"],
+  boleto_compraventa:     ["Vendedor/a",  "Comprador/a"],
+  donacion_inmueble:      ["Donante",     "Donatario/a"],
+  donacion_hijo:          ["Donante",     "Donatario/a"],
+  donacion_reserva_uso:   ["Donante",     "Donatario/a"],
+  poder_especial:         ["Poderdante",  "Apoderado/a"],
+  poder_administracion:   ["Poderdante",  "Apoderado/a"],
+  poder_irrevocable:      ["Poderdante",  "Apoderado/a"],
+  revocacion_poder:       ["Poderdante",  null],
+  locacion_inmueble:      ["Locador/a",   "Locatario/a"],
+  locacion_comercial:     ["Locador/a",   "Locatario/a"],
+  mutuo_simple:           ["Mutuante",    "Mutuario/a"],
+  mutuo_hipotecario:      ["Mutuante",    "Mutuario/a"],
+  cesion_herencia:        ["Cedente",     "Cesionario/a"],
+  cesion_cuotas:          ["Cedente",     "Cesionario/a"],
+  cert_firma:             ["Compareciente", null],
+  cert_firma_f08:         ["Compareciente", null],
+  cert_copia:             ["Requirente",  null],
+  fe_vida:                ["Compareciente", null],
+};
+
 
 function PanelSection({ label, onClick, children, alerta }) {
   return (
@@ -583,7 +611,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       </div>
 
       {/* MODALES */}
-      {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={["cert_firma_f08","certFirmaF08"].includes(templateSlug)}/>}
+      {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={["cert_firma_f08","certFirmaF08"].includes(templateSlug)} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
       {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={applyAndGen(setProtocolo)}   onClose={() => setModal(null)}/>}

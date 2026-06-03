@@ -238,7 +238,7 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
   );
 }
 
-export function PartesEditor({ partes, onChange, showRol = true }) {
+export function PartesEditor({ partes, onChange, showRol = true, rolesContextuales }) {
   const { usuario, registroActivo } = useAuth();
   const registroNumero = usuario?.registro_numero || registroActivo;
   const [openId, setOpenId] = useState(partes[0]?.id ?? null);
@@ -320,9 +320,18 @@ export function PartesEditor({ partes, onChange, showRol = true }) {
                                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                       {x.apellido || "Parte " + (idx + 1)}
                     </div>
-                    {showRol && (
-                      <div style={{ fontSize:10, color:"rgba(26,35,50,.6)" }}>{x.rol || "sin rol"}</div>
-                    )}
+                    {(() => {
+                      const etiqueta = x.rol || rolesContextuales?.[idx] || `Parte ${idx + 1}`;
+                      return (
+                        <div style={{
+                          fontSize: 10,
+                          color: x.rol ? "rgba(26,35,50,.6)" : C.cerulean,
+                          fontWeight: x.rol ? 400 : 600,
+                        }}>
+                          {etiqueta}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
                 {(
