@@ -1,4 +1,4 @@
-import { diaLetras, anioLetras } from "../utils";
+import { diaLetras, anioLetras, numeroALetras } from "../utils";
 
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 
@@ -28,6 +28,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     ESCRIBANO_CARACTER_TEXTO:   escribanoCaracterTexto,
     ESCRIBANO_TITULO:           escribanoTitulo,
     ESCRIBANO_CIRCUNSCRIPCION:  escribano.circunscripcion || "primera",
+    ESCRIBANO_REGISTRO_LETRAS:  numeroALetras(parseInt(escribano.registro || "0")).replace(/ CON 00\/100$/, ""),
 
     FECHA_DIA:          String(fecha.dia || 1).padStart(2, "0"),
     FECHA_MES:          String((fecha.mes || 0) + 1).padStart(2, "0"),
@@ -83,6 +84,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_FECHA_NAC`]       = fmtFechaNac(p.fechaNac || "");
     vars[`PARTE_${n}_ARTICULO_LA_EL`]  = esF ? "La" : "El";
     vars[`PARTE_${n}_NACIDO_A`]        = esF ? "nacida" : "nacido";
+    vars[`PARTE_${n}_DEL_DE_LA`]       = esF ? "de la" : "del";
 
     // Identidad completa — la fórmula notarial estándar
     const identidadPartes = [
