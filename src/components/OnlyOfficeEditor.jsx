@@ -33,12 +33,13 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       editorConfig: {
         mode: "edit",
         lang: "es-AR",
+        callbackUrl: `${window.location.origin}/api/oo-callback`,
         plugins: {
           autostart:   [],
           pluginsData: [`${serverUrl}/sdkjs-plugins/notarial-plugin/config.json`],
         },
         customization: {
-          autosave:        false,
+          autosave:        true,
           hideRightMenu:   true,
           hideRulers:      true,
           compactToolbar:  true,
@@ -80,7 +81,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
             permissions: { edit: true, print: true, download: true },
           },
           documentType: "word",
-          editorConfig: { mode: "edit", lang: "es" },
+          editorConfig: { mode: "edit", lang: "es", callbackUrl: `${window.location.origin}/api/oo-callback` },
         });
         return; // no recrear
       } catch (e) {
