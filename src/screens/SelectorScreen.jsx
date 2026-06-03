@@ -6,12 +6,13 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
 
 const FAMILIAS = [
-  { key: "cert",      label: "Certificaciones" },
-  { key: "poder",     label: "Poderes" },
-  { key: "acta",      label: "Actas notariales" },
-  { key: "escritura", label: "Escrituras públicas" },
-  { key: "traslado",  label: "Traslados" },
-  { key: "sucesion",  label: "Sucesiones" },
+  { key: "cert",           label: "Certificaciones" },
+  { key: "autorizaciones", label: "Autorizaciones" },
+  { key: "poder",          label: "Poderes" },
+  { key: "acta",           label: "Actas notariales" },
+  { key: "escritura",      label: "Escrituras públicas" },
+  { key: "traslado",       label: "Traslados" },
+  { key: "sucesion",       label: "Sucesiones" },
 ];
 
 const ESTADO_STYLE = {
