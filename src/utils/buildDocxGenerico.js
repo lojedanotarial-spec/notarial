@@ -8,6 +8,9 @@ const VARS_BOLD = new Set([
   'PARTE_1_NOMBRE',  'PARTE_2_NOMBRE',  'PARTE_3_NOMBRE',  'PARTE_4_NOMBRE',
   'PARTE_1_ROL',     'PARTE_2_ROL',     'PARTE_3_ROL',     'PARTE_4_ROL',
   'ESCRIBANO_NOMBRE',
+  // Datos del rodado
+  'VEHICULO_MARCA','VEHICULO_MODELO','VEHICULO_TIPO_DESC',
+  'VEHICULO_DOMINIO','VEHICULO_CHASIS','VEHICULO_MOTOR',
 ]);
 
 // Variables que siempre van subrayadas
