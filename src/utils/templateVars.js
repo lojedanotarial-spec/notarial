@@ -280,10 +280,10 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     // VEHICULOS_LISTA — texto formateado con marcadores de negrita
     const fmtVehiculo = (v) =>
       [
-        v.marca     ? `Marca **${v.marca}**`                              : null,
-        v.modelo    ? `Modelo **${v.modelo}**`                            : null,
+        v.marca     ? `Marca: **${v.marca}**`                             : null,
+        v.modelo    ? `Modelo: **${v.modelo}**`                           : null,
         v.tipo_desc ? `Tipo: **${v.tipo_desc}**`                          : null,
-        v.dominio   ? `Dominio: **${v.dominio}**${v.chasis ? ` Chasis **${v.chasis}**` : ""}` : null,
+        v.dominio   ? `Dominio: **${v.dominio}**${v.chasis ? ` Chasis: **${v.chasis}**` : ""}` : null,
         v.motor     ? `Motor: **${v.motor}**`                             : null,
       ].filter(Boolean).join(", ");
 
