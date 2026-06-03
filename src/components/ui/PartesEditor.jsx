@@ -487,7 +487,8 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                   if (!persona) return alert("No se encontraron datos de persona en el documento.");
                   // Merge: solo completa campos vacíos, no sobreescribe los que ya tienen datos
                   const actual = partes.find(x => x.id === openId) || {};
-                  const merge = (nuevo, actual) => nuevo && !actual ? nuevo : actual;
+                  // El escaneo gana si tiene valor; el formulario es solo fallback
+                  const merge = (nuevo, actual) => nuevo || actual;
                   cargarDesdeCRM({
                     apellido:     (merge(persona.apellido,     actual.apellido) || "").toUpperCase(),
                     nombre:       (merge(persona.nombre,       actual.nombre)   || "").toUpperCase(),
