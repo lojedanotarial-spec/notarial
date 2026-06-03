@@ -154,6 +154,48 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_IDENTIDAD_ACTA`] = identidadActa;
   });
 
+  // Variables pre-formateadas para autorizaciones de vehículo
+  // Autorizante: texto completo de la sección COMPARECE
+  const autorizante = partes.find(p => p?.rol?.toUpperCase().startsWith("AUTORIZANTE"));
+  if (autorizante) {
+    const art = autorizante.genero === "M" ? "el señor" : "la señora";
+    const nombre = [toTitleCase(autorizante.nombre), (autorizante.apellido||"").toUpperCase()].filter(Boolean).join(" ");
+    const nac = (() => {
+      const n = (autorizante.nacionalidad||"").toLowerCase().trim();
+      const masc = {argentina:"argentino",uruguaya:"uruguayo",chilena:"chileno",boliviana:"boliviano",peruana:"peruano",paraguaya:"paraguayo","brasileña":"brasileño",venezolana:"venezolano",colombiana:"colombiano"};
+      return autorizante.genero==="M" ? (masc[n]||autorizante.nacionalidad||"") : (autorizante.nacionalidad||"");
+    })();
+    const dniA = fmtDni(autorizante.nroDoc);
+    const domA = fmtDomicilio(autorizante);
+    const partes_aut = [
+      nac,
+      dniA ? `Documento Nacional de Identidad número ${dniA}` : null,
+      autorizante.cuit ? `C.U.I.T./L. ${autorizante.cuit}` : null,
+      autorizante.estadoCivil || null,
+      domA ? `domicilio en ${domA}` : null,
+    ].filter(Boolean).join(", ");
+    vars.AUTORIZANTE_TEXTO = `**__${art} ${nombre}__**, ${partes_aut}`;
+  }
+
+  // Autorizados: lista de todos los autorizados para "a favor de:"
+  const autorizados = partes.filter(p => p?.rol?.toUpperCase().startsWith("AUTORIZADO"));
+  if (autorizados.length > 0) {
+    const fmtAut = (p) => {
+      const nombre = [toTitleCase(p.nombre), (p.apellido||"").toUpperCase()].filter(Boolean).join(" ");
+      const nac = (() => {
+        const n = (p.nacionalidad||"").toLowerCase().trim();
+        const masc = {argentina:"argentino",uruguaya:"uruguayo",chilena:"chileno",boliviana:"boliviano",peruana:"peruano",paraguaya:"paraguayo","brasileña":"brasileño",venezolana:"venezolano",colombiana:"colombiano"};
+        return p.genero==="M" ? (masc[n]||p.nacionalidad||"") : (p.nacionalidad||"");
+      })();
+      const dniP = fmtDni(p.nroDoc);
+      return [`**__${nombre}__**`, nac, dniP ? `Documento Nacional de Identidad número ${dniP}` : null].filter(Boolean).join(", ");
+    };
+    const textos = autorizados.map(fmtAut);
+    vars.AUTORIZADOS_TEXTO = textos.length === 1
+      ? textos[0]
+      : textos.slice(0,-1).join("; ") + "; y " + textos[textos.length-1];
+  }
+
   // Variables de vehículos — genera VEHICULO_N_* y VEHICULOS_LISTA
   if (vehiculos.length > 0) {
     vehiculos.forEach((v, i) => {
