@@ -154,27 +154,35 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_IDENTIDAD_ACTA`] = identidadActa;
   });
 
-  // Variables pre-formateadas para autorizaciones de vehículo
-  // Autorizante: texto completo de la sección COMPARECE
-  const autorizante = partes.find(p => p?.rol?.toUpperCase().startsWith("AUTORIZANTE"));
-  if (autorizante) {
-    const art = autorizante.genero === "M" ? "el señor" : "la señora";
-    const nombre = [toTitleCase(autorizante.nombre), (autorizante.apellido||"").toUpperCase()].filter(Boolean).join(" ");
-    const nac = (() => {
-      const n = (autorizante.nacionalidad||"").toLowerCase().trim();
-      const masc = {argentina:"argentino",uruguaya:"uruguayo",chilena:"chileno",boliviana:"boliviano",peruana:"peruano",paraguaya:"paraguayo","brasileña":"brasileño",venezolana:"venezolano",colombiana:"colombiano"};
-      return autorizante.genero==="M" ? (masc[n]||autorizante.nacionalidad||"") : (autorizante.nacionalidad||"");
-    })();
-    const dniA = fmtDni(autorizante.nroDoc);
-    const domA = fmtDomicilio(autorizante);
-    const partes_aut = [
+  // Variables pre-formateadas para autorizaciones (soporta múltiples autorizantes y autorizados)
+  const fmtPersonaAut = (p) => {
+    const art = p.genero === "M" ? "el señor" : "la señora";
+    const nombre = [toTitleCase(p.nombre), (p.apellido||"").toUpperCase()].filter(Boolean).join(" ");
+    const n = (p.nacionalidad||"").toLowerCase().trim();
+    const masc = {argentina:"argentino",uruguaya:"uruguayo",chilena:"chileno",boliviana:"boliviano",peruana:"peruano",paraguaya:"paraguayo","brasileña":"brasileño",venezolana:"venezolano",colombiana:"colombiano"};
+    const nac = p.genero==="M" ? (masc[n]||p.nacionalidad||"") : (p.nacionalidad||"");
+    const dni = fmtDni(p.nroDoc);
+    const dom = fmtDomicilio(p);
+    const datos = [
       nac,
-      dniA ? `Documento Nacional de Identidad número ${dniA}` : null,
-      autorizante.cuit ? `C.U.I.T./L. ${autorizante.cuit}` : null,
-      autorizante.estadoCivil || null,
-      domA ? `domicilio en ${domA}` : null,
+      dni ? `Documento Nacional de Identidad número ${dni}` : null,
+      p.cuit ? `C.U.I.T./L. ${p.cuit}` : null,
+      p.estadoCivil || null,
+      dom ? `domicilio en ${dom}` : null,
     ].filter(Boolean).join(", ");
-    vars.AUTORIZANTE_TEXTO = `**__${art} ${nombre}__**, ${partes_aut}`;
+    return `**__${art} ${nombre}__**, ${datos}`;
+  };
+
+  const autorizantes = partes.filter(p => p?.rol?.toUpperCase().startsWith("AUTORIZANTE"));
+  if (autorizantes.length > 0) {
+    const textos = autorizantes.map(fmtPersonaAut);
+    vars.AUTORIZANTE_TEXTO = textos.length === 1
+      ? textos[0]
+      : textos.slice(0,-1).join("; ") + "; y " + textos[textos.length-1];
+    // Singular/plural para la frase de capacidad
+    vars.AUTORIZANTE_CAPACIDAD = autorizantes.length === 1
+      ? "mayor de edad, quien justifica su identidad conforme a los términos del artículo 306 inciso a del Código Civil y Comercial de la Nación"
+      : "mayores de edad, quienes justifican su identidad conforme a los términos del artículo 306 inciso a del Código Civil y Comercial de la Nación";
   }
 
   // Autorizados: lista de todos los autorizados para "a favor de:"
