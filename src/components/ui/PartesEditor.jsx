@@ -320,7 +320,8 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
 
   function cargarDesdeCRM(persona) {
     if (!openId) return;
-    const genero    = persona.genero   || "F";
+    const parteActual = partes.find(x => x.id === openId) || {};
+    const genero    = persona.genero   || parteActual.genero || "F";
     const nroDocRaw = String(persona.nro_doc || "").replace(/\D/g, "");
 
     // Concordancia de nacionalidad según género
@@ -338,8 +339,8 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
     }
 
     upd(openId, {
-      apellido:         persona.apellido      || "",
-      nombre:           persona.nombre        || "",
+      apellido:         (persona.apellido || "").toUpperCase(),
+      nombre:           (persona.nombre   || "").toUpperCase(),
       genero,
       nacionalidad:     nac,
       tipoDoc:          persona.tipo_doc      || "DNI",
@@ -456,8 +457,8 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                   const actual = partes.find(x => x.id === openId) || {};
                   const merge = (nuevo, actual) => nuevo && !actual ? nuevo : actual;
                   cargarDesdeCRM({
-                    apellido:     merge(persona.apellido,     actual.apellido),
-                    nombre:       merge(persona.nombre,       actual.nombre),
+                    apellido:     (merge(persona.apellido,     actual.apellido) || "").toUpperCase(),
+                    nombre:       (merge(persona.nombre,       actual.nombre)   || "").toUpperCase(),
                     nro_doc:      merge(persona.nro_doc,      actual.nroDoc),
                     tipo_doc:     merge(persona.tipo_doc,     actual.tipoDoc) || "DNI",
                     genero:       merge(persona.genero,       actual.genero)  || "F",
