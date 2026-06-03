@@ -79,7 +79,13 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     ESCRIBANO_CARACTER_TEXTO:   escribanoCaracterTexto,
     ESCRIBANO_TITULO:           escribanoTitulo,
     ESCRIBANO_CIRCUNSCRIPCION:  escribano.circunscripcion || "primera",
-    ESCRIBANO_REGISTRO_LETRAS:  numeroALetras(parseInt(escribano.registro || "0")).replace(/ CON 00\/100$/, "").toLowerCase(),
+    ESCRIBANO_REGISTRO_LETRAS:  (() => {
+      const n = parseInt(escribano.registro || "0");
+      if (!n) return "";
+      return numeroALetras(n).replace(/ CON 00\/100$/, "").toLowerCase();
+    })(),
+    // "del" para titular, "al" para adscripto/a
+    ESCRIBANO_AL_DEL: esTitular ? "del" : "al",
 
     FECHA_DIA:          String(fecha.dia || 1).padStart(2, "0"),
     FECHA_MES:          String((fecha.mes || 0) + 1).padStart(2, "0"),
