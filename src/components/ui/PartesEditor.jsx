@@ -320,14 +320,31 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
 
   function cargarDesdeCRM(persona) {
     if (!openId) return;
+    const genero    = persona.genero   || "F";
+    const nroDocRaw = String(persona.nro_doc || "").replace(/\D/g, "");
+
+    // Concordancia de nacionalidad según género
+    const NAC_MASC = { argentina:"argentino", uruguaya:"uruguayo", chilena:"chileno",
+      boliviana:"boliviano", peruana:"peruano", paraguaya:"paraguayo",
+      "brasileña":"brasileño", venezolana:"venezolano", colombiana:"colombiano" };
+    const nacRaw = (persona.nacionalidad || "").toLowerCase().trim();
+    const nac = genero === "M" ? (NAC_MASC[nacRaw] || persona.nacionalidad || "") : (persona.nacionalidad || "");
+
+    // Calcular CUIT si hay DNI y género
+    let cuit = persona.cuit || "";
+    if (!cuit && nroDocRaw.length >= 7) {
+      const c = calcularCUIT(nroDocRaw, genero);
+      if (c) cuit = `${c.prefijo}-${nroDocRaw}-${c.verificador}`;
+    }
+
     upd(openId, {
       apellido:         persona.apellido      || "",
       nombre:           persona.nombre        || "",
-      genero:           persona.genero        || "F",
-      nacionalidad:     persona.nacionalidad  || "",
+      genero,
+      nacionalidad:     nac,
       tipoDoc:          persona.tipo_doc      || "DNI",
-      nroDoc:           persona.nro_doc       || "",
-      cuit:             persona.cuit          || "",
+      nroDoc:           nroDocRaw,
+      cuit,
       fechaNac:         persona.fecha_nac     || "",
       estadoCivil:      persona.estado_civil  || "",
       calle:            persona.calle         || "",
