@@ -108,12 +108,21 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   const [partes,        setPartes]        = useState(() => params?.partes?.length ? params.partes : [PARTE_VACIA()]);
   const [vehiculos,     setVehiculos]     = useState([]);
-  const [escribano,     setEscribano]     = useState(() => miUsuario ? {
-    nombre:          miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
-    caracter:        miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
-    registro:        miUsuario.registro,
-    circunscripcion: miUsuario.circunscripcion,
-  } : ESCRIBANO_INI);
+  const [escribano,     setEscribano]     = useState(() => {
+    if (!miUsuario) return ESCRIBANO_INI;
+    const ROL_CARACTER_INI = {
+      titular:   miUsuario.genero === "f" ? "Notaria Titular"   : "Notario Titular",
+      adscripta: "Notaria Adscripta",
+      adscripto: "Notario Adscripto",
+    };
+    return {
+      nombre:          miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
+      caracter:        ROL_CARACTER_INI[miUsuario.rol] || (miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a"),
+      registro:        miUsuario.registro,
+      circunscripcion: miUsuario.circunscripcion,
+      genero:          miUsuario.genero,
+    };
+  });
   const [templateKey,   setTemplateKey]   = useState(() => {
     if (params?.templateKey) return params.templateKey;
     const SLUG_MAP = {
