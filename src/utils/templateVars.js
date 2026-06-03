@@ -233,7 +233,8 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars.EL_AUTORIZADO_TEXTO = pluralAut
       ? (todosM_aut2 ? "Los autorizados asumen" : "Los autorizados/as asumen")
       : (autorizados[0]?.genero === "F" ? "La autorizada asume" : "El autorizado asume");
-    vars.EL_COMPARECIENTE_CIERRE = plural
+    const pluralAut2 = autorizantes.length > 1;
+    vars.EL_COMPARECIENTE_CIERRE = pluralAut2
       ? "los comparecientes"
       : (autorizantes[0]?.genero === "M" ? "el compareciente" : "la compareciente");
 

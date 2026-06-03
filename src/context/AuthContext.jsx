@@ -34,11 +34,13 @@ export function AuthProvider({ children }) {
       .eq("id", u.registros_id)
       .single();
     setMiUsuario(yo ? { ...yo, is_admin: false } : null);
+    // Para no-admin: activar su propio registro automáticamente
+    if (yo?.registro) setRegistroActivo(yo.registro);
 
     const { data: m } = await supabase
       .from("registros")
       .select("*")
-      .eq("registro", u.registro_numero)
+      .eq("registro", yo?.registro || u.registro_numero)
       .order("rol");
     setMiembros(m || []);
     setPerfilCargado(true);
