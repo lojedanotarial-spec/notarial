@@ -26,18 +26,30 @@ async function escanearVehiculo(archivo) {
 }
 
 function ScanVehiculoBtn({ onDatos }) {
-  const [escaneando, setEscaneando] = useState(false);
+  const [progreso, setProgreso] = useState("");
   const ref = useRef(null);
   return (
     <>
-      <input ref={ref} type="file" accept="image/*" style={{ display:"none" }}
+      <input ref={ref} type="file" accept="image/*" multiple style={{ display:"none" }}
         onChange={async e => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          setEscaneando(true);
-          try { onDatos(await escanearVehiculo(f)); }
-          catch { alert("No se pudo leer el documento."); }
-          finally { setEscaneando(false); e.target.value = ""; }
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+          setProgreso(files.length > 1 ? `0/${files.length}` : "…");
+          try {
+            let acumulado = null;
+            for (let i = 0; i < files.length; i++) {
+              if (files.length > 1) setProgreso(`${i+1}/${files.length}`);
+              const res = await escanearVehiculo(files[i]);
+              // Merge: el frente tiene vehiculo, el dorso tiene personas — tomamos lo que haya
+              if (!acumulado) { acumulado = res; }
+              else {
+                if (res.vehiculo && !acumulado.vehiculo) acumulado.vehiculo = res.vehiculo;
+                if (res.personas && !acumulado.personas) acumulado.personas = res.personas;
+              }
+            }
+            onDatos(acumulado);
+          } catch { alert("No se pudo leer alguno de los documentos."); }
+          finally { setProgreso(""); e.target.value = ""; }
         }}
       />
       <button type="button" onClick={() => ref.current?.click()}
@@ -50,7 +62,7 @@ function ScanVehiculoBtn({ onDatos }) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
         </svg>
-        {escaneando ? "Escaneando..." : "Escanear tarjeta / título"}
+        {progreso ? `Escaneando ${progreso}` : "Escanear tarjeta / título"}
       </button>
     </>
   );

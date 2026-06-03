@@ -29,19 +29,55 @@ async function escanearDocumento(archivo) {
   });
 }
 
+// Merge de dos resultados de visión: usa el primer valor no vacío de cada campo
+function mergePersonas(base, nuevo) {
+  if (!base) return nuevo;
+  const p1 = base?.personas?.[0] || {};
+  const p2 = nuevo?.personas?.[0] || {};
+  const m = (a, b) => a || b;
+  return {
+    ...base,
+    personas: [{
+      apellido:     m(p1.apellido,     p2.apellido),
+      nombre:       m(p1.nombre,       p2.nombre),
+      nro_doc:      m(p1.nro_doc,      p2.nro_doc),
+      tipo_doc:     m(p1.tipo_doc,     p2.tipo_doc),
+      genero:       m(p1.genero,       p2.genero),
+      fecha_nac:    m(p1.fecha_nac,    p2.fecha_nac),
+      estado_civil: m(p1.estado_civil, p2.estado_civil),
+      nacionalidad: m(p1.nacionalidad, p2.nacionalidad),
+      calle:        m(p1.calle,        p2.calle),
+      numero:       m(p1.numero,       p2.numero),
+      localidad:    m(p1.localidad,    p2.localidad),
+      departamento: m(p1.departamento, p2.departamento),
+      barrio:       m(p1.barrio,       p2.barrio),
+      manzana:      m(p1.manzana,      p2.manzana),
+      casa:         m(p1.casa,         p2.casa),
+    }],
+  };
+}
+
 function ScanBtn({ onDatos, tipo = "documento", style }) {
-  const [escaneando, setEscaneando] = useState(false);
+  const [progreso, setProgreso] = useState("");
   const ref = useRef(null);
   return (
     <>
-      <input ref={ref} type="file" accept="image/*,application/pdf" style={{ display:"none" }}
+      <input ref={ref} type="file" accept="image/*,application/pdf"
+        multiple style={{ display:"none" }}
         onChange={async e => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          setEscaneando(true);
-          try { onDatos(await escanearDocumento(f)); }
-          catch { alert("No se pudo leer el documento."); }
-          finally { setEscaneando(false); e.target.value = ""; }
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+          setProgreso(files.length > 1 ? `0/${files.length}` : "…");
+          try {
+            let acumulado = null;
+            for (let i = 0; i < files.length; i++) {
+              if (files.length > 1) setProgreso(`${i+1}/${files.length}`);
+              const res = await escanearDocumento(files[i]);
+              acumulado = mergePersonas(acumulado, res);
+            }
+            onDatos(acumulado);
+          } catch { alert("No se pudo leer alguno de los documentos."); }
+          finally { setProgreso(""); e.target.value = ""; }
         }}
       />
       <button type="button" onClick={() => ref.current?.click()}
@@ -54,7 +90,7 @@ function ScanBtn({ onDatos, tipo = "documento", style }) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
         </svg>
-        {escaneando ? "Escaneando..." : `Escanear ${tipo}`}
+        {progreso ? `Escaneando ${progreso}` : `Escanear ${tipo}`}
       </button>
     </>
   );
