@@ -186,6 +186,10 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     // **COMPARECE** / **COMPARECEN** y **DICE** / **DICEN** — negrita + pluralidad
     vars.COMPARECE_TEXTO = plural ? "**COMPARECEN**" : "**COMPARECE**";
     vars.DICE_TEXTO       = plural ? "**DICEN**"      : "**DICE**";
+    // Para el HEADER: nombres de autorizantes en todo uppercase
+    vars.AUTORIZANTES_UP = autorizantes
+      .map(p => [(p.nombre||"").toUpperCase(), (p.apellido||"").toUpperCase()].filter(Boolean).join(" "))
+      .join("; y ");
   }
 
   // Autorizados: lista de todos los autorizados para "a favor de:"
@@ -205,6 +209,10 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars.AUTORIZADOS_TEXTO = textos.length === 1
       ? textos[0]
       : textos.slice(0,-1).join("; ") + "; y " + textos[textos.length-1];
+    // Para el HEADER: nombres de autorizados en todo uppercase
+    vars.AUTORIZADOS_UP = autorizados
+      .map(p => [(p.nombre||"").toUpperCase(), (p.apellido||"").toUpperCase()].filter(Boolean).join(" "))
+      .join("; y ");
   }
 
   // Variables de vehículos — genera VEHICULO_N_* y VEHICULOS_LISTA
