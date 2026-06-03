@@ -452,13 +452,26 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                 <ScanBtn tipo="DNI" onDatos={datos => {
                   const persona = datos?.personas?.[0];
                   if (!persona) return alert("No se encontraron datos de persona en el documento.");
+                  // Merge: solo completa campos vacíos, no sobreescribe los que ya tienen datos
+                  const actual = partes.find(x => x.id === openId) || {};
+                  const merge = (nuevo, actual) => nuevo && !actual ? nuevo : actual;
                   cargarDesdeCRM({
-                    apellido: persona.apellido, nombre: persona.nombre,
-                    nro_doc: persona.nro_doc, tipo_doc: persona.tipo_doc || "DNI",
-                    genero: persona.genero, fecha_nac: persona.fecha_nac,
-                    estado_civil: persona.estado_civil, nacionalidad: persona.nacionalidad,
-                    calle: persona.calle, numero: persona.numero,
-                    localidad: persona.localidad, departamento: persona.departamento,
+                    apellido:     merge(persona.apellido,     actual.apellido),
+                    nombre:       merge(persona.nombre,       actual.nombre),
+                    nro_doc:      merge(persona.nro_doc,      actual.nroDoc),
+                    tipo_doc:     merge(persona.tipo_doc,     actual.tipoDoc) || "DNI",
+                    genero:       merge(persona.genero,       actual.genero)  || "F",
+                    fecha_nac:    merge(persona.fecha_nac,    actual.fechaNac),
+                    estado_civil: merge(persona.estado_civil, actual.estadoCivil),
+                    nacionalidad: merge(persona.nacionalidad, actual.nacionalidad),
+                    calle:        merge(persona.calle,        actual.calle),
+                    numero:       merge(persona.numero,       actual.numero),
+                    barrio:       merge(persona.barrio,       actual.barrio),
+                    manzana:      merge(persona.manzana,      actual.manzana),
+                    casa:         merge(persona.casa,         actual.casa),
+                    localidad:    merge(persona.localidad,    actual.localidad),
+                    departamento: merge(persona.departamento, actual.departamento) || "Ciudad",
+                    cuit:         actual.cuit || undefined,
                   });
                 }} style={{ flexShrink:0 }}/>
               </div>
