@@ -98,8 +98,8 @@ export const ELABELS = {
 // ── ESTADO INICIAL DE DOCUMENTO ───────────────────────────────────────────────
 export const PARTE_VACIA = () => ({
   id:          Date.now() + Math.random(),
-  genero:      "F",
-  apellido:    "", nombre:       "", nacionalidad: "argentina",
+  genero:      "",
+  apellido:    "", nombre:       "", nacionalidad: "",
   tipoDoc:     "DNI", nroDoc:   "", cuit:         "", fechaNac: "",
   estadoCivil: "",
   calle:       "", numero:       "", piso:         "", dpto:    "",

@@ -358,7 +358,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
   function cargarDesdeCRM(persona) {
     if (!openId) return;
     const parteActual = partes.find(x => x.id === openId) || {};
-    const genero    = persona.genero   || parteActual.genero || "F";
+    const genero    = persona.genero   || parteActual.genero || "";
     const nroDocRaw = String(persona.nro_doc || "").replace(/\D/g, "");
 
     // Concordancia de nacionalidad según género
@@ -494,7 +494,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     nombre:       (merge(persona.nombre,       actual.nombre)   || "").toUpperCase(),
                     nro_doc:      merge(persona.nro_doc,      actual.nroDoc),
                     tipo_doc:     merge(persona.tipo_doc,     actual.tipoDoc) || "DNI",
-                    genero:       merge(persona.genero,       actual.genero)  || "F",
+                    genero:       merge(persona.genero,       actual.genero)  || "",
                     fecha_nac:    merge(persona.fecha_nac,    actual.fechaNac),
                     estado_civil: merge(persona.estado_civil, actual.estadoCivil),
                     nacionalidad: merge(persona.nacionalidad, actual.nacionalidad),
@@ -524,7 +524,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                 <Fg label="Genero">
                   <select style={inp} value={p.genero} onChange={e => {
                     const g = e.target.value;
-                    const fields = { genero: g, estadoCivil: g === "F" ? "soltera" : "soltero" };
+                    const fields = { genero: g };
                     if (p.nacionalidad === "argentina" || p.nacionalidad === "argentino") {
                       fields.nacionalidad = g === "F" ? "argentina" : "argentino";
                     }
@@ -534,6 +534,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     }
                     upd(p.id, fields);
                   }}>
+                    <option value="">—</option>
                     <option value="F">Femenino</option>
                     <option value="M">Masculino</option>
                   </select>
@@ -541,6 +542,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                 <Fg label="Estado civil">
                   <select style={inp} value={p.estadoCivil}
                     onChange={e => upd(p.id, { estadoCivil: e.target.value })}>
+                    <option value="">—</option>
                     {(p.genero === "F" ? EC_F : EC_M).map(ec => <option key={ec}>{ec}</option>)}
                   </select>
                 </Fg>
@@ -728,7 +730,7 @@ export async function guardarPartesEnCRM(partes, registroNumero) {
       registro_id:      registroNumero,
       apellido:         p.apellido      || "",
       nombre:           p.nombre        || "",
-      genero:           p.genero        || "F",
+      genero:           p.genero        || "",
       nacionalidad:     p.nacionalidad  || "",
       tipo_doc:         p.tipoDoc       || "DNI",
       nro_doc:          p.nroDoc        || "",
