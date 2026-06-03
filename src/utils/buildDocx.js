@@ -147,7 +147,7 @@ export async function buildDocxCertFirmaF08({
   }
 
   const margen = margenKey === "protocolar"
-    ? { left: 36, top: 76, right: 15, bottom: 20 }
+    ? { left: 36, top: 75, right: 14, bottom: 16 }
     : { left: 30, top: 35, right: 20, bottom: 20 };
 
   const mainRuns = [

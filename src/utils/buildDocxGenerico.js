@@ -88,7 +88,7 @@ function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false) {
 const mm2twip = (mm) => Math.round(mm * 56.69);
 
 const MARGENES = {
-  protocolar:   { top: mm2twip(76), bottom: mm2twip(20), left: mm2twip(36), right: mm2twip(15) },
+  protocolar:   { top: mm2twip(75), bottom: mm2twip(16), left: mm2twip(36), right: mm2twip(14) },
   noprotocolar: { top: mm2twip(25), bottom: mm2twip(25), left: mm2twip(30), right: mm2twip(25) },
 };
 
