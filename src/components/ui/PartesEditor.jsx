@@ -469,13 +469,21 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     }}
                     placeholder="dd/mm/aaaa" maxLength={10}/>
                 </Fg>
-                {showRol && (
-                  <Fg label="Rol en el acto">
+                <Fg label="Función en el acto">
+                  {rolesContextuales?.length ? (
+                    <select style={inp} value={p.rol}
+                      onChange={e => upd(p.id, { rol: e.target.value })}>
+                      <option value="">— sin especificar —</option>
+                      {rolesContextuales.filter(Boolean).map(r => (
+                        <option key={r} value={r.toUpperCase()}>{r}</option>
+                      ))}
+                    </select>
+                  ) : (
                     <input style={inp} value={p.rol}
                       onChange={e => upd(p.id, { rol: e.target.value.toUpperCase() })}
-                      placeholder="ej: COMPRADORA"/>
-                  </Fg>
-                )}
+                      placeholder="ej: VENDEDOR, COMPRADOR, AUTORIZADO..."/>
+                  )}
+                </Fg>
                 <Fg label="Calle">
                   <input style={inp} value={p.calle}
                     onChange={e => upd(p.id, { calle: e.target.value })} placeholder="ingrese calle"/>
