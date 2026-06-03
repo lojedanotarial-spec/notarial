@@ -1,5 +1,63 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { C, DEPARTAMENTOS, PARTE_VACIA, inp } from "../../constants";
+
+async function escanearDocumento(archivo) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(archivo);
+    img.onload = () => {
+      const MAX = 1200;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
+      fetch("/api/vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imagen: { data: base64, mediaType: "image/jpeg" } }),
+      })
+        .then(r => r.json())
+        .then(resolve)
+        .catch(reject);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function ScanBtn({ onDatos, tipo = "DNI", style }) {
+  const [escaneando, setEscaneando] = useState(false);
+  const ref = useRef(null);
+  return (
+    <>
+      <input ref={ref} type="file" accept="image/*,application/pdf" style={{ display:"none" }}
+        onChange={async e => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          setEscaneando(true);
+          try { onDatos(await escanearDocumento(f)); }
+          catch { alert("No se pudo leer el documento."); }
+          finally { setEscaneando(false); e.target.value = ""; }
+        }}
+      />
+      <button type="button" onClick={() => ref.current?.click()}
+        style={{
+          display:"flex", alignItems:"center", gap:5, padding:"5px 10px",
+          border:"1px solid " + C.cerulean, borderRadius:6, background:"transparent",
+          color:C.cerulean, fontSize:11, fontWeight:700, cursor:"pointer",
+          fontFamily:"'Montserrat',sans-serif", ...style,
+        }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+        {escaneando ? "Escaneando..." : `Escanear ${tipo}`}
+      </button>
+    </>
+  );
+}
 import { Fg } from "./FormElements";
 import { Btn } from "./Btn";
 import { supabase } from "../../supabase";
@@ -369,7 +427,21 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
         <div style={{ flex:1, overflowY:"auto", paddingRight:4 }}>
           {p ? (
             <>
-              <BuscadorDNI registroNumero={registroNumero} onSelect={cargarDesdeCRM} />
+              <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:12 }}>
+                <BuscadorDNI registroNumero={registroNumero} onSelect={cargarDesdeCRM} />
+                <ScanBtn tipo="DNI" onDatos={datos => {
+                  const persona = datos?.personas?.[0];
+                  if (!persona) return alert("No se encontraron datos de persona en el documento.");
+                  cargarDesdeCRM({
+                    apellido: persona.apellido, nombre: persona.nombre,
+                    nro_doc: persona.nro_doc, tipo_doc: persona.tipo_doc || "DNI",
+                    genero: persona.genero, fecha_nac: persona.fecha_nac,
+                    estado_civil: persona.estado_civil, nacionalidad: persona.nacionalidad,
+                    calle: persona.calle, numero: persona.numero,
+                    localidad: persona.localidad, departamento: persona.departamento,
+                  });
+                }} style={{ flexShrink:0 }}/>
+              </div>
 
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                 <Fg label="Apellido">

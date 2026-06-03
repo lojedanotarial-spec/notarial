@@ -1,5 +1,60 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { C, inp } from "../../constants";
+
+async function escanearVehiculo(archivo) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(archivo);
+    img.onload = () => {
+      const MAX = 1200;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
+      fetch("/api/vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imagen: { data: base64, mediaType: "image/jpeg" } }),
+      }).then(r => r.json()).then(resolve).catch(reject);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function ScanVehiculoBtn({ onDatos }) {
+  const [escaneando, setEscaneando] = useState(false);
+  const ref = useRef(null);
+  return (
+    <>
+      <input ref={ref} type="file" accept="image/*" style={{ display:"none" }}
+        onChange={async e => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          setEscaneando(true);
+          try { onDatos(await escanearVehiculo(f)); }
+          catch { alert("No se pudo leer el documento."); }
+          finally { setEscaneando(false); e.target.value = ""; }
+        }}
+      />
+      <button type="button" onClick={() => ref.current?.click()}
+        style={{
+          display:"flex", alignItems:"center", gap:5, padding:"5px 10px",
+          border:"1px solid " + C.cerulean, borderRadius:6, background:"transparent",
+          color:C.cerulean, fontSize:11, fontWeight:700, cursor:"pointer",
+          fontFamily:"'Montserrat',sans-serif", marginBottom:10, width:"fit-content",
+        }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+        {escaneando ? "Escaneando..." : "Escanear tarjeta / título"}
+      </button>
+    </>
+  );
+}
 import { Modal } from "../Modal";
 import { Btn } from "../ui/Btn";
 import { Fg } from "../ui/FormElements";
@@ -119,6 +174,22 @@ export function ModalVehiculos({ vehiculos, onApply, onClose }) {
         <div style={{ flex:1, overflowY:"auto", paddingRight:4 }}>
           {v && (
             <>
+              <ScanVehiculoBtn onDatos={datos => {
+                const veh = datos?.vehiculo;
+                if (!veh) {
+                  // Podría ser dorso — ignorar personas
+                  alert("No se encontraron datos de vehículo. Asegurate de fotografiar el frente de la tarjeta.");
+                  return;
+                }
+                upd(v.id, {
+                  marca:         (veh.marca     || "").toUpperCase(),
+                  modelo:        (veh.modelo    || "").toUpperCase(),
+                  tipo_desc:     (veh.tipo_desc || "").toUpperCase(),
+                  dominio:       (veh.dominio   || "").toUpperCase(),
+                  chasis:        (veh.chasis    || "").toUpperCase(),
+                  motor:         (veh.motor     || "").toUpperCase(),
+                });
+              }} />
               <Fg label="Tipo">
                 <select style={inp} value={v.tipo_vehiculo}
                   onChange={e => upd(v.id, { tipo_vehiculo: e.target.value })}>
