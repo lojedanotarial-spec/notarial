@@ -1,4 +1,19 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import JSZip from "jszip";
+
+async function inyectarMargenesSimetricos(blob) {
+  const buf = await blob.arrayBuffer();
+  const zip = await JSZip.loadAsync(buf);
+  const file = zip.file("word/settings.xml");
+  if (!file) return blob;
+  let xml = await file.async("string");
+  if (!xml.includes("w:mirrorMargins")) {
+    xml = xml.replace("</w:settings>", "<w:mirrorMargins/></w:settings>");
+    zip.file("word/settings.xml", xml);
+  }
+  const nuevo = await zip.generateAsync({ type: "arraybuffer" });
+  return new Blob([nuevo], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+}
 
 const mm2twip = (mm) => Math.round(mm * 56.69);
 
@@ -204,5 +219,6 @@ export async function buildDocxCertFirmaF08({
     }],
   });
 
-  return Packer.toBlob(doc);
+  const blob = await Packer.toBlob(doc);
+  return margenKey === "protocolar" ? inyectarMargenesSimetricos(blob) : blob;
 }

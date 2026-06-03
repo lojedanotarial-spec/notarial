@@ -1,5 +1,20 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType, UnderlineType } from "docx";
+import JSZip from "jszip";
 import { buildVars, sustituirVars } from "./templateVars";
+
+async function inyectarMargenesSimetricos(blob) {
+  const buf = await blob.arrayBuffer();
+  const zip = await JSZip.loadAsync(buf);
+  const file = zip.file("word/settings.xml");
+  if (!file) return blob;
+  let xml = await file.async("string");
+  if (!xml.includes("w:mirrorMargins")) {
+    xml = xml.replace("</w:settings>", "<w:mirrorMargins/></w:settings>");
+    zip.file("word/settings.xml", xml);
+  }
+  const nuevo = await zip.generateAsync({ type: "arraybuffer" });
+  return new Blob([nuevo], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+}
 
 // Variables que siempre van en negrita
 const VARS_BOLD = new Set([
@@ -153,5 +168,7 @@ export async function buildDocxGenerico({
     sections: [{ properties: { page: { margin } }, children: parrafos }],
   });
 
-  return Packer.toBlob(doc);
+  const blob = await Packer.toBlob(doc);
+  // Inyectar márgenes simétricos para documentos protocolar
+  return margenKey === "protocolar" ? inyectarMargenesSimetricos(blob) : blob;
 }
