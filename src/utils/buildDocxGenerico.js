@@ -16,6 +16,20 @@ const VARS_UNDERLINE = new Set([
 ]);
 
 /**
+ * Pre-procesa el texto eliminando variables vacías junto con la coma adyacente.
+ * Evita el patrón ", , " cuando un campo opcional (ej: estado_civil) está vacío.
+ */
+function limpiarVarsVacias(texto, vars) {
+  // Quitar ", {{VAR}}" cuando VAR es vacío o no existe
+  let r = texto.replace(/,\s*\{\{([^}]+)\}\}/g, (m, key) =>
+    (vars[key] == null || vars[key] === "") ? "" : m);
+  // Quitar "{{VAR}}, " cuando VAR es vacío o no existe
+  r = r.replace(/\{\{([^}]+)\}\}\s*,/g, (m, key) =>
+    (vars[key] == null || vars[key] === "") ? "" : m);
+  return r;
+}
+
+/**
  * Parsea texto con marcadores de formato y variables:
  *   **texto**     → negrita
  *   __texto__     → subrayado
@@ -92,9 +106,10 @@ export async function buildDocxGenerico({
     ...datosExtra,
   };
 
-  // Derivar variantes de TIPO_VEHICULO (un solo selector → dos formas de texto)
-  if (vars.TIPO_VEHICULO) {
-    const tv = String(vars.TIPO_VEHICULO).trim().toUpperCase();
+  // Derivar variantes de TIPO_VEHICULO (default "VEHÍCULO" si no se seleccionó)
+  {
+    const tv = (vars.TIPO_VEHICULO || "VEHÍCULO").trim().toUpperCase();
+    if (!vars.TIPO_VEHICULO) vars.TIPO_VEHICULO = tv;
     vars.TIPO_VEHICULO_MIN = tv === "MOTOVEHÍCULO" ? "moto vehículo" : "vehículo";
   }
 
@@ -102,7 +117,8 @@ export async function buildDocxGenerico({
   const lang = { value: "es-AR", eastAsia: "es-AR", bidi: "es-AR" };
 
   const parrafos = lineas.map(linea => {
-    const texto = linea.trim();
+    const textoRaw = linea.trim();
+    const texto = limpiarVarsVacias(textoRaw, vars);
     const textoSustituido = sustituirVars(texto.replace(/\*\*(.+?)\*\*|__(.+?)__/g, '$1$2'), vars);
     const esTitulo = ES_TITULO(textoSustituido);
     const segmentos = parsearSegmentos(texto, vars, esTitulo, false);

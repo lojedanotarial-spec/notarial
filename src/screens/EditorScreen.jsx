@@ -439,8 +439,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   const tipoLabel = templateNombre || templateKey || "Documento notarial";
   const docTitle  = partesLabel
-    ? tipoLabel + " - " + partesLabel + " - " + fechaStr
-    : tipoLabel + " - nuevo documento";
+    ? tipoLabel.replace(/\//g, "-") + " - " + partesLabel + " - " + fechaStr.replace(/\//g, "-")
+    : tipoLabel.replace(/\//g, "-") + " - nuevo documento";
 
   useEffect(() => {
     if (!onScribaContexto) return;

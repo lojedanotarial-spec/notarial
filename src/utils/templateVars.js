@@ -117,7 +117,11 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
 }
 
 export function sustituirVars(texto, vars) {
-  return texto.replace(/\{\{([^}]+)\}\}/g, (match, key) =>
+  let result = texto.replace(/\{\{([^}]+)\}\}/g, (match, key) =>
     vars[key] !== undefined ? vars[key] : match
   );
+  // Limpiar comas/espacios huérfanos cuando una variable queda vacía
+  // ej: "DNI 123, , domicilio" → "DNI 123, domicilio"
+  result = result.replace(/,\s*,/g, ",").replace(/,\s*;/g, ";").replace(/\(\s*\)/g, "");
+  return result;
 }
