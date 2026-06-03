@@ -13,7 +13,7 @@ const fmtFechaNac = (v) => {
 const fmtDni = (v) => v ? Number(String(v).replace(/\D/g,"")).toLocaleString("es-AR") : "";
 const fmtDomicilio = (p) => [p.calle, p.numero, p.piso && `piso ${p.piso}`, p.dpto && `dpto. ${p.dpto}`, p.localidad, p.departamento].filter(Boolean).join(", ");
 
-export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null }) {
+export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null, vehiculos = [] }) {
   // Si hay roles definidos para este template, ordenar partes por rol antes de asignar posiciones.
   // Así "Autorizado/a" siempre va a PARTE_2 aunque se haya cargado primero.
   if (rolesContextuales?.length) {
@@ -127,6 +127,41 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     ].filter(Boolean).join(", ");
     vars[`PARTE_${n}_IDENTIDAD_ACTA`] = identidadActa;
   });
+
+  // Variables de vehículos — genera VEHICULO_N_* y VEHICULOS_LISTA
+  if (vehiculos.length > 0) {
+    vehiculos.forEach((v, i) => {
+      const n = i + 1;
+      vars[`VEHICULO_${n}_TIPO`]      = v.tipo_vehiculo || "VEHÍCULO";
+      vars[`VEHICULO_${n}_MARCA`]     = v.marca         || "";
+      vars[`VEHICULO_${n}_MODELO`]    = v.modelo        || "";
+      vars[`VEHICULO_${n}_TIPO_DESC`] = v.tipo_desc     || "";
+      vars[`VEHICULO_${n}_DOMINIO`]   = v.dominio       || "";
+      vars[`VEHICULO_${n}_CHASIS`]    = v.chasis        || "";
+      vars[`VEHICULO_${n}_MOTOR`]     = v.motor         || "";
+    });
+
+    // VEHICULOS_LISTA — texto formateado con marcadores de negrita
+    const fmtVehiculo = (v) =>
+      [
+        v.marca     ? `Marca **${v.marca}**`                              : null,
+        v.modelo    ? `Modelo **${v.modelo}**`                            : null,
+        v.tipo_desc ? `Tipo: **${v.tipo_desc}**`                          : null,
+        v.dominio   ? `Dominio: **${v.dominio}**${v.chasis ? ` CHASIS **${v.chasis}**` : ""}` : null,
+        v.motor     ? `MOTOR: **${v.motor}**`                             : null,
+      ].filter(Boolean).join(", ");
+
+    vars.VEHICULOS_LISTA = vehiculos.length === 1
+      ? fmtVehiculo(vehiculos[0]) + ";"
+      : vehiculos.map((v, i) => `${i + 1}) ${fmtVehiculo(v)}`).join("; ") + ";";
+
+    // TIPO_VEHICULO y TIPO_VEHICULO_MIN derivados del array
+    const tipos = [...new Set(vehiculos.map(v => (v.tipo_vehiculo || "VEHÍCULO").toUpperCase()))];
+    vars.TIPO_VEHICULO     = tipos.length === 1 ? tipos[0] : "VEHÍCULOS";
+    vars.TIPO_VEHICULO_MIN = tipos.length === 1
+      ? (tipos[0] === "MOTOVEHÍCULO" ? "moto vehículo" : "vehículo")
+      : "vehículos";
+  }
 
   // Variables extra del template (inyectadas desde el editor)
   Object.assign(vars, extravars);

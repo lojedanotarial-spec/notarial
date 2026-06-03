@@ -590,15 +590,16 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         } else if (esVehiculo && datos.vehiculo) {
           // Documento de vehículo — poblar extravars del template
           const v = datos.vehiculo;
-          const vars = {};
-          if (v.marca)     vars.VEHICULO_MARCA     = v.marca.toUpperCase();
-          if (v.modelo)    vars.VEHICULO_MODELO    = v.modelo.toUpperCase();
-          if (v.tipo_desc) vars.VEHICULO_TIPO_DESC = v.tipo_desc.toUpperCase();
-          if (v.dominio)   vars.VEHICULO_DOMINIO   = v.dominio.toUpperCase();
-          if (v.chasis)    vars.VEHICULO_CHASIS    = v.chasis.toUpperCase();
-          if (v.motor)     vars.VEHICULO_MOTOR     = v.motor.toUpperCase();
-
-          window.dispatchEvent(new CustomEvent("scriba:completar_vars", { detail: vars }));
+          const vehiculoData = {
+            marca:         (v.marca     || "").toUpperCase(),
+            modelo:        (v.modelo    || "").toUpperCase(),
+            tipo_desc:     (v.tipo_desc || "").toUpperCase(),
+            dominio:       (v.dominio   || "").toUpperCase(),
+            chasis:        (v.chasis    || "").toUpperCase(),
+            motor:         (v.motor     || "").toUpperCase(),
+            tipo_vehiculo: "VEHÍCULO",
+          };
+          window.dispatchEvent(new CustomEvent("scriba:completar_vehiculo", { detail: vehiculoData }));
 
           const lineas = [
             `**Documento leído:** ${datos.tipo_documento === "tarjeta_verde" ? "Tarjeta verde" : "Título automotor"}`,

@@ -60,11 +60,16 @@ function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false) {
       // {{VAR}}
       const key = m[3];
       const val = vars[key] !== undefined ? String(vars[key]) : `{{${key}}}`;
-      if (val) segments.push({
-        text:      val,
-        bold:      ctxBold      || VARS_BOLD.has(key),
-        underline: ctxUnderline || VARS_UNDERLINE.has(key),
-      });
+      if (val) {
+        const boldVar = ctxBold || VARS_BOLD.has(key);
+        const ulVar   = ctxUnderline || VARS_UNDERLINE.has(key);
+        // Si el valor contiene marcadores de formato, procesarlos recursivamente
+        if (val.includes("**") || val.includes("__")) {
+          segments.push(...parsearSegmentos(val, vars, boldVar, ulVar));
+        } else {
+          segments.push({ text: val, bold: boldVar, underline: ulVar });
+        }
+      }
     }
 
     last = m.index + m[0].length;
@@ -98,6 +103,7 @@ export async function buildDocxGenerico({
   datosExtra = {},
   extravars = {},
   rolesContextuales = null,
+  vehiculos = [],
 }) {
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2;
@@ -106,7 +112,7 @@ export async function buildDocxGenerico({
   const lineRule   = interlineado?.rule || "auto";
 
   const vars = {
-    ...buildVars({ partes, escribano, fecha, protocolo, instrumento, extravars, rolesContextuales }),
+    ...buildVars({ partes, escribano, fecha, protocolo, instrumento, extravars, rolesContextuales, vehiculos }),
     ...datosExtra,
   };
 

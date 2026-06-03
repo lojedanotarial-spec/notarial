@@ -11,6 +11,7 @@ import { Modal }   from "../components/Modal";
 import { Btn }     from "../components/ui/Btn";
 import { Warn }    from "../components/ui/FormElements";
 import { ModalPartes }    from "../components/modals/ModalPartes";
+import { ModalVehiculos } from "../components/modals/ModalVehiculos";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato }  from "../components/modals/ModalFormato";
 import { buildDocxCertFirmaF08, buildDocxBlanco } from "../utils/buildDocx";
@@ -106,6 +107,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const generateAfterRef  = useRef(false);
 
   const [partes,        setPartes]        = useState(() => params?.partes?.length ? params.partes : [PARTE_VACIA()]);
+  const [vehiculos,     setVehiculos]     = useState([]);
   const [escribano,     setEscribano]     = useState(() => miUsuario ? {
     nombre:          miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
     caracter:        miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
@@ -192,7 +194,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               contenido: templateContenido,
               partes, escribano, fecha, protocolo, instrumento,
               margenKey, fontSize, fuente, interlineado,
-              extravars,
+              extravars, vehiculos,
               rolesContextuales: ROLES_CONTEXTUALES[templateSlug] || null,
             })
           : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente });
@@ -296,17 +298,26 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     return () => window.removeEventListener("scriba:modificar", handler);
   }, []);
 
-  // Actualizar variables del template (vehículo, inmueble, etc.) desde Scriba
+  // Agregar vehículo desde Scriba (tarjeta verde, título automotor)
   useEffect(() => {
     const handler = (e) => {
-      const vars = e.detail; // { VEHICULO_MARCA: "VOLKSWAGEN", ... }
-      setExtravars(prev => ({ ...prev, ...vars }));
+      const v = e.detail; // { marca, modelo, tipo_desc, dominio, chasis, motor, tipo_vehiculo }
+      setVehiculos(prev => {
+        // Si ya existe mismo dominio, actualizar; si no, agregar
+        const idx = v.dominio ? prev.findIndex(x => x.dominio === v.dominio) : -1;
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], ...v };
+          return updated;
+        }
+        return [...prev, { id: Date.now() + Math.random(), tipo_vehiculo: "VEHÍCULO", ...v }];
+      });
       generateAfterRef.current = true;
       setIsDirty(true);
       setTimeout(() => { generateAfterRef.current = false; handleGenerarRef.current?.(); }, 120);
     };
-    window.addEventListener("scriba:completar_vars", handler);
-    return () => window.removeEventListener("scriba:completar_vars", handler);
+    window.addEventListener("scriba:completar_vehiculo", handler);
+    return () => window.removeEventListener("scriba:completar_vehiculo", handler);
   }, []);
 
   useEffect(() => {
@@ -565,13 +576,31 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 </div>
               </PanelSection>
 
-              {/* Variables extra del template */}
-              {templateVarsSchema.length > 0 && (
+              {/* Vehículos — solo para templates que usan VEHICULOS_LISTA */}
+              {(templateSlug === "autorizacion_vehiculo" || vehiculos.length > 0) && (
+                <PanelSection
+                  label={`Vehículos${vehiculos.length ? ` (${vehiculos.length})` : ""}`}
+                  onClick={() => setModal("vehiculos")}
+                >
+                  {vehiculos.length === 0 ? (
+                    <div style={{ fontSize:13, fontStyle:"italic", color:"rgba(26,35,50,.4)" }}>Sin vehículos</div>
+                  ) : vehiculos.map((v, i) => (
+                    <div key={v.id} style={{ fontSize:13, color:C.dark, marginBottom:2 }}>
+                      <strong>{v.dominio || `Veh. ${i+1}`}</strong>
+                      {v.marca ? ` · ${v.marca}` : ""}
+                      {v.modelo ? ` ${v.modelo}` : ""}
+                    </div>
+                  ))}
+                </PanelSection>
+              )}
+
+              {/* Variables extra del template (excluir las de vehículo ya gestionadas por el modal) */}
+              {templateVarsSchema.filter(v => !v.name.startsWith("VEHICULO_")).length > 0 && (
                 <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(26,35,50,.45)", marginBottom: 8 }}>
                     Datos del instrumento
                   </div>
-                  {templateVarsSchema.map(v => (
+                  {templateVarsSchema.filter(v => !v.name.startsWith("VEHICULO_")).map(v => (
                     <div key={v.name} style={{ marginBottom: 10 }}>
                       <label style={{ fontSize: 11, fontWeight: 600, color: C.dark, display: "block", marginBottom: 3 }}>
                         {v.label}{v.required && <span style={{ color: "#c0392b" }}> *</span>}
@@ -639,6 +668,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       </div>
 
       {/* MODALES */}
+      {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { setVehiculos(v); generateAfterRef.current = true; setTimeout(() => { generateAfterRef.current = false; handleGenerarRef.current?.(); }, 120); }} onClose={() => setModal(null)}/>}
       {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
