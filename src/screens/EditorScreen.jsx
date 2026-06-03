@@ -232,7 +232,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     } finally {
       setGenerating(false);
     }
-  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight, templateContenido, templateSlug]);
+  }, [partes, vehiculos, extravars, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight, templateContenido, templateSlug]);
 
   // Keep ref updated so the mount effect can call the latest version
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);
