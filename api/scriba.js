@@ -1398,8 +1398,12 @@ export default async function handler(req, res) {
   const horaHoy  = `${ahora.getUTCHours()-3 < 0 ? ahora.getUTCHours()+21 : ahora.getUTCHours()-3}:${ahora.getUTCMinutes().toString().padStart(2,"0")} (Argentina)`;
   const fechaNota = `\n\n[FECHA Y HORA ACTUAL: ${fechaHoy}, ${horaHoy}]`;
 
+  const rolesCtx = contexto?.rolesPartes
+    ? `\nRoles en este instrumento: ${contexto.rolesPartes.map((r,i) => r ? `PARTE_${i+1} = ${r}` : null).filter(Boolean).join(", ")}\nCuando el usuario identifique el rol de una persona (ej: "es el autorizado", "es la autorizante"), usá parte_index en completar_parte para posicionarla correctamente (0 = PARTE_1, 1 = PARTE_2, etc.). Esto reemplaza la búsqueda por DNI y posiciona a la persona exactamente donde corresponde.`
+    : "";
+
   const contextoNote = contexto
-    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables — ESTE ES EL ÚNICO DOCUMENTO QUE PODÉS MODIFICAR):\n${contexto.templateContenido}\n\nATENCIÓN: Si te piden modificar el documento, usá ESTE texto como base. No generes un instrumento diferente. No cambies el tipo de acto.` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
+    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${rolesCtx}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables — ESTE ES EL ÚNICO DOCUMENTO QUE PODÉS MODIFICAR):\n${contexto.templateContenido}\n\nATENCIÓN: Si te piden modificar el documento, usá ESTE texto como base. No generes un instrumento diferente. No cambies el tipo de acto.` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
     : "";
 
   const INSERTAR_TOOL = [{
@@ -1467,7 +1471,11 @@ const COMPLETAR_PARTE_TOOL = [{
           departamento: { type: "string", description: "Departamento de Mendoza si aplica" },
         },
       },
-      mensaje: { type: "string", description: "Resumen breve de lo que encontraste en el documento" },
+      parte_index: {
+        type: "integer",
+        description: "Posición 0-based donde insertar esta parte. 0 = PARTE_1 (autorizante, vendedor, poderdante...), 1 = PARTE_2 (autorizado, comprador, apoderado...). Usá este campo cuando el usuario especifica explícitamente el rol o posición de la persona (ej: 'es el autorizado', 'va como PARTE_2', 'es la compradora'). Omitir si no se especifica posición."
+      },
+      mensaje: { type: "string", description: "Resumen breve de lo que encontraste o hiciste" },
     },
     required: ["datos", "mensaje"],
   },
@@ -1581,10 +1589,11 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
 
         const completarParte = toolUses.find(t => t.name === "completar_parte");
         if (completarParte && toolUses.length === 1) {
-          const { datos, mensaje: msg } = completarParte.input;
+          const { datos, parte_index, mensaje: msg } = completarParte.input;
+          const datosConIdx = parte_index !== undefined ? { ...datos, parte_index } : datos;
           return res.status(200).json({
             respuesta: msg,
-            accion: { tipo: "completar_parte", datos },
+            accion: { tipo: "completar_parte", datos: datosConIdx },
           });
         }
 

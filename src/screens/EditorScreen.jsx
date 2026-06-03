@@ -319,7 +319,20 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         representaciones: [],
       };
       setPartes(prev => {
-        // Si ya existe una parte con el mismo DNI, actualizarla (merge)
+        const parteIdx = typeof d.parte_index === "number" ? d.parte_index : null;
+
+        if (parteIdx !== null) {
+          // Posicionamiento explícito: mover la persona al índice indicado
+          // Si ya estaba en otra posición, la sacamos de ahí
+          const sinEste = dniNuevo ? prev.filter(p => p.nroDoc !== dniNuevo) : [...prev];
+          // Asegurar que haya suficientes posiciones
+          const vacia = () => ({ id: Date.now() + Math.random(), apellido:"", nombre:"", genero:"F", nacionalidad:"", tipoDoc:"DNI", nroDoc:"", cuit:"", fechaNac:"", estadoCivil:"", calle:"", numero:"", piso:"", dpto:"", localidad:"", departamento:"Ciudad", rol:"", representaciones:[] });
+          while (sinEste.length < parteIdx) sinEste.push(vacia());
+          sinEste.splice(parteIdx, sinEste.length > parteIdx ? 1 : 0, nuevaParte);
+          return sinEste;
+        }
+
+        // Lógica original: buscar por DNI o agregar nueva
         const idx = dniNuevo ? prev.findIndex(p => p.nroDoc === dniNuevo) : -1;
         if (idx >= 0) {
           const actualizada = { ...prev[idx] };
@@ -418,7 +431,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   useEffect(() => {
     if (!onScribaContexto) return;
-    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido });
+    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido, rolesPartes: ROLES_CONTEXTUALES[templateSlug] || null });
     return () => onScribaContexto(null);
   }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido]);
 
