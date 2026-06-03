@@ -179,10 +179,13 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars.AUTORIZANTE_TEXTO = textos.length === 1
       ? textos[0]
       : textos.slice(0,-1).join("; ") + "; y " + textos[textos.length-1];
-    // Singular/plural para la frase de capacidad
-    vars.AUTORIZANTE_CAPACIDAD = autorizantes.length === 1
-      ? "mayor de edad, quien justifica su identidad conforme a los términos del artículo 306 inciso a del Código Civil y Comercial de la Nación"
-      : "mayores de edad, quienes justifican su identidad conforme a los términos del artículo 306 inciso a del Código Civil y Comercial de la Nación";
+    const plural = autorizantes.length > 1;
+    vars.AUTORIZANTE_CAPACIDAD = plural
+      ? "mayores de edad, quienes justifican su identidad conforme a los términos del artículo 306 inciso a del Código Civil y Comercial de la Nación"
+      : "mayor de edad, quien justifica su identidad conforme a los términos del artículo 306 inciso a del Código Civil y Comercial de la Nación";
+    // **COMPARECE** / **COMPARECEN** y **DICE** / **DICEN** — negrita + pluralidad
+    vars.COMPARECE_TEXTO = plural ? "**COMPARECEN**" : "**COMPARECE**";
+    vars.DICE_TEXTO       = plural ? "**DICEN**"      : "**DICE**";
   }
 
   // Autorizados: lista de todos los autorizados para "a favor de:"
