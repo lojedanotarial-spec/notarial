@@ -235,7 +235,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mark dirty whenever data changes after first generation; auto-generate si viene de un modal
+  // Mark dirty + auto-generate si viene de un modal (flag generateAfterRef)
   useEffect(() => {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
@@ -243,7 +243,14 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       generateAfterRef.current = false;
       handleGenerarRef.current?.();
     }
-  }, [partes, vehiculos, extravars, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight]);
+  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight]);
+
+  // Vehiculos y extravars siempre regeneran — no dependen del flag
+  useEffect(() => {
+    if (!generatedOnceRef.current) return;
+    setIsDirty(true);
+    handleGenerarRef.current?.();
+  }, [vehiculos, extravars]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
