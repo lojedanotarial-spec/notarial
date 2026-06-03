@@ -10,12 +10,17 @@ export function ModalPartes({ partes, onApply, onClose, showRol = true, rolesCon
   const [guardando, setGuardando] = useState(false);
 
   async function handleGuardar() {
-    
     setGuardando(true);
-    await guardarPartesEnCRM(draft, usuario?.registro_numero || registroActivo);
+    // Aplicar al documento siempre, independientemente del resultado del CRM
     onApply(draft);
-    setGuardando(false);
-    onClose();
+    try {
+      await guardarPartesEnCRM(draft, usuario?.registro_numero || registroActivo);
+    } catch (e) {
+      console.warn("Error al guardar partes en CRM:", e);
+    } finally {
+      setGuardando(false);
+      onClose();
+    }
   }
 
   return (

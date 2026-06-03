@@ -35,6 +35,8 @@ describe("buildVars", () => {
     expect(vars.PARTE_1_APELLIDO).toBe("MORAN");
     expect(vars.PARTE_1_NOMBRE).toBe("RAUL ALBERTO");
     expect(vars.PARTE_1_DNI).toBe("22.358.282");
+    expect(vars.PARTE_1_NOMBRE).toBe("Raul Alberto");   // título case
+    expect(vars.PARTE_1_APELLIDO).toBe("MORAN");        // uppercase
     expect(vars.PARTE_1_ESTADO_CIVIL).toBe("soltero");
   });
 
@@ -75,7 +77,7 @@ describe("buildVars", () => {
   it("fecha en letras", () => {
     const vars = buildVars({ partes: [], escribano: escribanoBase, fecha: fechaBase, protocolo: {}, instrumento: {} });
     expect(vars.FECHA_DIA_LETRAS).toBeTruthy();
-    expect(vars.FECHA_MES_LETRAS).toBe("junio");
+    expect(vars.FECHA_MES_LETRAS).toBe("JUNIO");
     expect(vars.FECHA_ANIO_LETRAS).toBeTruthy();
   });
 });

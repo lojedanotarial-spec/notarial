@@ -11,6 +11,8 @@ const VARS_BOLD = new Set([
   // Datos del rodado
   'VEHICULO_MARCA','VEHICULO_MODELO','VEHICULO_TIPO_DESC',
   'VEHICULO_DOMINIO','VEHICULO_CHASIS','VEHICULO_MOTOR',
+  // Fecha en letras
+  'FECHA_DIA_LETRAS','FECHA_MES_LETRAS','FECHA_ANIO_LETRAS','FECHA_CIUDAD',
 ]);
 
 // Variables que siempre van subrayadas

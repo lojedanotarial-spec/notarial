@@ -91,9 +91,9 @@ export async function buildDocxCertFirmaF08({
       if (idx > 0 && esUltima) partesRuns.push(r("; y "));
 
       partesRuns.push(r(gen(p, "la señora", "el señor") + " "));
-      const nombreCompleto = p.apellido
-        ? p.apellido + (p.nombre ? ", " + p.nombre : "")
-        : (p.nombre || "");
+      // Formato registro 853: nombre capitalizado + apellido UPPERCASE
+      const toTC = s => (s||"").split(/\s+/).map(w => w ? w.charAt(0).toUpperCase()+w.slice(1).toLowerCase() : w).join(" ");
+      const nombreCompleto = [toTC(p.nombre), (p.apellido||"").toUpperCase()].filter(Boolean).join(" ");
       partesRuns.push(vRun("APELLIDO Y NOMBRE", nombreCompleto, true));
       partesRuns.push(r(", "));
       const nacGenero = (nac, g) => {

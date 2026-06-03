@@ -1,6 +1,12 @@
 import { diaLetras, anioLetras, numeroALetras } from "../utils";
 
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const MESES_UP = MESES.map(m => m.toUpperCase());
+
+// Capitaliza cada palabra: "RAUL ALBERTO" → "Raúl Alberto"
+const toTitleCase = (str) => (str || "").split(/\s+/)
+  .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w)
+  .join(" ");
 
 const fmtFechaNac = (v) => {
   if (!v) return "";
@@ -49,7 +55,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     : `${escribanoTitulo} Adscripta/o`;
 
   const vars = {
-    ESCRIBANO_NOMBRE:           escribano.nombre || "",
+    ESCRIBANO_NOMBRE:           (escribano.nombre || "").toUpperCase(),
     ESCRIBANO_REGISTRO:         escribano.registro || "",
     ESCRIBANO_CARACTER:         escribano.caracter || "",
     ESCRIBANO_CARACTER_TEXTO:   escribanoCaracterTexto,
@@ -61,7 +67,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     FECHA_MES:          String((fecha.mes || 0) + 1).padStart(2, "0"),
     FECHA_ANIO:         String(fecha.anio || new Date().getFullYear()),
     FECHA_DIA_LETRAS:   diaLetras(fecha.dia || 1),
-    FECHA_MES_LETRAS:   MESES[fecha.mes || 0] || "",
+    FECHA_MES_LETRAS:   MESES_UP[fecha.mes || 0] || "",
     FECHA_ANIO_LETRAS:  anioLetras(fecha.anio || new Date().getFullYear()),
     FECHA_CIUDAD:       fecha.ciudad || "Mendoza",
 
@@ -74,14 +80,17 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
   partes.forEach((p, i) => {
     if (!p) return; // slot vacío — no se generan vars para esta posición
     const n = i + 1;
-    const apellidoNombre = [p.apellido, p.nombre].filter(Boolean).join(" ");
+    // Formato: nombre capitalizado + apellido UPPERCASE (ej: "Raúl Alberto MORÁN")
+    const nombreFmt   = toTitleCase(p.nombre);
+    const apellidoFmt = (p.apellido || "").toUpperCase();
+    const apellidoNombre = [nombreFmt, apellidoFmt].filter(Boolean).join(" ");
     const dni = fmtDni(p.nroDoc);
     const domicilio = fmtDomicilio(p);
     const genArticulo = p.genero === "M" ? "el señor" : "la señora";
 
     const esF = p.genero !== "M";
-    vars[`PARTE_${n}_APELLIDO`]        = p.apellido     || "";
-    vars[`PARTE_${n}_NOMBRE`]          = p.nombre       || "";
+    vars[`PARTE_${n}_APELLIDO`]        = apellidoFmt;
+    vars[`PARTE_${n}_NOMBRE`]          = nombreFmt;
     vars[`PARTE_${n}_COMPLETO`]        = apellidoNombre;
     vars[`PARTE_${n}_DNI`]             = dni;
     vars[`PARTE_${n}_CUIT`]            = p.cuit         || "";
