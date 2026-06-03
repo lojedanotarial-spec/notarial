@@ -192,6 +192,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               partes, escribano, fecha, protocolo, instrumento,
               margenKey, fontSize, fuente, interlineado,
               extravars,
+              rolesContextuales: ROLES_CONTEXTUALES[templateSlug] || null,
             })
           : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente });
 

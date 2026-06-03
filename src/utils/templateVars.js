@@ -13,7 +13,24 @@ const fmtFechaNac = (v) => {
 const fmtDni = (v) => v ? Number(String(v).replace(/\D/g,"")).toLocaleString("es-AR") : "";
 const fmtDomicilio = (p) => [p.calle, p.numero, p.piso && `piso ${p.piso}`, p.dpto && `dpto. ${p.dpto}`, p.localidad, p.departamento].filter(Boolean).join(", ");
 
-export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {} }) {
+export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null }) {
+  // Si hay roles definidos para este template, ordenar partes por rol antes de asignar posiciones.
+  // Así "Autorizado/a" siempre va a PARTE_2 aunque se haya cargado primero.
+  if (rolesContextuales?.length) {
+    let restantes = [...partes];
+    const slots = rolesContextuales.map(rolEsperado => {
+      if (!rolEsperado) return null;
+      const base = rolEsperado.toLowerCase().split("/")[0].trim();
+      const idx = restantes.findIndex(p => {
+        const pr = (p.rol || "").toLowerCase();
+        return pr && (pr.startsWith(base) || base.startsWith(pr) || pr.includes(base));
+      });
+      if (idx >= 0) { const p = restantes[idx]; restantes.splice(idx, 1); return p; }
+      return null; // posición sin parte todavía
+    });
+    // Partes sin rol reconocido van al final
+    partes = [...slots, ...restantes];
+  }
   const esTitular = (escribano.caracter || "").toLowerCase().includes("titular");
   const esFemenino = (escribano.nombre || "").match(/\b(dra|dra\.|doctora|notaria)\b/i);
   const escribanoTitulo = esFemenino ? "Notaria" : "Notario";
@@ -45,6 +62,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
   };
 
   partes.forEach((p, i) => {
+    if (!p) return; // slot vacío — no se generan vars para esta posición
     const n = i + 1;
     const apellidoNombre = [p.apellido, p.nombre].filter(Boolean).join(" ");
     const dni = fmtDni(p.nroDoc);
