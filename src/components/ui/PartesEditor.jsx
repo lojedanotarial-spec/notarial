@@ -28,7 +28,7 @@ async function escanearDocumento(archivo) {
   });
 }
 
-function ScanBtn({ onDatos, tipo = "DNI", style }) {
+function ScanBtn({ onDatos, tipo = "documento", style }) {
   const [escaneando, setEscaneando] = useState(false);
   const ref = useRef(null);
   return (
@@ -163,7 +163,7 @@ function BuscadorDNI({ registroNumero, onSelect }) {
   }, [query, registroNumero]);
 
   return (
-    <div style={{ position:"relative", marginBottom:14 }}>
+    <div style={{ position:"relative", flex:1 }}>
       <div style={{ position:"relative" }}>
         <svg style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}
              width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="rgba(26,35,50,.4)" strokeWidth="1.5">
@@ -443,9 +443,9 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
         <div style={{ flex:1, overflowY:"auto", paddingRight:4 }}>
           {p ? (
             <>
-              <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:12 }}>
+              <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:14 }}>
                 <BuscadorDNI registroNumero={registroNumero} onSelect={cargarDesdeCRM} />
-                <ScanBtn tipo="DNI" onDatos={datos => {
+                <ScanBtn onDatos={datos => {
                   const persona = datos?.personas?.[0];
                   if (!persona) return alert("No se encontraron datos de persona en el documento.");
                   // Merge: solo completa campos vacíos, no sobreescribe los que ya tienen datos
@@ -469,7 +469,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     departamento: merge(persona.departamento, actual.departamento) || "Ciudad",
                     cuit:         actual.cuit || undefined,
                   });
-                }} style={{ flexShrink:0 }}/>
+                }} style={{ flexShrink:0, alignSelf:"flex-start" }}/>
               </div>
 
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
