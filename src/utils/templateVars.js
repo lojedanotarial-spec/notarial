@@ -186,6 +186,21 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     // **COMPARECE** / **COMPARECEN** y **DICE** / **DICEN** — negrita + pluralidad
     vars.COMPARECE_TEXTO = plural ? "**COMPARECEN**" : "**COMPARECE**";
     vars.DICE_TEXTO       = plural ? "**DICEN**"      : "**DICE**";
+
+    // Concordancia de género/número para el autorizante
+    const todosM_aut = autorizantes.every(p => p.genero === "M");
+    const hayF_aut   = autorizantes.some(p => p.genero === "F");
+    // "la compareciente" / "el compareciente" / "los comparecientes" / "las comparecientes"
+    vars.DEL_DE_LA_COMPARECIENTE = plural
+      ? (todosM_aut ? "del compareciente" : "de los comparecientes")
+      : (autorizantes[0]?.genero === "M" ? "del compareciente" : "de la compareciente");
+    vars.EL_LA_COMPARECIENTE = plural
+      ? (todosM_aut ? "el compareciente" : hayF_aut ? "los comparecientes" : "el compareciente")
+      : (autorizantes[0]?.genero === "M" ? "el compareciente" : "la compareciente");
+    vars.LOS_LAS_COMPARECIENTES = plural
+      ? (todosM_aut ? "los comparecientes" : "los/las comparecientes")
+      : (autorizantes[0]?.genero === "M" ? "el compareciente" : "la compareciente");
+
     // Para el HEADER: nombres de autorizantes en todo uppercase
     vars.AUTORIZANTES_UP = autorizantes
       .map(p => [(p.nombre||"").toUpperCase(), (p.apellido||"").toUpperCase()].filter(Boolean).join(" "))
@@ -209,6 +224,19 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars.AUTORIZADOS_TEXTO = textos.length === 1
       ? textos[0]
       : textos.slice(0,-1).join("; ") + "; y " + textos[textos.length-1];
+    // Concordancia de género/número para el autorizado
+    const pluralAut   = autorizados.length > 1;
+    const todosM_aut2 = autorizados.every(p => p.genero === "M");
+    vars.FACULTADO_TEXTO = pluralAut
+      ? (todosM_aut2 ? "quedan facultados" : "quedan facultados/as")
+      : (autorizados[0]?.genero === "F" ? "queda facultada" : "queda facultado");
+    vars.EL_AUTORIZADO_TEXTO = pluralAut
+      ? (todosM_aut2 ? "Los autorizados asumen" : "Los autorizados/as asumen")
+      : (autorizados[0]?.genero === "F" ? "La autorizada asume" : "El autorizado asume");
+    vars.EL_COMPARECIENTE_CIERRE = plural
+      ? "los comparecientes"
+      : (autorizantes[0]?.genero === "M" ? "el compareciente" : "la compareciente");
+
     // Para el HEADER: nombres de autorizados en todo uppercase
     vars.AUTORIZADOS_UP = autorizados
       .map(p => [(p.nombre||"").toUpperCase(), (p.apellido||"").toUpperCase()].filter(Boolean).join(" "))
