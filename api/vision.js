@@ -18,39 +18,65 @@ export default async function handler(req, res) {
           { type: "image", source: { type: "base64", media_type: imagen.mediaType, data: imagen.data } },
           { type: "text", text: `Analizá este documento argentino.
 
-PASO 1 — IDENTIFICAR EL TIPO:
-¿El documento contiene datos de un VEHÍCULO (dominio/patente, chasis, motor, marca, modelo)?
-Documentos de vehículo incluyen: tarjeta verde, cédula verde, cédula azul, título automotor, Cédula de Identificación del Automotor, Cédula de Identificación de Vehículos (DNRPA), cualquier documento con dominio/patente y datos técnicos del rodado.
+IDENTIFICAR TIPO — seguí este orden:
 
-Si SÍ → usá el formato VEHÍCULO.
-Si NO → usá el formato PERSONA.
+A) ¿Ves "DOMINIO", "CHASIS", "MOTOR", "MARCA", "MODELO" con valores técnicos? (frente de tarjeta verde/cédula de vehículo)
+   → usá FORMATO A — VEHÍCULO FRENTE
 
-INSTRUCCIONES GENERALES:
-- El documento puede estar fotografiado en cualquier orientación. Rotalo mentalmente hasta leerlo.
-- Si un campo no está visible o legible, dejá el campo vacío — NUNCA inventes datos.
+B) ¿Ves "TITULAR:" seguido de un nombre, "AUTORIZADO:" seguido de otro nombre, y el logo DNRPA? (dorso de tarjeta verde)
+   → usá FORMATO B — VEHÍCULO DORSO
 
-FORMATO VEHÍCULO (cuando el documento tiene dominio, chasis, motor, marca):
+C) ¿Es DNI, LE, LC, pasaporte, licencia, partida de nacimiento/matrimonio?
+   → usá FORMATO C — PERSONA
+
+Instrucciones: el documento puede estar en cualquier orientación — rotalo mentalmente. Si un dato no se lee con certeza, dejá el campo vacío.
+
+═══ FORMATO A — VEHÍCULO FRENTE (dominio, chasis, motor) ═══
 {
   "tipo_documento": "tarjeta_verde",
   "vehiculo": {
     "marca": "MARCA EN MAYÚSCULAS",
     "modelo": "modelo completo con versión",
-    "tipo_desc": "SEDAN 5 PTAS | HATCHBACK | SUV | MOTOCICLETA | etc.",
+    "tipo_desc": "SEDAN 5 PTAS | SEDAN 5 PUERTAS | HATCHBACK | SUV | MOTOCICLETA",
     "dominio": "patente sin espacios ni guiones",
     "chasis": "número de chasis o VIN completo",
     "motor": "número de motor completo",
-    "anio": "año si figura",
-    "color": "color si figura"
+    "anio": "",
+    "color": ""
   },
-  "titular": {
-    "apellido": "",
-    "nombre": "",
-    "nro_doc": "solo números"
-  },
+  "titular": { "apellido": "", "nombre": "", "nro_doc": "solo números" },
   "notas": ""
 }
 
-FORMATO PERSONA (DNI, LE, LC, pasaporte, partidas, licencias):
+═══ FORMATO B — VEHÍCULO DORSO (titular + autorizado) ═══
+{
+  "tipo_documento": "tarjeta_verde",
+  "personas": [
+    {
+      "apellido": "apellido del TITULAR",
+      "nombre": "nombre/s del TITULAR",
+      "nro_doc": "DNI del titular solo números",
+      "tipo_doc": "DNI",
+      "genero": "M|F",
+      "calle": "calle del domicilio si figura",
+      "numero": "número si figura",
+      "localidad": "localidad si figura",
+      "departamento": "departamento si figura",
+      "_rol_sugerido": "AUTORIZANTE"
+    },
+    {
+      "apellido": "apellido del AUTORIZADO",
+      "nombre": "nombre/s del AUTORIZADO",
+      "nro_doc": "DNI del autorizado solo números",
+      "tipo_doc": "DNI",
+      "genero": "M|F",
+      "_rol_sugerido": "AUTORIZADO"
+    }
+  ],
+  "notas": ""
+}
+
+═══ FORMATO C — PERSONA (DNI, pasaporte, partidas, licencias) ═══
 {
   "tipo_documento": "DNI|licencia|partida_nacimiento|partida_matrimonio|otro",
   "personas": [{
@@ -65,15 +91,13 @@ FORMATO PERSONA (DNI, LE, LC, pasaporte, partidas, licencias):
     "cuit": "",
     "calle": "",
     "numero": "",
-    "piso": "",
-    "dpto": "",
     "localidad": "",
     "departamento": ""
   }],
   "notas": ""
 }
 
-Respondé SOLO con el JSON válido, sin texto adicional.` }
+Respondé SOLO con el JSON válido del formato que corresponda, sin texto adicional.` }
         ]
       }],
     });

@@ -545,7 +545,22 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         const datos = await procesarImagen(imgActual);
         const esVehiculo = ["tarjeta_verde","titulo_automotor"].includes(datos.tipo_documento);
 
-        if (esVehiculo && datos.vehiculo) {
+        // Dorso de tarjeta verde: tiene personas con _rol_sugerido pero sin vehiculo
+        if (esVehiculo && !datos.vehiculo && datos.personas?.length) {
+          const personas = datos.personas;
+          const resumen = personas.map(p =>
+            `**${[p.apellido, p.nombre].filter(Boolean).join(" ")}** — DNI ${p.nro_doc || ""}${p._rol_sugerido ? ` *(${p._rol_sugerido})*` : ""}`
+          ).join("\n");
+          const respuesta = `Dorso de tarjeta verde leído.\n\n${resumen}\n\nPodés agregar cada persona como parte del documento.`;
+          // Limpiar _rol_sugerido del primer dato para la acción pero pasarlo como rol
+          const limpia = p => { const { _rol_sugerido, ...rest } = p; return { ...rest, rol: _rol_sugerido || "" }; };
+          const accion = personas.length === 1
+            ? { tipo: "completar_parte", datos: limpia(personas[0]) }
+            : { tipo: "completar_parte", datos: limpia(personas[0]), personas_adicionales: personas.slice(1).map(limpia) };
+          const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
+          setMensajes(mensajesFinales);
+          guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+        } else if (esVehiculo && datos.vehiculo) {
           // Documento de vehículo — poblar extravars del template
           const v = datos.vehiculo;
           const vars = {};
