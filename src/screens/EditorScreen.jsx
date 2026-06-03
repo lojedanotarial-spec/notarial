@@ -253,7 +253,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       generateAfterRef.current = false;
       handleGenerarRef.current?.();
     }
-  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight]);
+  }, [partes, vehiculos, extravars, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight]);
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
@@ -668,7 +668,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       </div>
 
       {/* MODALES */}
-      {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { setVehiculos(v); generateAfterRef.current = true; setTimeout(() => { generateAfterRef.current = false; handleGenerarRef.current?.(); }, 120); }} onClose={() => setModal(null)}/>}
+      {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
       {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
