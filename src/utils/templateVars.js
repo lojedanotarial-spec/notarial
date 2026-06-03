@@ -283,8 +283,8 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
         v.marca     ? `Marca **${v.marca}**`                              : null,
         v.modelo    ? `Modelo **${v.modelo}**`                            : null,
         v.tipo_desc ? `Tipo: **${v.tipo_desc}**`                          : null,
-        v.dominio   ? `Dominio: **${v.dominio}**${v.chasis ? ` CHASIS **${v.chasis}**` : ""}` : null,
-        v.motor     ? `MOTOR: **${v.motor}**`                             : null,
+        v.dominio   ? `Dominio: **${v.dominio}**${v.chasis ? ` Chasis **${v.chasis}**` : ""}` : null,
+        v.motor     ? `Motor: **${v.motor}**`                             : null,
       ].filter(Boolean).join(", ");
 
     vars.VEHICULOS_LISTA = vehiculos.length === 1
