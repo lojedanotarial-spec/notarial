@@ -103,6 +103,7 @@ export const PARTE_VACIA = () => ({
   tipoDoc:     "DNI", nroDoc:   "", cuit:         "", fechaNac: "",
   estadoCivil: "",
   calle:       "", numero:       "", piso:         "", dpto:    "",
+  barrio:      "", manzana:      "", casa:         "",
   localidad:   "", departamento: "Ciudad",           rol:      "",
 });
 

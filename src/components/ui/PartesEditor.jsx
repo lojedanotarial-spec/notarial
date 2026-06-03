@@ -351,6 +351,9 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
       numero:           persona.numero        || "",
       piso:             persona.piso          || "",
       dpto:             persona.dpto          || "",
+      barrio:           persona.barrio        || "",
+      manzana:          persona.manzana       || "",
+      casa:             persona.casa          || "",
       localidad:        persona.localidad     || "",
       departamento:     persona.departamento  || "Ciudad",
       representaciones: persona.representaciones || [],
@@ -588,6 +591,18 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                 <Fg label="Depto.">
                   <input style={inp} value={p.dpto}
                     onChange={e => upd(p.id, { dpto: e.target.value })}/>
+                </Fg>
+                <Fg label="Barrio">
+                  <input style={inp} value={p.barrio || ""}
+                    onChange={e => upd(p.id, { barrio: e.target.value })} placeholder="ej: Unión y Fuerza"/>
+                </Fg>
+                <Fg label="Manzana">
+                  <input style={inp} value={p.manzana || ""}
+                    onChange={e => upd(p.id, { manzana: e.target.value })} placeholder="ej: B"/>
+                </Fg>
+                <Fg label="Casa / Lote">
+                  <input style={inp} value={p.casa || ""}
+                    onChange={e => upd(p.id, { casa: e.target.value })} placeholder="ej: 42"/>
                 </Fg>
                 <Fg label="Localidad">
                   <input style={inp} value={p.localidad}

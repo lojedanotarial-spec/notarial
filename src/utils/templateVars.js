@@ -11,7 +11,17 @@ const fmtFechaNac = (v) => {
 };
 
 const fmtDni = (v) => v ? Number(String(v).replace(/\D/g,"")).toLocaleString("es-AR") : "";
-const fmtDomicilio = (p) => [p.calle, p.numero, p.piso && `piso ${p.piso}`, p.dpto && `dpto. ${p.dpto}`, p.localidad, p.departamento].filter(Boolean).join(", ");
+const fmtDomicilio = (p) => [
+  p.barrio  && `Barrio ${p.barrio}`,
+  p.manzana && `Manzana ${p.manzana}`,
+  p.casa    && `Casa ${p.casa}`,
+  p.calle,
+  p.numero,
+  p.piso    && `piso ${p.piso}`,
+  p.dpto    && `dpto. ${p.dpto}`,
+  p.localidad,
+  p.departamento,
+].filter(Boolean).join(", ");
 
 export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null, vehiculos = [] }) {
   // Si hay roles definidos para este template, ordenar partes por rol antes de asignar posiciones.

@@ -77,6 +77,9 @@ export async function buildDocxCertFirmaF08({
     partes.forEach((p, idx) => {
       const esUltima = idx === partes.length - 1;
       const domicilio = [
+        p.barrio  && "Barrio " + p.barrio,
+        p.manzana && "Manzana " + p.manzana,
+        p.casa    && "Casa " + p.casa,
         p.calle, p.numero,
         p.piso && "piso " + p.piso,
         p.dpto && "departamento " + p.dpto,
