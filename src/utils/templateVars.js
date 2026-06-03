@@ -59,6 +59,20 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
   const escribanoTitulo = escribanoCaracterTexto.split(" ")[0] || "Notario";
 
   const vars = {
+    // Defaults para variables de concordancia (se sobreescriben abajo si hay partes con roles)
+    COMPARECE_TEXTO:           "**COMPARECE**",
+    DICE_TEXTO:                "**DICE**",
+    AUTORIZANTE_TEXTO:         "",
+    AUTORIZANTES_UP:           "",
+    AUTORIZANTE_CAPACIDAD:     "mayor de edad, quien justifica su identidad conforme a los términos del artículo 306 inciso a del Código Civil y Comercial de la Nación",
+    DEL_DE_LA_COMPARECIENTE:  "del compareciente",
+    EL_LA_COMPARECIENTE:      "el compareciente",
+    EL_COMPARECIENTE_CIERRE:  "el compareciente",
+    AUTORIZADOS_TEXTO:        "",
+    AUTORIZADOS_UP:           "",
+    FACULTADO_TEXTO:          "queda facultado",
+    EL_AUTORIZADO_TEXTO:      "El autorizado asume",
+
     ESCRIBANO_NOMBRE:           (escribano.nombre || "").toUpperCase(),
     ESCRIBANO_REGISTRO:         escribano.registro || "",
     ESCRIBANO_CARACTER:         escribano.caracter || "",
