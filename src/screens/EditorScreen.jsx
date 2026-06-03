@@ -130,23 +130,24 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   const { usuario } = useAuth();
 
-  // Para admin: cargar datos del titular del registro activo
+  // Para admin: cuando miembros del registro activo se cargan, preseleccionar el titular
   useEffect(() => {
-    if (!miUsuario?.is_admin || !registroActivo || params?.docId) return;
-    supabase
-      .from("registros")
-      .select("*")
-      .eq("registro", registroActivo)
-      .then(({ data }) => {
-        const titular = (data || []).find(m => m.rol === "titular") || data?.[0];
-        if (titular) setEscribano({
-          nombre:          titular.nombre_preferido || `${titular.nombre} ${titular.apellido}`,
-          caracter:        titular.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
-          registro:        titular.registro,
-          circunscripcion: titular.circunscripcion,
-        });
+    if (!miUsuario?.is_admin || !registroActivo || params?.docId || miembros.length === 0) return;
+    const titular = miembros.find(m => m.rol === "titular") || miembros[0];
+    if (titular) {
+      const ROL_CARACTER = {
+        titular:   titular.genero === "f" ? "Notaria Titular"   : "Notario Titular",
+        adscripta: "Notaria Adscripta",
+        adscripto: "Notario Adscripto",
+      };
+      setEscribano({
+        nombre:          titular.nombre_preferido || `${titular.nombre} ${titular.apellido}`,
+        caracter:        ROL_CARACTER[titular.rol] || "Notario/a Titular",
+        registro:        titular.registro,
+        circunscripcion: titular.circunscripcion,
       });
-  }, [miUsuario?.is_admin, registroActivo]);
+    }
+  }, [miUsuario?.is_admin, registroActivo, miembros]);
 
   const [templateContenido, setTemplateContenido] = useState("");
   const [templateVarsSchema, setTemplateVarsSchema] = useState([]); // [{name,label,type,placeholder,required}]

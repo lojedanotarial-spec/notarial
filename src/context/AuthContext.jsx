@@ -24,6 +24,7 @@ export function AuthProvider({ children }) {
     if (u.is_admin) {
       setMiUsuario({ nombre: "Admin", apellido: "", is_admin: true });
       setMiembros([]);
+      setPerfilCargado(true);
       return;
     }
 
@@ -74,6 +75,17 @@ export function AuthProvider({ children }) {
   async function logout() {
     await supabase.auth.signOut();
   }
+
+  // Admin: cargar todos los miembros de un registro cuando cambia el registro activo
+  useEffect(() => {
+    if (!miUsuario?.is_admin || !registroActivo) return;
+    supabase
+      .from("registros")
+      .select("*")
+      .eq("registro", registroActivo)
+      .order("rol")
+      .then(({ data }) => setMiembros(data || []));
+  }, [miUsuario?.is_admin, registroActivo]);
 
   async function actualizarMiembro(id, campos) {
     const { error } = await supabase
