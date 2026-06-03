@@ -543,19 +543,56 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       setMensajes(nuevosMensajes);
       try {
         const datos = await procesarImagen(imgActual);
-        const personas = datos.personas || [];
-        const resumen = personas.length
-          ? personas.map(p => `**${p.apellido || ""} ${p.nombre || ""}** — DNI ${p.nro_doc || ""}${p.fecha_nac ? `, nacido/a ${p.fecha_nac}` : ""}${p.estado_civil ? `, ${p.estado_civil}` : ""}`).join("\n")
-          : "No encontré datos de personas en el documento.";
-        const respuesta = `Documento leído: ${datos.tipo_documento || "documento"}.\n\n${resumen}${datos.notas ? `\n\n${datos.notas}` : ""}`;
-        const accion = personas.length === 1
-          ? { tipo: "completar_parte", datos: personas[0] }
-          : personas.length > 1
-          ? { tipo: "completar_parte", datos: personas[0], personas_adicionales: personas.slice(1) }
-          : null;
-        const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
-        setMensajes(mensajesFinales);
-        guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+        const esVehiculo = ["tarjeta_verde","titulo_automotor"].includes(datos.tipo_documento);
+
+        if (esVehiculo && datos.vehiculo) {
+          // Documento de vehículo — poblar extravars del template
+          const v = datos.vehiculo;
+          const vars = {};
+          if (v.marca)     vars.VEHICULO_MARCA     = v.marca.toUpperCase();
+          if (v.modelo)    vars.VEHICULO_MODELO    = v.modelo.toUpperCase();
+          if (v.tipo_desc) vars.VEHICULO_TIPO_DESC = v.tipo_desc.toUpperCase();
+          if (v.dominio)   vars.VEHICULO_DOMINIO   = v.dominio.toUpperCase();
+          if (v.chasis)    vars.VEHICULO_CHASIS    = v.chasis.toUpperCase();
+          if (v.motor)     vars.VEHICULO_MOTOR     = v.motor.toUpperCase();
+
+          window.dispatchEvent(new CustomEvent("scriba:completar_vars", { detail: vars }));
+
+          const lineas = [
+            `**Documento leído:** ${datos.tipo_documento === "tarjeta_verde" ? "Tarjeta verde" : "Título automotor"}`,
+            v.marca    ? `Marca: **${v.marca}**`                : null,
+            v.modelo   ? `Modelo: **${v.modelo}**`             : null,
+            v.dominio  ? `Dominio: **${v.dominio}**`           : null,
+            v.chasis   ? `Chasis: ${v.chasis}`                  : null,
+            v.motor    ? `Motor: ${v.motor}`                    : null,
+          ].filter(Boolean);
+
+          const respuesta = lineas.join("\n") + "\n\nDatos cargados en el documento.";
+
+          // Si hay titular, ofrecer cargarlo como parte también
+          const accion = datos.titular?.nro_doc
+            ? { tipo: "completar_parte", datos: datos.titular }
+            : null;
+
+          const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
+          setMensajes(mensajesFinales);
+          guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+        } else {
+          // Documento de identidad — flujo original
+          const personas = datos.personas || [];
+          const resumen = personas.length
+            ? personas.map(p => `**${p.apellido || ""} ${p.nombre || ""}** — DNI ${p.nro_doc || ""}${p.fecha_nac ? `, nacido/a ${p.fecha_nac}` : ""}${p.estado_civil ? `, ${p.estado_civil}` : ""}`).join("\n")
+            : "No encontré datos de personas en el documento.";
+          const respuesta = `Documento leído: ${datos.tipo_documento || "documento"}.\n\n${resumen}${datos.notas ? `\n\n${datos.notas}` : ""}`;
+          const accion = personas.length === 1
+            ? { tipo: "completar_parte", datos: personas[0] }
+            : personas.length > 1
+            ? { tipo: "completar_parte", datos: personas[0], personas_adicionales: personas.slice(1) }
+            : null;
+          const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
+          setMensajes(mensajesFinales);
+          guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+        }
       } catch (e) {
         setError(e.message);
       } finally {

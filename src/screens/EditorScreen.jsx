@@ -294,6 +294,19 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     return () => window.removeEventListener("scriba:modificar", handler);
   }, []);
 
+  // Actualizar variables del template (vehículo, inmueble, etc.) desde Scriba
+  useEffect(() => {
+    const handler = (e) => {
+      const vars = e.detail; // { VEHICULO_MARCA: "VOLKSWAGEN", ... }
+      setExtravars(prev => ({ ...prev, ...vars }));
+      generateAfterRef.current = true;
+      setIsDirty(true);
+      setTimeout(() => { generateAfterRef.current = false; handleGenerarRef.current?.(); }, 120);
+    };
+    window.addEventListener("scriba:completar_vars", handler);
+    return () => window.removeEventListener("scriba:completar_vars", handler);
+  }, []);
+
   useEffect(() => {
     const handler = (e) => {
       const d = e.detail;
