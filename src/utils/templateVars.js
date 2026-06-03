@@ -47,12 +47,16 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     // Partes sin rol reconocido van al final
     partes = [...slots, ...restantes];
   }
+  // Usar caracter tal como viene de la tabla registros (ya tiene género correcto)
+  // Solo derivar si no está seteado
   const esTitular = (escribano.caracter || "").toLowerCase().includes("titular");
-  const esFemenino = (escribano.nombre || "").match(/\b(dra|dra\.|doctora|notaria)\b/i);
-  const escribanoTitulo = esFemenino ? "Notaria" : "Notario";
-  const escribanoCaracterTexto = esTitular
-    ? `${escribanoTitulo} Titular`
-    : `${escribanoTitulo} Adscripta/o`;
+  const escribanoCaracterTexto = escribano.caracter || (() => {
+    const esFemenino = (escribano.nombre || "").match(/\b(dra|dra\.|doctora|notaria)\b/i);
+    const titulo = esFemenino ? "Notaria" : "Notario";
+    return esTitular ? `${titulo} Titular` : `${titulo} Adscripta/o`;
+  })();
+  // Extraer título (Notaria/Notario) del caracter
+  const escribanoTitulo = escribanoCaracterTexto.split(" ")[0] || "Notario";
 
   const vars = {
     ESCRIBANO_NOMBRE:           (escribano.nombre || "").toUpperCase(),
