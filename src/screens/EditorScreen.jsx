@@ -228,16 +228,6 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   // Keep ref updated so the mount effect can call the latest version
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);
 
-  // Suprimir el dialog nativo de Chrome cuando OO detecta cambios sin guardar.
-  // Capture phase + stopImmediatePropagation impide que el handler de OO llegue a ejecutarse.
-  useEffect(() => {
-    const suppress = (e) => {
-      e.stopImmediatePropagation();
-      delete e.returnValue;
-    };
-    window.addEventListener("beforeunload", suppress, { capture: true });
-    return () => window.removeEventListener("beforeunload", suppress, { capture: true });
-  }, []);
 
   // Auto-generate once on mount (delay lets the admin escribano effect settle first)
   useEffect(() => {

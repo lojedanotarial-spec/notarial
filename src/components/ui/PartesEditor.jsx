@@ -399,18 +399,13 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                       {x.apellido || "Parte " + (idx + 1)}
                     </div>
-                    {(() => {
-                      const etiqueta = x.rol || rolesContextuales?.[idx] || `Parte ${idx + 1}`;
-                      return (
-                        <div style={{
-                          fontSize: 10,
-                          color: x.rol ? "rgba(26,35,50,.6)" : C.cerulean,
-                          fontWeight: x.rol ? 400 : 600,
-                        }}>
-                          {etiqueta}
-                        </div>
-                      );
-                    })()}
+                    <div style={{
+                      fontSize: 10,
+                      color: x.rol ? "rgba(26,35,50,.6)" : "rgba(26,35,50,.35)",
+                      fontStyle: x.rol ? "normal" : "italic",
+                    }}>
+                      {x.rol || "sin rol asignado"}
+                    </div>
                   </div>
                 </div>
                 {(

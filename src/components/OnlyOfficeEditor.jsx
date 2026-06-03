@@ -10,6 +10,18 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
   documentTitleRef.current = documentTitle;
 
 
+  // Bloquear para siempre que OO registre handlers de beforeunload.
+  // useAutoguardado ya registró el suyo ANTES de que este componente monte,
+  // por lo que ese handler no se ve afectado.
+  useEffect(() => {
+    const origAEL = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function blockOOBeforeUnload(type, handler, opts) {
+      if (this === window && type === "beforeunload") return; // silenciar
+      return origAEL.call(this, type, handler, opts);
+    };
+    return () => { EventTarget.prototype.addEventListener = origAEL; };
+  }, []);
+
   const createEditor = useCallback(() => {
     if (!window.DocsAPI || !documentUrl) return;
 

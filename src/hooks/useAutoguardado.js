@@ -74,11 +74,14 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
     return () => clearTimeout(timerRef.current);
   }, [titulo, estado, contenido, guardar, registroNumero, usuarioId]);
 
-  // Guardar al cerrar la pestaña
+  // Guardar al cerrar la pestaña — listener estable (ref), no se re-registra
+  const guardarRef = useRef(guardar);
+  guardarRef.current = guardar;
   useEffect(() => {
-    window.addEventListener("beforeunload", guardar);
-    return () => window.removeEventListener("beforeunload", guardar);
-  }, [guardar]);
+    const handler = () => guardarRef.current();
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const guardarAhora = () => {
     clearTimeout(timerRef.current);
