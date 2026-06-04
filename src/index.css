@@ -13,3 +13,8 @@ body {
   color: rgba(26, 35, 50, 0.38);
   font-style: italic;
 }
+
+@keyframes scanProgress {
+  0%   { left: -40%; }
+  100% { left: 100%; }
+}

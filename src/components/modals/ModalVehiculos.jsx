@@ -52,17 +52,30 @@ function ScanVehiculoBtn({ onDatos }) {
           finally { setProgreso(""); e.target.value = ""; }
         }}
       />
-      <button type="button" onClick={() => ref.current?.click()}
+      <button type="button" onClick={() => !progreso && ref.current?.click()}
         style={{
-          display:"flex", alignItems:"center", gap:5, padding:"5px 10px",
-          border:"1px solid " + C.cerulean, borderRadius:6, background:"transparent",
-          color:C.cerulean, fontSize:11, fontWeight:700, cursor:"pointer",
-          fontFamily:"'Montserrat',sans-serif", marginBottom:10, width:"fit-content",
+          display:"flex", flexDirection:"column", alignItems:"stretch", gap:0,
+          padding:0, border:"1px solid " + C.cerulean, borderRadius:6,
+          background: progreso ? C.ceruleanLight : "transparent",
+          color:C.cerulean, fontSize:11, fontWeight:700,
+          cursor: progreso ? "default" : "pointer",
+          fontFamily:"'Montserrat',sans-serif", marginBottom:10,
+          width:"fit-content", minWidth:160, overflow:"hidden",
         }}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
-        </svg>
-        {progreso ? `Escaneando ${progreso}` : "Escanear tarjeta / título"}
+        <div style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px" }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+          </svg>
+          {progreso ? `Escaneando ${progreso}` : "Escanear tarjeta / título"}
+        </div>
+        {progreso && (
+          <div style={{ height:3, background:"rgba(58,124,165,.15)", position:"relative", overflow:"hidden" }}>
+            <div style={{
+              position:"absolute", height:"100%", width:"40%", background:C.cerulean,
+              borderRadius:2, animation:"scanProgress 1.2s ease-in-out infinite",
+            }}/>
+          </div>
+        )}
       </button>
     </>
   );
