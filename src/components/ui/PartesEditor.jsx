@@ -1,5 +1,27 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { C, DEPARTAMENTOS, PARTE_VACIA, inp } from "../../constants";
+
+// Artículos y preposiciones que van en minúscula en el interior de un nombre
+const MINUSCULAS_ES = new Set([
+  'a','al','ante','bajo','con','contra','de','del','desde','en','entre',
+  'hacia','hasta','mediante','para','por','según','sin','sobre','tras',
+  'y','e','o','u','ni','que','el','la','los','las','un','una','unos','unas',
+]);
+
+function titleCaseDomicilio(str) {
+  if (!str) return str;
+  return str.toLowerCase().split(/\s+/).map((w, i) => {
+    if (!w) return w;
+    // Abreviaturas con °, . o solo números: mantener tal cual (ya lowercased)
+    if (/^[0-9]/.test(w) || w.includes('°')) return w;
+    // Primera palabra siempre con mayúscula
+    if (i === 0) return w.charAt(0).toUpperCase() + w.slice(1);
+    // Artículos/preposiciones: minúscula
+    if (MINUSCULAS_ES.has(w)) return w;
+    // Resto: primera mayúscula
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  }).join(' ');
+}
 import { aplicarTildesNombre } from "../../utils/tildesNombres";
 
 async function escanearDocumento(archivo) {
@@ -395,16 +417,16 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
       cuit,
       fechaNac:         persona.fecha_nac     || "",
       estadoCivil:      persona.estado_civil  || "",
-      calle:            persona.calle         || "",
-      numero:           persona.numero        || "",
-      piso:             persona.piso          || "",
-      dpto:             persona.dpto          || "",
-      barrio:           persona.barrio        || "",
-      manzana:          persona.manzana       || "",
-      casa:             persona.casa          || "",
-      localidad:        persona.localidad     || "",
-      provincia:        persona.provincia     || "",
-      pais:             persona.pais          || "",
+      calle:            titleCaseDomicilio(persona.calle)     || "",
+      numero:           persona.numero                        || "",
+      piso:             persona.piso                          || "",
+      dpto:             persona.dpto                          || "",
+      barrio:           titleCaseDomicilio(persona.barrio)    || "",
+      manzana:          persona.manzana                       || "",
+      casa:             persona.casa                          || "",
+      localidad:        titleCaseDomicilio(persona.localidad) || "",
+      provincia:        titleCaseDomicilio(persona.provincia) || "",
+      pais:             titleCaseDomicilio(persona.pais)      || "",
       departamento:     persona.departamento  || "Ciudad",
       representaciones: persona.representaciones || [],
       _personaId:       persona.id,
@@ -510,13 +532,13 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     fecha_nac:    merge(persona.fecha_nac,    actual.fechaNac),
                     estado_civil: merge(persona.estado_civil, actual.estadoCivil),
                     nacionalidad: merge(persona.nacionalidad, actual.nacionalidad),
-                    calle:        merge(persona.calle,        actual.calle),
-                    numero:       merge(persona.numero,       actual.numero),
-                    barrio:       merge(persona.barrio,       actual.barrio),
-                    manzana:      merge(persona.manzana,      actual.manzana),
-                    casa:         merge(persona.casa,         actual.casa),
-                    localidad:    merge(persona.localidad,    actual.localidad),
-                    departamento: merge(persona.departamento, actual.departamento) || "Ciudad",
+                    calle:        titleCaseDomicilio(merge(persona.calle,     actual.calle))     || "",
+                    numero:       merge(persona.numero,      actual.numero)                      || "",
+                    barrio:       titleCaseDomicilio(merge(persona.barrio,   actual.barrio))     || "",
+                    manzana:      merge(persona.manzana,     actual.manzana)                     || "",
+                    casa:         merge(persona.casa,        actual.casa)                        || "",
+                    localidad:    titleCaseDomicilio(merge(persona.localidad, actual.localidad)) || "",
+                    departamento: titleCaseDomicilio(merge(persona.departamento, actual.departamento)) || "",
                     cuit:         actual.cuit || undefined,
                   });
                 }} style={{ flexShrink:0, alignSelf:"flex-start" }}/>
