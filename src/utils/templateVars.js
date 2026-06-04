@@ -34,7 +34,7 @@ const fmtDomicilio = (p) => [
 
 export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null, vehiculos = [], estilos = {} }) {
   const {
-    nombresFormato     = "titlecase",
+    nombresFormato     = "titlecase_upper",
     escribanoUppercase = true,
     registroFormato    = "letras",
   } = estilos;
@@ -115,7 +115,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     const n = i + 1;
     // Formato de nombres según estilos
     const nombreFmt   = nombresFormato === "uppercase" ? (p.nombre||"").toUpperCase() : toTitleCase(p.nombre);
-    const apellidoFmt = (p.apellido || "").toUpperCase();
+    const apellidoFmt = nombresFormato === "titlecase_both" ? toTitleCase(p.apellido) : (p.apellido||"").toUpperCase();
     const apellidoNombre = [nombreFmt, apellidoFmt].filter(Boolean).join(" ");
     const dni = fmtDni(p.nroDoc);
     const domicilio = fmtDomicilio(p);

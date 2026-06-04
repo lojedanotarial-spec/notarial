@@ -12,7 +12,7 @@ export const ESTILOS_DEFAULT = {
   interlineado:  INTERLINEADOS[0],
 
   // Nombres de partes
-  nombresFormato:      "titlecase", // "titlecase" | "uppercase"
+  nombresFormato:      "titlecase_upper", // "titlecase_both" | "titlecase_upper" | "uppercase"
   // Énfasis (negrita automática)
   nombresNegrita:      true,
   fechaNegrita:        true,
@@ -93,15 +93,19 @@ export function ModalFormato({ estilos: inicial, onApply, onClose }) {
         </div>
 
         <SecTitle>Nombres de partes</SecTitle>
-        <div style={{ display:"flex", gap:8, marginBottom:4 }}>
-          {[["titlecase","Nombre Apellido"],["uppercase","NOMBRE APELLIDO"]].map(([k,l]) => (
+        <div style={{ display:"flex", gap:6, marginBottom:4 }}>
+          {[
+            ["titlecase_both",  "Nombre Apellido"],
+            ["titlecase_upper", "Nombre APELLIDO"],
+            ["uppercase",       "NOMBRE APELLIDO"],
+          ].map(([k,l]) => (
             <button key={k} type="button" onClick={() => upd("nombresFormato", k)}
               style={{
-                flex:1, padding:"8px 0", borderRadius:7, border:"1px solid",
+                flex:1, padding:"8px 4px", borderRadius:7, border:"1px solid",
                 borderColor: e.nombresFormato === k ? C.cerulean : "rgba(26,35,50,.15)",
                 background: e.nombresFormato === k ? C.ceruleanLight : "transparent",
                 color: e.nombresFormato === k ? C.cerulean : C.dark,
-                fontFamily:"'Montserrat',sans-serif", fontWeight:700, fontSize:12, cursor:"pointer",
+                fontFamily:"'Montserrat',sans-serif", fontWeight:700, fontSize:11, cursor:"pointer",
               }}>{l}</button>
           ))}
         </div>
