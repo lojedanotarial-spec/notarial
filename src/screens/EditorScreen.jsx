@@ -12,7 +12,7 @@ import { Btn }     from "../components/ui/Btn";
 import { Warn }    from "../components/ui/FormElements";
 import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalVehiculos } from "../components/modals/ModalVehiculos";
-import { ModalFormulario } from "../components/modals/ModalFormulario";
+import { ModalFormulario, fmtNumFormulario } from "../components/modals/ModalFormulario";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato }  from "../components/modals/ModalFormato";
 import { buildDocxCertFirmaF08, buildDocxBlanco } from "../utils/buildDocx";
@@ -199,7 +199,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             showRol: ["cert_firma_f08", "certFirmaF08"].includes(templateSlug),
             margenKey, fontSize, fuente, interlineado,
             showVarHighlight,
-            extravars: { NUMERO_FORMULARIO: formulario.numero, DOMINIO: formulario.dominio, TIPO_FORMULARIO: formulario.tipo },
+            extravars: { NUMERO_FORMULARIO: fmtNumFormulario(formulario), DOMINIO: formulario.dominio, TIPO_FORMULARIO: formulario.tipo },
           })
         : templateContenido
           ? await buildDocxGenerico({
@@ -583,7 +583,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 <PanelSection label={`Formulario 0${formulario.tipo}`} onClick={() => setModal("formulario")}>
                   {formulario.numero ? (
                     <>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: C.dark }}>N.° {formulario.numero}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.dark }}>N.° {fmtNumFormulario(formulario)}</div>
                       <div style={{ fontSize: 12, color: C.muted }}>Dominio: {formulario.dominio || "—"}</div>
                     </>
                   ) : (
