@@ -6,7 +6,8 @@ import { SelectorScreen } from "./screens/SelectorScreen";
 import { EditorScreen }  from "./screens/EditorScreen";
 import { BulkScreen }    from "./screens/BulkScreen";
 import { AdminScreen }      from "./screens/AdminScreen";
-import { ExpedientesScreen } from "./screens/ExpedientesScreen";
+import { ExpedientesScreen }     from "./screens/ExpedientesScreen";
+import { ExpedienteDetailScreen } from "./screens/ExpedienteDetailScreen";
 import { ScribaPanel }   from "./components/ScribaPanel";
 
 
@@ -103,7 +104,8 @@ function AppRouter() {
       {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} onScribaContexto={setScribaContexto} />}
       {screen === "bulk"         && <BulkScreen        onGo={handleGo} />}
       {screen === "admin"        && <AdminScreen       onGo={handleGo} />}
-      {screen === "expedientes"  && <ExpedientesScreen onGo={handleGo} registroActivo={registroActivo} miUsuario={miUsuario} />}
+      {screen === "expedientes"  && <ExpedientesScreen     onGo={handleGo} registroActivo={registroActivo} miUsuario={miUsuario} />}
+      {screen === "expediente"   && <ExpedienteDetailScreen onGo={handleGo} params={params} />}
 
       {/* Botón flotante Scriba */}
       <div className="no-print" style={{ position: "fixed", bottom: 24, right: 24, zIndex: 199 }}>

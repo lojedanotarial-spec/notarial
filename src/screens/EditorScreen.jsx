@@ -15,6 +15,7 @@ import { ModalVehiculos } from "../components/modals/ModalVehiculos";
 import { ModalFormulario, fmtNumFormulario } from "../components/modals/ModalFormulario";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato }  from "../components/modals/ModalFormato";
+import { ModalAgregarExpediente } from "../components/modals/ModalAgregarExpediente";
 import { buildDocxCertFirmaF08, buildDocxBlanco } from "../utils/buildDocx";
 import { buildDocxGenerico } from "../utils/buildDocxGenerico";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
@@ -659,6 +660,16 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 </div>
               )}
 
+              {/* Expediente */}
+              {params?.docId && (
+                <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
+                  <button onClick={() => setModal("expediente")}
+                    style={{ width: "100%", padding: "7px 10px", borderRadius: 7, border: "1px dashed rgba(58,124,165,.4)", background: "transparent", color: C.cerulean, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Montserrat',sans-serif" }}>
+                    📁 Agregar a expediente
+                  </button>
+                </div>
+              )}
+
               <PanelSection label="Formato" onClick={() => setModal("formato")}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>
                   {fuente.label || "Merriweather"} {fontSize}pt
@@ -692,6 +703,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       {/* MODALES */}
       {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
       {modal === "formulario"  && <ModalFormulario formulario={formulario} onApply={v => { setFormulario(v); generateAfterRef.current = true; }} onClose={() => setModal(null)}/>}
+      {modal === "expediente"  && <ModalAgregarExpediente docId={params?.docId} registroId={miUsuario?.registro || registroActivo} onClose={() => setModal(null)} onGo={onGo} />}
       {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
