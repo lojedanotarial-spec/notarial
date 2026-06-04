@@ -185,18 +185,30 @@ export async function buildDocxCertFirmaF08({
       if (reprPF) {
         const reprNombre = [(reprPF.repr_nombre||"").toUpperCase(), (reprPF.repr_apellido||"").toUpperCase()].filter(Boolean).join(" ");
         const reprDni    = fmtDni(reprPF.repr_dni);
-        partesRuns.push(r(".- INTERVIENE: en nombre y representación "));
-        if (reprNombre) { partesRuns.push(r("del señor/la señora ")); partesRuns.push(vRun("REPRESENTADO", reprNombre, true)); }
-        if (reprDni)    { partesRuns.push(r(", con Documento Nacional de Identidad número ")); partesRuns.push(vRun("DNI REP", reprDni)); }
+        const reprArt    = reprPF.repr_genero === "F" ? "de la señora" : "del señor";
+        // Fecha del poder en palabras
+        const fmtPoderFecha = (v) => {
+          if (!v) return v;
+          const pts = v.includes("/") ? v.split("/") : v.includes("-") ? v.split("-").reverse() : [];
+          if (pts.length !== 3) return v;
+          const [dia, mes, anio] = pts;
+          const MESES_P = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+          return `${Number(dia)} de ${MESES_P[Number(mes)-1]||""} de ${anio}`;
+        };
+        partesRuns.push(r(".- INTERVIENE: en nombre y representación " + reprArt + " "));
+        partesRuns.push(vRun("REPRESENTADO", reprNombre, true));
+        if (reprDni) { partesRuns.push(r(", con Documento Nacional de Identidad número ")); partesRuns.push(vRun("DNI REP", reprDni)); }
         if (reprPF.documentacion) { partesRuns.push(r("; " + reprPF.documentacion)); }
         // Descripción del poder
-        const poderDesc = [
-          reprPF.poder_escritura && `Escritura número ${reprPF.poder_escritura}`,
-          reprPF.poder_fecha     && `de fecha ${reprPF.poder_fecha}`,
+        const poderParts = [
+          reprPF.poder_escritura && `Poder otorgado mediante escritura número ${reprPF.poder_escritura}`,
+          reprPF.poder_fecha     && `de fecha ${fmtPoderFecha(reprPF.poder_fecha)}`,
           reprPF.poder_escribano && `pasada ante ${reprPF.poder_escribano}`,
-          reprPF.poder_registro  && `inscripta bajo ${reprPF.poder_registro}`,
-        ].filter(Boolean).join(", ");
-        if (poderDesc) { partesRuns.push(r("; con facultades suficientes para este acto a mérito de: " + poderDesc + ".-")); }
+          reprPF.poder_registro  && `inscripto bajo el número ${reprPF.poder_registro}`,
+        ].filter(Boolean);
+        if (poderParts.length) {
+          partesRuns.push(r("; con facultades suficientes para este acto a mérito de la siguiente documentación: a)- " + poderParts.join(", ") + ".-"));
+        }
         partesRuns.push(r(" Documentación que para este acto he tenido a la vista, doy fe"));
       }
     });

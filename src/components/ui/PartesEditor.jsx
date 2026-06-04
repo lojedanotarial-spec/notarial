@@ -137,7 +137,7 @@ const REPR_VACIA = () => ({
   id: Date.now() + Math.random(),
   tipo: "pj_representante",
   razon_social: "", cuit_sociedad: "", caracter: "", documentacion: "",
-  repr_nombre: "", repr_apellido: "", repr_dni: "",
+  repr_nombre: "", repr_apellido: "", repr_dni: "", repr_genero: "M",
   poder_escritura: "", poder_fecha: "", poder_escribano: "", poder_registro: "",
 });
 
@@ -291,6 +291,22 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
 
       {esPF && (
         <>
+          {/* Género del representado */}
+          <div style={{ display:"flex", gap:8, marginBottom:8, alignItems:"center" }}>
+            <span style={{ fontSize:11, fontWeight:600, color:C.dark, minWidth:60 }}>Género</span>
+            {[["M","Masculino"],["F","Femenino"]].map(([val,lbl]) => (
+              <button key={val} type="button" onClick={() => upd("repr_genero", val)}
+                style={{
+                  padding:"4px 14px", borderRadius:6, border:"1px solid",
+                  borderColor: repr.repr_genero === val ? C.cerulean : "rgba(26,35,50,.15)",
+                  background: repr.repr_genero === val ? C.ceruleanLight : "transparent",
+                  color: repr.repr_genero === val ? C.cerulean : C.dark,
+                  fontFamily:"'Montserrat',sans-serif", fontWeight:600, fontSize:11, cursor:"pointer",
+                }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
           <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr", gap:8, alignItems:"start", marginBottom:8 }}>
             <Fg label="Apellido">
               <input style={inp} value={repr.repr_apellido}
@@ -309,14 +325,21 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
                         textTransform:"uppercase", color:C.muted, marginBottom:6 }}>
             Poder notarial
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"80px 100px 1fr 1fr", gap:8, alignItems:"start" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"80px 110px 1fr 1fr", gap:8, alignItems:"start" }}>
             <Fg label="N° escrit.">
               <input style={inp} value={repr.poder_escritura}
                      onChange={e => upd("poder_escritura", e.target.value)}/>
             </Fg>
-            <Fg label="Fecha">
+            <Fg label="Fecha (dd/mm/aaaa)">
               <input style={inp} value={repr.poder_fecha}
-                     onChange={e => upd("poder_fecha", e.target.value)} placeholder="dd/mm/aaaa"/>
+                     placeholder="dd/mm/aaaa" maxLength={10}
+                     onChange={e => {
+                       const v = e.target.value.replace(/\D/g,"");
+                       const fmt = v.length <= 2 ? v
+                         : v.length <= 4 ? v.slice(0,2)+"/"+v.slice(2)
+                         : v.slice(0,2)+"/"+v.slice(2,4)+"/"+v.slice(4,8);
+                       upd("poder_fecha", fmt);
+                     }}/>
             </Fg>
             <Fg label="Escribano">
               <input style={inp} value={repr.poder_escribano}
