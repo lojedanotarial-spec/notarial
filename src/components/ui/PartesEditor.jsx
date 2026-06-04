@@ -267,12 +267,12 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
       </div>
 
       {esPJ && (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:8, alignItems:"start" }}>
           <Fg label="Razón social">
             <input style={inp} value={repr.razon_social}
                    onChange={e => upd("razon_social", e.target.value)} placeholder="ej: VEXTER S.A."/>
           </Fg>
-          <Fg label="CUIT sociedad">
+          <Fg label="CUIT">
             <input style={inp} value={repr.cuit_sociedad}
                    onChange={e => upd("cuit_sociedad", e.target.value)} placeholder="xx-xxxxxxxx-x"/>
           </Fg>
@@ -284,23 +284,23 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
           <Fg label="Documentación">
             <input style={inp} value={repr.documentacion}
                    onChange={e => upd("documentacion", e.target.value)}
-                   placeholder="actas, escrituras que acreditan"/>
+                   placeholder="actas, escrituras"/>
           </Fg>
         </div>
       )}
 
       {esPF && (
         <>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:8 }}>
-            <Fg label="Apellido del representado">
+          <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr", gap:8, alignItems:"start", marginBottom:8 }}>
+            <Fg label="Apellido">
               <input style={inp} value={repr.repr_apellido}
                      onChange={e => upd("repr_apellido", e.target.value.toUpperCase())}/>
             </Fg>
-            <Fg label="Nombre del representado">
+            <Fg label="Nombre/s">
               <input style={inp} value={repr.repr_nombre}
                      onChange={e => upd("repr_nombre", e.target.value.toUpperCase())}/>
             </Fg>
-            <Fg label="DNI del representado">
+            <Fg label="DNI">
               <input style={inp} value={repr.repr_dni}
                      onChange={e => upd("repr_dni", e.target.value.replace(/\D/g,""))}/>
             </Fg>
@@ -309,8 +309,8 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
                         textTransform:"uppercase", color:C.muted, marginBottom:6 }}>
             Poder notarial
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
-            <Fg label="N° escritura">
+          <div style={{ display:"grid", gridTemplateColumns:"80px 100px 1fr 1fr", gap:8, alignItems:"start" }}>
+            <Fg label="N° escrit.">
               <input style={inp} value={repr.poder_escritura}
                      onChange={e => upd("poder_escritura", e.target.value)}/>
             </Fg>
