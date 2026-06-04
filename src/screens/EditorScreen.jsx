@@ -14,7 +14,7 @@ import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalVehiculos } from "../components/modals/ModalVehiculos";
 import { ModalFormulario, fmtNumFormulario } from "../components/modals/ModalFormulario";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
-import { ModalFormato }  from "../components/modals/ModalFormato";
+import { ModalFormato, ESTILOS_DEFAULT } from "../components/modals/ModalFormato";
 import { ModalAgregarExpediente } from "../components/modals/ModalAgregarExpediente";
 import { buildDocxCertFirmaF08, buildDocxBlanco } from "../utils/buildDocx";
 import { buildDocxGenerico } from "../utils/buildDocxGenerico";
@@ -92,10 +92,12 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const { miUsuario, miembros, registroActivo } = useAuth();
   const [modal,        setModal]        = useState(null);
   const [estado,       setEstado]       = useState("borrador");
-  const [fuente,       setFuente]       = useState(FUENTES[0]);
-  const [margenKey,    setMargenKey]    = useState("protocolar");
-  const [fontSize,     setFontSize]     = useState(11);
-  const [interlineado, setInterlineado] = useState(INTERLINEADOS[0]);
+  const [estilos,      setEstilos]      = useState(ESTILOS_DEFAULT);
+  // Aliases para compatibilidad con código existente
+  const fuente      = estilos.fuente;
+  const margenKey   = estilos.margenKey;
+  const fontSize    = estilos.fontSize;
+  const interlineado = estilos.interlineado;
   const [documentUrl,  setDocumentUrl]  = useState(null);
   const [documentKey,  setDocumentKey]  = useState(null);
   const [generating,   setGenerating]   = useState(false);
@@ -198,7 +200,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             partes, escribano, fecha, protocolo, instrumento,
             instrTexto, fechaLetras, gen,
             showRol: ["cert_firma_f08", "certFirmaF08"].includes(templateSlug),
-            margenKey, fontSize, fuente, interlineado,
+            margenKey, fontSize, fuente, interlineado, estilos,
             showVarHighlight,
             extravars: { NUMERO_FORMULARIO: fmtNumFormulario(formulario), DOMINIO: formulario.dominio, TIPO_FORMULARIO: formulario.tipo },
           })
@@ -206,7 +208,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
           ? await buildDocxGenerico({
               contenido: templateContenido,
               partes, escribano, fecha, protocolo, instrumento,
-              margenKey, fontSize, fuente, interlineado,
+              margenKey, fontSize, fuente, interlineado, estilos,
               extravars, vehiculos,
               rolesContextuales: ROLES_CONTEXTUALES[templateSlug] || null,
             })
@@ -504,6 +506,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         indicadorGuardado={indicador}
         onGuardar={guardarAhora}
         onGo={handleGo}
+        onFormato={() => setModal("formato")}
         showVarHighlight={showVarHighlight}
         onToggleVarHighlight={() => { generateAfterRef.current = true; setShowVarHighlight(v => !v); }}
       />
@@ -670,14 +673,9 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 </div>
               )}
 
-              <PanelSection label="Formato" onClick={() => setModal("formato")}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>
-                  {fuente.label || "Merriweather"} {fontSize}pt
-                </div>
-                <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginTop: 2 }}>
-                  {margenKey === "protocolar" ? "Protocolar" : "No protocolar"} &middot; {interlineado.label || "Protocolar"}
-                </div>
-              </PanelSection>
+              <div style={{ padding: "8px 12px", borderTop: "1px solid rgba(26,35,50,.08)", fontSize: 11, color: "rgba(26,35,50,.45)" }}>
+                {fuente.label} {fontSize}pt &middot; {margenKey === "protocolar" ? "Protocolar" : "No protocolar"}
+              </div>
 
             </div>
             {isDirty && (
@@ -710,11 +708,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={applyAndGen(setProtocolo)}   onClose={() => setModal(null)}/>}
       {modal === "fecha"       && <ModalFecha       fecha={fecha}             onApply={applyAndGen(setFecha)}       onClose={() => setModal(null)}/>}
       {modal === "formato"     && <ModalFormato
-        fuente={fuente} fontSize={fontSize} margenKey={margenKey} interlineado={interlineado}
-        onApply={({ fuente: f, fontSize: fs, margenKey: mk, interlineado: il }) => {
-          generateAfterRef.current = true;
-          setFuente(f); setFontSize(fs); setMargenKey(mk); setInterlineado(il);
-        }}
+        estilos={estilos}
+        onApply={nuevos => { generateAfterRef.current = true; setEstilos(nuevos); }}
         onClose={() => setModal(null)}
       />}
 

@@ -32,7 +32,12 @@ const fmtDomicilio = (p) => [
   p.pais,
 ].filter(Boolean).join(", ");
 
-export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null, vehiculos = [] }) {
+export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null, vehiculos = [], estilos = {} }) {
+  const {
+    nombresFormato     = "titlecase",
+    escribanoUppercase = true,
+    registroFormato    = "letras",
+  } = estilos;
   // Si hay roles definidos para este template, ordenar partes por rol antes de asignar posiciones.
   // Así "Autorizado/a" siempre va a PARTE_2 aunque se haya cargado primero.
   if (rolesContextuales?.length) {
@@ -76,7 +81,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     FACULTADO_TEXTO:          "queda facultado",
     EL_AUTORIZADO_TEXTO:      "El autorizado asume",
 
-    ESCRIBANO_NOMBRE:           (escribano.nombre || "").toUpperCase(),
+    ESCRIBANO_NOMBRE:           escribanoUppercase ? (escribano.nombre || "").toUpperCase() : (escribano.nombre || ""),
     ESCRIBANO_REGISTRO:         escribano.registro || "",
     ESCRIBANO_CARACTER:         escribano.caracter || "",
     ESCRIBANO_CARACTER_TEXTO:   escribanoCaracterTexto,
@@ -85,6 +90,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     ESCRIBANO_REGISTRO_LETRAS:  (() => {
       const n = parseInt(escribano.registro || "0");
       if (!n) return "";
+      if (registroFormato === "numero") return String(n);
       return numeroALetras(n).replace(/ CON 00\/100$/, "").toLowerCase();
     })(),
     // "del" para titular, "al" para adscripto/a
@@ -107,8 +113,8 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
   partes.forEach((p, i) => {
     if (!p) return; // slot vacío — no se generan vars para esta posición
     const n = i + 1;
-    // Formato: nombre capitalizado + apellido UPPERCASE (ej: "Raúl Alberto MORÁN")
-    const nombreFmt   = toTitleCase(p.nombre);
+    // Formato de nombres según estilos
+    const nombreFmt   = nombresFormato === "uppercase" ? (p.nombre||"").toUpperCase() : toTitleCase(p.nombre);
     const apellidoFmt = (p.apellido || "").toUpperCase();
     const apellidoNombre = [nombreFmt, apellidoFmt].filter(Boolean).join(" ");
     const dni = fmtDni(p.nroDoc);

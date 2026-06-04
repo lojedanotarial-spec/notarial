@@ -78,8 +78,8 @@ function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false) {
       const key = m[3];
       const val = vars[key] !== undefined ? String(vars[key]) : `{{${key}}}`;
       if (val) {
-        const boldVar = ctxBold || VARS_BOLD.has(key);
-        const ulVar   = ctxUnderline || VARS_UNDERLINE.has(key);
+        const boldVar = ctxBold || VARS_BOLD_DYN.has(key);
+        const ulVar   = ctxUnderline || VARS_UNDERLINE_DYN.has(key);
         // Si el valor contiene marcadores de formato, procesarlos recursivamente
         if (val.includes("**") || val.includes("__")) {
           segments.push(...parsearSegmentos(val, vars, boldVar, ulVar));
@@ -121,7 +121,29 @@ export async function buildDocxGenerico({
   extravars = {},
   rolesContextuales = null,
   vehiculos = [],
+  estilos = {},
 }) {
+  const {
+    nombresNegrita   = true,
+    nombresSubrayado = true,
+    fechaNegrita     = true,
+    vehiculoNegrita  = true,
+    escribanoNegrita = true,
+  } = estilos;
+
+  // VARS_BOLD dinámico según estilos
+  const VARS_BOLD_DYN = new Set([
+    ...(nombresNegrita   ? ['PARTE_1_COMPLETO','PARTE_2_COMPLETO','PARTE_3_COMPLETO','PARTE_4_COMPLETO',
+                            'PARTE_1_APELLIDO','PARTE_2_APELLIDO','PARTE_3_APELLIDO','PARTE_4_APELLIDO',
+                            'PARTE_1_NOMBRE',  'PARTE_2_NOMBRE',  'PARTE_3_NOMBRE',  'PARTE_4_NOMBRE',
+                            'PARTE_1_ROL',     'PARTE_2_ROL',     'PARTE_3_ROL',     'PARTE_4_ROL'] : []),
+    ...(escribanoNegrita ? ['ESCRIBANO_NOMBRE'] : []),
+    ...(fechaNegrita     ? ['FECHA_DIA_LETRAS','FECHA_MES_LETRAS','FECHA_ANIO_LETRAS','FECHA_CIUDAD'] : []),
+    ...(vehiculoNegrita  ? ['VEHICULO_MARCA','VEHICULO_MODELO','VEHICULO_TIPO_DESC','VEHICULO_DOMINIO','VEHICULO_CHASIS','VEHICULO_MOTOR'] : []),
+  ]);
+  const VARS_UNDERLINE_DYN = new Set([
+    ...(nombresSubrayado ? ['PARTE_1_COMPLETO','PARTE_2_COMPLETO','PARTE_3_COMPLETO','PARTE_4_COMPLETO'] : []),
+  ]);
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2;
   const margin = MARGENES[margenKey] || MARGENES.protocolar;
@@ -129,7 +151,7 @@ export async function buildDocxGenerico({
   const lineRule   = interlineado?.rule || "auto";
 
   const vars = {
-    ...buildVars({ partes, escribano, fecha, protocolo, instrumento, extravars, rolesContextuales, vehiculos }),
+    ...buildVars({ partes, escribano, fecha, protocolo, instrumento, extravars, rolesContextuales, vehiculos, estilos }),
     ...datosExtra,
   };
 
