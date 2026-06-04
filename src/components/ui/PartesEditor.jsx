@@ -138,7 +138,7 @@ const REPR_VACIA = () => ({
   tipo: "pj_representante",
   razon_social: "", cuit_sociedad: "", caracter: "", documentacion: "",
   repr_nombre: "", repr_apellido: "", repr_dni: "", repr_genero: "M",
-  poder_escritura: "", poder_fecha: "", poder_escribano: "", poder_registro: "",
+  domicilio_social: "",
 });
 
 function ConfirmQuitarParte({ nombre, onConfirm, onCancel }) {
@@ -267,7 +267,7 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
       </div>
 
       {esPJ && (
-        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:8, alignItems:"start" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:8, alignItems:"start", marginBottom:8 }}>
           <Fg label="Razón social">
             <input style={inp} value={repr.razon_social}
                    onChange={e => upd("razon_social", e.target.value)} placeholder="ej: VEXTER S.A."/>
@@ -276,17 +276,25 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
             <input style={inp} value={repr.cuit_sociedad}
                    onChange={e => upd("cuit_sociedad", e.target.value)} placeholder="xx-xxxxxxxx-x"/>
           </Fg>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:8, alignItems:"start", marginBottom:8 }}>
+          <Fg label="Domicilio social">
+            <input style={inp} value={repr.domicilio_social||""}
+                   onChange={e => upd("domicilio_social", e.target.value)}
+                   placeholder="ej: Belgrano 1553, Ciudad, Mendoza"/>
+          </Fg>
           <Fg label="Carácter">
             <input style={inp} value={repr.caracter}
                    onChange={e => upd("caracter", e.target.value.toUpperCase())}
                    placeholder="ej: PRESIDENTE"/>
           </Fg>
-          <Fg label="Documentación">
-            <input style={inp} value={repr.documentacion}
-                   onChange={e => upd("documentacion", e.target.value)}
-                   placeholder="actas, escrituras"/>
-          </Fg>
         </div>
+        <Fg label="Documentación (a), b), c)...)">
+          <textarea style={{ ...inp, resize:"vertical", minHeight:72, lineHeight:1.5 }}
+                    value={repr.documentacion}
+                    onChange={e => upd("documentacion", e.target.value)}
+                    placeholder={"a) Estatuto, escritura N° 29 de fecha 12/06/2017...\nb) Poder General Amplio, escritura N° 30..."}/>
+        </Fg>
       )}
 
       {esPF && (
@@ -321,35 +329,12 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
                      onChange={e => upd("repr_dni", e.target.value.replace(/\D/g,""))}/>
             </Fg>
           </div>
-          <div style={{ fontSize:11, fontWeight:700, letterSpacing:".05em",
-                        textTransform:"uppercase", color:C.muted, marginBottom:6 }}>
-            Poder notarial
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"80px 110px 1fr 1fr", gap:8, alignItems:"start" }}>
-            <Fg label="N° escrit.">
-              <input style={inp} value={repr.poder_escritura}
-                     onChange={e => upd("poder_escritura", e.target.value)}/>
-            </Fg>
-            <Fg label="Fecha (dd/mm/aaaa)">
-              <input style={inp} value={repr.poder_fecha}
-                     placeholder="dd/mm/aaaa" maxLength={10}
-                     onChange={e => {
-                       const v = e.target.value.replace(/\D/g,"");
-                       const fmt = v.length <= 2 ? v
-                         : v.length <= 4 ? v.slice(0,2)+"/"+v.slice(2)
-                         : v.slice(0,2)+"/"+v.slice(2,4)+"/"+v.slice(4,8);
-                       upd("poder_fecha", fmt);
-                     }}/>
-            </Fg>
-            <Fg label="Escribano">
-              <input style={inp} value={repr.poder_escribano}
-                     onChange={e => upd("poder_escribano", e.target.value)}/>
-            </Fg>
-            <Fg label="Registro">
-              <input style={inp} value={repr.poder_registro}
-                     onChange={e => upd("poder_registro", e.target.value)}/>
-            </Fg>
-          </div>
+          <Fg label="Documentación (a), b), c)...)">
+            <textarea style={{ ...inp, resize:"vertical", minHeight:72, lineHeight:1.5 }}
+                      value={repr.documentacion}
+                      onChange={e => upd("documentacion", e.target.value)}
+                      placeholder={"a) Poder General Amplio, escritura N° 71 de fecha 25/06/2010, pasada ante mí...\nb) Inscripto bajo N° 14023, fojas 155/156, Tomo 135M..."}/>
+          </Fg>
         </>
       )}
     </div>
