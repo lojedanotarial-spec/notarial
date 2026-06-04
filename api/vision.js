@@ -94,10 +94,11 @@ Instrucciones: el documento puede estar en cualquier orientación — rotalo men
     "barrio": "nombre del barrio si figura (ej: B° Di Rocco, B° Unión y Fuerza) — NO poner en localidad",
     "manzana": "manzana si figura",
     "casa": "casa o lote si figura",
-    "localidad": "nombre del pueblo, ciudad o distrito — NO confundir con barrio",
+    "localidad": "nombre del pueblo, ciudad o distrito — NO confundir con barrio. Si ciudad y provincia tienen el mismo nombre (ej: SAN JUAN - SAN JUAN, CÓRDOBA - CÓRDOBA), el primero es localidad y el segundo es provincia",
     "departamento": "departamento o municipio (ej: Godoy Cruz, Maipú, Capital)",
-    "provincia": "provincia si figura (ej: Mendoza, Buenos Aires)",
-    "pais": "país si figura, omitir si es Argentina"
+    "provincia": "provincia si figura. CRÍTICO: en DNIs con formato 'CIUDAD - PROVINCIA', extraé la provincia aunque coincida con la ciudad (ej: SAN JUAN → provincia San Juan, CÓRDOBA → provincia Córdoba, MENDOZA → provincia Mendoza)",
+    "pais": "país si figura, omitir si es Argentina",
+    "fecha_nac": "CRÍTICO: buscá la fecha de nacimiento tanto en texto impreso como en la banda MRZ (línea de caracteres). En la MRZ el formato es AAMMDD (ej: 710821 = 21/08/1971). Devolvé siempre en formato dd/mm/aaaa"
   }],
   "notas": ""
 }
