@@ -12,6 +12,7 @@ import { Btn }     from "../components/ui/Btn";
 import { Warn }    from "../components/ui/FormElements";
 import { ModalPartes }    from "../components/modals/ModalPartes";
 import { ModalVehiculos } from "../components/modals/ModalVehiculos";
+import { ModalFormulario } from "../components/modals/ModalFormulario";
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato }  from "../components/modals/ModalFormato";
 import { buildDocxCertFirmaF08, buildDocxBlanco } from "../utils/buildDocx";
@@ -108,6 +109,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   const [partes,        setPartes]        = useState(() => params?.partes?.length ? params.partes : [PARTE_VACIA()]);
   const [vehiculos,     setVehiculos]     = useState([]);
+  const [formulario,    setFormulario]    = useState({ tipo: "08", numero: "", dominio: "" });
   const [escribano,     setEscribano]     = useState(() => {
     if (!miUsuario) return ESCRIBANO_INI;
     const ROL_CARACTER_INI = {
@@ -196,7 +198,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             instrTexto, fechaLetras, gen,
             showRol: ["cert_firma_f08", "certFirmaF08"].includes(templateSlug),
             margenKey, fontSize, fuente, interlineado,
-            showVarHighlight, extravars,
+            showVarHighlight,
+            extravars: { NUMERO_FORMULARIO: formulario.numero, DOMINIO: formulario.dominio, TIPO_FORMULARIO: formulario.tipo },
           })
         : templateContenido
           ? await buildDocxGenerico({
@@ -576,11 +579,24 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 </div>
               </PanelSection>
 
-              <PanelSection label="Instrumento" onClick={() => setModal("instrumento")}>
-                <div style={{ fontSize: 14, fontWeight: instrumento.descripcion ? 600 : 400, fontStyle: instrumento.descripcion ? "normal" : "italic", color: instrumento.descripcion ? C.dark : "rgba(26,35,50,.4)" }}>
-                  {instrumento.descripcion || "Sin especificar"}
-                </div>
-              </PanelSection>
+              {["cert_firma_f08","certFirmaF08"].includes(templateSlug) ? (
+                <PanelSection label={`Formulario 0${formulario.tipo}`} onClick={() => setModal("formulario")}>
+                  {formulario.numero ? (
+                    <>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.dark }}>N.° {formulario.numero}</div>
+                      <div style={{ fontSize: 12, color: C.muted }}>Dominio: {formulario.dominio || "—"}</div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 13, fontStyle: "italic", color: "rgba(26,35,50,.4)" }}>Sin especificar</div>
+                  )}
+                </PanelSection>
+              ) : (
+                <PanelSection label="Instrumento" onClick={() => setModal("instrumento")}>
+                  <div style={{ fontSize: 14, fontWeight: instrumento.descripcion ? 600 : 400, fontStyle: instrumento.descripcion ? "normal" : "italic", color: instrumento.descripcion ? C.dark : "rgba(26,35,50,.4)" }}>
+                    {instrumento.descripcion || "Sin especificar"}
+                  </div>
+                </PanelSection>
+              )}
 
               {/* Vehículos — solo para templates que usan VEHICULOS_LISTA */}
               {(templateSlug === "autorizacion_vehiculo" || vehiculos.length > 0) && (
@@ -601,7 +617,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               )}
 
               {/* Variables extra del template (excluir las de vehículo ya gestionadas por el modal) */}
-              {templateVarsSchema.filter(v => !v.name.startsWith("VEHICULO_")).length > 0 && (
+              {!["cert_firma_f08","certFirmaF08"].includes(templateSlug) && templateVarsSchema.filter(v => !v.name.startsWith("VEHICULO_")).length > 0 && (
                 <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(26,35,50,.45)", marginBottom: 8 }}>
                     Datos del instrumento
@@ -675,6 +691,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
       {/* MODALES */}
       {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
+      {modal === "formulario"  && <ModalFormulario formulario={formulario} onApply={v => { setFormulario(v); generateAfterRef.current = true; }} onClose={() => setModal(null)}/>}
       {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
