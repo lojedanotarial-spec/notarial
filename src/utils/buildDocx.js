@@ -39,6 +39,28 @@ export async function buildDocxBlanco({ escribano, margenKey = "protocolar", fon
   return Packer.toBlob(doc);
 }
 
+// Orden de grupos para cert_firma_f08
+const F08_ROL_INFO = {
+  'VENDEDOR':                { g:0, o:0 }, 'VENDEDORA':                { g:0, o:0 },
+  'CO-VENDEDOR':             { g:0, o:1 }, 'CO-VENDEDORA':             { g:0, o:1 },
+  'CONYUGE DEL VENDEDOR':    { g:0, o:2 }, 'CÓNYUGE DEL VENDEDOR':     { g:0, o:2 },
+  'CONYUGE DE LA VENDEDORA': { g:0, o:2 }, 'CÓNYUGE DE LA VENDEDORA':  { g:0, o:2 },
+  'COMPRADOR':               { g:1, o:0 }, 'COMPRADORA':               { g:1, o:0 },
+  'CO-COMPRADOR':            { g:1, o:1 }, 'CO-COMPRADORA':            { g:1, o:1 },
+  'CONYUGE DEL COMPRADOR':   { g:1, o:2 }, 'CÓNYUGE DEL COMPRADOR':    { g:1, o:2 },
+  'CONYUGE DEL COMPRADORA':  { g:1, o:2 }, 'CÓNYUGE DE LA COMPRADORA': { g:1, o:2 },
+};
+
+function ordenarPartesF08(partes) {
+  return [...partes].sort((a, b) => {
+    const rA = (a.rol||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const rB = (b.rol||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const infoA = F08_ROL_INFO[(a.rol||'').toUpperCase()] || F08_ROL_INFO[rA] || {g:9,o:9};
+    const infoB = F08_ROL_INFO[(b.rol||'').toUpperCase()] || F08_ROL_INFO[rB] || {g:9,o:9};
+    return infoA.g !== infoB.g ? infoA.g - infoB.g : infoA.o - infoB.o;
+  });
+}
+
 export async function buildDocxCertFirmaF08({
   partes, escribano, fecha, protocolo, instrumento,
   instrTexto, fechaLetras, gen,
@@ -48,6 +70,7 @@ export async function buildDocxCertFirmaF08({
   fuente,
   interlineado,
   showVarHighlight = true,
+  extravars = {},
 }) {
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2; // docx uses half-points
@@ -78,87 +101,103 @@ export async function buildDocxCertFirmaF08({
 
   const al_del = escribano.caracter?.toLowerCase().includes("titular") ? "del" : "al";
 
+  const MESES_NAC = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const fmtNac = (v) => {
+    if (!v) return "";
+    const pts = v.includes("-") ? v.split("-") : v.split("/").reverse();
+    const [anio, mes, dia] = pts;
+    return `${Number(dia)} de ${MESES_NAC[Number(mes)-1]||""} de ${anio}`;
+  };
+  const nacGenero = (nac, g) => {
+    if (!nac) return "";
+    const n = nac.toLowerCase().trim();
+    const map = { argentina:"argentino", uruguaya:"uruguayo", chilena:"chileno", boliviana:"boliviano", peruana:"peruano", paraguaya:"paraguayo", "brasileña":"brasileño", venezolana:"venezolano", colombiana:"colombiano" };
+    return g === "M" ? (map[n] || nac) : nac;
+  };
+  const fmtDom = (p) => [
+    p.barrio  && "Barrio " + p.barrio,
+    p.manzana && "Manzana " + p.manzana,
+    p.casa    && "Casa " + p.casa,
+    p.calle, p.numero,
+    p.piso && "piso " + p.piso,
+    p.dpto && "departamento " + p.dpto,
+    p.localidad && p.departamento && p.localidad !== p.departamento
+      ? p.localidad + " del departamento de " + p.departamento
+      : (p.localidad || p.departamento),
+  ].filter(Boolean).join(", ");
+
+  // Ordenar partes: VENTA primero, COMPRA después; dentro de cada grupo por prioridad
+  const partesOrdenadas = ordenarPartesF08(partes.filter(Boolean));
+
+  const numFormulario = extravars.NUMERO_FORMULARIO || extravars.numero_formulario || "";
+  const dominio       = extravars.DOMINIO           || extravars.dominio           || "";
+  const nPartes       = partesOrdenadas.length;
+
+  // Texto del bloque de partes
   const partesRuns = [];
-  if (partes.length === 0) {
+
+  if (nPartes === 0) {
     partesRuns.push(vRun("PARTE", ""));
   } else {
-    const fraseIdentidad = partes.length === 1
-      ? ", y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.- "
-      : ", y cuyas identidades justifican conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhiben los documentos anteriormente relacionados cuyas copias archivo en esta escribanía.- ";
-    const fraseCapacidad = partes.length === 1
-      ? gen(partes[0], "La compareciente", "El compareciente") + " manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.-"
-      : "Los comparecientes manifiestan no tener su capacidad de ejercicio restringida por sentencia alguna.-";
-
-    partes.forEach((p, idx) => {
-      const esUltima = idx === partes.length - 1;
-      const domicilio = [
-        p.barrio  && "Barrio " + p.barrio,
-        p.manzana && "Manzana " + p.manzana,
-        p.casa    && "Casa " + p.casa,
-        p.calle, p.numero,
-        p.piso && "piso " + p.piso,
-        p.dpto && "departamento " + p.dpto,
-        p.localidad,
-      ].filter(Boolean).join(", ");
-
-      if (idx === 0) partesRuns.push(r("por "));
-      if (idx > 0 && !esUltima) partesRuns.push(r("; "));
-      if (idx > 0 && esUltima) partesRuns.push(r("; y "));
-
-      partesRuns.push(r(gen(p, "la señora", "el señor") + " "));
-      // Formato registro 853: nombre capitalizado + apellido UPPERCASE
+    partesOrdenadas.forEach((p, idx) => {
+      const art = gen(p, "la señora", "el señor");
       const toTC = s => (s||"").split(/\s+/).map(w => w ? w.charAt(0).toUpperCase()+w.slice(1).toLowerCase() : w).join(" ");
-      const nombreCompleto = [toTC(p.nombre), (p.apellido||"").toUpperCase()].filter(Boolean).join(" ");
-      partesRuns.push(vRun("APELLIDO Y NOMBRE", nombreCompleto, true));
-      partesRuns.push(r(", "));
-      const nacGenero = (nac, g) => {
-        if (!nac) return "";
-        const n = nac.toLowerCase().trim();
-        if (g === "M") {
-          const map = { argentina:"argentino", uruguaya:"uruguayo", chilena:"chileno", boliviana:"boliviano", peruana:"peruano", paraguaya:"paraguayo", "brasileña":"brasileño", venezolana:"venezolano", colombiana:"colombiano" };
-          return map[n] || nac;
-        }
-        return nac;
-      };
-      partesRuns.push(vRun("NACIONALIDAD", nacGenero(p.nacionalidad, p.genero)));
+      const nombre = [(p.nombre||"").toUpperCase(), (p.apellido||"").toUpperCase()].filter(Boolean).join(" ");
+      const dom = fmtDom(p);
+      const elLaQue = gen(p, "la que", "el que");
+
+      // Conector entre partes
+      if (idx === 0) {
+        partesRuns.push(r("ha sido puesta en mi presencia por " + art + " "));
+      } else {
+        partesRuns.push(r("; y " + art + " "));
+      }
+
+      partesRuns.push(vRun("NOMBRE", nombre, true));
+      if (p.nacionalidad) { partesRuns.push(r(", " + nacGenero(p.nacionalidad, p.genero))); }
       partesRuns.push(r(", con "));
-      partesRuns.push(vRun("TIPO DOC", p.tipoDoc));
+      partesRuns.push(vRun("TIPO DOC", p.tipoDoc || "Documento Nacional de Identidad"));
       partesRuns.push(r(" número "));
-      partesRuns.push(vRun("N° DOCUMENTO", fmtDni(p.nroDoc)));
+      partesRuns.push(vRun("DNI", fmtDni(p.nroDoc)));
       if (p.cuit) {
-        partesRuns.push(r(", C.U.I.T./L. "));
-        partesRuns.push(vRun("CUIT/CUIL", fmtCuit(p.cuit)));
+        partesRuns.push(r(", con C.U.I.T./L. número "));
+        partesRuns.push(vRun("CUIT", fmtCuit(p.cuit)));
       }
       if (p.fechaNac) {
-        const MESES_NAC = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-        const fmtNac = (v) => {
-          if (!v) return v;
-          const parts = v.includes("-") ? v.split("-") : v.split("/").reverse();
-          const [anio, mes, dia] = parts;
-          return `${Number(dia)} de ${MESES_NAC[Number(mes)-1] || ""} de ${anio}`;
-        };
         partesRuns.push(r(", nacid" + gen(p, "a", "o") + " el "));
         partesRuns.push(vRun("FECHA NAC", fmtNac(p.fechaNac)));
       }
-      partesRuns.push(r(", quien manifiesta ser de estado de familia "));
-      partesRuns.push(vRun("ESTADO CIVIL", p.estadoCivil));
-      if (domicilio) {
+      if (p.estadoCivil) {
+        partesRuns.push(r(", quien manifiesta ser de estado civil "));
+        partesRuns.push(vRun("ESTADO CIVIL", p.estadoCivil));
+      }
+      if (dom) {
         partesRuns.push(r(", con domicilio en "));
-        partesRuns.push(vRun("DOMICILIO", domicilio));
-        partesRuns.push(r(", departamento "));
-        partesRuns.push(vRun("DEPARTAMENTO", p.departamento));
-        partesRuns.push(r(", de esta Provincia de Mendoza"));
+        partesRuns.push(vRun("DOMICILIO", dom));
+        partesRuns.push(r(", de ésta Provincia de Mendoza"));
       }
-      if (showRol) {
-        partesRuns.push(r("; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, "));
-        partesRuns.push(r(gen(p, "la que", "el que") + " firma en su carácter de "));
-        partesRuns.push(vRun("ROL", p.rol, true));
-      } else {
-        partesRuns.push(r("; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto"));
-      }
+      partesRuns.push(r("; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, cuya copia archivo en ésta escribanía "));
+      partesRuns.push(r(elLaQue + " firma en su carácter de "));
+      partesRuns.push(vRun("ROL", p.rol, true));
     });
 
-    partesRuns.push(r(fraseIdentidad + fraseCapacidad));
+    // Cierre colectivo
+    const plural = nPartes > 1;
+    const fraseIdentidad = plural
+      ? "; y cuyas identidades justifican conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhiben los documentos anteriormente relacionados cuyas copias archivo en esta escribanía.-"
+      : "; y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.-";
+    const fraseCapacidad = plural
+      ? " Los comparecientes manifiestan no tener su capacidad de ejercicio restringida por sentencia alguna.-"
+      : " " + gen(partesOrdenadas[0], "La compareciente", "El compareciente") + " manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.-";
+    const fraseRequerimiento = plural
+      ? " Los requerimientos respectivos han sido formalizados en Acta número "
+      : " El requerimiento respectivo ha sido formalizado en Acta número ";
+
+    partesRuns.push(r(fraseIdentidad + fraseCapacidad + fraseRequerimiento));
+    partesRuns.push(vRun("N° ACTA", protocolo.nroActa));
+    partesRuns.push(r(" Libro de Requerimientos para Certificaciones de Firmas número "));
+    partesRuns.push(vRun("N° LIBRO", protocolo.nroLibro));
+    partesRuns.push(r(".-"));
   }
 
   const margen = margenKey === "protocolar"
@@ -175,20 +214,15 @@ export async function buildDocxCertFirmaF08({
     r(escribano.circunscripcion ? escribano.circunscripcion + " circunscripción" : ""),
     r(", "),
     r("CERTIFICO:-", true),
-    r(" Que la firma que se encuentra inserta en "),
-    vRun("INSTRUMENTO", instrTexto),
-    instrumento.fojas ? r(", " + instrumento.fojas) : null,
-    r(", que lleva mi firma y sello; ha sido puesta en mi presencia "),
+    r(" Que las firmas que se encuentran insertas en el Formulario 08 N.° "),
+    vRun("N° FORMULARIO", numFormulario),
+    r(", perteneciente al dominio "),
+    vRun("DOMINIO", dominio),
+    r(", el que se encuentra parcialmente en blanco, adjunto a la presente Actuación Notarial, que lleva mi firma y sello; "),
     ...partesRuns,
-    r(" El requerimiento respectivo ha sido formalizado en Acta número "),
-    vRun("N° ACTA", protocolo.nroActa),
-    r(" del "),
-    vRun("LIBRO", protocolo.libro),
-    r(" número "),
-    vRun("N° LIBRO", protocolo.nroLibro),
-    r(".- En "),
+    r(" En "),
     vRun("CIUDAD", fecha.ciudad ? fecha.ciudad.toUpperCase() : "", true),
-    r(", Provincia de Mendoza, República Argentina, a los "),
+    r(", Provincia de Mendoza, República Argentina, a "),
     vRun("FECHA", fechaLetras, true),
     r(".-"),
   ].filter(Boolean);

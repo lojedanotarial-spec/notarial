@@ -45,7 +45,7 @@ const ROLES_CONTEXTUALES = {
   cesion_herencia:        ["Cedente",     "Cesionario/a"],
   cesion_cuotas:          ["Cedente",     "Cesionario/a"],
   cert_firma:             ["Compareciente", null],
-  cert_firma_f08:         ["Compareciente", null],
+  cert_firma_f08:         ["Vendedor", "Co-vendedor", "Cónyuge del vendedor", "Comprador", "Co-comprador", "Cónyuge del comprador"],
   cert_copia:             ["Requirente",  null],
   fe_vida:                ["Compareciente", null],
 };
@@ -196,7 +196,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             instrTexto, fechaLetras, gen,
             showRol: ["cert_firma_f08", "certFirmaF08"].includes(templateSlug),
             margenKey, fontSize, fuente, interlineado,
-            showVarHighlight,
+            showVarHighlight, extravars,
           })
         : templateContenido
           ? await buildDocxGenerico({
