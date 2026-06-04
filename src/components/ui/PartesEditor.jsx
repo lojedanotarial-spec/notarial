@@ -267,6 +267,7 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
       </div>
 
       {esPJ && (
+        <>
         <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:8, alignItems:"start", marginBottom:8 }}>
           <Fg label="Razón social">
             <input style={inp} value={repr.razon_social}
@@ -295,6 +296,7 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
                     onChange={e => upd("documentacion", e.target.value)}
                     placeholder={"a) Estatuto, escritura N° 29 de fecha 12/06/2017...\nb) Poder General Amplio, escritura N° 30..."}/>
         </Fg>
+        </>
       )}
 
       {esPF && (

@@ -1,4 +1,5 @@
 import { diaLetras, anioLetras, numeroALetras } from "../utils";
+import { textoInterviene } from "./buildInterviene";
 
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const MESES_UP = MESES.map(m => m.toUpperCase());
@@ -149,6 +150,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_ARTICULO_LA_EL`]  = esF ? "La" : "El";
     vars[`PARTE_${n}_NACIDO_A`]        = esF ? "nacida" : "nacido";
     vars[`PARTE_${n}_DEL_DE_LA`]       = esF ? "de la" : "del";
+    vars[`PARTE_${n}_INTERVIENE`]      = textoInterviene(p);
 
     // Identidad completa — la fórmula notarial estándar
     const identidadPartes = [

@@ -1,5 +1,6 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import JSZip from "jszip";
+import { runsInterviene } from "./buildInterviene";
 
 async function inyectarMargenesSimetricos(blob) {
   const buf = await blob.arrayBuffer();
@@ -180,34 +181,8 @@ export async function buildDocxCertFirmaF08({
       partesRuns.push(r(elLaQue + " firma en su carácter de "));
       partesRuns.push(vRun("ROL", p.rol, true));
 
-      // Bloque INTERVIENE — persona física apoderada
-      const reprPF = (p.representaciones || []).find(rp => rp.tipo === "pf_apoderado");
-      if (reprPF) {
-        const reprNombre = [(reprPF.repr_nombre||"").toUpperCase(), (reprPF.repr_apellido||"").toUpperCase()].filter(Boolean).join(" ");
-        const reprDni    = fmtDni(reprPF.repr_dni);
-        const reprArt    = reprPF.repr_genero === "F" ? "de la señora" : "del señor";
-        partesRuns.push(r(".- INTERVIENE: en nombre y representación " + reprArt + " "));
-        partesRuns.push(vRun("REPRESENTADO", reprNombre, true));
-        if (reprDni) { partesRuns.push(r(", con Documento Nacional de Identidad número ")); partesRuns.push(vRun("DNI REP", reprDni)); }
-        if (reprPF.documentacion) {
-          partesRuns.push(r("; con facultades suficientes para este acto a mérito de la siguiente documentación: " + reprPF.documentacion + ".-"));
-        }
-        partesRuns.push(r(" Documentación que para este acto he tenido a la vista, doy fe"));
-      }
-
-      // Bloque INTERVIENE — persona jurídica
-      const reprPJ = (p.representaciones || []).find(rp => rp.tipo === "pj_apoderado" || rp.tipo === "pj_representante");
-      if (reprPJ) {
-        partesRuns.push(r(".- INTERVIENE: en nombre y representación de "));
-        partesRuns.push(vRun("RAZÓN SOCIAL", (reprPJ.razon_social||"").toUpperCase(), true));
-        if (reprPJ.cuit_sociedad) { partesRuns.push(r(", C.U.I.T. número ")); partesRuns.push(r(reprPJ.cuit_sociedad)); }
-        if (reprPJ.domicilio_social) { partesRuns.push(r(", con domicilio en " + reprPJ.domicilio_social)); }
-        if (reprPJ.caracter) { partesRuns.push(r("; en su carácter de ")); partesRuns.push(vRun("CARÁCTER", reprPJ.caracter, true)); }
-        if (reprPJ.documentacion) {
-          partesRuns.push(r(", con facultades suficientes para el presente acto, conforme lo que acredita con la siguiente documentación: " + reprPJ.documentacion + ".-"));
-        }
-        partesRuns.push(r(" Documentación que para este acto he tenido a la vista, doy fe"));
-      }
+      // Bloque INTERVIENE — función compartida
+      runsInterviene(p, r, vRun, fmtDni).forEach(run => partesRuns.push(run));
     });
 
     // Cierre colectivo

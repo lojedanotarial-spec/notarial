@@ -26,7 +26,8 @@
       "Bash(npx tsc *)",
       "Bash(npm run *)",
       "Bash(git commit *)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(npm test *)"
     ]
   }
 }
