@@ -12,8 +12,10 @@ function titleCaseDomicilio(str) {
   if (!str) return str;
   return str.toLowerCase().split(/\s+/).map((w, i) => {
     if (!w) return w;
-    // Abreviaturas con °, . o solo números: mantener tal cual (ya lowercased)
-    if (/^[0-9]/.test(w) || w.includes('°')) return w;
+    // Números al inicio: mantener (ej: "9 de Julio")
+    if (/^[0-9]/.test(w)) return w;
+    // Abreviaturas con ° (B°, N°): capitalizar primera letra
+    if (w.includes('°')) return w.charAt(0).toUpperCase() + w.slice(1);
     // Primera palabra siempre con mayúscula
     if (i === 0) return w.charAt(0).toUpperCase() + w.slice(1);
     // Artículos/preposiciones: minúscula

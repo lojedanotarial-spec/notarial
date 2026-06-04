@@ -89,10 +89,15 @@ Instrucciones: el documento puede estar en cualquier orientación — rotalo men
     "estado_civil": "",
     "nacionalidad": "argentina",
     "cuit": "",
-    "calle": "",
-    "numero": "",
-    "localidad": "",
-    "departamento": ""
+    "calle": "nombre de la calle o avenida",
+    "numero": "número de puerta/lote",
+    "barrio": "nombre del barrio si figura (ej: B° Di Rocco, B° Unión y Fuerza) — NO poner en localidad",
+    "manzana": "manzana si figura",
+    "casa": "casa o lote si figura",
+    "localidad": "nombre del pueblo, ciudad o distrito — NO confundir con barrio",
+    "departamento": "departamento o municipio (ej: Godoy Cruz, Maipú, Capital)",
+    "provincia": "provincia si figura (ej: Mendoza, Buenos Aires)",
+    "pais": "país si figura, omitir si es Argentina"
   }],
   "notas": ""
 }
