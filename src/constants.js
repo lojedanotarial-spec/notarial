@@ -104,7 +104,8 @@ export const PARTE_VACIA = () => ({
   estadoCivil: "",
   calle:       "", numero:       "", piso:         "", dpto:    "",
   barrio:      "", manzana:      "", casa:         "",
-  localidad:   "", departamento: "Ciudad",           rol:      "",
+  localidad:   "", departamento: "", provincia:   "", pais:     "",
+  rol:         "",
 });
 
 export const ESCRIBANO_INI = {

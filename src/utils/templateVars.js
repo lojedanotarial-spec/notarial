@@ -28,6 +28,8 @@ const fmtDomicilio = (p) => [
   p.dpto    && `dpto. ${p.dpto}`,
   p.localidad,
   p.departamento,
+  p.provincia,
+  p.pais,
 ].filter(Boolean).join(", ");
 
 export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null, vehiculos = [] }) {

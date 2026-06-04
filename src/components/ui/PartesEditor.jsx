@@ -403,6 +403,8 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
       manzana:          persona.manzana       || "",
       casa:             persona.casa          || "",
       localidad:        persona.localidad     || "",
+      provincia:        persona.provincia     || "",
+      pais:             persona.pais          || "",
       departamento:     persona.departamento  || "Ciudad",
       representaciones: persona.representaciones || [],
       _personaId:       persona.id,
@@ -639,7 +641,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                   <input style={inp} value={p.calle}
                     onChange={e => upd(p.id, { calle: e.target.value })} placeholder="ingrese calle"/>
                 </Fg>
-                <Fg label="Numero">
+                <Fg label="Número">
                   <input style={inp} value={p.numero}
                     onChange={e => upd(p.id, { numero: e.target.value })} placeholder="nro"/>
                 </Fg>
@@ -667,11 +669,17 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                   <input style={inp} value={p.localidad}
                     onChange={e => upd(p.id, { localidad: e.target.value })} placeholder="ej: Dorrego"/>
                 </Fg>
-                <Fg label="Departamento Mendoza">
-                  <select style={inp} value={p.departamento}
-                    onChange={e => upd(p.id, { departamento: e.target.value })}>
-                    {DEPARTAMENTOS.map(d => <option key={d}>{d}</option>)}
-                  </select>
+                <Fg label="Departamento">
+                  <input style={inp} value={p.departamento}
+                    onChange={e => upd(p.id, { departamento: e.target.value })} placeholder="ej: Godoy Cruz"/>
+                </Fg>
+                <Fg label="Provincia">
+                  <input style={inp} value={p.provincia || ""}
+                    onChange={e => upd(p.id, { provincia: e.target.value })} placeholder="ej: Mendoza"/>
+                </Fg>
+                <Fg label="País">
+                  <input style={inp} value={p.pais || ""}
+                    onChange={e => upd(p.id, { pais: e.target.value })} placeholder="ej: Argentina"/>
                 </Fg>
               </div>
 
