@@ -26,29 +26,29 @@ export function ModalFormulario({ formulario, onApply, onClose }) {
             {TIPOS.map(t => (
               <button key={t.key} type="button" onClick={() => upd("tipo", t.key)}
                 style={{
-                  flex: 1, padding: "8px 4px", borderRadius: 8, border: "2px solid",
+                  flex: 1, padding: "5px 4px", borderRadius: 7, border: "1px solid",
                   borderColor: d.tipo === t.key ? C.cerulean : "rgba(26,35,50,.15)",
                   background: d.tipo === t.key ? C.ceruleanLight : "transparent",
                   color: d.tipo === t.key ? C.cerulean : C.dark,
                   fontFamily: "'Montserrat', sans-serif", fontWeight: 700,
-                  fontSize: 13, cursor: "pointer", lineHeight: 1.3,
+                  fontSize: 12, cursor: "pointer", lineHeight: 1.3,
                 }}>
-                <div style={{ fontSize: 16 }}>{t.label}</div>
-                <div style={{ fontSize: 10, fontWeight: 500, opacity: 0.7 }}>{t.hint}</div>
+                <div style={{ fontSize: 13 }}>{t.label}</div>
+                <div style={{ fontSize: 10, fontWeight: 400, opacity: 0.6 }}>{t.hint}</div>
               </button>
             ))}
           </div>
         </Fg>
 
         <Fg label="N° de formulario">
-          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+          <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
             {tipoActual.prefix && (
               <div style={{
-                padding: "0 10px", height: 38, display: "flex", alignItems: "center",
-                background: "rgba(26,35,50,.07)", border: "1px solid rgba(26,35,50,.18)",
-                borderRight: "none", borderRadius: "6px 0 0 6px",
+                padding: "0 10px", display: "flex", alignItems: "center",
+                background: "rgba(26,35,50,.07)", border: "1px solid rgba(26,35,50,.14)",
+                borderRight: "none", borderRadius: "7px 0 0 7px",
                 fontFamily: "'Montserrat', sans-serif", fontWeight: 700,
-                fontSize: 14, color: C.dark, letterSpacing: "0.05em",
+                fontSize: 13, color: C.dark,
               }}>
                 {tipoActual.prefix}
               </div>
@@ -56,20 +56,22 @@ export function ModalFormulario({ formulario, onApply, onClose }) {
             <input
               style={{
                 ...inp,
-                borderRadius: tipoActual.prefix ? "0 6px 6px 0" : 6,
+                borderRadius: tipoActual.prefix ? "0 7px 7px 0" : 7,
                 flex: 1,
               }}
               value={d.numero}
               onChange={e => upd("numero", e.target.value.replace(/\D/g, ""))}
+              onKeyDown={e => { if (!/[\d\b]/.test(e.key) && !e.ctrlKey && !e.metaKey && e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Delete") e.preventDefault(); }}
+              inputMode="numeric"
               placeholder={tipoActual.prefix ? "Ej: 06500179" : "Ej: 53583936"}
               maxLength={12}
             />
           </div>
-          {tipoActual.prefix && (
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>
-              Se guardará como N.° M{d.numero || "XXXXXXXX"}
-            </div>
-          )}
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>
+            {tipoActual.prefix
+              ? `Solo números. Se guardará como N.° M${d.numero || "XXXXXXXX"}`
+              : "Solo números, sin letras ni guiones."}
+          </div>
         </Fg>
 
         <Fg label="Dominio (patente)">
