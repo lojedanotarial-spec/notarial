@@ -30,10 +30,10 @@ const DEPTO_MENDOZA = new Set([
 function inferirProvincia(localidad, departamento) {
   const loc = (localidad||"").toLowerCase().trim();
   const dep = (departamento||"").toLowerCase().trim();
-  // Por departamento mendocino
-  if (DEPTO_MENDOZA.has(dep)) return "Mendoza";
-  // Por localidad conocida
+  // Localidad tiene prioridad — es más específica que el departamento
   if (LOCALIDAD_PROVINCIA[loc]) return LOCALIDAD_PROVINCIA[loc];
+  // Departamento mendocino como fallback ("Capital" existe en muchas provincias)
+  if (DEPTO_MENDOZA.has(dep)) return "Mendoza";
   return "";
 }
 
