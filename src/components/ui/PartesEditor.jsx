@@ -1,6 +1,42 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { C, DEPARTAMENTOS, PARTE_VACIA, inp } from "../../constants";
 
+// Inferencia de provincia argentina a partir de localidad o departamento
+const LOCALIDAD_PROVINCIA = {
+  // Capitales provinciales
+  "buenos aires":"Buenos Aires","la plata":"Buenos Aires",
+  "córdoba":"Córdoba","catamarca":"Catamarca","corrientes":"Corrientes",
+  "entre ríos":"Entre Ríos","paraná":"Entre Ríos",
+  "formosa":"Formosa","jujuy":"Jujuy","san salvador de jujuy":"Jujuy",
+  "la pampa":"La Pampa","santa rosa":"La Pampa",
+  "la rioja":"La Rioja","mendoza":"Mendoza",
+  "misiones":"Misiones","posadas":"Misiones",
+  "neuquén":"Neuquén","río negro":"Río Negro","viedma":"Río Negro",
+  "salta":"Salta","san juan":"San Juan","san luis":"San Luis",
+  "santa cruz":"Santa Cruz","río gallegos":"Santa Cruz",
+  "santa fe":"Santa Fe","rosario":"Santa Fe",
+  "santiago del estero":"Santiago del Estero",
+  "tierra del fuego":"Tierra del Fuego","ushuaia":"Tierra del Fuego",
+  "tucumán":"Tucumán","san miguel de tucumán":"Tucumán",
+  "chaco":"Chaco","resistencia":"Chaco",
+  "chubut":"Chubut","rawson":"Chubut",
+};
+const DEPTO_MENDOZA = new Set([
+  "capital","godoy cruz","maipú","las heras","guaymallén","luján de cuyo",
+  "san martín","san rafael","general alvear","rivadavia","tunuyán",
+  "tupungato","san carlos","la paz","santa rosa","malargüe","lavalle","junín"
+]);
+
+function inferirProvincia(localidad, departamento) {
+  const loc = (localidad||"").toLowerCase().trim();
+  const dep = (departamento||"").toLowerCase().trim();
+  // Por departamento mendocino
+  if (DEPTO_MENDOZA.has(dep)) return "Mendoza";
+  // Por localidad conocida
+  if (LOCALIDAD_PROVINCIA[loc]) return LOCALIDAD_PROVINCIA[loc];
+  return "";
+}
+
 // Artículos y preposiciones que van en minúscula en el interior de un nombre
 const MINUSCULAS_ES = new Set([
   'a','al','ante','bajo','con','contra','de','del','desde','en','entre',
@@ -440,7 +476,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
       manzana:          persona.manzana                       || "",
       casa:             persona.casa                          || "",
       localidad:        titleCaseDomicilio(persona.localidad) || "",
-      provincia:        titleCaseDomicilio(persona.provincia) || "",
+      provincia:        titleCaseDomicilio(persona.provincia) || inferirProvincia(persona.localidad, persona.departamento),
       pais:             titleCaseDomicilio(persona.pais)      || "",
       departamento:     persona.departamento  || "Ciudad",
       representaciones: persona.representaciones || [],
