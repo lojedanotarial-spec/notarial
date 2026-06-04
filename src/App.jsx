@@ -5,7 +5,8 @@ import { HomeScreen }    from "./screens/HomeScreen";
 import { SelectorScreen } from "./screens/SelectorScreen";
 import { EditorScreen }  from "./screens/EditorScreen";
 import { BulkScreen }    from "./screens/BulkScreen";
-import { AdminScreen }   from "./screens/AdminScreen";
+import { AdminScreen }      from "./screens/AdminScreen";
+import { ExpedientesScreen } from "./screens/ExpedientesScreen";
 import { ScribaPanel }   from "./components/ScribaPanel";
 
 
@@ -40,7 +41,7 @@ const globalStyles = [
 ].join("\n");
 
 function AppRouter() {
-  const { session, cargando, usuario, perfilCargado, logout, setRegistroActivo } = useAuth();
+  const { session, cargando, usuario, miUsuario, perfilCargado, logout, setRegistroActivo, registroActivo } = useAuth();
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
   const [scribaOpen, setScribaOpen] = useState(false);
@@ -100,8 +101,9 @@ function AppRouter() {
       {screen === "home"     && <HomeScreen     onGo={handleGo} />}
       {screen === "selector" && <SelectorScreen onGo={handleGo} />}
       {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} onScribaContexto={setScribaContexto} />}
-      {screen === "bulk"     && <BulkScreen     onGo={handleGo} />}
-      {screen === "admin"    && <AdminScreen    onGo={handleGo} />}
+      {screen === "bulk"         && <BulkScreen        onGo={handleGo} />}
+      {screen === "admin"        && <AdminScreen       onGo={handleGo} />}
+      {screen === "expedientes"  && <ExpedientesScreen onGo={handleGo} registroActivo={registroActivo} miUsuario={miUsuario} />}
 
       {/* Botón flotante Scriba */}
       <div className="no-print" style={{ position: "fixed", bottom: 24, right: 24, zIndex: 199 }}>
