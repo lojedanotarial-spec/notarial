@@ -179,6 +179,26 @@ export async function buildDocxCertFirmaF08({
       partesRuns.push(r("; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, cuya copia archivo en ésta escribanía "));
       partesRuns.push(r(elLaQue + " firma en su carácter de "));
       partesRuns.push(vRun("ROL", p.rol, true));
+
+      // Bloque INTERVIENE para apoderados de persona física
+      const reprPF = (p.representaciones || []).find(rp => rp.tipo === "pf_apoderado");
+      if (reprPF) {
+        const reprNombre = [(reprPF.repr_nombre||"").toUpperCase(), (reprPF.repr_apellido||"").toUpperCase()].filter(Boolean).join(" ");
+        const reprDni    = fmtDni(reprPF.repr_dni);
+        partesRuns.push(r(".- INTERVIENE: en nombre y representación "));
+        if (reprNombre) { partesRuns.push(r("del señor/la señora ")); partesRuns.push(vRun("REPRESENTADO", reprNombre, true)); }
+        if (reprDni)    { partesRuns.push(r(", con Documento Nacional de Identidad número ")); partesRuns.push(vRun("DNI REP", reprDni)); }
+        if (reprPF.documentacion) { partesRuns.push(r("; " + reprPF.documentacion)); }
+        // Descripción del poder
+        const poderDesc = [
+          reprPF.poder_escritura && `Escritura número ${reprPF.poder_escritura}`,
+          reprPF.poder_fecha     && `de fecha ${reprPF.poder_fecha}`,
+          reprPF.poder_escribano && `pasada ante ${reprPF.poder_escribano}`,
+          reprPF.poder_registro  && `inscripta bajo ${reprPF.poder_registro}`,
+        ].filter(Boolean).join(", ");
+        if (poderDesc) { partesRuns.push(r("; con facultades suficientes para este acto a mérito de: " + poderDesc + ".-")); }
+        partesRuns.push(r(" Documentación que para este acto he tenido a la vista, doy fe"));
+      }
     });
 
     // Cierre colectivo
