@@ -227,7 +227,7 @@ export function NavBar({
             </span>
           </button>
           <span style={{ color: "rgba(253,252,250,.5)", fontSize: 12 }}>|</span>
-          <span style={{ color: "rgba(255,255,255,.5)", fontSize: 11, fontWeight: 400, fontStyle: "italic", letterSpacing: ".02em" }}>Fe pública digital</span>
+          <span style={{ color: "rgba(255,255,255,.5)", fontSize: 11, fontWeight: 400, fontStyle: "italic", letterSpacing: ".02em" }}>Fe Pública Digital</span>
 
           <div style={{ position: "relative", marginLeft: "auto" }}>
             <button
