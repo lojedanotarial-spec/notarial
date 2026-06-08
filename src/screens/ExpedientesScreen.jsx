@@ -139,46 +139,47 @@ function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
 }
 
 function FilaExpediente({ exp, onOpen, onDelete }) {
-  const [hover, setHover] = useState(false);
   return (
-    <div
-      onClick={() => onOpen(exp.id)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        background: "#FDFCFA", borderRadius: 10, padding: "14px 18px",
-        border: "1px solid rgba(26,35,50,.08)", cursor: "pointer",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        boxShadow: hover ? "0 2px 12px rgba(26,35,50,.08)" : "none",
-        transition: "box-shadow .1s",
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 3 }}>
-          {exp.nombre}
+    <>
+      <style href="fila-exp-styles">{`
+        .fila-exp { transition: box-shadow .1s; }
+        .fila-exp:hover { box-shadow: 0 2px 12px rgba(26,35,50,.08); }
+        .trash-btn:hover { background: #fdf0f0 !important; border-color: #e07070 !important; }
+      `}</style>
+      <div
+        className="fila-exp"
+        onClick={() => onOpen(exp.id)}
+        style={{
+          background: "#FDFCFA", borderRadius: 10, padding: "14px 18px",
+          border: "1px solid rgba(26,35,50,.08)", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 3 }}>
+            {exp.nombre}
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)" }}>
+            {exp.tipo_acto || "—"} · {new Date(exp.created_at).toLocaleDateString("es-AR")}
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)" }}>
-          {exp.tipo_acto || "—"} · {new Date(exp.created_at).toLocaleDateString("es-AR")}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <BadgeEstado estado={exp.estado} />
+          <button
+            className="trash-btn"
+            onClick={e => { e.stopPropagation(); onDelete(exp); }}
+            title="Eliminar expediente"
+            style={{
+              width: 26, height: 26, borderRadius: 5, border: "1px solid transparent",
+              background: "transparent", cursor: "pointer", display: "flex",
+              alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <TrashIcon />
+          </button>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <BadgeEstado estado={exp.estado} />
-        <button
-          onClick={e => { e.stopPropagation(); onDelete(exp); }}
-          title="Eliminar expediente"
-          style={{
-            width: 26, height: 26, borderRadius: 5, border: "1px solid transparent",
-            background: "transparent", cursor: "pointer", display: "flex",
-            alignItems: "center", justifyContent: "center",
-            opacity: hover ? 1 : 0, transition: "opacity .15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
-        >
-          <TrashIcon />
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 
