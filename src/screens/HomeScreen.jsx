@@ -200,7 +200,7 @@ function ConfirmDelete({ titulo, onConfirm, onCancel }) {
   );
 }
 
-function FilaDoc({ doc, onOpen, onDelete, onExpediente, last }) {
+function FilaDoc({ doc, onOpen, onDelete, onExpediente, tieneExpediente, last }) {
   const [hover, setHover] = useState(false);
   return (
     <div
@@ -232,10 +232,10 @@ function FilaDoc({ doc, onOpen, onDelete, onExpediente, last }) {
           style={{ width:26, height:26, borderRadius:5, border:"1px solid transparent",
                    background:"transparent", cursor:"pointer", display:"flex",
                    alignItems:"center", justifyContent:"center" }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.ceruleanLight; e.currentTarget.style.borderColor = C.ceruleanMid; }}
+          onMouseEnter={e => { e.currentTarget.style.background = tieneExpediente ? C.ceruleanLight : "rgba(26,35,50,.06)"; e.currentTarget.style.borderColor = tieneExpediente ? C.ceruleanMid : "rgba(26,35,50,.2)"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.cerulean} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={tieneExpediente ? C.cerulean : "rgba(26,35,50,.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
           </svg>
         </button>
@@ -263,17 +263,19 @@ export function HomeScreen({ onGo }) {
   const esAdmin = usuario?.is_admin;
 
   // datos
-  const [docs, setDocs]         = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const [docs, setDocs]                     = useState([]);
+  const [cargando, setCargando]             = useState(true);
+  const [conExpediente, setConExpediente]   = useState(new Set());
 
   // filtros
   const [query,      setQuery]      = useState("");
   const [queryDni,   setQueryDni]   = useState("");
-  const [fEstado,    setFEstado]    = useState("");
-  const [fTipo,      setFTipo]      = useState("");
-  const [fEscribano, setFEscribano] = useState("");
-  const [fDesde,     setFDesde]     = useState("");
-  const [fHasta,     setFHasta]     = useState("");
+  const [fEstado,      setFEstado]      = useState("");
+  const [fTipo,        setFTipo]        = useState("");
+  const [fEscribano,   setFEscribano]   = useState("");
+  const [fDesde,       setFDesde]       = useState("");
+  const [fHasta,       setFHasta]       = useState("");
+  const [fExpediente,  setFExpediente]  = useState("");
 
   // ui
   const [pagina,        setPagina]        = useState(1);
@@ -299,7 +301,16 @@ export function HomeScreen({ onGo }) {
       }
 
       const { data } = await query;
-      setDocs((data || []).filter(d => d.template_key !== "escrituraBarrio"));
+      const docs = (data || []).filter(d => d.template_key !== "escrituraBarrio");
+      setDocs(docs);
+
+      if (docs.length) {
+        const { data: links } = await supabase
+          .from("expediente_documentos")
+          .select("documento_id")
+          .in("documento_id", docs.map(d => d.id));
+        setConExpediente(new Set((links || []).map(l => l.documento_id)));
+      }
       setCargando(false);
     }
     cargar();
@@ -318,6 +329,8 @@ export function HomeScreen({ onGo }) {
       }
       if (fDesde && (d.updated_at || "").slice(0,10) < fDesde) return false;
       if (fHasta && (d.updated_at || "").slice(0,10) > fHasta) return false;
+      if (fExpediente === "con"  && !conExpediente.has(d.id)) return false;
+      if (fExpediente === "sin"  &&  conExpediente.has(d.id)) return false;
       if (q && !d.titulo?.toLowerCase().includes(q)) return false;
       if (dni) {
         const partes = d.contenido?.partes || [];
@@ -325,7 +338,7 @@ export function HomeScreen({ onGo }) {
       }
       return true;
     });
-  }, [docs, query, queryDni, fEstado, fTipo, fEscribano, fDesde, fHasta]);
+  }, [docs, query, queryDni, fEstado, fTipo, fEscribano, fDesde, fHasta, fExpediente, conExpediente]);
 
   const lista = filtrados();
   const totalPags = Math.max(1, Math.ceil(lista.length / POR_PAG));
@@ -346,7 +359,7 @@ export function HomeScreen({ onGo }) {
   }
 
   const nombre = miUsuario?.nombre_preferido || miUsuario?.nombre || "";
-  const hayFiltros = fEstado || fTipo || fEscribano || fDesde || fHasta || query || queryDni;
+  const hayFiltros = fEstado || fTipo || fEscribano || fDesde || fHasta || query || queryDni || fExpediente;
 
   const escribanosFiltro = [...new Set(
     docs.map(d => d.contenido?.escribano?.nombre).filter(Boolean)
@@ -393,6 +406,15 @@ export function HomeScreen({ onGo }) {
             {[{ val: "", label: "Todos" }, ...escribanosFiltro].map(({ val, label }) => (
               <FilterItem key={val} label={label} active={fEscribano === val}
                           onClick={() => { setFEscribano(val); resetPag(); }} />
+            ))}
+          </SideSection>
+
+          <SideSection label="Expediente">
+            {[["", "Todos"], ["con", "Con expediente"], ["sin", "Sin expediente"]].map(([val, label]) => (
+              <FilterItem key={val} label={label}
+                          count={val === "con" ? conExpediente.size : val === "sin" ? docs.length - conExpediente.size : null}
+                          active={fExpediente === val}
+                          onClick={() => { setFExpediente(val); resetPag(); }} />
             ))}
           </SideSection>
 
@@ -515,7 +537,7 @@ export function HomeScreen({ onGo }) {
                                 color:C.dark, fontFamily:"'Inter', sans-serif", outline:"none" }} />
               </div>
               {hayFiltros && (
-                <button onClick={() => { setQuery(""); setQueryDni(""); setFEstado(""); setFTipo(""); setFEscribano(""); setFDesde(""); setFHasta(""); resetPag(); }}
+                <button onClick={() => { setQuery(""); setQueryDni(""); setFEstado(""); setFTipo(""); setFEscribano(""); setFDesde(""); setFHasta(""); setFExpediente(""); resetPag(); }}
                         style={{ padding:"8px 12px", borderRadius:R.md, border:"1px solid rgba(26,35,50,.12)",
                                  background:"transparent", fontSize:12, fontWeight:600, color:"rgba(26,35,50,.5)",
                                  cursor:"pointer", fontFamily:"'Inter', sans-serif", whiteSpace:"nowrap" }}>
@@ -530,7 +552,7 @@ export function HomeScreen({ onGo }) {
               {/* Header tabla */}
               <div style={{ display:"grid", gridTemplateColumns:"2fr 100px 110px 80px 90px 64px",
                             padding:"8px 16px", borderBottom:"2px solid rgba(26,35,50,.07)", background:C.warm }}>
-                {["Documento","Tipo","Escribano","Fecha","Estado",""].map(h => (
+                {["Documento","Tipo","Escribano","Fecha","Estado","Exp."].map(h => (
                   <div key={h} style={{ fontSize:11, fontWeight:600,
                                         color:"rgba(26,35,50,.55)" }}>{h}</div>
                 ))}
@@ -543,7 +565,8 @@ export function HomeScreen({ onGo }) {
                   <FilaDoc key={doc.id} doc={doc} last={idx === visibles.length - 1}
                            onOpen={id => onGo("editor", { docId: id })}
                            onDelete={doc => setConfirmDel(doc)}
-                           onExpediente={doc => setExpedienteDoc(doc)} />
+                           onExpediente={doc => setExpedienteDoc(doc)}
+                           tieneExpediente={conExpediente.has(doc.id)} />
                 ))
               ) : (
                 <div style={{ padding:"36px 16px", textAlign:"center", ...T.l2 }}>
