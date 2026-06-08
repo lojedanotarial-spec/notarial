@@ -19,6 +19,23 @@ const TIPOS_ARCHIVO = [
   { key: "otro",          label: "Otro" },
 ];
 
+function ConfirmDelete({ nombre, onConfirm, onCancel }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "28px 28px 20px", width: 360, boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>Eliminar expediente</div>
+        <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20, lineHeight: 1.5 }}>
+          ¿Confirmás que querés eliminar <strong style={{ color: C.dark }}>{nombre}</strong>? Esta acción no se puede deshacer.
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={onCancel} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", fontSize: 13, fontWeight: 600, color: C.dark, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancelar</button>
+          <button onClick={onConfirm} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #e07070", background: "#fdf0f0", fontSize: 13, fontWeight: 700, color: "#c0392b", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Eliminar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Tag({ children, color = C.cerulean }) {
   return (
     <span style={{
@@ -44,6 +61,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   const [notas, setNotas]             = useState("");
   const [tab, setTab]                 = useState("docs"); // docs | archivos
   const [modalVincular, setModalVincular] = useState(false);
+  const [confirmEliminar, setConfirmEliminar] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => { if (expedienteId) cargar(); }, [expedienteId]);
@@ -126,7 +144,6 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   }
 
   async function eliminarExpediente() {
-    if (!window.confirm(`¿Eliminar el expediente "${expediente.nombre}"? Esta acción no se puede deshacer.`)) return;
     await supabase.from("expediente_documentos").delete().eq("expediente_id", expedienteId);
     await supabase.from("expediente_archivos").delete().eq("expediente_id", expedienteId);
     await supabase.from("expedientes").delete().eq("id", expedienteId);
@@ -194,7 +211,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
           <div style={{ flex: 1 }} />
 
-          <button onClick={eliminarExpediente}
+          <button onClick={() => setConfirmEliminar(true)}
             style={{ padding: "7px 0", borderRadius: 7, border: "1px solid rgba(231,76,60,.25)", background: "rgba(231,76,60,.06)", color: "#e74c3c", fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 11, cursor: "pointer" }}>
             Eliminar expediente
           </button>
@@ -334,6 +351,14 @@ export function ExpedienteDetailScreen({ onGo, params }) {
           </div>
         </div>
       </div>
+
+      {confirmEliminar && (
+        <ConfirmDelete
+          nombre={expediente.nombre}
+          onConfirm={eliminarExpediente}
+          onCancel={() => setConfirmEliminar(false)}
+        />
+      )}
 
       {/* Modal vincular documentos */}
       {modalVincular && (

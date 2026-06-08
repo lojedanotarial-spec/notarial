@@ -3,6 +3,29 @@ import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 
+function ConfirmDelete({ nombre, onConfirm, onCancel }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "28px 28px 20px", width: 360, boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2332", marginBottom: 8 }}>Eliminar expediente</div>
+        <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20, lineHeight: 1.5 }}>
+          ¿Confirmás que querés eliminar <strong style={{ color: "#1A2332" }}>{nombre}</strong>? Esta acción no se puede deshacer.
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={onCancel} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", fontSize: 13, fontWeight: 600, color: "#1A2332", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancelar</button>
+          <button onClick={onConfirm} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #e07070", background: "#fdf0f0", fontSize: 13, fontWeight: 700, color: "#c0392b", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Eliminar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const TrashIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c0392b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+  </svg>
+);
+
 const ESTADOS = [
   { key: "abierto",     label: "Abierto",     color: "#3a7ca5", bg: "rgba(58,124,165,.1)" },
   { key: "en_tramite",  label: "En trámite",  color: "#c9a961", bg: "rgba(201,169,97,.15)" },
@@ -123,6 +146,7 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [query, setQuery] = useState("");
   const [hoverId, setHoverId] = useState(null);
+  const [confirmDel, setConfirmDel] = useState(null);
 
   useEffect(() => {
     cargar();
@@ -137,13 +161,12 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
     setCargando(false);
   }
 
-  async function eliminar(e, exp) {
-    e.stopPropagation();
-    if (!window.confirm(`¿Eliminar "${exp.nombre}"?`)) return;
+  async function eliminar(exp) {
     await supabase.from("expediente_documentos").delete().eq("expediente_id", exp.id);
     await supabase.from("expediente_archivos").delete().eq("expediente_id", exp.id);
     await supabase.from("expedientes").delete().eq("id", exp.id);
     setExpedientes(prev => prev.filter(x => x.id !== exp.id));
+    setConfirmDel(null);
   }
 
   const filtrados = expedientes.filter(e => {
@@ -252,14 +275,19 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                     <BadgeEstado estado={exp.estado} />
                     <button
-                      onClick={e => eliminar(e, exp)}
+                      onClick={e => { e.stopPropagation(); setConfirmDel(exp); }}
                       title="Eliminar expediente"
                       style={{
-                        opacity: hoverId === exp.id ? 1 : 0,
-                        transition: "opacity .15s",
-                        background: "transparent", border: "none", cursor: "pointer",
-                        color: "#e74c3c", fontSize: 15, padding: "2px 4px", lineHeight: 1,
-                      }}>✕</button>
+                        width: 26, height: 26, borderRadius: 5, border: "1px solid transparent",
+                        background: "transparent", cursor: "pointer", display: "flex",
+                        alignItems: "center", justifyContent: "center",
+                        opacity: hoverId === exp.id ? 1 : 0, transition: "opacity .15s",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
+                    >
+                      <TrashIcon />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -274,6 +302,14 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
           userId={usuario?.id}
           onCrear={exp => setExpedientes(prev => [exp, ...prev])}
           onClose={() => setModalNuevo(false)}
+        />
+      )}
+
+      {confirmDel && (
+        <ConfirmDelete
+          nombre={confirmDel.nombre}
+          onConfirm={() => eliminar(confirmDel)}
+          onCancel={() => setConfirmDel(null)}
         />
       )}
     </div>
