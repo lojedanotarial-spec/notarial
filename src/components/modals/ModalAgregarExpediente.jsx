@@ -126,6 +126,9 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
       </div>
 
       {/* ── Lista de expedientes ── */}
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: C.muted, marginBottom: 8 }}>
+        Expedientes existentes
+      </div>
       <input
         style={{ ...inp, marginBottom: 10 }}
         value={query}
@@ -144,7 +147,7 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
           const yaVinculado = vinculados.has(exp.id);
           return (
             <div key={exp.id} onClick={() => !yaVinculado && vincular(exp.id)}
-              style={{ padding: "10px 14px", borderRadius: 8, border: `1px solid ${yaVinculado ? "rgba(201,169,97,.35)" : "rgba(26,35,50,.1)"}`, cursor: yaVinculado ? "default" : "pointer", background: yaVinculado ? C.fawn50 : "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              style={{ padding: "10px 14px", borderRadius: 8, border: `1px solid ${yaVinculado ? C.ceruleanMid : "rgba(26,35,50,.1)"}`, cursor: yaVinculado ? "default" : "pointer", background: yaVinculado ? C.ceruleanLight : "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}
               onMouseEnter={e => { if (!yaVinculado) e.currentTarget.style.background = C.ceruleanLight; }}
               onMouseLeave={e => { if (!yaVinculado) e.currentTarget.style.background = "#fff"; }}>
               <div style={{ minWidth: 0 }}>
@@ -153,7 +156,7 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 8 }}>
                 {yaVinculado && (
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: C.fawn50, color: C.gold }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: C.ceruleanLight, color: C.cerulean }}>
                     Vinculado ✓
                   </span>
                 )}
