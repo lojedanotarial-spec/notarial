@@ -236,16 +236,15 @@ function FilaDoc({ doc, onOpen, onDelete, onExpediente, tieneExpediente, last })
           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
         >
           {tieneExpediente ? (
-            /* Carpeta con papeles — ya vinculado */
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.cerulean} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            /* Carpeta rellena — vinculado */
+            <svg width="13" height="13" viewBox="0 0 24 24" fill={C.cerulean} stroke={C.cerulean} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-              <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="16" x2="13" y2="16"/>
+              <line x1="8" y1="13" x2="16" y2="13" stroke="white" strokeWidth="1.5"/><line x1="8" y1="16" x2="13" y2="16" stroke="white" strokeWidth="1.5"/>
             </svg>
           ) : (
-            /* Carpeta abierta — sin vínculo */
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(26,35,50,.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2h5l2 2h9a2 2 0 012 2v1"/>
-              <path d="M2 10h20l-2 9H4L2 10z"/>
+            /* Carpeta outline — sin vínculo */
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.cerulean} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.45">
+              <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
             </svg>
           )}
         </button>
