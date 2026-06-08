@@ -25,23 +25,45 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
 
   async function vincular(expedienteId) {
     if (!docId) return;
-    await supabase.from("expediente_documentos").upsert({
-      expediente_id: expedienteId,
-      documento_id: docId,
-    }, { onConflict: "expediente_id,documento_id" });
+    // Verificar si ya existe el vínculo antes de insertar
+    const { data: existe } = await supabase
+      .from("expediente_documentos")
+      .select("id")
+      .eq("expediente_id", expedienteId)
+      .eq("documento_id", docId)
+      .maybeSingle();
+    if (!existe) {
+      const { error } = await supabase.from("expediente_documentos").insert({
+        expediente_id: expedienteId,
+        documento_id: docId,
+      });
+      if (error) { alert("Error al vincular: " + error.message); return; }
+    }
     onClose();
     onGo?.("expediente", { expedienteId });
   }
 
   async function crearYVincular() {
     if (!nombre.trim()) return;
+    // Validar nombre duplicado
+    const { data: existente } = await supabase
+      .from("expedientes")
+      .select("id")
+      .eq("nombre", nombre.trim())
+      .eq("registro_id", registroId)
+      .maybeSingle();
+    if (existente) {
+      alert(`Ya existe un expediente llamado "${nombre.trim()}". Usá un nombre diferente o vinculalo desde la lista.`);
+      return;
+    }
     setGuardando(true);
-    const { data: exp } = await supabase.from("expedientes").insert({
+    const { data: exp, error } = await supabase.from("expedientes").insert({
       nombre: nombre.trim(),
       registro_id: registroId || null,
       usuario_id: userId || null,
       estado: "abierto",
     }).select().single();
+    if (error) { alert("Error al crear expediente: " + error.message); setGuardando(false); return; }
     if (exp) await vincular(exp.id);
     setGuardando(false);
   }

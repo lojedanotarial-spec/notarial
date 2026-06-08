@@ -28,6 +28,14 @@ function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
 
   async function handleCrear() {
     if (!nombre.trim()) return;
+    // Validar nombre duplicado
+    const { data: existente } = await supabase
+      .from("expedientes").select("id")
+      .eq("nombre", nombre.trim()).eq("registro_id", registroId).maybeSingle();
+    if (existente) {
+      alert(`Ya existe un expediente llamado "${nombre.trim()}".`);
+      return;
+    }
     setGuardando(true);
     const { data, error } = await supabase.from("expedientes").insert({
       nombre: nombre.trim(),
