@@ -62,6 +62,8 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   const [tab, setTab]                 = useState("docs"); // docs | archivos
   const [modalVincular, setModalVincular] = useState(false);
   const [queryVincular, setQueryVincular] = useState("");
+  const [filtroTipo, setFiltroTipo]       = useState("");
+  const [filtroFecha, setFiltroFecha]     = useState("all");
   const [confirmEliminar, setConfirmEliminar] = useState(false);
   const fileRef = useRef(null);
   const vincularDocRef = useRef(params?.vincularDocId || null);
@@ -179,12 +181,16 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
   async function abrirModalVincular() {
     const regId = registroActivo || miUsuario?.registro;
-    let q = supabase.from("documentos").select("id, titulo, template_key, created_at").order("created_at", { ascending: false }).limit(200);
+    let q = supabase.from("documentos")
+      .select("id, titulo, template_key, created_at, partes")
+      .order("created_at", { ascending: false }).limit(300);
     if (regId) q = q.eq("registro_id", regId);
     const { data } = await q;
     const yaVinculados = new Set(documentos.map(d => d.documento_id));
     setDocsDisp((data || []).filter(d => !yaVinculados.has(d.id)));
     setQueryVincular("");
+    setFiltroTipo("");
+    setFiltroFecha("all");
     setModalVincular(true);
   }
 
@@ -411,78 +417,187 @@ export function ExpedienteDetailScreen({ onGo, params }) {
       )}
 
       {/* Modal vincular documentos */}
-      {modalVincular && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "24px", width: 540, maxHeight: "75vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 14 }}>Vincular documento al expediente</div>
+      {modalVincular && <ModalVincularDoc
+        docsDisp={docsDisp}
+        queryVincular={queryVincular} setQueryVincular={setQueryVincular}
+        filtroTipo={filtroTipo} setFiltroTipo={setFiltroTipo}
+        filtroFecha={filtroFecha} setFiltroFecha={setFiltroFecha}
+        onVincular={vincularDoc}
+        onClose={() => setModalVincular(false)}
+      />}
+    </div>
+  );
+}
 
-            {/* Búsqueda */}
-            <div style={{ position: "relative", marginBottom: 12 }}>
-              <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                autoFocus
-                value={queryVincular}
-                onChange={e => setQueryVincular(e.target.value)}
-                placeholder="Buscar por título o tipo de documento..."
-                style={{
-                  width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 32px",
-                  borderRadius: 7, border: "1px solid rgba(26,35,50,.14)",
-                  fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.dark, outline: "none",
-                }}
-              />
-              {queryVincular && (
-                <button onClick={() => setQueryVincular("")}
-                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, fontSize: 14, padding: 2 }}>
-                  ✕
-                </button>
-              )}
-            </div>
+const FECHA_OPTS = [
+  { key: "all",       label: "Cualquier fecha" },
+  { key: "semana",    label: "Última semana" },
+  { key: "mes",       label: "Último mes" },
+  { key: "trimestre", label: "Últimos 3 meses" },
+];
 
-            {/* Lista filtrada */}
-            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-              {(() => {
-                const q = queryVincular.trim().toLowerCase();
-                const filtrados = q
-                  ? docsDisp.filter(d =>
-                      d.titulo?.toLowerCase().includes(q) ||
-                      d.template_key?.toLowerCase().includes(q)
-                    )
-                  : docsDisp;
-                if (filtrados.length === 0) return (
-                  <div style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 24 }}>
-                    {q ? "Sin resultados para esa búsqueda." : "No hay documentos disponibles para vincular."}
-                  </div>
-                );
-                return filtrados.map(doc => (
-                  <div key={doc.id} onClick={() => vincularDoc(doc.id)}
-                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(26,35,50,.1)", cursor: "pointer", background: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                    onMouseEnter={e => e.currentTarget.style.background = C.ceruleanLight}
-                    onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.titulo || "Sin título"}</div>
-                      <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>{doc.template_key} · {new Date(doc.created_at).toLocaleDateString("es-AR")}</div>
-                    </div>
-                    <span style={{ fontSize: 11, color: C.cerulean, fontWeight: 700, marginLeft: 12, flexShrink: 0 }}>Vincular →</span>
-                  </div>
-                ));
-              })()}
-            </div>
+function prettyKey(key) {
+  return key?.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || key;
+}
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
-              <span style={{ fontSize: 11, color: C.muted }}>
-                {docsDisp.length} documento{docsDisp.length !== 1 ? "s" : ""} disponible{docsDisp.length !== 1 ? "s" : ""}
-              </span>
-              <button onClick={() => setModalVincular(false)}
-                style={{ padding: "7px 18px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", cursor: "pointer", fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 12 }}>
-                Cancelar
+function ModalVincularDoc({ docsDisp, queryVincular, setQueryVincular, filtroTipo, setFiltroTipo, filtroFecha, setFiltroFecha, onVincular, onClose }) {
+  const tiposDisp = [...new Set(docsDisp.map(d => d.template_key).filter(Boolean))].sort();
+
+  function aplicarFiltros(docs) {
+    let r = docs;
+
+    if (queryVincular.trim()) {
+      const q = queryVincular.trim().toLowerCase();
+      r = r.filter(d => {
+        if (d.titulo?.toLowerCase().includes(q)) return true;
+        if (Array.isArray(d.partes)) {
+          return d.partes.some(p =>
+            `${p.nombre || ""} ${p.apellido || ""}`.toLowerCase().includes(q) ||
+            p.dni?.includes(q)
+          );
+        }
+        return false;
+      });
+    }
+
+    if (filtroTipo) r = r.filter(d => d.template_key === filtroTipo);
+
+    if (filtroFecha !== "all") {
+      const dias = filtroFecha === "semana" ? 7 : filtroFecha === "mes" ? 30 : 90;
+      const limite = Date.now() - dias * 864e5;
+      r = r.filter(d => new Date(d.created_at).getTime() >= limite);
+    }
+
+    return r;
+  }
+
+  const filtrados = aplicarFiltros(docsDisp);
+  const hayFiltros = queryVincular || filtroTipo || filtroFecha !== "all";
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "#FDFCFA", borderRadius: 12, width: 580, maxHeight: "82vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 40px rgba(26,35,50,.22)" }}>
+
+        {/* Header */}
+        <div style={{ padding: "20px 24px 0", flexShrink: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 14 }}>Vincular documento al expediente</div>
+
+          {/* Búsqueda texto */}
+          <div style={{ position: "relative", marginBottom: 10 }}>
+            <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              autoFocus
+              value={queryVincular}
+              onChange={e => setQueryVincular(e.target.value)}
+              placeholder="Buscar por título o por nombre de parte..."
+              style={{
+                width: "100%", boxSizing: "border-box", padding: "9px 34px 9px 32px",
+                borderRadius: 7, border: "1px solid rgba(26,35,50,.16)",
+                fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.dark, outline: "none",
+                background: "#fff",
+              }}
+            />
+            {queryVincular && (
+              <button onClick={() => setQueryVincular("")}
+                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, fontSize: 14, lineHeight: 1 }}>
+                ✕
               </button>
+            )}
+          </div>
+
+          {/* Fecha + chips de tipo */}
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap" }}>
+            <select
+              value={filtroFecha}
+              onChange={e => setFiltroFecha(e.target.value)}
+              style={{
+                padding: "5px 10px", borderRadius: 6, border: "1px solid rgba(26,35,50,.16)",
+                fontFamily: "'Inter',sans-serif", fontSize: 12, color: C.dark,
+                background: filtroFecha !== "all" ? C.ceruleanLight : "#fff",
+                cursor: "pointer", flexShrink: 0,
+              }}>
+              {FECHA_OPTS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button onClick={() => setFiltroTipo("")}
+                style={{
+                  padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  border: `1px solid ${filtroTipo === "" ? C.cerulean : "rgba(26,35,50,.16)"}`,
+                  background: filtroTipo === "" ? C.cerulean : "#fff",
+                  color: filtroTipo === "" ? "#fff" : C.dark,
+                  fontFamily: "'Montserrat',sans-serif",
+                }}>Todos</button>
+              {tiposDisp.map(t => (
+                <button key={t} onClick={() => setFiltroTipo(filtroTipo === t ? "" : t)}
+                  style={{
+                    padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    border: `1px solid ${filtroTipo === t ? C.cerulean : "rgba(26,35,50,.16)"}`,
+                    background: filtroTipo === t ? C.cerulean : "#fff",
+                    color: filtroTipo === t ? "#fff" : C.dark,
+                    fontFamily: "'Montserrat',sans-serif",
+                  }}>{prettyKey(t)}</button>
+              ))}
             </div>
           </div>
+
+          <div style={{ height: 1, background: "rgba(26,35,50,.08)", marginLeft: -24, marginRight: -24 }} />
         </div>
-      )}
+
+        {/* Lista */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "10px 24px", display: "flex", flexDirection: "column", gap: 6 }}>
+          {filtrados.length === 0 ? (
+            <div style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 32 }}>
+              {hayFiltros ? "Sin resultados con los filtros actuales." : "No hay documentos disponibles para vincular."}
+            </div>
+          ) : filtrados.map(doc => {
+            const parteNombres = Array.isArray(doc.partes) && doc.partes.length > 0
+              ? doc.partes.map(p => [p.nombre, p.apellido].filter(Boolean).join(" ")).filter(Boolean).join(" · ")
+              : null;
+            return (
+              <div key={doc.id} onClick={() => onVincular(doc.id)}
+                style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(26,35,50,.1)", cursor: "pointer", background: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}
+                onMouseEnter={e => e.currentTarget.style.background = C.ceruleanLight}
+                onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {doc.titulo || "Sin título"}
+                  </div>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
+                    {prettyKey(doc.template_key)} · {new Date(doc.created_at).toLocaleDateString("es-AR")}
+                  </div>
+                  {parteNombres && (
+                    <div style={{ fontSize: 11, color: C.muted, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {parteNombres}
+                    </div>
+                  )}
+                </div>
+                <span style={{ fontSize: 11, color: C.cerulean, fontWeight: 700, flexShrink: 0 }}>Vincular →</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 24px 18px", borderTop: "1px solid rgba(26,35,50,.08)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: C.muted }}>
+            {filtrados.length} de {docsDisp.length} documento{docsDisp.length !== 1 ? "s" : ""}
+            {hayFiltros && (
+              <button onClick={() => { setQueryVincular(""); setFiltroTipo(""); setFiltroFecha("all"); }}
+                style={{ marginLeft: 10, fontSize: 11, color: C.cerulean, background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: 0 }}>
+                Limpiar filtros
+              </button>
+            )}
+          </span>
+          <button onClick={onClose}
+            style={{ padding: "7px 18px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", cursor: "pointer", fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 12 }}>
+            Cancelar
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
