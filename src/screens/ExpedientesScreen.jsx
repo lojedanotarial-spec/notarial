@@ -138,6 +138,50 @@ function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
   );
 }
 
+function FilaExpediente({ exp, onOpen, onDelete }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onClick={() => onOpen(exp.id)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: "#FDFCFA", borderRadius: 10, padding: "14px 18px",
+        border: "1px solid rgba(26,35,50,.08)", cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        boxShadow: hover ? "0 2px 12px rgba(26,35,50,.08)" : "none",
+        transition: "box-shadow .1s",
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 3 }}>
+          {exp.nombre}
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)" }}>
+          {exp.tipo_acto || "—"} · {new Date(exp.created_at).toLocaleDateString("es-AR")}
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <BadgeEstado estado={exp.estado} />
+        <button
+          onClick={e => { e.stopPropagation(); onDelete(exp); }}
+          title="Eliminar expediente"
+          style={{
+            width: 26, height: 26, borderRadius: 5, border: "1px solid transparent",
+            background: "transparent", cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            opacity: hover ? 1 : 0, transition: "opacity .15s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
+        >
+          <TrashIcon />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
   const { session, usuario } = useAuth();
   const [expedientes, setExpedientes] = useState([]);
@@ -145,7 +189,6 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
   const [modalNuevo, setModalNuevo] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState("");
   const [query, setQuery] = useState("");
-  const [hoverId, setHoverId] = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
 
   useEffect(() => {
@@ -252,44 +295,12 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {filtrados.map(exp => (
-                <div key={exp.id}
-                  onClick={() => onGo?.("expediente", { expedienteId: exp.id })}
-                  onMouseEnter={() => setHoverId(exp.id)}
-                  onMouseLeave={() => setHoverId(null)}
-                  style={{
-                    background: "#FDFCFA", borderRadius: 10, padding: "14px 18px",
-                    border: "1px solid rgba(26,35,50,.08)", cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    boxShadow: hoverId === exp.id ? "0 2px 12px rgba(26,35,50,.08)" : "none",
-                    transition: "box-shadow .1s",
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 3 }}>
-                      {exp.nombre}
-                    </div>
-                    <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)" }}>
-                      {exp.tipo_acto || "—"} · {new Date(exp.created_at).toLocaleDateString("es-AR")}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                    <BadgeEstado estado={exp.estado} />
-                    <button
-                      onClick={e => { e.stopPropagation(); setConfirmDel(exp); }}
-                      title="Eliminar expediente"
-                      style={{
-                        width: 26, height: 26, borderRadius: 5, border: "1px solid transparent",
-                        background: "transparent", cursor: "pointer", display: "flex",
-                        alignItems: "center", justifyContent: "center",
-                        opacity: hoverId === exp.id ? 1 : 0, transition: "opacity .15s",
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
-                    >
-                      <TrashIcon />
-                    </button>
-                  </div>
-                </div>
+                <FilaExpediente
+                  key={exp.id}
+                  exp={exp}
+                  onOpen={id => onGo?.("expediente", { expedienteId: id })}
+                  onDelete={exp => setConfirmDel(exp)}
+                />
               ))}
             </div>
           )}
