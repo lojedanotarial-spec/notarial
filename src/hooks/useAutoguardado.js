@@ -17,7 +17,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
   }, [initialDocId]);
 
   const guardar = useCallback(async () => {
-    if (!registroNumero || !usuarioId) return;
+    if (!registroNumero || !usuarioId) return null;
 
     setGuardando(true);
     setHayPendiente(false);
@@ -35,6 +35,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
     };
 
     try {
+      let id = docId;
       if (docId) {
         const { error } = await supabase
           .from("documentos")
@@ -48,13 +49,16 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
           .select("id")
           .single();
         if (error) throw error;
-        setDocId(data.id);
+        id = data.id;
+        setDocId(id);
       }
       setUltimoGuardado(new Date());
+      return id;
     } catch (e) {
       setError("Error al guardar");
       setHayPendiente(true);
       console.error(e);
+      return null;
     } finally {
       setGuardando(false);
     }
@@ -83,9 +87,9 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
     return () => window.removeEventListener("beforeunload", handler);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const guardarAhora = () => {
+  const guardarAhora = async () => {
     clearTimeout(timerRef.current);
-    guardar();
+    return guardar();
   };
 
   const indicador = guardando

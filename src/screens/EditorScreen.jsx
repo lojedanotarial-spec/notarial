@@ -212,7 +212,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               extravars, vehiculos,
               rolesContextuales: ROLES_CONTEXTUALES[templateSlug] || null,
             })
-          : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente });
+          : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente, estilos });
 
       const key      = `doc-${Date.now()}`;
       const filePath = `${key}.docx`;
@@ -473,7 +473,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     return () => onScribaContexto(null);
   }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido]);
 
-  const { indicador, guardarAhora, hayPendiente } = useAutoguardado({
+  const { docId: autoDocId, indicador, guardarAhora, hayPendiente } = useAutoguardado({
     titulo: docTitle,
     estado,
     contenido: contenidoParaGuardar,
@@ -483,6 +483,17 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     usuarioId: usuario?.id,
     initialDocId: params?.docId,
   });
+
+  const currentDocId = params?.docId || autoDocId;
+
+  const [expedienteDocId, setExpedienteDocId] = useState(params?.docId || null);
+
+  async function handleAbrirExpediente() {
+    let id = currentDocId;
+    if (!id) id = await guardarAhora();
+    setExpedienteDocId(id);
+    setModal("expediente");
+  }
 
   const applyAndGen = (setter) => (val) => { generateAfterRef.current = true; setter(val); };
 
@@ -507,6 +518,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         onGuardar={guardarAhora}
         onGo={handleGo}
         onFormato={() => setModal("formato")}
+        onExpediente={handleAbrirExpediente}
         showVarHighlight={showVarHighlight}
         onToggleVarHighlight={() => { generateAfterRef.current = true; setShowVarHighlight(v => !v); }}
       />
@@ -663,15 +675,6 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 </div>
               )}
 
-              {/* Expediente */}
-              {params?.docId && (
-                <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
-                  <button onClick={() => setModal("expediente")}
-                    style={{ width: "100%", padding: "7px 10px", borderRadius: 7, border: "1px dashed rgba(58,124,165,.4)", background: "transparent", color: C.cerulean, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Montserrat',sans-serif" }}>
-                    📁 Agregar a expediente
-                  </button>
-                </div>
-              )}
 
               <div style={{ padding: "8px 12px", borderTop: "1px solid rgba(26,35,50,.08)", fontSize: 11, color: "rgba(26,35,50,.45)" }}>
                 {fuente.label} {fontSize}pt &middot; {margenKey === "protocolar" ? "Protocolar" : "No protocolar"}
@@ -701,7 +704,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       {/* MODALES */}
       {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
       {modal === "formulario"  && <ModalFormulario formulario={formulario} onApply={v => { setFormulario(v); generateAfterRef.current = true; }} onClose={() => setModal(null)}/>}
-      {modal === "expediente"  && <ModalAgregarExpediente docId={params?.docId} registroId={miUsuario?.registro || registroActivo} onClose={() => setModal(null)} onGo={onGo} />}
+      {modal === "expediente"  && <ModalAgregarExpediente docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} nombreSugerido={docTitle} onClose={() => setModal(null)} onGo={onGo} />}
       {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}

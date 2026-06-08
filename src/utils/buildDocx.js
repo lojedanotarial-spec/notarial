@@ -18,19 +18,23 @@ async function inyectarMargenesSimetricos(blob) {
 
 const mm2twip = (mm) => Math.round(mm * 56.69);
 
-export async function buildDocxBlanco({ escribano, margenKey = "protocolar", fontSize = 11, fuente }) {
+export async function buildDocxBlanco({ escribano, margenKey = "protocolar", fontSize = 11, fuente, estilos = {} }) {
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2;
   const margenes = margenKey === "protocolar"
     ? { top: mm2twip(10), bottom: mm2twip(10), left: mm2twip(35), right: mm2twip(20) }
     : { top: mm2twip(20), bottom: mm2twip(20), left: mm2twip(25), right: mm2twip(25) };
 
+  const escribanoNombre = (estilos.escribanoUppercase ?? true)
+    ? (escribano?.nombre || "").toUpperCase()
+    : (escribano?.nombre || "");
+
   const doc = new Document({
     sections: [{
       properties: { page: { margin: margenes } },
       children: [
         new Paragraph({
-          children: [new TextRun({ text: escribano?.nombre || "", bold: true, size, font: fontName })],
+          children: [new TextRun({ text: escribanoNombre, bold: estilos.escribanoNegrita ?? true, size, font: fontName })],
           alignment: AlignmentType.CENTER,
         }),
         new Paragraph({ children: [new TextRun({ text: "", size, font: fontName })] }),
@@ -70,11 +74,19 @@ export async function buildDocxCertFirmaF08({
   fontSize = 11,
   fuente,
   interlineado,
+  estilos = {},
   showVarHighlight = true,
   extravars = {},
 }) {
   const fontName = fuente?.family?.replace(/['"]/g, "").split(",")[0].trim() || "Times New Roman";
   const size = fontSize * 2; // docx uses half-points
+
+  const nombresNegrita   = estilos.nombresNegrita   ?? true;
+  const nombresSubrayado = estilos.nombresSubrayado ?? true;
+  const nombresFormato   = estilos.nombresFormato   || "titlecase_upper";
+  const escribanoNegrita  = estilos.escribanoNegrita  ?? true;
+  const escribanoUppercase = estilos.escribanoUppercase ?? true;
+  const fechaNegrita     = estilos.fechaNegrita     ?? true;
 
   const fmtDni = (val) =>
     val ? Number(String(val).replace(/\D/g, "")).toLocaleString("es-AR") : "";
@@ -87,10 +99,11 @@ export async function buildDocxCertFirmaF08({
 
   const lang = { value: "es-AR", eastAsia: "es-AR", bidi: "es-AR" };
 
-  const vRun = (label, value, bold = false) =>
+  const vRun = (label, value, bold = false, underline = false) =>
     new TextRun({
       text: value ? String(value) : `{{${label}}}`,
       bold: bold || (showVarHighlight && !value),
+      underline: underline ? {} : undefined,
       color: showVarHighlight && !value ? "c0392b" : "1A2332",
       size,
       font: fontName,
@@ -143,7 +156,11 @@ export async function buildDocxCertFirmaF08({
     partesOrdenadas.forEach((p, idx) => {
       const art = gen(p, "la señora", "el señor");
       const toTC = s => (s||"").split(/\s+/).map(w => w ? w.charAt(0).toUpperCase()+w.slice(1).toLowerCase() : w).join(" ");
-      const nombre = [(p.nombre||"").toUpperCase(), (p.apellido||"").toUpperCase()].filter(Boolean).join(" ");
+      const nombre = nombresFormato === "titlecase_both"
+        ? [toTC(p.nombre), toTC(p.apellido)].filter(Boolean).join(" ")
+        : nombresFormato === "uppercase"
+          ? [(p.nombre||"").toUpperCase(), (p.apellido||"").toUpperCase()].filter(Boolean).join(" ")
+          : [toTC(p.nombre), (p.apellido||"").toUpperCase()].filter(Boolean).join(" "); // titlecase_upper
       const dom = fmtDom(p);
       const elLaQue = gen(p, "la que", "el que");
 
@@ -154,7 +171,7 @@ export async function buildDocxCertFirmaF08({
         partesRuns.push(r("; y " + art + " "));
       }
 
-      partesRuns.push(vRun("NOMBRE", nombre, true));
+      partesRuns.push(vRun("NOMBRE", nombre, nombresNegrita, nombresSubrayado));
       if (p.nacionalidad) { partesRuns.push(r(", " + nacGenero(p.nacionalidad, p.genero))); }
       partesRuns.push(r(", con "));
       partesRuns.push(vRun("TIPO DOC", p.tipoDoc || "Documento Nacional de Identidad"));
@@ -208,8 +225,12 @@ export async function buildDocxCertFirmaF08({
     ? { left: 36, top: 75, right: 14, bottom: 16 }
     : { left: 30, top: 35, right: 20, bottom: 20 };
 
+  const escribanoNombreFmt = escribanoUppercase
+    ? (escribano.nombre || "").toUpperCase()
+    : (escribano.nombre || "");
+
   const mainRuns = [
-    vRun("ESCRIBANO", escribano.nombre, true),
+    vRun("ESCRIBANO", escribanoNombreFmt, escribanoNegrita),
     r(", "),
     r(escribano.caracter || "Notario/a"),
     r(" " + al_del + " Registro Notarial número "),
@@ -227,7 +248,7 @@ export async function buildDocxCertFirmaF08({
     r(" En "),
     vRun("CIUDAD", fecha.ciudad ? fecha.ciudad.toUpperCase() : "", true),
     r(", Provincia de Mendoza, República Argentina, a "),
-    vRun("FECHA", fechaLetras, true),
+    vRun("FECHA", fechaLetras, fechaNegrita),
     r(".-"),
   ].filter(Boolean);
 

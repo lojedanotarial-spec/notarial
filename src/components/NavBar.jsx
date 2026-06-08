@@ -188,6 +188,7 @@ export function NavBar({
   indicadorGuardado, onGuardar,
   showVarHighlight, onToggleVarHighlight,
   onFormato,
+  onExpediente,
   onGo, onVolver,
 }) {
   const { iniciales } = useAuth();
@@ -298,6 +299,18 @@ export function NavBar({
               }}>
                 {indicadorGuardado}
               </span>
+            )}
+
+            {onExpediente && (
+              <button onClick={onExpediente} style={{
+                border: "1px solid rgba(201,169,97,.4)", borderRadius: 6,
+                background: "rgba(201,169,97,.1)", color: "#c9a961",
+                fontSize: 12, fontWeight: 600, padding: "5px 12px",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer", flexShrink: 0,
+                display: "flex", alignItems: "center", gap: 5,
+              }}>
+                📁 Expediente
+              </button>
             )}
 
             {onFormato && (
