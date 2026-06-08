@@ -125,6 +125,14 @@ export function ExpedienteDetailScreen({ onGo, params }) {
     cargar();
   }
 
+  async function eliminarExpediente() {
+    if (!window.confirm(`¿Eliminar el expediente "${expediente.nombre}"? Esta acción no se puede deshacer.`)) return;
+    await supabase.from("expediente_documentos").delete().eq("expediente_id", expedienteId);
+    await supabase.from("expediente_archivos").delete().eq("expediente_id", expedienteId);
+    await supabase.from("expedientes").delete().eq("id", expedienteId);
+    onGo?.("expedientes");
+  }
+
   if (cargando) return <div style={{ padding: 40, color: C.muted }}>Cargando...</div>;
   if (!expediente) return <div style={{ padding: 40 }}>Expediente no encontrado.</div>;
 
@@ -182,6 +190,13 @@ export function ExpedienteDetailScreen({ onGo, params }) {
           <button onClick={() => onGo?.("selector", { expedienteId })}
             style={{ padding: "9px 0", borderRadius: 8, border: "1px dashed " + C.cerulean, background: "transparent", color: C.cerulean, fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
             + Nuevo documento
+          </button>
+
+          <div style={{ flex: 1 }} />
+
+          <button onClick={eliminarExpediente}
+            style={{ padding: "7px 0", borderRadius: 7, border: "1px solid rgba(231,76,60,.25)", background: "rgba(231,76,60,.06)", color: "#e74c3c", fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 11, cursor: "pointer" }}>
+            Eliminar expediente
           </button>
         </div>
 

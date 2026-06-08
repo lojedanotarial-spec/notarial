@@ -122,6 +122,7 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
   const [modalNuevo, setModalNuevo] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState("");
   const [query, setQuery] = useState("");
+  const [hoverId, setHoverId] = useState(null);
 
   useEffect(() => {
     cargar();
@@ -134,6 +135,15 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
     const { data } = await q;
     setExpedientes(data || []);
     setCargando(false);
+  }
+
+  async function eliminar(e, exp) {
+    e.stopPropagation();
+    if (!window.confirm(`¿Eliminar "${exp.nombre}"?`)) return;
+    await supabase.from("expediente_documentos").delete().eq("expediente_id", exp.id);
+    await supabase.from("expediente_archivos").delete().eq("expediente_id", exp.id);
+    await supabase.from("expedientes").delete().eq("id", exp.id);
+    setExpedientes(prev => prev.filter(x => x.id !== exp.id));
   }
 
   const filtrados = expedientes.filter(e => {
@@ -221,16 +231,17 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
               {filtrados.map(exp => (
                 <div key={exp.id}
                   onClick={() => onGo?.("expediente", { expedienteId: exp.id })}
+                  onMouseEnter={() => setHoverId(exp.id)}
+                  onMouseLeave={() => setHoverId(null)}
                   style={{
                     background: "#FDFCFA", borderRadius: 10, padding: "14px 18px",
                     border: "1px solid rgba(26,35,50,.08)", cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "space-between",
+                    boxShadow: hoverId === exp.id ? "0 2px 12px rgba(26,35,50,.08)" : "none",
                     transition: "box-shadow .1s",
                   }}
-                  onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 12px rgba(26,35,50,.08)"}
-                  onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
                 >
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginBottom: 3 }}>
                       {exp.nombre}
                     </div>
@@ -238,7 +249,18 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
                       {exp.tipo_acto || "—"} · {new Date(exp.created_at).toLocaleDateString("es-AR")}
                     </div>
                   </div>
-                  <BadgeEstado estado={exp.estado} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                    <BadgeEstado estado={exp.estado} />
+                    <button
+                      onClick={e => eliminar(e, exp)}
+                      title="Eliminar expediente"
+                      style={{
+                        opacity: hoverId === exp.id ? 1 : 0,
+                        transition: "opacity .15s",
+                        background: "transparent", border: "none", cursor: "pointer",
+                        color: "#e74c3c", fontSize: 15, padding: "2px 4px", lineHeight: 1,
+                      }}>✕</button>
+                  </div>
                 </div>
               ))}
             </div>
