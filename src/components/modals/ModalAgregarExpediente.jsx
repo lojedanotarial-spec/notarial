@@ -11,6 +11,7 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
   const [cargando, setCargando]       = useState(true);
   const [nombre, setNombre]           = useState(nombreSugerido);
   const [guardando, setGuardando]     = useState(false);
+  const [mostrarOtro, setMostrarOtro] = useState(false);
 
   useEffect(() => { cargar(); }, []);
 
@@ -30,6 +31,11 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
     setCargando(false);
   }
 
+  function irAExpediente(expedienteId) {
+    onClose();
+    onGo?.("expediente", { expedienteId });
+  }
+
   function vincular(expedienteId) {
     if (!docId) {
       alert("El documento todavía no fue guardado. Esperá un momento y volvé a intentarlo.");
@@ -41,7 +47,6 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
 
   async function crearYVincular() {
     if (!nombre.trim()) return;
-    // Validar nombre duplicado
     const { data: existente } = await supabase
       .from("expedientes")
       .select("id")
@@ -64,7 +69,6 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
 
     let expedienteId = exp?.id;
     if (!expedienteId) {
-      // RETURNING filtrado por RLS — buscar el expediente recién creado por nombre
       const { data: buscado } = await supabase.from("expedientes")
         .select("id").eq("nombre", nombre.trim())
         .order("created_at", { ascending: false }).limit(1).maybeSingle();
@@ -80,9 +84,12 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
     onGo?.("expediente", { expedienteId, vincularDocId: docId });
   }
 
-  const filtrados = expedientes.filter(e =>
-    !query || e.nombre?.toLowerCase().includes(query.toLowerCase())
-  );
+  const yaVinculados = expedientes.filter(e => vinculados.has(e.id));
+  const tieneVinculo = !cargando && yaVinculados.length > 0;
+
+  const filtrados = expedientes
+    .filter(e => !vinculados.has(e.id))
+    .filter(e => !query || e.nombre?.toLowerCase().includes(query.toLowerCase()));
 
   const BADGE = {
     abierto:     { bg: "#e8f5e9", color: "#2e7d32" },
@@ -92,9 +99,73 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
   };
 
   return (
-    <Modal title="Agregar a expediente" onClose={onClose}
+    <Modal title="Expediente del documento" onClose={onClose}
       footer={<Btn onClick={onClose}>Cerrar</Btn>}>
 
+      {cargando ? (
+        <div style={{ color: C.muted, fontSize: 13, textAlign: "center", padding: 30 }}>Cargando...</div>
+      ) : tieneVinculo ? (
+        <>
+          {/* ── Expedientes vinculados ── */}
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: C.muted, marginBottom: 8 }}>
+            Vinculado a
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+            {yaVinculados.map(exp => {
+              const badge = BADGE[exp.estado] || BADGE.abierto;
+              return (
+                <div key={exp.id} style={{ padding: "10px 14px", borderRadius: 8, border: `1px solid ${C.ceruleanMid}`, background: C.ceruleanLight, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.nombre}</div>
+                    {exp.tipo_acto && <div style={{ fontSize: 11, color: C.muted }}>{exp.tipo_acto}</div>}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: badge.bg, color: badge.color, textTransform: "capitalize" }}>
+                      {exp.estado?.replace("_", " ")}
+                    </span>
+                    <button onClick={() => irAExpediente(exp.id)} style={{ fontSize: 11, fontWeight: 600, color: C.cerulean, background: "none", border: `1px solid ${C.ceruleanMid}`, borderRadius: 6, padding: "3px 10px", cursor: "pointer" }}>Ver →</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Vincular a otro ── */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: mostrarOtro ? 16 : 0 }}>
+            <div style={{ flex: 1, height: 1, background: "rgba(26,35,50,.1)" }}/>
+            <button
+              onClick={() => setMostrarOtro(v => !v)}
+              style={{ fontSize: 11, color: C.cerulean, fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              {mostrarOtro ? "Ocultar ▲" : "Vincular a otro expediente ▼"}
+            </button>
+            <div style={{ flex: 1, height: 1, background: "rgba(26,35,50,.1)" }}/>
+          </div>
+
+          {mostrarOtro && <FlujoCrearVincular
+            nombre={nombre} setNombre={setNombre}
+            guardando={guardando} docId={docId}
+            query={query} setQuery={setQuery}
+            filtrados={filtrados} BADGE={BADGE}
+            crearYVincular={crearYVincular} vincular={vincular}
+          />}
+        </>
+      ) : (
+        /* ── Sin vínculo: flujo completo ── */
+        <FlujoCrearVincular
+          nombre={nombre} setNombre={setNombre}
+          guardando={guardando} docId={docId}
+          query={query} setQuery={setQuery}
+          filtrados={filtrados} BADGE={BADGE}
+          crearYVincular={crearYVincular} vincular={vincular}
+        />
+      )}
+    </Modal>
+  );
+}
+
+function FlujoCrearVincular({ nombre, setNombre, guardando, docId, query, setQuery, filtrados, BADGE, crearYVincular, vincular }) {
+  return (
+    <>
       {/* ── Crear nuevo ── */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: C.muted, marginBottom: 8 }}>
@@ -125,7 +196,7 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
         <div style={{ flex: 1, height: 1, background: "rgba(26,35,50,.1)" }}/>
       </div>
 
-      {/* ── Lista de expedientes ── */}
+      {/* ── Lista ── */}
       <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: C.muted, marginBottom: 8 }}>
         Expedientes existentes
       </div>
@@ -135,39 +206,29 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
         onChange={e => setQuery(e.target.value)}
         placeholder="Buscar expediente..."
       />
-      <div style={{ maxHeight: 260, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-        {cargando ? (
-          <div style={{ color: C.muted, fontSize: 13, textAlign: "center", padding: 20 }}>Cargando...</div>
-        ) : filtrados.length === 0 ? (
+      <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+        {filtrados.length === 0 ? (
           <div style={{ color: C.muted, fontSize: 13, textAlign: "center", padding: 20 }}>
             {query ? "Sin resultados" : "No hay expedientes"}
           </div>
         ) : filtrados.map(exp => {
           const badge = BADGE[exp.estado] || BADGE.abierto;
-          const yaVinculado = vinculados.has(exp.id);
           return (
-            <div key={exp.id} onClick={() => !yaVinculado && vincular(exp.id)}
-              style={{ padding: "10px 14px", borderRadius: 8, border: `1px solid ${yaVinculado ? C.ceruleanMid : "rgba(26,35,50,.1)"}`, cursor: yaVinculado ? "default" : "pointer", background: yaVinculado ? C.ceruleanLight : "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-              onMouseEnter={e => { if (!yaVinculado) e.currentTarget.style.background = C.ceruleanLight; }}
-              onMouseLeave={e => { if (!yaVinculado) e.currentTarget.style.background = "#fff"; }}>
+            <div key={exp.id} onClick={() => vincular(exp.id)}
+              style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(26,35,50,.1)", cursor: "pointer", background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              onMouseEnter={e => e.currentTarget.style.background = C.ceruleanLight}
+              onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.nombre}</div>
                 {exp.tipo_acto && <div style={{ fontSize: 11, color: C.muted }}>{exp.tipo_acto}</div>}
               </div>
-              <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 8 }}>
-                {yaVinculado && (
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: C.ceruleanLight, color: C.cerulean }}>
-                    Vinculado ✓
-                  </span>
-                )}
-                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: badge.bg, color: badge.color, textTransform: "capitalize" }}>
-                  {exp.estado?.replace("_", " ")}
-                </span>
-              </div>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: badge.bg, color: badge.color, flexShrink: 0, marginLeft: 8, textTransform: "capitalize" }}>
+                {exp.estado?.replace("_", " ")}
+              </span>
             </div>
           );
         })}
       </div>
-    </Modal>
+    </>
   );
 }
