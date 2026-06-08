@@ -6,6 +6,7 @@ import { supabase } from "../../supabase";
 
 export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugerido = "", onClose, onGo }) {
   const [expedientes, setExpedientes] = useState([]);
+  const [vinculados, setVinculados]   = useState(new Set());
   const [query, setQuery]             = useState("");
   const [cargando, setCargando]       = useState(true);
   const [nombre, setNombre]           = useState(nombreSugerido);
@@ -18,8 +19,14 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
     let q = supabase.from("expedientes").select("id, nombre, tipo_acto, estado")
       .order("created_at", { ascending: false }).limit(50);
     if (registroId) q = q.eq("registro_id", registroId);
-    const { data } = await q;
+    const [{ data }, { data: links }] = await Promise.all([
+      q,
+      docId
+        ? supabase.from("expediente_documentos").select("expediente_id").eq("documento_id", docId)
+        : Promise.resolve({ data: [] }),
+    ]);
     setExpedientes(data || []);
+    setVinculados(new Set((links || []).map(l => l.expediente_id)));
     setCargando(false);
   }
 
@@ -134,18 +141,26 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
           </div>
         ) : filtrados.map(exp => {
           const badge = BADGE[exp.estado] || BADGE.abierto;
+          const yaVinculado = vinculados.has(exp.id);
           return (
-            <div key={exp.id} onClick={() => vincular(exp.id)}
-              style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(26,35,50,.1)", cursor: "pointer", background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-              onMouseEnter={e => e.currentTarget.style.background = C.ceruleanLight}
-              onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+            <div key={exp.id} onClick={() => !yaVinculado && vincular(exp.id)}
+              style={{ padding: "10px 14px", borderRadius: 8, border: `1px solid ${yaVinculado ? "rgba(46,125,50,.25)" : "rgba(26,35,50,.1)"}`, cursor: yaVinculado ? "default" : "pointer", background: yaVinculado ? "#f1f8f1" : "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+              onMouseEnter={e => { if (!yaVinculado) e.currentTarget.style.background = C.ceruleanLight; }}
+              onMouseLeave={e => { if (!yaVinculado) e.currentTarget.style.background = "#fff"; }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.nombre}</div>
                 {exp.tipo_acto && <div style={{ fontSize: 11, color: C.muted }}>{exp.tipo_acto}</div>}
               </div>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: badge.bg, color: badge.color, flexShrink: 0, marginLeft: 8, textTransform: "capitalize" }}>
-                {exp.estado?.replace("_", " ")}
-              </span>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: 8 }}>
+                {yaVinculado && (
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: "#e8f5e9", color: "#2e7d32" }}>
+                    Vinculado ✓
+                  </span>
+                )}
+                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: badge.bg, color: badge.color, textTransform: "capitalize" }}>
+                  {exp.estado?.replace("_", " ")}
+                </span>
+              </div>
             </div>
           );
         })}
