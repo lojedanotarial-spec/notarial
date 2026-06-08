@@ -95,7 +95,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
       const { error } = await supabase.from("expediente_documentos")
         .insert({ expediente_id: expedienteId, documento_id: docId });
       if (error) {
-        console.error("autoVincular error:", error.message);
+        alert(`Error al vincular (${error.code}): ${error.message}`);
         return;
       }
     }
