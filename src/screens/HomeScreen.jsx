@@ -228,7 +228,7 @@ function FilaDoc({ doc, onOpen, onDelete, onExpediente, tieneExpediente, last })
       <div style={{ display:"flex", gap:4, alignItems:"center" }}>
         <button
           onClick={e => { e.stopPropagation(); onExpediente(doc); }}
-          title="Agregar a expediente"
+          title={tieneExpediente ? "Ver expediente" : "Agregar a expediente"}
           style={{ width:26, height:26, borderRadius:5, border:"1px solid transparent",
                    background:"transparent", cursor:"pointer", display:"flex",
                    alignItems:"center", justifyContent:"center" }}
@@ -552,7 +552,7 @@ export function HomeScreen({ onGo }) {
               {/* Header tabla */}
               <div style={{ display:"grid", gridTemplateColumns:"2fr 100px 110px 80px 90px 64px",
                             padding:"8px 16px", borderBottom:"2px solid rgba(26,35,50,.07)", background:C.warm }}>
-                {["Documento","Tipo","Escribano","Fecha","Estado","Exp."].map(h => (
+                {["Documento","Tipo","Escribano","Fecha","Estado","Expte."].map(h => (
                   <div key={h} style={{ fontSize:11, fontWeight:600,
                                         color:"rgba(26,35,50,.55)" }}>{h}</div>
                 ))}
