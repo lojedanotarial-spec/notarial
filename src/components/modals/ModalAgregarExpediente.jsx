@@ -23,21 +23,27 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
     setCargando(false);
   }
 
-  async function vincular(expedienteId) {
-    if (!docId) return;
+  async function vincular(expedienteId, overrideDocId) {
+    const id = overrideDocId ?? docId;
+    if (!id) {
+      alert("El documento todavía no fue guardado. Esperá un momento y volvé a intentarlo.");
+      return;
+    }
     // Verificar si ya existe el vínculo antes de insertar
     const { data: existe } = await supabase
       .from("expediente_documentos")
       .select("id")
       .eq("expediente_id", expedienteId)
-      .eq("documento_id", docId)
+      .eq("documento_id", id)
       .maybeSingle();
     if (!existe) {
-      const { error } = await supabase.from("expediente_documentos").insert({
-        expediente_id: expedienteId,
-        documento_id: docId,
-      });
+      const { data: insertado, error } = await supabase
+        .from("expediente_documentos")
+        .insert({ expediente_id: expedienteId, documento_id: id })
+        .select("id")
+        .maybeSingle();
       if (error) { alert("Error al vincular: " + error.message); return; }
+      if (!insertado) { alert("No se pudo vincular el documento (sin permisos o error silencioso)."); return; }
     }
     onClose();
     onGo?.("expediente", { expedienteId });
@@ -64,7 +70,7 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
       estado: "abierto",
     }).select().single();
     if (error) { alert("Error al crear expediente: " + error.message); setGuardando(false); return; }
-    if (exp) await vincular(exp.id);
+    if (exp) await vincular(exp.id, docId);
     setGuardando(false);
   }
 

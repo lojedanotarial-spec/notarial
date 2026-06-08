@@ -238,7 +238,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     } finally {
       setGenerating(false);
     }
-  }, [partes, vehiculos, extravars, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight, templateContenido, templateSlug]);
+  }, [partes, vehiculos, extravars, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight, templateContenido, templateSlug, estilos]);
 
   // Keep ref updated so the mount effect can call the latest version
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);
@@ -258,7 +258,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       generateAfterRef.current = false;
       handleGenerarRef.current?.();
     }
-  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight]);
+  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight, estilos]);
 
   // Vehiculos y extravars siempre regeneran — no dependen del flag
   useEffect(() => {
