@@ -56,7 +56,7 @@ function limpiarVarsVacias(texto, vars) {
  *   {{VAR}}       → sustitución (con bold/underline automáticos según VARS_*)
  * Los marcadores son anidables: __**texto**__ = negrita + subrayado
  */
-function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false) {
+function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false, boldVars = VARS_BOLD, underlineVars = VARS_UNDERLINE) {
   const segments = [];
   const re = /\*\*(.+?)\*\*|__(.+?)__|{{([^}]+)}}/gs;
   let last = 0, m;
@@ -69,20 +69,20 @@ function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false) {
 
     if (m[1] !== undefined) {
       // **bold**
-      segments.push(...parsearSegmentos(m[1], vars, true, ctxUnderline));
+      segments.push(...parsearSegmentos(m[1], vars, true, ctxUnderline, boldVars, underlineVars));
     } else if (m[2] !== undefined) {
       // __underline__
-      segments.push(...parsearSegmentos(m[2], vars, ctxBold, true));
+      segments.push(...parsearSegmentos(m[2], vars, ctxBold, true, boldVars, underlineVars));
     } else if (m[3] !== undefined) {
       // {{VAR}}
       const key = m[3];
       const val = vars[key] !== undefined ? String(vars[key]) : `{{${key}}}`;
       if (val) {
-        const boldVar = ctxBold || VARS_BOLD_DYN.has(key);
-        const ulVar   = ctxUnderline || VARS_UNDERLINE_DYN.has(key);
+        const boldVar = ctxBold || boldVars.has(key);
+        const ulVar   = ctxUnderline || underlineVars.has(key);
         // Si el valor contiene marcadores de formato, procesarlos recursivamente
         if (val.includes("**") || val.includes("__")) {
-          segments.push(...parsearSegmentos(val, vars, boldVar, ulVar));
+          segments.push(...parsearSegmentos(val, vars, boldVar, ulVar, boldVars, underlineVars));
         } else {
           segments.push({ text: val, bold: boldVar, underline: ulVar });
         }
@@ -170,7 +170,7 @@ export async function buildDocxGenerico({
     const texto = limpiarVarsVacias(textoRaw, vars);
     const textoSustituido = sustituirVars(texto.replace(/\*\*(.+?)\*\*|__(.+?)__/g, '$1$2'), vars);
     const esTitulo = ES_TITULO(textoSustituido);
-    const segmentos = parsearSegmentos(texto, vars, esTitulo, false);
+    const segmentos = parsearSegmentos(texto, vars, esTitulo, false, VARS_BOLD_DYN, VARS_UNDERLINE_DYN);
 
     return new Paragraph({
       alignment: esTitulo ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
