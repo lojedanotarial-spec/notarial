@@ -112,7 +112,7 @@ export function LoginScreen() {
             <h1 style={{ margin: 0, fontFamily: "'Merriweather', Georgia, serif", fontWeight: 300,
               fontSize: 24, letterSpacing: "0.01em", color: C.porcelain }}>Notarial</h1>
             <p style={{ margin: 0, fontFamily: "'Montserrat', sans-serif", fontSize: 10, fontWeight: 500,
-              letterSpacing: "0.32em", textTransform: "uppercase", color: C.gold }}>Fe pública digital</p>
+              letterSpacing: "0.04em", fontStyle: "italic", color: C.gold }}>fe pública digital</p>
           </div>
         </div>
 
