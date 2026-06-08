@@ -23,30 +23,13 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
     setCargando(false);
   }
 
-  async function vincular(expedienteId, overrideDocId) {
-    const id = overrideDocId ?? docId;
-    if (!id) {
+  function vincular(expedienteId) {
+    if (!docId) {
       alert("El documento todavía no fue guardado. Esperá un momento y volvé a intentarlo.");
       return;
     }
-    // Verificar si ya existe el vínculo antes de insertar
-    const { data: existe } = await supabase
-      .from("expediente_documentos")
-      .select("id")
-      .eq("expediente_id", expedienteId)
-      .eq("documento_id", id)
-      .maybeSingle();
-    if (!existe) {
-      const { data: insertado, error } = await supabase
-        .from("expediente_documentos")
-        .insert({ expediente_id: expedienteId, documento_id: id })
-        .select("id")
-        .maybeSingle();
-      if (error) { alert("Error al vincular: " + error.message); return; }
-      if (!insertado) { alert("No se pudo vincular el documento (sin permisos o error silencioso)."); return; }
-    }
     onClose();
-    onGo?.("expediente", { expedienteId });
+    onGo?.("expediente", { expedienteId, vincularDocId: docId });
   }
 
   async function crearYVincular() {
@@ -56,7 +39,7 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
       .from("expedientes")
       .select("id")
       .eq("nombre", nombre.trim())
-      .eq("registro_id", registroId)
+      .eq("registro_id", registroId || null)
       .maybeSingle();
     if (existente) {
       alert(`Ya existe un expediente llamado "${nombre.trim()}". Usá un nombre diferente o vinculalo desde la lista.`);
@@ -68,10 +51,26 @@ export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugeri
       registro_id: registroId || null,
       usuario_id: userId || null,
       estado: "abierto",
-    }).select().single();
+    }).select("id").maybeSingle();
+
     if (error) { alert("Error al crear expediente: " + error.message); setGuardando(false); return; }
-    if (exp) await vincular(exp.id, docId);
+
+    let expedienteId = exp?.id;
+    if (!expedienteId) {
+      // RETURNING filtrado por RLS — buscar el expediente recién creado por nombre
+      const { data: buscado } = await supabase.from("expedientes")
+        .select("id").eq("nombre", nombre.trim())
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      expedienteId = buscado?.id;
+    }
+
     setGuardando(false);
+    if (!expedienteId) {
+      alert("No se pudo obtener el expediente recién creado. Intentá de nuevo.");
+      return;
+    }
+    onClose();
+    onGo?.("expediente", { expedienteId, vincularDocId: docId });
   }
 
   const filtrados = expedientes.filter(e =>

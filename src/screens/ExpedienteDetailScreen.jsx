@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
@@ -63,6 +63,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   const [modalVincular, setModalVincular] = useState(false);
   const [confirmEliminar, setConfirmEliminar] = useState(false);
   const fileRef = useRef(null);
+  const vincularDocRef = useRef(params?.vincularDocId || null);
 
   useEffect(() => { if (expedienteId) cargar(); }, [expedienteId]);
 
@@ -79,6 +80,29 @@ export function ExpedienteDetailScreen({ onGo, params }) {
     setDocumentos(docs || []);
     setArchivos(arch || []);
     setCargando(false);
+
+    // Auto-vincular si viene de "Crear y vincular" o "Vincular a existente" en el editor
+    if (vincularDocRef.current) {
+      const docId = vincularDocRef.current;
+      vincularDocRef.current = null;
+      await autoVincular(docId, docs || []);
+    }
+  }
+
+  async function autoVincular(docId, docsYaCargados) {
+    const yaVinculado = docsYaCargados.some(d => d.documento_id === docId);
+    if (!yaVinculado) {
+      const { error } = await supabase.from("expediente_documentos")
+        .insert({ expediente_id: expedienteId, documento_id: docId });
+      if (error) {
+        console.error("autoVincular error:", error.message);
+        return;
+      }
+    }
+    // Recargar para mostrar el documento recién vinculado
+    const { data: docs } = await supabase
+      .from("expediente_documentos").select("*, documentos(*)").eq("expediente_id", expedienteId);
+    setDocumentos(docs || []);
   }
 
   async function cambiarEstado(nuevoEstado) {
