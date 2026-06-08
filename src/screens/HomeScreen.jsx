@@ -6,6 +6,16 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
 import { ModalAgregarExpediente } from "../components/modals/ModalAgregarExpediente";
 
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function sinFecha(titulo) {
+  if (!titulo) return "";
+  const partes = titulo.split(" - ");
+  if (partes.length >= 2 && /^\d{2}-\d{2}-\d{4}$/.test(partes[partes.length - 1].trim())) {
+    return partes.slice(0, -1).join(" — ");
+  }
+  return titulo;
+}
+
 // ── CONSTANTES ────────────────────────────────────────────────────────────────
 const POR_PAG = 8;
 
@@ -629,7 +639,7 @@ export function HomeScreen({ onGo }) {
           docId={expedienteDoc.id}
           registroId={miUsuario?.registro || registroActivo}
           userId={usuario?.id}
-          nombreSugerido={expedienteDoc.titulo}
+          nombreSugerido={sinFecha(expedienteDoc.titulo)}
           onClose={() => setExpedienteDoc(null)}
           onGo={onGo}
         />
