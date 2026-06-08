@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
-import { subirArchivoDrive, urlDescargaDrive } from "../utils/driveHelper";
+import { subirArchivoDrive, buscarOCrearCarpetaDrive, urlDescargaDrive } from "../utils/driveHelper";
 
 const ESTADOS = [
   { key: "abierto",    label: "Abierto",    color: "#3a7ca5" },
@@ -149,9 +149,18 @@ export function ExpedienteDetailScreen({ onGo, params }) {
     }
     setSubiendo(true);
     try {
-      const resultado = await subirArchivoDrive(
-        session, file, file.name, file.type, null
-      );
+      // Carpeta raíz "Notarial" en el Drive del usuario
+      const carpetaRaizId = await buscarOCrearCarpetaDrive(session, "Notarial");
+
+      // Carpeta del expediente dentro de "Notarial" — se guarda en BD para no recrearla
+      let folderId = expediente?.drive_folder_id;
+      if (!folderId) {
+        folderId = await buscarOCrearCarpetaDrive(session, expediente.nombre, carpetaRaizId);
+        await supabase.from("expedientes").update({ drive_folder_id: folderId }).eq("id", expedienteId);
+        setExpediente(prev => ({ ...prev, drive_folder_id: folderId }));
+      }
+
+      const resultado = await subirArchivoDrive(session, file, file.name, file.type, folderId);
       await supabase.from("expediente_archivos").insert({
         expediente_id: expedienteId,
         drive_file_id: resultado.id,
