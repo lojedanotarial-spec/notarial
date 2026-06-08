@@ -6,6 +6,16 @@
 -- Solución: política INSERT con un chequeo simple (usuario autenticado).
 -- ══════════════════════════════════════════════════════════════════════════════
 
+-- FK constraints necesarias para que PostgREST soporte el join embebido documentos(*)
+-- Sin estas constraints la query select=*,documentos(*) falla con HTTP 400
+ALTER TABLE expediente_documentos
+  DROP CONSTRAINT IF EXISTS fk_expdocs_expediente,
+  DROP CONSTRAINT IF EXISTS fk_expdocs_documento;
+
+ALTER TABLE expediente_documentos
+  ADD CONSTRAINT fk_expdocs_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE,
+  ADD CONSTRAINT fk_expdocs_documento  FOREIGN KEY (documento_id)  REFERENCES documentos(id)  ON DELETE CASCADE;
+
 DROP POLICY IF EXISTS "expediente_docs_acceso"   ON expediente_documentos;
 DROP POLICY IF EXISTS "expediente_docs_select"   ON expediente_documentos;
 DROP POLICY IF EXISTS "expediente_docs_insert"   ON expediente_documentos;

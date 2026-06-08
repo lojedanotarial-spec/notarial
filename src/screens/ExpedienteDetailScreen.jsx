@@ -67,17 +67,35 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
   useEffect(() => { if (expedienteId) cargar(); }, [expedienteId]);
 
+  // Carga los vínculos expediente_documentos + detalles de documentos sin FK join
+  // (el join embebido documentos(*) requiere FK constraint en DB y falla con 400)
+  async function cargarLinks(expId) {
+    const { data: links } = await supabase
+      .from("expediente_documentos")
+      .select("id, expediente_id, documento_id, created_at")
+      .eq("expediente_id", expId);
+    if (!links?.length) return [];
+    const { data: docDets } = await supabase
+      .from("documentos")
+      .select("id, titulo, template_key, created_at")
+      .in("id", links.map(l => l.documento_id));
+    return links.map(l => ({
+      ...l,
+      documentos: docDets?.find(d => d.id === l.documento_id) || null,
+    }));
+  }
+
   async function cargar() {
     setCargando(true);
-    const [{ data: exp }, { data: docs }, { data: arch }] = await Promise.all([
+    const [{ data: exp }, links, { data: arch }] = await Promise.all([
       supabase.from("expedientes").select("*").eq("id", expedienteId).single(),
-      supabase.from("expediente_documentos").select("*, documentos(*)").eq("expediente_id", expedienteId),
+      cargarLinks(expedienteId),
       supabase.from("expediente_archivos").select("*").eq("expediente_id", expedienteId).order("created_at", { ascending: false }),
     ]);
     setExpediente(exp);
     setNombre(exp?.nombre || "");
     setNotas(exp?.notas || "");
-    setDocumentos(docs || []);
+    setDocumentos(links);
     setArchivos(arch || []);
     setCargando(false);
 
@@ -85,7 +103,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
     if (vincularDocRef.current) {
       const docId = vincularDocRef.current;
       vincularDocRef.current = null;
-      await autoVincular(docId, docs || []);
+      await autoVincular(docId, links);
     }
   }
 
@@ -99,10 +117,8 @@ export function ExpedienteDetailScreen({ onGo, params }) {
         return;
       }
     }
-    // Recargar para mostrar el documento recién vinculado
-    const { data: docs } = await supabase
-      .from("expediente_documentos").select("*, documentos(*)").eq("expediente_id", expedienteId);
-    setDocumentos(docs || []);
+    const links = await cargarLinks(expedienteId);
+    setDocumentos(links);
   }
 
   async function cambiarEstado(nuevoEstado) {
