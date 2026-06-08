@@ -704,7 +704,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       {/* MODALES */}
       {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
       {modal === "formulario"  && <ModalFormulario formulario={formulario} onApply={v => { setFormulario(v); generateAfterRef.current = true; }} onClose={() => setModal(null)}/>}
-      {modal === "expediente"  && <ModalAgregarExpediente docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} nombreSugerido={docTitle} onClose={() => setModal(null)} onGo={onGo} />}
+      {modal === "expediente"  && <ModalAgregarExpediente docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} userId={usuario?.id} nombreSugerido={docTitle} onClose={() => setModal(null)} onGo={onGo} />}
       {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}

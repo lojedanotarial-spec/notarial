@@ -21,7 +21,7 @@ function BadgeEstado({ estado }) {
   );
 }
 
-function ModalNuevoExpediente({ onCrear, onClose, registroId }) {
+function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
   const [nombre, setNombre] = useState("");
   const [tipoActo, setTipoActo] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -33,6 +33,7 @@ function ModalNuevoExpediente({ onCrear, onClose, registroId }) {
       nombre: nombre.trim(),
       tipo_acto: tipoActo || null,
       registro_id: registroId || null,
+      usuario_id: userId || null,
       estado: "abierto",
     }).select().single();
     setGuardando(false);
@@ -107,7 +108,7 @@ function ModalNuevoExpediente({ onCrear, onClose, registroId }) {
 }
 
 export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
-  const { session } = useAuth();
+  const { session, usuario } = useAuth();
   const [expedientes, setExpedientes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [modalNuevo, setModalNuevo] = useState(false);
@@ -240,6 +241,7 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
       {modalNuevo && (
         <ModalNuevoExpediente
           registroId={registroActivo || miUsuario?.registro}
+          userId={usuario?.id}
           onCrear={exp => setExpedientes(prev => [exp, ...prev])}
           onClose={() => setModalNuevo(false)}
         />

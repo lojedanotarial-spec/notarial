@@ -4,7 +4,7 @@ import { Modal } from "../Modal";
 import { Btn } from "../ui/Btn";
 import { supabase } from "../../supabase";
 
-export function ModalAgregarExpediente({ docId, registroId, nombreSugerido = "", onClose, onGo }) {
+export function ModalAgregarExpediente({ docId, registroId, userId, nombreSugerido = "", onClose, onGo }) {
   const [expedientes, setExpedientes] = useState([]);
   const [query, setQuery]             = useState("");
   const [cargando, setCargando]       = useState(true);
@@ -39,6 +39,7 @@ export function ModalAgregarExpediente({ docId, registroId, nombreSugerido = "",
     const { data: exp } = await supabase.from("expedientes").insert({
       nombre: nombre.trim(),
       registro_id: registroId || null,
+      usuario_id: userId || null,
       estado: "abierto",
     }).select().single();
     if (exp) await vincular(exp.id);
