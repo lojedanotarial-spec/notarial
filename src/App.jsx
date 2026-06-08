@@ -67,7 +67,7 @@ function AppRouter() {
       height: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
       background: "#1a2332",
     }}>
-      <img src="/logo-pen-transparent.png" alt="Notarial" style={{ height: 56, opacity: .75 }} />
+      <img src="/logo-pen-transparent1.png" alt="Notarial" style={{ height: 56, opacity: .75 }} />
     </div>
   );
 
@@ -79,7 +79,7 @@ function AppRouter() {
       alignItems: "center", justifyContent: "center",
       background: "#1a2332", gap: 20,
     }}>
-      <img src="/logo-pen-transparent.png" alt="Notarial" style={{ height: 56, opacity: .5 }} />
+      <img src="/logo-pen-transparent1.png" alt="Notarial" style={{ height: 56, opacity: .5 }} />
       <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 8 }}>
         <p style={{ margin: 0, fontFamily: "'Merriweather', serif", fontSize: 18,
           fontWeight: 400, color: "#fdfcfa" }}>Sin acceso</p>

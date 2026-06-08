@@ -107,7 +107,7 @@ export function LoginScreen() {
 
         {/* Brand */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-          <img src="/logo-pen-transparent.png" alt="Notarial" style={{ width: 72, height: 72, objectFit: "contain" }} />
+          <img src="/logo-pen-transparent1.png" alt="Notarial" style={{ width: 72, height: 72, objectFit: "contain" }} />
           <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 4 }}>
             <h1 style={{ margin: 0, fontFamily: "'Merriweather', Georgia, serif", fontWeight: 300,
               fontSize: 24, letterSpacing: "0.01em", color: C.porcelain }}>Notarial</h1>

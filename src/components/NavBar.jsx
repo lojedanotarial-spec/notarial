@@ -220,7 +220,7 @@ export function NavBar({
             onClick={() => onGo && onGo("home")}
             style={{ display:"flex", alignItems:"center", gap:10, background:"none", border:"none", cursor:"pointer", padding:0 }}
           >
-            <img src="/logo-pen-transparent.png" alt="Notarial" style={{ height: 28, display: "block" }} />
+            <img src="/logo-pen-transparent1.png" alt="Notarial" style={{ height: 28, display: "block" }} />
             <div style={{ width: 1, height: 14, background: "rgba(253,252,250,.2)" }} />
             <span style={{ color: "#FDFCFA", fontSize: 13, fontWeight: 700, letterSpacing: "-.01em" }}>
               Notarial
