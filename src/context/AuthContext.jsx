@@ -48,11 +48,28 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.provider_token) {
+        localStorage.setItem("provider_token", session.provider_token);
+      }
+      if (session && !session.provider_token) {
+        const saved = localStorage.getItem("provider_token");
+        if (saved) session.provider_token = saved;
+      }
       setSession(session);
       if (session) cargarPerfil(session.user.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // provider_token solo llega en el SIGNED_IN inicial — lo persistimos para que sobreviva recargas
+      if (session?.provider_token) {
+        localStorage.setItem("provider_token", session.provider_token);
+      }
+      // Si ya no viene en la sesión, reinyectarlo desde localStorage
+      if (session && !session.provider_token) {
+        const saved = localStorage.getItem("provider_token");
+        if (saved) session.provider_token = saved;
+      }
+      if (!session) localStorage.removeItem("provider_token");
       setSession(session);
       if (session) cargarPerfil(session.user.id);
       else { setUsuario(null); setMiUsuario(null); setMiembros([]); setPerfilCargado(false); }
