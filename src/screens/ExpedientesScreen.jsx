@@ -46,7 +46,6 @@ function BadgeEstado({ estado }) {
 
 function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
   const [nombre, setNombre] = useState("");
-  const [tipoActo, setTipoActo] = useState("");
   const [guardando, setGuardando] = useState(false);
 
   async function handleCrear() {
@@ -62,7 +61,6 @@ function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
     setGuardando(true);
     const { data, error } = await supabase.from("expedientes").insert({
       nombre: nombre.trim(),
-      tipo_acto: tipoActo || null,
       registro_id: registroId || null,
       usuario_id: userId || null,
       estado: "abierto",
@@ -100,21 +98,6 @@ function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
               onChange={e => setNombre(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleCrear()}
               placeholder="ej: Transferencia VW Gol IOC385 — MORAN"
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: C.dark, display: "block", marginBottom: 4 }}>
-              Tipo de acto
-            </label>
-            <input
-              style={{
-                width: "100%", padding: "8px 11px", borderRadius: 7, boxSizing: "border-box",
-                border: "1px solid rgba(26,35,50,.14)", fontFamily: "'Inter',sans-serif",
-                fontSize: 13, color: C.dark,
-              }}
-              value={tipoActo}
-              onChange={e => setTipoActo(e.target.value)}
-              placeholder="ej: Certificación F08, Autorización conducir..."
             />
           </div>
         </div>
@@ -311,7 +294,7 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
       {modalNuevo && (
         <ModalNuevoExpediente
           registroId={registroActivo || miUsuario?.registro}
-          userId={usuario?.id}
+          userId={session?.user?.id}
           onCrear={exp => setExpedientes(prev => [exp, ...prev])}
           onClose={() => setModalNuevo(false)}
         />

@@ -61,6 +61,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   const [notas, setNotas]             = useState("");
   const [tab, setTab]                 = useState("docs"); // docs | archivos
   const [modalVincular, setModalVincular] = useState(false);
+  const [queryVincular, setQueryVincular] = useState("");
   const [confirmEliminar, setConfirmEliminar] = useState(false);
   const fileRef = useRef(null);
   const vincularDocRef = useRef(params?.vincularDocId || null);
@@ -178,11 +179,12 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
   async function abrirModalVincular() {
     const regId = registroActivo || miUsuario?.registro;
-    let q = supabase.from("documentos").select("id, titulo, template_key, created_at").order("created_at", { ascending: false }).limit(50);
+    let q = supabase.from("documentos").select("id, titulo, template_key, created_at").order("created_at", { ascending: false }).limit(200);
     if (regId) q = q.eq("registro_id", regId);
     const { data } = await q;
     const yaVinculados = new Set(documentos.map(d => d.documento_id));
     setDocsDisp((data || []).filter(d => !yaVinculados.has(d.id)));
+    setQueryVincular("");
     setModalVincular(true);
   }
 
@@ -244,7 +246,6 @@ export function ExpedienteDetailScreen({ onGo, params }) {
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.dark, lineHeight: 1.4 }}>{expediente.nombre}</div>
                 <button onClick={() => setEditNombre(true)} style={{ background: "transparent", border: "none", cursor: "pointer", color: C.muted, fontSize: 12, padding: "2px 4px" }}>✏</button>
               </div>
-              {expediente.tipo_acto && <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>{expediente.tipo_acto}</div>}
               {expediente.notas && <div style={{ fontSize: 12, color: C.dark, marginTop: 8, lineHeight: 1.5, background: "rgba(26,35,50,.04)", borderRadius: 6, padding: "8px 10px" }}>{expediente.notas}</div>}
             </div>
           )}
@@ -412,25 +413,73 @@ export function ExpedienteDetailScreen({ onGo, params }) {
       {/* Modal vincular documentos */}
       {modalVincular && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "24px", width: 500, maxHeight: "70vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 16 }}>Vincular documento al expediente</div>
-            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
-              {docsDisp.length === 0 ? (
-                <div style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 20 }}>No hay documentos disponibles para vincular.</div>
-              ) : docsDisp.map(doc => (
-                <div key={doc.id} onClick={() => vincularDoc(doc.id)}
-                  style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(26,35,50,.1)", cursor: "pointer", background: "#fff" }}
-                  onMouseEnter={e => e.currentTarget.style.background = C.ceruleanLight}
-                  onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.dark }}>{doc.titulo || "Sin título"}</div>
-                  <div style={{ fontSize: 11, color: C.muted }}>{doc.template_key} · {new Date(doc.created_at).toLocaleDateString("es-AR")}</div>
-                </div>
-              ))}
+          <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "24px", width: 540, maxHeight: "75vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 14 }}>Vincular documento al expediente</div>
+
+            {/* Búsqueda */}
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                autoFocus
+                value={queryVincular}
+                onChange={e => setQueryVincular(e.target.value)}
+                placeholder="Buscar por título o tipo de documento..."
+                style={{
+                  width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 32px",
+                  borderRadius: 7, border: "1px solid rgba(26,35,50,.14)",
+                  fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.dark, outline: "none",
+                }}
+              />
+              {queryVincular && (
+                <button onClick={() => setQueryVincular("")}
+                  style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: C.muted, fontSize: 14, padding: 2 }}>
+                  ✕
+                </button>
+              )}
             </div>
-            <button onClick={() => setModalVincular(false)}
-              style={{ marginTop: 16, padding: "8px 0", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", cursor: "pointer", fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 12 }}>
-              Cancelar
-            </button>
+
+            {/* Lista filtrada */}
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+              {(() => {
+                const q = queryVincular.trim().toLowerCase();
+                const filtrados = q
+                  ? docsDisp.filter(d =>
+                      d.titulo?.toLowerCase().includes(q) ||
+                      d.template_key?.toLowerCase().includes(q)
+                    )
+                  : docsDisp;
+                if (filtrados.length === 0) return (
+                  <div style={{ color: C.muted, fontSize: 13, textAlign: "center", marginTop: 24 }}>
+                    {q ? "Sin resultados para esa búsqueda." : "No hay documentos disponibles para vincular."}
+                  </div>
+                );
+                return filtrados.map(doc => (
+                  <div key={doc.id} onClick={() => vincularDoc(doc.id)}
+                    style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(26,35,50,.1)", cursor: "pointer", background: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                    onMouseEnter={e => e.currentTarget.style.background = C.ceruleanLight}
+                    onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.titulo || "Sin título"}</div>
+                      <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>{doc.template_key} · {new Date(doc.created_at).toLocaleDateString("es-AR")}</div>
+                    </div>
+                    <span style={{ fontSize: 11, color: C.cerulean, fontWeight: 700, marginLeft: 12, flexShrink: 0 }}>Vincular →</span>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
+              <span style={{ fontSize: 11, color: C.muted }}>
+                {docsDisp.length} documento{docsDisp.length !== 1 ? "s" : ""} disponible{docsDisp.length !== 1 ? "s" : ""}
+              </span>
+              <button onClick={() => setModalVincular(false)}
+                style={{ padding: "7px 18px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", cursor: "pointer", fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 12 }}>
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}
