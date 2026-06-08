@@ -4,6 +4,7 @@ import { T, R, S } from "../theme";
 import { NavBar } from "../components/NavBar";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
+import { ModalAgregarExpediente } from "../components/modals/ModalAgregarExpediente";
 
 // ── CONSTANTES ────────────────────────────────────────────────────────────────
 const POR_PAG = 8;
@@ -199,13 +200,13 @@ function ConfirmDelete({ titulo, onConfirm, onCancel }) {
   );
 }
 
-function FilaDoc({ doc, onOpen, onDelete, last }) {
+function FilaDoc({ doc, onOpen, onDelete, onExpediente, last }) {
   const [hover, setHover] = useState(false);
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{ display:"grid", gridTemplateColumns:"2fr 100px 110px 80px 90px 32px",
+      style={{ display:"grid", gridTemplateColumns:"2fr 100px 110px 80px 90px 64px",
                gap:0, padding:"10px 16px", alignItems:"center",
                borderBottom: last ? "none" : "1px solid rgba(26,35,50,.05)",
                background: hover ? "rgba(26,35,50,.02)" : "transparent",
@@ -224,14 +225,26 @@ function FilaDoc({ doc, onOpen, onDelete, last }) {
       </div>
       <div style={{ display:"flex", alignItems:"center", fontSize:11, color:"rgba(26,35,50,.65)" }}>{fmtFecha(doc.updated_at)}</div>
       <div style={{ display:"flex", alignItems:"center" }}><Badge estado={doc.estado} /></div>
-      <div>
+      <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+        <button
+          onClick={e => { e.stopPropagation(); onExpediente(doc); }}
+          title="Agregar a expediente"
+          style={{ width:26, height:26, borderRadius:5, border:"1px solid transparent",
+                   background:"transparent", cursor:"pointer", display:"flex",
+                   alignItems:"center", justifyContent:"center" }}
+          onMouseEnter={e => { e.currentTarget.style.background = C.ceruleanLight; e.currentTarget.style.borderColor = C.ceruleanMid; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.cerulean} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+          </svg>
+        </button>
         <button
           onClick={e => { e.stopPropagation(); onDelete(doc); }}
           title="Eliminar"
           style={{ width:26, height:26, borderRadius:5, border:"1px solid transparent",
                    background:"transparent", cursor:"pointer", display:"flex",
-                   alignItems:"center", justifyContent:"center",
-                   opacity: 1 }}
+                   alignItems:"center", justifyContent:"center" }}
           onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}
         >
@@ -263,8 +276,9 @@ export function HomeScreen({ onGo }) {
   const [fHasta,     setFHasta]     = useState("");
 
   // ui
-  const [pagina,      setPagina]      = useState(1);
-  const [confirmDel,  setConfirmDel]  = useState(null); // doc a eliminar
+  const [pagina,        setPagina]        = useState(1);
+  const [confirmDel,    setConfirmDel]    = useState(null);
+  const [expedienteDoc, setExpedienteDoc] = useState(null);
 
   // ── CARGA ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -514,7 +528,7 @@ export function HomeScreen({ onGo }) {
             <div style={{ background:C.porcelain, borderRadius:R.lg, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden" }}>
 
               {/* Header tabla */}
-              <div style={{ display:"grid", gridTemplateColumns:"2fr 100px 110px 80px 90px 32px",
+              <div style={{ display:"grid", gridTemplateColumns:"2fr 100px 110px 80px 90px 64px",
                             padding:"8px 16px", borderBottom:"2px solid rgba(26,35,50,.07)", background:C.warm }}>
                 {["Documento","Tipo","Escribano","Fecha","Estado",""].map(h => (
                   <div key={h} style={{ fontSize:11, fontWeight:600,
@@ -528,7 +542,8 @@ export function HomeScreen({ onGo }) {
                 visibles.map((doc, idx) => (
                   <FilaDoc key={doc.id} doc={doc} last={idx === visibles.length - 1}
                            onOpen={id => onGo("editor", { docId: id })}
-                           onDelete={doc => setConfirmDel(doc)} />
+                           onDelete={doc => setConfirmDel(doc)}
+                           onExpediente={doc => setExpedienteDoc(doc)} />
                 ))
               ) : (
                 <div style={{ padding:"36px 16px", textAlign:"center", ...T.l2 }}>
@@ -571,11 +586,21 @@ export function HomeScreen({ onGo }) {
         </div>
       </div>
 
-      {/* Modal confirmación borrado */}
       {confirmDel && (
         <ConfirmDelete titulo={confirmDel.titulo}
                        onConfirm={handleDelete}
                        onCancel={() => setConfirmDel(null)} />
+      )}
+
+      {expedienteDoc && (
+        <ModalAgregarExpediente
+          docId={expedienteDoc.id}
+          registroId={miUsuario?.registro || registroActivo}
+          userId={usuario?.id}
+          nombreSugerido={expedienteDoc.titulo}
+          onClose={() => setExpedienteDoc(null)}
+          onGo={onGo}
+        />
       )}
     </div>
   );
