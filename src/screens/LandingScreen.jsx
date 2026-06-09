@@ -462,7 +462,7 @@ export function LandingScreen({ onLogin }) {
             },
             {
               titulo: "Contacto",
-              texto: "Para consultas sobre privacidad o solicitudes de eliminación de datos: contacto@notarial.lat",
+              texto: "Para consultas sobre privacidad o solicitudes de eliminación de datos: lojeda.notarial@gmail.com",
             },
           ].map((s, i) => (
             <div key={i} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: i < 4 ? "1px solid rgba(26,35,50,.06)" : "none" }}>
