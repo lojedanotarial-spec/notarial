@@ -113,7 +113,7 @@ function ModalPreferencias({ onClose }) {
   );
 }
 
-function UserDropdown({ onClose, onPreferencias }) {
+function UserDropdown({ onClose, onPreferencias, onAdmin, esAdmin }) {
   const { miUsuario, logout } = useAuth();
   const ref = useRef();
 
@@ -146,6 +146,27 @@ function UserDropdown({ onClose, onPreferencias }) {
           {ROL_LABEL[miUsuario?.rol]} · Registro {miUsuario?.registro}
         </div>
       </div>
+
+      {esAdmin && (
+        <button
+          onClick={onAdmin}
+          style={{
+            width: "100%", padding: "11px 16px",
+            background: "transparent", border: "none",
+            color: "rgba(255,255,255,.85)", fontSize: 13,
+            fontFamily: "'Montserrat', sans-serif",
+            cursor: "pointer", textAlign: "left",
+            display: "flex", alignItems: "center", gap: 8,
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.05)"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          Admin
+        </button>
+      )}
 
       <button
         onClick={onPreferencias}
@@ -191,7 +212,8 @@ export function NavBar({
   onExpediente,
   onGo, onVolver,
 }) {
-  const { iniciales } = useAuth();
+  const { iniciales, usuario } = useAuth();
+  const esAdmin = usuario?.is_admin;
   const [menuOpen, setMenuOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
   const ec = ESTADO_COLORS[estado] || ESTADO_COLORS.borrador;
@@ -248,6 +270,8 @@ export function NavBar({
               <UserDropdown
                 onClose={() => setMenuOpen(false)}
                 onPreferencias={abrirPreferencias}
+                esAdmin={esAdmin}
+                onAdmin={() => { setMenuOpen(false); onGo && onGo("admin"); }}
               />
             )}
           </div>
