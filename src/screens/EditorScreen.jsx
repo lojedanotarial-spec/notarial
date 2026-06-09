@@ -473,7 +473,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       .map(p => (p.apellido || p.nombre).toUpperCase())
       .slice(0, 3)
       .join(" / ");
-    return apellidos ? `${tipoLabel} — ${apellidos}` : tipoLabel;
+    return apellidos ? `Expte. ${tipoLabel} — ${apellidos}` : `Expte. ${tipoLabel}`;
   })();
 
   useEffect(() => {
