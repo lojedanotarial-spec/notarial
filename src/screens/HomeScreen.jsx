@@ -460,40 +460,6 @@ export function HomeScreen({ onGo }) {
             </div>
           </SideSection>
 
-          {/* ── Calculadoras ── */}
-          <div style={{ marginTop: 4 }}>
-            <div style={{ fontSize:11, fontWeight:600, color:"rgba(26,35,50,.45)",
-              letterSpacing:".08em", textTransform:"uppercase", padding:"0 16px", marginBottom:8 }}>
-              Utilidades
-            </div>
-            <div style={{ display:"flex", flexDirection:"column", gap:6, padding:"0 10px" }}>
-              {[
-                { id:"estimador_dnrpa",     label:"Estimador DNRPA",     desc:"Aranceles de transferencia", activo:false },
-                { id:"presupuesto_notarial", label:"Presupuesto Notarial", desc:"Honorarios y sellos ATM",    activo:false },
-                { id:"calculadora_cuit",    label:"Calculadora CUIT",     desc:"Desde DNI y género",         activo:true  },
-              ].map(tool => (
-                <div key={tool.id} onClick={() => onGo("herramientas")}
-                  style={{ padding:"9px 12px", borderRadius:8, cursor:"pointer",
-                    background: tool.activo ? C.ceruleanLight : "rgba(26,35,50,.03)",
-                    border: `1px solid ${tool.activo ? C.ceruleanMid : "rgba(26,35,50,.08)"}`,
-                    transition:"background .12s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = tool.activo ? "#d4e8f5" : "rgba(26,35,50,.06)"}
-                  onMouseLeave={e => e.currentTarget.style.background = tool.activo ? C.ceruleanLight : "rgba(26,35,50,.03)"}>
-                  <div style={{ fontSize:12, fontWeight:600, color:C.dark, fontFamily:"'Inter',sans-serif" }}>
-                    {tool.label}
-                  </div>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:2 }}>
-                    <span style={{ fontSize:11, color:C.muted, fontFamily:"'Inter',sans-serif" }}>{tool.desc}</span>
-                    {tool.activo
-                      ? <span style={{ fontSize:10, fontWeight:700, color:"#27ae60" }}>●</span>
-                      : <span style={{ fontSize:10, color:C.muted, fontFamily:"'Montserrat',sans-serif" }}>Próx.</span>
-                    }
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
 
         {/* ── CONTENIDO PRINCIPAL ─────────────────────────────────────────── */}
@@ -673,6 +639,52 @@ export function HomeScreen({ onGo }) {
 
           </div>
         </div>
+
+        {/* ── PANEL DERECHO — Utilidades ───────────────────────────────────── */}
+        <div style={{ width:192, flexShrink:0, overflowY:"auto", padding:"20px 14px",
+                      borderLeft:"1px solid rgba(26,35,50,.1)", background:C.warm,
+                      display:"flex", flexDirection:"column", gap:10 }}>
+
+          <div style={{ fontSize:11, fontWeight:600, color:"rgba(26,35,50,.45)",
+            letterSpacing:".08em", textTransform:"uppercase", padding:"0 4px", marginBottom:2 }}>
+            Utilidades
+          </div>
+
+          {[
+            { id:"estimador_dnrpa",      label:"Estimador DNRPA",      desc:"Aranceles de transferencia automotor", activo:false },
+            { id:"presupuesto_notarial", label:"Presupuesto Notarial",  desc:"Honorarios y sellos ATM",              activo:false },
+            { id:"calculadora_cuit",     label:"Calculadora CUIT/CUIL", desc:"Desde DNI y género",                   activo:true  },
+            { id:"informe_dominio",      label:"Informe de Dominio",    desc:"Estado registral de automotor",         activo:false },
+          ].map(tool => (
+            <div key={tool.id} onClick={() => onGo("herramientas")}
+              style={{ padding:"10px 12px", borderRadius:9, cursor:"pointer",
+                background: tool.activo ? C.ceruleanLight : C.porcelain,
+                border: `1px solid ${tool.activo ? C.ceruleanMid : "rgba(26,35,50,.09)"}`,
+                transition:"box-shadow .12s" }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(26,35,50,.08)"}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+              <div style={{ fontSize:12, fontWeight:600, color:C.dark, fontFamily:"'Inter',sans-serif", marginBottom:3 }}>
+                {tool.label}
+              </div>
+              <div style={{ fontSize:11, color:C.muted, fontFamily:"'Inter',sans-serif", lineHeight:1.4, marginBottom:5 }}>
+                {tool.desc}
+              </div>
+              {tool.activo
+                ? <span style={{ fontSize:10, fontWeight:700, color:"#27ae60", fontFamily:"'Montserrat',sans-serif" }}>● Disponible</span>
+                : <span style={{ fontSize:10, color:C.muted, fontFamily:"'Montserrat',sans-serif",
+                    background:"rgba(26,35,50,.06)", padding:"2px 8px", borderRadius:20 }}>Próximamente</span>
+              }
+            </div>
+          ))}
+
+          <button onClick={() => onGo("herramientas")}
+            style={{ marginTop:4, fontSize:11, color:C.cerulean, fontWeight:600, background:"none",
+              border:"none", cursor:"pointer", fontFamily:"'Montserrat',sans-serif",
+              padding:"4px 4px", textAlign:"left" }}>
+            Ver todas →
+          </button>
+        </div>
+
       </div>
 
       {confirmDel && (
