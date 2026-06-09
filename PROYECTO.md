@@ -1,6 +1,6 @@
 # Notarial v2 — Documentación de Proyecto
 
-> Última actualización: 8 junio 2026
+> Última actualización: 9 junio 2026
 
 ---
 
@@ -68,14 +68,15 @@ supabase.co                   Base de datos Supabase (ver §Base de Datos)
 | Pantalla | Ruta/acción | Qué hace |
 |---|---|---|
 | `LoginScreen` | — | Login email/contraseña y Google OAuth (con scope Drive) |
-| `HomeScreen` | default tras login | Dashboard con documentos recientes del registro; botón Expedientes |
+| `HomeScreen` | default tras login | Dashboard con 3 columnas: FILTROS (izq) · DOCUMENTOS recientes (centro) · UTILIDADES (der) |
 | `SelectorScreen` | "Nuevo documento" | Selector de plantilla por familia (cert, poder, acta, escritura, autorizaciones...) |
 | `EditorScreen` | al elegir plantilla | Editor principal: OO + panel de datos + Scriba |
 | `ExpedientesScreen` | desde HomeScreen | Lista de expedientes con filtros por estado; crear nuevo expediente |
 | `ExpedienteDetailScreen` | desde ExpedientesScreen | Dos tabs: Documentos (Supabase) + Archivos Drive; editar nombre/notas/estado |
 | `BulkScreen` | "Lote" | Generación masiva de escrituras para subdivisiones |
 | `ModeloScreen` | admin | Editor visual de plantillas HTML por registro |
-| `AdminScreen` | admin | Gestión de registros (escribanos) |
+| `AdminScreen` | admin (avatar dropdown) | Gestión de registros (escribanos) |
+| `HerramientasScreen` | "Ver todas →" en panel Utilidades | Grid de herramientas/calculadoras con estado (disponible / próximamente) |
 | `LoteDocScreen` | desde BulkScreen | Formulario de medidas catastrales para cada lote |
 
 ---
@@ -164,10 +165,11 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | Estructura de carpetas Drive: Notarial/[expediente]/ | ✅ | `buscarOCrearCarpetaDrive()` — busca o crea; `drive_folder_id` cacheado en expedientes |
 | RLS por usuario | ✅ | `expedientes` requiere `usuario_id = auth.uid()` |
 | Indicador de expediente por documento en HomeScreen | ✅ | Ícono carpeta cerulean rellena (vinculado) / borde (sin vincular); filtro sidebar |
-| Vincular docs existentes a expediente desde ExpedientesScreen | ❌ | Flow 3 — pendiente |
+| Vincular docs existentes a expediente desde ExpedienteDetailScreen | ✅ | Flow 3 — `ModalVincularDoc` con búsqueda por título/partes/tipo (chips)/fecha |
+| Editar expediente (nombre, estado, notas) | ✅ | Desde `ExpedienteDetailScreen` |
 
 **Tablas de expedientes:**
-- `expedientes` — id, nombre, tipo_acto, registro_id, usuario_id, estado, notas
+- `expedientes` — id, nombre, registro_id, usuario_id, estado, notas (`tipo_acto` existe en DB pero removido de la UI)
 - `expediente_documentos` — vinculación documento ↔ expediente
 - `expediente_archivos` — metadata de archivos en Drive (url, nombre, tipo)
 
@@ -280,16 +282,15 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 
 ### Features próximas
 
-- [ ] **Flow 3 — ExpedientesScreen** — desde el detalle de expediente, vincular documentos existentes (buscar/seleccionar docs de Supabase) y editar nombre/tipo_acto/estado del expediente
 - [ ] **Landing page + Google OAuth producción** — página de inicio pública con descripción del producto + privacy policy; necesaria para que Google apruebe el OAuth en producción (actualmente en modo test)
-- [ ] **Auto-nombre de expediente** — generar nombre sugerido desde partes + tipo_acto al crear expediente desde el editor
 - [ ] **Historial de conversaciones Scriba** — listar y cargar conversaciones previas desde Supabase (tabla `scriba_conversaciones` ya existe)
+- [ ] **Estimador DNRPA** — replicar cálculo cliente (porcentajes en código, montos fijos en Supabase para actualización anual); el sitio DNRPA es 100% JS cliente sin API pública
 
 ### Features mediano plazo
 
 - [ ] **Insertar en OO confirmado** — validar end-to-end cuando el servidor OO esté estable (fix ya deployado, pendiente confirmación)
 - [ ] **Guardado de ediciones OO** — persistir los cambios hechos en OO de vuelta a Supabase (callback de OO → Supabase Storage)
-- [ ] **Calculador de presupuesto** — calcular sellos ATM + honorarios desde valor del acto
+- [ ] **Calculador de presupuesto notarial** — calcular sellos ATM + honorarios desde valor del acto
 - [ ] **Sync requirentes CRM** — botón "Sincronizar" en ModalPartes (placeholder visible, sin backend)
 - [ ] **F04 model** — plantilla F-04 (diferente a F-08; `ModalFormulario` ya tiene el selector)
 
@@ -545,6 +546,12 @@ Deploy automático en Vercel al hacer push a `main`.
 37. Flow 2 — ícono de carpeta por fila en HomeScreen; cerulean relleno (vinculado) / borde sin relleno (sin vincular); tooltip dinámico; filtro "Con expediente / Sin expediente" en sidebar
 38. Slogan *Fe Pública Digital* — itálica, title case, color muted en navbar y login
 39. Fix RLS `expedientes` INSERT — política FOR ALL dividida en SELECT/UPDATE/DELETE (ownership) + INSERT (`auth.uid() IS NOT NULL`); código usa `session.user.id`
+40. Removido campo `tipo_acto` de la UI de expedientes (modal y sidebar) — sigue existiendo en DB pero no se usa
+41. Flow 3 — `ModalVincularDoc` en `ExpedienteDetailScreen`: busca 300 docs con búsqueda full-text (título, partes, DNI), chips por tipo de template, dropdown de fecha (semana/mes/trimestre), contador "X de Y documentos"
+42. Auto-nombre de expediente — `nombreExpediente` calculado en `EditorScreen` desde apellidos de partes + label de template (ej. "Cert. firma — OJEDA / LUCAS"); `sinFecha()` en HomeScreen strips la fecha del título para el sugerido
+43. `HerramientasScreen` — pantalla de utilidades con grid de herramientas categorizadas (Automotor/General/Identidad); badges de estado "Disponible" / "Próximamente"
+44. HomeScreen rediseño — layout 3 columnas: FILTROS (izq, 210px) · DOCUMENTOS (centro) · UTILIDADES (der, 192px); panel derecho con 4 cards de herramientas + "Ver todas →"; títulos de sección FILTROS / DOCUMENTOS
+45. Admin movido al avatar dropdown (solo visible para is_admin); removido botón Admin y botón Utilidades del navbar
 
 ---
 
