@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Notarial — Fe Pública Digital</title>
+  <meta name="description" content="Plantillas, expedientes y normativa mendocina en un solo lugar. Menos tiempo en la parte mecánica, más tiempo para el criterio jurídico." />
   <link rel="icon" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -50,17 +51,18 @@
       width: 100%; max-width: 1200px; margin: 0 auto;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .navbar-brand { display: flex; align-items: baseline; gap: 14px; }
-    .navbar-logo  { display: flex; align-items: center; gap: 8px; }
-    .navbar-logo img { height: 24px; }
+    .navbar-brand { display: flex; align-items: center; gap: 10px; }
+    .navbar-brand img { height: 26px; }
     .navbar-name {
       font-family: var(--ff-brand); font-size: 17px; font-weight: 700;
       color: #fff; letter-spacing: -0.01em;
     }
+    .navbar-sep {
+      width: 1px; height: 18px; background: rgba(201,169,97,0.3); margin: 0 14px;
+    }
     .navbar-tagline {
       font-family: var(--ff-doc); font-style: italic;
-      font-size: 12px; color: var(--text-light); letter-spacing: 0.02em;
-      padding-left: 14px; border-left: 1px solid rgba(201,169,97,0.3);
+      font-size: 12px; color: var(--text-light);
     }
     .btn-nav {
       font-family: var(--ff-brand); font-size: 12px; font-weight: 600;
@@ -76,8 +78,7 @@
     /* ── HERO ───────────────────────────────────────────────────────── */
     .hero {
       background: var(--hero-bg);
-      display: flex; align-items: center;
-      padding: 120px 40px 100px;
+      padding: 130px 40px 110px;
       position: relative; overflow: hidden;
     }
     .hero::before {
@@ -90,7 +91,7 @@
     .hero-inner {
       width: 100%; max-width: 1200px; margin: 0 auto;
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 64px; align-items: center; position: relative; z-index: 1;
+      gap: 72px; align-items: center; position: relative; z-index: 1;
     }
     .hero-badge {
       display: inline-flex; align-items: center; gap: 7px;
@@ -98,7 +99,7 @@
       letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--gold); background: rgba(201,169,97,0.08);
       border: 1px solid rgba(201,169,97,0.25);
-      padding: 6px 12px; border-radius: 2px; margin-bottom: 28px;
+      padding: 6px 12px; border-radius: 2px; margin-bottom: 24px;
     }
     .hero-badge::before {
       content: ''; width: 6px; height: 6px; border-radius: 50%;
@@ -106,45 +107,30 @@
     }
     .hero-headline {
       font-family: var(--ff-brand);
-      font-size: clamp(30px, 3.8vw, 50px); font-weight: 800;
-      line-height: 1.1; letter-spacing: -0.02em; color: #f8fafc;
+      font-size: clamp(32px, 4vw, 52px); font-weight: 800;
+      line-height: 1.08; letter-spacing: -0.025em; color: #f8fafc;
       margin-bottom: 20px;
     }
     .hero-headline em { font-style: normal; color: var(--gold); }
-    .hero-flow {
-      display: flex; align-items: center; gap: 6px;
-      font-family: var(--ff-doc); font-size: 13px; font-style: italic;
-      color: #64748b; margin-bottom: 28px; flex-wrap: wrap;
+    .hero-sub {
+      font-size: 16px; color: #94a3b8; line-height: 1.7;
+      margin-bottom: 36px; max-width: 480px;
     }
-    .hero-flow-step { color: #94a3b8; }
-    .hero-flow-arrow { color: var(--gold); font-style: normal; font-family: var(--ff-ui); }
-    .hero-bullets {
-      list-style: none; display: flex; flex-direction: column;
-      gap: 12px; margin-bottom: 36px;
-    }
-    .hero-bullets li {
-      display: grid; grid-template-columns: 16px 1fr;
-      gap: 10px; font-size: 14px; color: #94a3b8; line-height: 1.55;
-    }
-    .hero-bullets li::before {
-      content: '—'; color: var(--gold);
-      font-family: var(--ff-brand); font-weight: 700; padding-top: 1px;
-    }
-    .hero-bullets li strong { color: #cbd5e1; }
+    .hero-sub strong { color: #cbd5e1; font-weight: 500; }
     .hero-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .btn-primary {
       font-family: var(--ff-brand); font-size: 13px; font-weight: 600;
       letter-spacing: 0.04em; color: #fff; background: var(--cerulean);
-      border: 2px solid var(--cerulean); padding: 12px 24px; border-radius: 3px;
+      border: 2px solid var(--cerulean); padding: 13px 26px; border-radius: 3px;
       cursor: pointer; text-decoration: none;
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 7px;
       transition: background 0.2s;
     }
     .btn-primary:hover { background: var(--cerulean-h); border-color: var(--cerulean-h); }
     .btn-outline {
       font-family: var(--ff-brand); font-size: 13px; font-weight: 500;
       letter-spacing: 0.04em; color: #94a3b8; background: transparent;
-      border: 1px solid rgba(148,163,184,0.3); padding: 12px 24px; border-radius: 3px;
+      border: 1px solid rgba(148,163,184,0.3); padding: 13px 26px; border-radius: 3px;
       cursor: pointer; text-decoration: none;
       transition: border-color 0.2s, color 0.2s;
     }
@@ -153,24 +139,25 @@
     .hero-visual {}
     .screenshot-wrap {
       border-radius: 10px; overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(201,169,97,0.15),
-                  0 40px 100px rgba(0,0,0,0.65),
+      box-shadow: 0 0 0 1px rgba(201,169,97,0.12),
+                  0 40px 100px rgba(0,0,0,0.7),
                   0 8px 24px rgba(0,0,0,0.4);
-      transform: perspective(1200px) rotateY(-5deg) rotateX(2deg);
-      transition: transform 0.4s ease;
+      transform: perspective(1200px) rotateY(-6deg) rotateX(2deg);
+      transition: transform 0.5s ease;
     }
     .screenshot-wrap:hover {
       transform: perspective(1200px) rotateY(0deg) rotateX(0deg);
     }
     .screenshot-wrap img { display: block; width: 100%; height: auto; }
 
-    /* ── CÓMO FUNCIONA ──────────────────────────────────────────────── */
-    .how {
-      background: var(--navy-mid); padding: 88px 40px;
-      border-top: 1px solid rgba(201,169,97,0.1);
-      border-bottom: 1px solid rgba(201,169,97,0.1);
+    /* ── DOLOR ──────────────────────────────────────────────────────── */
+    .dolor {
+      background: var(--navy-mid);
+      padding: 88px 40px;
+      border-top: 1px solid rgba(201,169,97,0.08);
+      border-bottom: 1px solid rgba(58,124,165,0.1);
     }
-    .how-inner { max-width: 1200px; margin: 0 auto; }
+    .dolor-inner { max-width: 1200px; margin: 0 auto; }
     .eyebrow {
       font-family: var(--ff-brand); font-size: 11px; font-weight: 600;
       letter-spacing: 0.12em; text-transform: uppercase;
@@ -178,21 +165,42 @@
     }
     .section-title {
       font-family: var(--ff-brand); font-size: clamp(20px, 2.8vw, 30px);
-      font-weight: 700; letter-spacing: -0.015em; color: #f1f5f9; margin-bottom: 56px;
+      font-weight: 700; letter-spacing: -0.015em; color: #f1f5f9;
+      margin-bottom: 52px;
     }
+    .dolor-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+    .dolor-card {
+      background: var(--navy-mid); padding: 36px 32px;
+    }
+    .dolor-icon {
+      font-size: 22px; margin-bottom: 16px; opacity: 0.7;
+    }
+    .dolor-title {
+      font-family: var(--ff-brand); font-size: 14px; font-weight: 700;
+      color: #e2e8f0; margin-bottom: 10px;
+    }
+    .dolor-desc { font-size: 13.5px; color: var(--text-light); line-height: 1.7; }
+
+    /* ── CÓMO FUNCIONA ──────────────────────────────────────────────── */
+    .how {
+      background: #0f172a; padding: 88px 40px;
+      border-bottom: 1px solid rgba(201,169,97,0.08);
+    }
+    .how-inner { max-width: 1200px; margin: 0 auto; }
+    .how .section-title { color: #f1f5f9; }
     .how-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; }
-    .how-step { padding: 0 40px 0 0; }
+    .how-step { padding-right: 48px; }
     .how-step:last-child { padding-right: 0; }
     .how-step-num {
-      font-family: var(--ff-brand); font-size: 34px; font-weight: 800;
-      color: rgba(201,169,97,0.2); line-height: 1; margin-bottom: 18px;
+      font-family: var(--ff-brand); font-size: 36px; font-weight: 800;
+      color: rgba(201,169,97,0.18); line-height: 1; margin-bottom: 16px;
     }
-    .how-step-bar { width: 32px; height: 2px; background: var(--gold); margin-bottom: 18px; opacity: 0.6; }
+    .how-step-bar { width: 32px; height: 2px; background: var(--gold); margin-bottom: 16px; opacity: 0.5; }
     .how-step-label {
       font-family: var(--ff-brand); font-size: 14px; font-weight: 700;
       color: #f1f5f9; margin-bottom: 10px;
     }
-    .how-step-desc { font-size: 14px; color: #94a3b8; line-height: 1.65; }
+    .how-step-desc { font-size: 13.5px; color: #64748b; line-height: 1.7; }
 
     /* ── FEATURES ───────────────────────────────────────────────────── */
     .features { background: var(--warm); padding: 88px 40px; }
@@ -226,11 +234,11 @@
     .access { background: var(--warm); border-top: 1px solid rgba(26,35,50,0.1); padding: 88px 40px; }
     .access-inner {
       max-width: 1200px; margin: 0 auto;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: start;
     }
     .access .eyebrow { color: var(--gold-dim); }
     .access .section-title { color: var(--dark); margin-bottom: 14px; }
-    .access-intro { font-size: 14px; color: #4a5568; line-height: 1.7; margin-bottom: 28px; }
+    .access-intro { font-size: 14px; color: #4a5568; line-height: 1.75; margin-bottom: 28px; }
     .privacy-box {
       background: rgba(26,35,50,0.04); border: 1px solid rgba(26,35,50,0.08);
       border-radius: 4px; padding: 20px 22px;
@@ -239,7 +247,7 @@
       font-family: var(--ff-brand); font-size: 11px; font-weight: 700;
       letter-spacing: 0.08em; text-transform: uppercase; color: var(--dark); margin-bottom: 8px;
     }
-    .privacy-box p { font-size: 12px; color: #64748b; line-height: 1.6; }
+    .privacy-box p { font-size: 12px; color: #64748b; line-height: 1.65; }
     .privacy-box a { color: var(--cerulean); text-decoration: none; }
 
     .form-card {
@@ -249,8 +257,9 @@
     }
     .form-title {
       font-family: var(--ff-brand); font-size: 16px; font-weight: 700;
-      color: var(--dark); margin-bottom: 24px;
+      color: var(--dark); margin-bottom: 6px;
     }
+    .form-subtitle { font-size: 13px; color: #64748b; margin-bottom: 24px; }
     .form-group { margin-bottom: 18px; }
     .form-label {
       display: block; font-family: var(--ff-brand); font-size: 11px; font-weight: 600;
@@ -282,9 +291,7 @@
       background: rgba(192,57,43,0.05); border: 1px solid rgba(192,57,43,0.15);
       margin-bottom: 10px; display: none;
     }
-    .form-success {
-      text-align: center; padding: 44px 24px; display: none;
-    }
+    .form-success { text-align: center; padding: 44px 24px; display: none; }
     .form-success-icon {
       width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 14px;
       background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.2);
@@ -306,11 +313,11 @@
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 20px;
     }
+    .footer-brand {}
     .footer-name {
       font-family: var(--ff-brand); font-size: 16px; font-weight: 700;
       color: #fff; margin-bottom: 4px;
     }
-    .footer-name span { color: var(--gold); }
     .footer-tagline { font-family: var(--ff-doc); font-style: italic; font-size: 12px; color: var(--text-muted); }
     .footer-links { display: flex; align-items: center; gap: 28px; }
     .footer-links a {
@@ -322,18 +329,16 @@
     .footer-copy { font-size: 11px; color: #374151; }
 
     /* ── RESPONSIVE ─────────────────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .hero-inner, .access-inner { grid-template-columns: 1fr; gap: 40px; }
+    @media (max-width: 960px) {
+      .hero-inner, .access-inner { grid-template-columns: 1fr; gap: 48px; }
       .hero-visual { display: none; }
-      .how-steps { grid-template-columns: 1fr; gap: 36px; }
+      .dolor-grid, .how-steps, .features-grid { grid-template-columns: 1fr; gap: 1px; }
       .how-step { padding-right: 0; }
-      .features-grid { grid-template-columns: 1fr; }
-      .navbar-tagline { display: none; }
+      .navbar-sep, .navbar-tagline { display: none; }
     }
     @media (max-width: 600px) {
-      .navbar, .hero, .how, .features, .access, .footer { padding-left: 20px; padding-right: 20px; }
-      .hero { padding-top: 100px; padding-bottom: 64px; }
-      .footer-inner { flex-direction: column; align-items: flex-start; }
+      .navbar, .hero, .dolor, .how, .features, .access, .footer { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 100px; padding-bottom: 72px; }
       .hero-ctas { flex-direction: column; }
       .btn-primary, .btn-outline { width: 100%; justify-content: center; text-align: center; }
     }
@@ -342,7 +347,6 @@
 <body>
 
   <script>
-    // Si viene de un redirect OAuth (Supabase/Google), redirigir a la app
     if (window.location.hash.includes('access_token') ||
         window.location.search.includes('code=') ||
         window.location.search.includes('error=')) {
@@ -354,10 +358,9 @@
   <nav class="navbar">
     <div class="navbar-inner">
       <div class="navbar-brand">
-        <div class="navbar-logo">
-          <img src="/logo-pen-transparent1.png" alt="Notarial" />
-          <span class="navbar-name">Notarial</span>
-        </div>
+        <img src="/logo-pen-transparent1.png" alt="Notarial" />
+        <span class="navbar-name">Notarial</span>
+        <div class="navbar-sep"></div>
         <span class="navbar-tagline">Fe Pública Digital</span>
       </div>
       <a href="/app" class="btn-nav">Iniciar sesión</a>
@@ -372,18 +375,10 @@
         <h1 class="hero-headline">
           Redacción notarial<br/>asistida por <em>IA.</em>
         </h1>
-        <div class="hero-flow">
-          <span class="hero-flow-step">Elegís el instrumento</span>
-          <span class="hero-flow-arrow">→</span>
-          <span class="hero-flow-step">cargás las partes</span>
-          <span class="hero-flow-arrow">→</span>
-          <span class="hero-flow-step">exportás DOCX protocolar</span>
-        </div>
-        <ul class="hero-bullets">
-          <li><strong>50+ plantillas notariales</strong> listas para Mendoza: poderes, escrituras, actas, certificaciones de firma.</li>
-          <li><strong>Scriba</strong> completa datos, sugiere cláusulas y consulta normativa vigente (CCyC, UIF, ARCA, ATM).</li>
-          <li><strong>Expedientes</strong> vinculados a Google Drive con organización por estado y registro.</li>
-        </ul>
+        <p class="hero-sub">
+          <strong>Plantillas, expedientes y normativa mendocina en un solo lugar.</strong>
+          Menos tiempo en la parte mecánica, más tiempo para el criterio jurídico.
+        </p>
         <div class="hero-ctas">
           <a href="#acceso" class="btn-primary">
             Solicitar acceso
@@ -400,29 +395,54 @@
     </div>
   </section>
 
+  <!-- EL PROBLEMA -->
+  <section class="dolor">
+    <div class="dolor-inner">
+      <div class="eyebrow">El problema</div>
+      <div class="section-title">Así trabaja el estudio hoy.</div>
+      <div class="dolor-grid">
+        <div class="dolor-card">
+          <div class="dolor-icon">📄</div>
+          <div class="dolor-title">Plantillas Word que hay que adaptar cada vez</div>
+          <div class="dolor-desc">Cada instrumento empieza de cero o de una versión anterior desactualizada. Los mismos errores de formato se arrastran de documento en documento.</div>
+        </div>
+        <div class="dolor-card">
+          <div class="dolor-icon">🔍</div>
+          <div class="dolor-title">Normativa dispersa en múltiples fuentes</div>
+          <div class="dolor-desc">CCyC, UIF, ARCA, ATM, Colegio de Mendoza. Cada uno en su sitio. Verificar un requisito lleva más tiempo que redactar la cláusula.</div>
+        </div>
+        <div class="dolor-card">
+          <div class="dolor-icon">📁</div>
+          <div class="dolor-title">Expedientes sin estructura</div>
+          <div class="dolor-desc">Archivos en carpetas de Drive sin nomenclatura consistente. Encontrar un documento de hace seis meses, o saber en qué estado está un trámite, es una tarea aparte.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- CÓMO FUNCIONA -->
   <section class="how">
     <div class="how-inner">
-      <div class="eyebrow">Flujo de trabajo</div>
-      <div class="section-title">Tres pasos, sin fricción.</div>
+      <div class="eyebrow">La solución</div>
+      <div class="section-title">Un flujo completo, sin saltar entre herramientas.</div>
       <div class="how-steps">
         <div class="how-step">
           <div class="how-step-num">01</div>
           <div class="how-step-bar"></div>
           <div class="how-step-label">Elegís el instrumento</div>
-          <div class="how-step-desc">Seleccionás el tipo de acto — escritura, poder, certificación, acta — desde la biblioteca de plantillas adaptadas a la normativa mendocina. Cada plantilla incluye las cláusulas habituales precargadas.</div>
+          <div class="how-step-desc">Seleccionás el tipo de acto desde la biblioteca — escritura, poder, certificación, acta. Las plantillas ya tienen las cláusulas habituales para Mendoza precargadas.</div>
         </div>
         <div class="how-step">
           <div class="how-step-num">02</div>
           <div class="how-step-bar"></div>
           <div class="how-step-label">Cargás las partes</div>
-          <div class="how-step-desc">Escaneás el DNI con la cámara o ingresás los datos manualmente. Scriba identifica el instrumento correcto, completa los campos y alerta si falta información requerida.</div>
+          <div class="how-step-desc">Escaneás el DNI o ingresás los datos. Scriba completa los campos, sugiere cláusulas según el tipo de acto y verifica que no falte información requerida.</div>
         </div>
         <div class="how-step">
           <div class="how-step-num">03</div>
           <div class="how-step-bar"></div>
-          <div class="how-step-label">Generás y exportás</div>
-          <div class="how-step-desc">Revisás el borrador en el editor OnlyOffice integrado. Cuando el documento está listo, exportás el DOCX protocolar y el sistema lo archiva en tu expediente.</div>
+          <div class="how-step-label">Generás y archivás</div>
+          <div class="how-step-desc">Revisás el borrador en el editor integrado, exportás el DOCX protocolar y el sistema lo archiva automáticamente en el expediente correspondiente.</div>
         </div>
       </div>
     </div>
@@ -432,13 +452,13 @@
   <section class="features">
     <div class="features-inner">
       <div class="eyebrow">Funcionalidades</div>
-      <div class="section-title">Herramientas para el estudio.</div>
+      <div class="section-title">Qué incluye Notarial.</div>
       <div class="features-grid">
 
         <div class="card">
           <div class="card-bar"></div>
-          <div class="card-title">Editor de documentos</div>
-          <div class="card-desc">Edición nativa en OnlyOffice con formato protocolar preservado. Más de 50 plantillas cubren los instrumentos más frecuentes en la práctica mendocina.</div>
+          <div class="card-title">Editor notarial</div>
+          <div class="card-desc">Más de 50 instrumentos listos para Mendoza: poderes, escrituras, actas, certificaciones. Edición nativa en OnlyOffice con formato protocolar preservado.</div>
           <div class="card-tags">
             <span class="tag">50+ plantillas</span>
             <span class="tag">DOCX protocolar</span>
@@ -452,29 +472,29 @@
         <div class="card">
           <div class="card-bar"></div>
           <div class="card-title">Scriba — Asistente IA</div>
-          <div class="card-desc">Entrenado en normativa mendocina vigente. Completa partes, sugiere cláusulas y verifica requisitos formales. No inventa: sólo aplica lo que la ley dice.</div>
+          <div class="card-desc">Normativa mendocina centralizada dentro del editor. Completa datos de las partes, sugiere cláusulas y verifica requisitos formales. No inventa: aplica lo que la ley dice.</div>
           <div class="card-tags">
             <span class="tag">CCyC</span>
             <span class="tag">UIF</span>
             <span class="tag">ARCA</span>
-            <span class="tag">ATM</span>
+            <span class="tag">ATM Mendoza</span>
           </div>
           <div class="card-img">
-            <img src="/Screen-sample-1.png" alt="Panel Scriba con consultas" />
+            <img src="/Screen-sample-1.png" alt="Panel Scriba con consulta de normativa" />
           </div>
         </div>
 
         <div class="card">
           <div class="card-bar"></div>
-          <div class="card-title">Expedientes y Drive</div>
-          <div class="card-desc">Cada instrumento puede vincularse a un expediente. Los archivos se organizan en tu Google Drive personal, sin apps intermediarias.</div>
+          <div class="card-title">Expedientes</div>
+          <div class="card-desc">Cada trámite en su expediente, con estado, historial de documentos y archivado automático en Google Drive. Sin carpetas dispersas, sin nomenclatura manual.</div>
           <div class="card-tags">
             <span class="tag">Google Drive</span>
-            <span class="tag">Por estado</span>
+            <span class="tag">Estados</span>
             <span class="tag">Búsqueda rápida</span>
           </div>
           <div class="card-img">
-            <img src="/Screen-sample-4.png" alt="Dashboard con documentos y utilidades" />
+            <img src="/Screen-sample-4.png" alt="Vista de expedientes" />
           </div>
         </div>
 
@@ -488,20 +508,20 @@
 
       <div>
         <div class="eyebrow">Acceso anticipado</div>
-        <div class="section-title">Notarial está en desarrollo.</div>
+        <div class="section-title">Notarial está en desarrollo activo.</div>
         <p class="access-intro">
-          Estamos incorporando escribanos de Mendoza para la etapa de prueba.
-          El acceso es gratuito durante el período piloto. Los datos que ingresás
-          se usan únicamente para coordinar el onboarding.
+          Estamos incorporando escribanos de Mendoza para la etapa piloto.
+          El acceso es gratuito durante este período. Si te interesa probarlo
+          antes del lanzamiento, dejá tus datos y te contactamos.
         </p>
         <div class="privacy-box" id="privacidad">
           <div class="privacy-title">Privacidad y datos</div>
           <p>
-            Tus datos personales se usan exclusivamente para gestionar tu acceso.
+            Tus datos se usan únicamente para coordinar el acceso.
             No se comparten con terceros ni se usan con fines publicitarios.
             Podés solicitar la eliminación escribiendo a
             <a href="mailto:lojeda.notarial@gmail.com">lojeda.notarial@gmail.com</a>.
-            El almacenamiento cumple con la Ley N.° 25.326 de Protección de Datos Personales.
+            Cumple con la Ley N.° 25.326 de Protección de Datos Personales.
           </p>
         </div>
       </div>
@@ -515,6 +535,7 @@
           </div>
           <div id="form-body">
             <div class="form-title">Solicitar acceso</div>
+            <div class="form-subtitle">Período piloto — acceso gratuito</div>
             <form id="access-form" onsubmit="enviarSolicitud(event)">
               <div class="form-group">
                 <label class="form-label" for="nombre">Nombre completo</label>
@@ -525,12 +546,11 @@
                 <input class="form-input" type="email" id="email" name="email" placeholder="escribano@ejemplo.com" required autocomplete="email" />
               </div>
               <div class="form-group">
-                <label class="form-label" for="registro">Número de registro</label>
+                <label class="form-label" for="registro">Número de registro <span style="font-weight:400;opacity:.6">(opcional)</span></label>
                 <input class="form-input" type="text" id="registro" name="registro" placeholder="Ej. 1234 — 1.ª Circunscripción" />
-                <div class="form-hint">Registro notarial asignado por el Colegio de Escribanos de Mendoza.</div>
               </div>
               <div class="form-group">
-                <label class="form-label" for="whatsapp">Teléfono WhatsApp</label>
+                <label class="form-label" for="whatsapp">WhatsApp <span style="font-weight:400;opacity:.6">(opcional)</span></label>
                 <input class="form-input" type="tel" id="whatsapp" name="whatsapp" placeholder="+54 9 261 000-0000" autocomplete="tel" />
                 <div class="form-hint">Para coordinar el acceso y resolver dudas de configuración.</div>
               </div>
@@ -547,15 +567,15 @@
   <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-inner">
-      <div>
-        <div class="footer-name">No<span>tarial</span></div>
-        <div class="footer-tagline">Fe Pública Digital</div>
+      <div class="footer-brand">
+        <div class="footer-name">Notarial</div>
+        <div class="footer-tagline">Fe Pública Digital · Mendoza, Argentina</div>
       </div>
       <div class="footer-links">
         <a href="#privacidad">Privacidad</a>
         <a href="/app">Iniciar sesión</a>
       </div>
-      <div class="footer-copy">© 2026 Notarial. Mendoza, Argentina.</div>
+      <div class="footer-copy">© 2026 Notarial.</div>
     </div>
   </footer>
 
