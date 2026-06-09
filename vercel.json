@@ -1,10 +1,11 @@
 {
   "functions": {
-    "api/scriba.js": {
-      "maxDuration": 60
-    },
-    "api/vision.js": {
-      "maxDuration": 30
-    }
-  }
+    "api/scriba.js": { "maxDuration": 60 },
+    "api/vision.js": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/",    "destination": "/landing.html" },
+    { "source": "/app", "destination": "/index.html"   },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }

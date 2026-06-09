@@ -1,7 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { LoginScreen }   from "./screens/LoginScreen.jsx";
-import { LandingScreen } from "./screens/LandingScreen.jsx";
 import { HomeScreen }    from "./screens/HomeScreen";
 import { SelectorScreen } from "./screens/SelectorScreen";
 import { EditorScreen }  from "./screens/EditorScreen";
@@ -47,7 +46,6 @@ function AppRouter() {
   const { session, cargando, usuario, miUsuario, perfilCargado, logout, setRegistroActivo, registroActivo } = useAuth();
   const [screen, setScreen] = useState("home");
   const [params, setParams] = useState({});
-  const [showLogin, setShowLogin] = useState(false);
   const [scribaOpen, setScribaOpen] = useState(false);
   const [scribaContexto, setScribaContexto] = useState(null);
 
@@ -74,10 +72,7 @@ function AppRouter() {
     </div>
   );
 
-  if (!session) {
-    if (showLogin) return <LoginScreen />;
-    return <LandingScreen onLogin={() => setShowLogin(true)} />;
-  }
+  if (!session) return <LoginScreen />;
 
   if (perfilCargado && !usuario) return (
     <div style={{
