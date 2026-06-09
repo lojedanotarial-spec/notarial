@@ -471,12 +471,6 @@ export function HomeScreen({ onGo }) {
         <div style={{ flex:1, overflowY:"auto", padding:"24px 24px" }}>
           <div style={{ maxWidth:860, margin:"0 auto", display:"flex", flexDirection:"column", gap:S.lg }}>
 
-            {/* Título sección */}
-            <div style={{ fontSize:11, fontWeight:600, color:"rgba(26,35,50,.45)",
-              letterSpacing:".08em", textTransform:"uppercase", marginBottom:-8 }}>
-              Documentos
-            </div>
-
             {/* Saludo */}
             <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
               <div>
@@ -507,18 +501,6 @@ export function HomeScreen({ onGo }) {
                                  display:"flex", alignItems:"center", gap:6 }}>
                   📁 Expedientes
                 </button>
-                <button onClick={() => onGo("herramientas")}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
-                        onMouseLeave={e => e.currentTarget.style.background = C.porcelain}
-                        style={{ padding:"8px 16px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
-                                 background:C.porcelain, fontSize:13, fontWeight:600, color:C.dark,
-                                 cursor:"pointer", fontFamily:"'Inter', sans-serif", transition:"background .12s",
-                                 display:"flex", alignItems:"center", gap:6 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/>
-                  </svg>
-                  Utilidades
-                </button>
                 <button onClick={() => onGo("bulk")}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
                         onMouseLeave={e => e.currentTarget.style.background = C.porcelain}
@@ -537,6 +519,15 @@ export function HomeScreen({ onGo }) {
                   + Documento
                 </button>
               </div>
+            </div>
+
+            {/* Título DOCUMENTOS */}
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:4 }}>
+              <span style={{ fontSize:11, fontWeight:700, color:"rgba(26,35,50,.5)",
+                letterSpacing:".1em", textTransform:"uppercase", flexShrink:0 }}>
+                Documentos
+              </span>
+              <div style={{ flex:1, height:1, background:"rgba(26,35,50,.1)" }} />
             </div>
 
             {/* Stats */}
