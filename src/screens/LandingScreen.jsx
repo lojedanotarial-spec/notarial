@@ -1,122 +1,315 @@
 import { useState, useEffect, useRef } from "react";
-import { C } from "../constants";
 import { supabase } from "../supabase";
 
-// Mockup visual del editor — represetación estilizada del producto
-function EditorMockup() {
-  return (
-    <div style={{
-      width: "100%", maxWidth: 480,
-      background: "#111827",
-      borderRadius: 14,
-      border: "1px solid rgba(255,255,255,.1)",
-      boxShadow: "0 32px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04)",
-      overflow: "hidden",
-      fontFamily: "'Inter', sans-serif",
-    }}>
-      {/* Barra superior */}
-      <div style={{
-        height: 38, background: "#0f172a",
-        display: "flex", alignItems: "center", padding: "0 14px", gap: 10,
-        borderBottom: "1px solid rgba(255,255,255,.07)",
-      }}>
-        <div style={{ display: "flex", gap: 6 }}>
-          {["#ef4444","#f59e0b","#22c55e"].map(c => (
-            <div key={c} style={{ width: 9, height: 9, borderRadius: "50%", background: c, opacity: .7 }} />
-          ))}
-        </div>
-        <div style={{
-          flex: 1, height: 20, background: "rgba(255,255,255,.06)",
-          borderRadius: 4, display: "flex", alignItems: "center",
-          padding: "0 10px", fontSize: 10, color: "rgba(255,255,255,.3)",
-        }}>
-          Cert. firma — OJEDA LUCAS — 09-06-2026
-        </div>
-      </div>
+const CSS = `
+  .lnd *, .lnd *::before, .lnd *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-      {/* Contenido editor */}
-      <div style={{ display: "flex" }}>
-        {/* Panel izquierdo */}
-        <div style={{
-          width: 160, flexShrink: 0, padding: "14px 12px",
-          borderRight: "1px solid rgba(255,255,255,.06)",
-          display: "flex", flexDirection: "column", gap: 10,
-        }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.25)", letterSpacing: ".08em", textTransform: "uppercase" }}>
-            Partes
-          </div>
-          {[
-            { nombre: "LUCAS OJEDA", rol: "Vendedor", dni: "28.441.320" },
-            { nombre: "ANA GÓMEZ", rol: "Compradora", dni: "31.220.114" },
-          ].map((p, i) => (
-            <div key={i} style={{
-              background: "rgba(255,255,255,.04)", borderRadius: 6,
-              padding: "8px 10px", border: "1px solid rgba(255,255,255,.07)",
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(253,252,250,.85)" }}>{p.nombre}</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,.35)", marginTop: 2 }}>{p.rol} · {p.dni}</div>
-            </div>
-          ))}
-          <div style={{ marginTop: 4 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.25)", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>
-              Documento
-            </div>
-            <div style={{ background: "rgba(58,124,165,.18)", borderRadius: 6, padding: "7px 10px", border: "1px solid rgba(58,124,165,.3)" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "#7ec8e3" }}>Cert. de firma F-08</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,.3)", marginTop: 2 }}>Compraventa · Automotor</div>
-            </div>
-          </div>
-        </div>
+  .lnd {
+    font-family: 'Inter', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
 
-        {/* Documento */}
-        <div style={{ flex: 1, padding: "16px 14px", background: "#1e293b" }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,.2)", marginBottom: 10, letterSpacing: ".04em" }}>
-            VISTA PREVIA
-          </div>
-          <div style={{ fontSize: 10, lineHeight: 1.8, color: "rgba(253,252,250,.55)" }}>
-            <p style={{ margin: "0 0 8px" }}>
-              En la ciudad de Mendoza, a los{" "}
-              <span style={{ background: "rgba(201,169,97,.25)", color: "#c9a961", borderRadius: 3, padding: "1px 5px", fontWeight: 700 }}>
-                nueve días del mes de junio
-              </span>{" "}
-              de dos mil veintiséis...
-            </p>
-            <p style={{ margin: "0 0 8px" }}>
-              Ante mí,{" "}
-              <span style={{ background: "rgba(58,124,165,.25)", color: "#7ec8e3", borderRadius: 3, padding: "1px 5px", fontWeight: 700 }}>
-                ESCRIBANO/A REGISTRO Nº 853
-              </span>
-              , comparece{" "}
-              <span style={{ background: "rgba(58,124,165,.25)", color: "#7ec8e3", borderRadius: 3, padding: "1px 5px", fontWeight: 700 }}>
-                LUCAS OJEDA
-              </span>
-              , argentino, DNI 28.441.320...
-            </p>
-            <p style={{ margin: 0, color: "rgba(255,255,255,.22)" }}>
-              [el compareciente me exhibe el Formulario 08...]{" "}
-            </p>
-          </div>
+  /* ── NAVBAR ─────────────────────────────────────────────────────── */
+  .lnd-navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 60px;
+    background: rgba(15,23,42,0.94);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(201,169,97,0.15);
+    display: flex; align-items: center; padding: 0 40px;
+  }
+  .lnd-navbar-inner {
+    width: 100%; max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .lnd-brand { display: flex; align-items: baseline; gap: 14px; }
+  .lnd-logo  { display: flex; align-items: center; gap: 8px; }
+  .lnd-logo img { height: 26px; }
+  .lnd-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.01em;
+  }
+  .lnd-tagline {
+    font-family: 'Merriweather', serif; font-style: italic;
+    font-size: 12px; color: #94a3b8; letter-spacing: 0.02em;
+    padding-left: 14px; border-left: 1px solid rgba(201,169,97,0.3);
+  }
+  .lnd-btn-nav {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #c9a961; background: transparent;
+    border: 1px solid rgba(201,169,97,0.4);
+    padding: 7px 18px; border-radius: 3px;
+    cursor: pointer; transition: background 0.2s, border-color 0.2s;
+  }
+  .lnd-btn-nav:hover { background: rgba(201,169,97,0.08); border-color: #c9a961; }
 
-          {/* Scriba */}
-          <div style={{
-            marginTop: 14, background: "rgba(201,169,97,.07)",
-            border: "1px solid rgba(201,169,97,.2)", borderRadius: 8, padding: "8px 10px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-              <div style={{ width: 16, height: 16, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <img src="/Scriba-icon-1.png" alt="S" style={{ width: 16, height: 16, borderRadius: "50%" }} onError={e => e.target.style.display = "none"} />
-              </div>
-              <span style={{ fontSize: 9, fontWeight: 700, color: C.gold, letterSpacing: ".04em" }}>SCRIBA</span>
-            </div>
-            <div style={{ fontSize: 9, color: "rgba(253,252,250,.5)", lineHeight: 1.6 }}>
-              Documento listo. El formulario F-08 fue detectado correctamente. ¿Querés que complete el bloque INTERVIENE para el apoderado?
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+  /* ── HERO ───────────────────────────────────────────────────────── */
+  .lnd-hero {
+    min-height: 100vh; background: #0f172a;
+    display: flex; align-items: center;
+    padding: 80px 40px 60px; position: relative; overflow: hidden;
+  }
+  .lnd-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(58,124,165,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(58,124,165,0.04) 1px, transparent 1px);
+    background-size: 48px 48px; pointer-events: none;
+  }
+  .lnd-hero-inner {
+    width: 100%; max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 55fr 45fr;
+    gap: 56px; align-items: center; position: relative; z-index: 1;
+  }
+  .lnd-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #c9a961; background: rgba(201,169,97,0.08);
+    border: 1px solid rgba(201,169,97,0.25);
+    padding: 6px 12px; border-radius: 2px; margin-bottom: 28px;
+  }
+  .lnd-badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: #c9a961; flex-shrink: 0;
+  }
+  .lnd-h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(30px, 3.8vw, 50px); font-weight: 800;
+    line-height: 1.1; letter-spacing: -0.02em; color: #f8fafc;
+    margin-bottom: 20px;
+  }
+  .lnd-h1 em { font-style: normal; color: #c9a961; }
+  .lnd-flow {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Merriweather', serif; font-size: 13px;
+    font-style: italic; color: #64748b; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .lnd-flow-step { color: #94a3b8; }
+  .lnd-flow-arrow { color: #c9a961; font-style: normal; font-family: 'Inter', sans-serif; }
+  .lnd-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 36px; }
+  .lnd-bullets li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #94a3b8; }
+  .lnd-bullets li::before {
+    content: '—'; color: #c9a961; font-family: 'Montserrat', sans-serif;
+    font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+  .lnd-bullets li strong { color: #cbd5e1; }
+  .lnd-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .lnd-btn-primary {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+    color: #fff; background: #3a7ca5; border: 2px solid #3a7ca5;
+    padding: 12px 24px; border-radius: 3px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background 0.2s; text-decoration: none;
+  }
+  .lnd-btn-primary:hover { background: #2d6389; border-color: #2d6389; }
+  .lnd-btn-outline {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
+    color: #94a3b8; background: transparent;
+    border: 1px solid rgba(148,163,184,0.3);
+    padding: 12px 24px; border-radius: 3px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .lnd-btn-outline:hover { border-color: #94a3b8; color: #cbd5e1; }
+
+  .lnd-screenshot-wrap {
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(201,169,97,0.15), 0 32px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .lnd-screenshot-wrap img { display: block; width: 100%; height: auto; border-radius: 10px; }
+
+  /* ── CÓMO FUNCIONA ──────────────────────────────────────────────── */
+  .lnd-how {
+    background: #1e293b; padding: 88px 40px;
+    border-top: 1px solid rgba(201,169,97,0.1);
+    border-bottom: 1px solid rgba(201,169,97,0.1);
+  }
+  .lnd-how-inner { max-width: 1200px; margin: 0 auto; }
+  .lnd-eyebrow {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #c9a961; margin-bottom: 14px;
+  }
+  .lnd-section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(20px, 2.8vw, 30px); font-weight: 700;
+    letter-spacing: -0.015em; color: #f1f5f9; margin-bottom: 56px;
+  }
+  .lnd-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; }
+  .lnd-step { padding: 0 40px 0 0; }
+  .lnd-step:last-child { padding-right: 0; }
+  .lnd-step-num {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 34px; font-weight: 800; color: rgba(201,169,97,0.2);
+    line-height: 1; margin-bottom: 18px; letter-spacing: -0.02em;
+  }
+  .lnd-step-bar { width: 32px; height: 2px; background: #c9a961; margin-bottom: 18px; opacity: 0.6; }
+  .lnd-step-label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 10px;
+  }
+  .lnd-step-desc { font-size: 14px; color: #94a3b8; line-height: 1.65; }
+
+  /* ── FEATURES ───────────────────────────────────────────────────── */
+  .lnd-features { background: #e8e3d8; padding: 88px 40px; }
+  .lnd-features-inner { max-width: 1200px; margin: 0 auto; }
+  .lnd-features .lnd-eyebrow { color: #a8873e; }
+  .lnd-features .lnd-section-title { color: #1a2332; }
+  .lnd-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+  .lnd-card {
+    background: #FDFCFA; border: 1px solid rgba(26,35,50,0.08);
+    border-radius: 4px; padding: 32px 28px;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .lnd-card-bar { width: 32px; height: 3px; background: #c9a961; margin-bottom: 22px; }
+  .lnd-card-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px; font-weight: 700; color: #1a2332;
+    margin-bottom: 10px; letter-spacing: -0.01em;
+  }
+  .lnd-card-desc { font-size: 13.5px; color: #4a5568; line-height: 1.65; margin-bottom: 18px; }
+  .lnd-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+  .lnd-tag {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #3a7ca5; background: rgba(58,124,165,0.08);
+    border: 1px solid rgba(58,124,165,0.2);
+    padding: 3px 8px; border-radius: 2px;
+  }
+  .lnd-card-img {
+    width: 100%; border-radius: 6px; overflow: hidden; margin-top: auto;
+    border: 1px solid rgba(26,35,50,0.1);
+    box-shadow: 0 4px 16px rgba(26,35,50,0.08);
+  }
+  .lnd-card-img img { display: block; width: 100%; height: auto; }
+
+  /* ── ACCESO ─────────────────────────────────────────────────────── */
+  .lnd-access {
+    background: #e8e3d8; border-top: 1px solid rgba(26,35,50,0.1); padding: 88px 40px;
+  }
+  .lnd-access-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start;
+  }
+  .lnd-access .lnd-eyebrow { color: #a8873e; }
+  .lnd-access .lnd-section-title { color: #1a2332; margin-bottom: 14px; }
+  .lnd-access-intro { font-size: 14px; color: #4a5568; line-height: 1.7; margin-bottom: 28px; }
+  .lnd-privacy {
+    background: rgba(26,35,50,0.04); border: 1px solid rgba(26,35,50,0.08);
+    border-radius: 4px; padding: 20px 22px;
+  }
+  .lnd-privacy-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #1a2332; margin-bottom: 8px;
+  }
+  .lnd-privacy p { font-size: 12px; color: #64748b; line-height: 1.6; }
+  .lnd-privacy a { color: #3a7ca5; text-decoration: none; }
+
+  /* Formulario */
+  .lnd-form-card {
+    background: #FDFCFA; border: 1px solid rgba(26,35,50,0.1); border-radius: 4px;
+    padding: 36px 32px;
+    box-shadow: 0 4px 24px rgba(26,35,50,0.06), 0 1px 4px rgba(26,35,50,0.04);
+  }
+  .lnd-form-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px; font-weight: 700; color: #1a2332; margin-bottom: 24px;
+  }
+  .lnd-form-group { margin-bottom: 18px; }
+  .lnd-label {
+    display: block; font-family: 'Montserrat', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+    color: #1a2332; opacity: 0.7; margin-bottom: 7px;
+  }
+  .lnd-input {
+    width: 100%; font-family: 'Inter', sans-serif; font-size: 14px;
+    color: #1a2332; background: #fff;
+    border: 1px solid rgba(26,35,50,0.18); border-radius: 3px;
+    padding: 10px 14px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; appearance: none;
+  }
+  .lnd-input::placeholder { color: #a0aec0; }
+  .lnd-input:focus { border-color: #3a7ca5; box-shadow: 0 0 0 3px rgba(58,124,165,0.12); }
+  .lnd-hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .lnd-submit {
+    width: 100%; font-family: 'Montserrat', sans-serif;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #fff; background: #3a7ca5; border: none; border-radius: 3px;
+    padding: 14px; cursor: pointer; margin-top: 8px; transition: background 0.2s;
+  }
+  .lnd-submit:hover:not(:disabled) { background: #2d6389; }
+  .lnd-submit:disabled { opacity: 0.55; cursor: default; }
+  .lnd-success {
+    text-align: center; padding: 40px 24px;
+    background: #FDFCFA; border: 1px solid rgba(39,174,96,0.2); border-radius: 4px;
+  }
+  .lnd-success-icon {
+    width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 14px;
+    background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: #27ae60; font-size: 18px;
+  }
+  .lnd-success-title {
+    font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 700;
+    color: #1a2332; margin-bottom: 6px;
+  }
+  .lnd-success-sub { font-size: 13px; color: #64748b; }
+  .lnd-error {
+    font-size: 13px; color: #c0392b; padding: 10px 12px; border-radius: 3px;
+    background: rgba(192,57,43,0.05); border: 1px solid rgba(192,57,43,0.15);
+    margin-bottom: 8px;
+  }
+
+  /* ── FOOTER ─────────────────────────────────────────────────────── */
+  .lnd-footer {
+    background: #1a2332; border-top: 1px solid rgba(201,169,97,0.12); padding: 40px;
+  }
+  .lnd-footer-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 20px;
+  }
+  .lnd-footer-name {
+    font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; color: #fff;
+    margin-bottom: 4px;
+  }
+  .lnd-footer-name span { color: #c9a961; }
+  .lnd-footer-tagline { font-family: 'Merriweather', serif; font-style: italic; font-size: 12px; color: #64748b; }
+  .lnd-footer-links { display: flex; align-items: center; gap: 28px; }
+  .lnd-footer-links a, .lnd-footer-links button {
+    font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: #64748b; text-decoration: none; background: none; border: none;
+    cursor: pointer; transition: color 0.2s; padding: 0;
+  }
+  .lnd-footer-links a:hover, .lnd-footer-links button:hover { color: #c9a961; }
+  .lnd-footer-copy { font-size: 11px; color: #374151; }
+
+  /* ── RESPONSIVE ─────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .lnd-hero-inner, .lnd-access-inner { grid-template-columns: 1fr; gap: 40px; }
+    .lnd-hero-visual { display: none; }
+    .lnd-steps { grid-template-columns: 1fr; gap: 36px; }
+    .lnd-step { padding-right: 0; }
+    .lnd-grid { grid-template-columns: 1fr; }
+    .lnd-tagline { display: none; }
+  }
+  @media (max-width: 600px) {
+    .lnd-navbar { padding: 0 20px; }
+    .lnd-hero, .lnd-how, .lnd-features, .lnd-access { padding-left: 20px; padding-right: 20px; }
+    .lnd-footer { padding: 28px 20px; }
+    .lnd-footer-inner { flex-direction: column; align-items: flex-start; }
+    .lnd-ctas { flex-direction: column; }
+    .lnd-btn-primary, .lnd-btn-outline { width: 100%; justify-content: center; }
+  }
+`;
 
 export function LandingScreen({ onLogin }) {
   const [form, setForm] = useState({ nombre: "", email: "", registro: "", telefono: "" });
@@ -144,399 +337,237 @@ export function LandingScreen({ onLogin }) {
     if (!form.nombre || !form.email) return;
     setEstado("enviando");
     const { error } = await supabase.from("contactos").insert([{
-      nombre: form.nombre,
-      email: form.email,
-      registro: form.registro || null,
-      telefono: form.telefono || null,
+      nombre: form.nombre, email: form.email,
+      registro: form.registro || null, telefono: form.telefono || null,
     }]);
     setEstado(error ? "error" : "enviado");
   }
 
   const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  const inp = {
-    width: "100%", boxSizing: "border-box",
-    border: "1px solid rgba(26,35,50,.15)", borderRadius: 8,
-    padding: "11px 14px", fontSize: 14,
-    fontFamily: "'Inter', sans-serif", color: C.dark,
-    outline: "none", background: "#fafaf8",
-    transition: "border-color .15s",
-  };
-  const lbl = {
-    fontSize: 11, fontWeight: 600, color: "rgba(26,35,50,.55)",
-    letterSpacing: ".05em", textTransform: "uppercase",
-    marginBottom: 6, display: "block",
-    fontFamily: "'Inter', sans-serif",
-  };
-
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: C.dark }}>
+    <>
+      <style>{CSS}</style>
+      <div className="lnd">
 
-      {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        height: 52, background: "rgba(15,23,42,.95)", backdropFilter: "blur(12px)",
-        display: "flex", alignItems: "center", padding: "0 32px",
-        borderBottom: "1px solid rgba(255,255,255,.06)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Logo en círculo para que sea visible */}
-          <div style={{
-            width: 30, height: 30, borderRadius: "50%",
-            background: C.gold,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <img src="/logo-pen-transparent1.png" alt="" style={{ height: 18, filter: "brightness(0) invert(1)" }}
-              onError={e => e.target.style.display = "none"} />
-          </div>
-          <span style={{ color: "#FDFCFA", fontFamily: "'Montserrat', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "-.01em" }}>
-            Notarial
-          </span>
-          <span style={{ color: "rgba(255,255,255,.3)", fontSize: 11, fontStyle: "italic" }}>Fe Pública Digital</span>
-        </div>
-        <button
-          onClick={onLogin}
-          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.08)"}
-          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-          style={{
-            marginLeft: "auto", padding: "7px 18px", borderRadius: 7,
-            border: "1px solid rgba(255,255,255,.18)", background: "transparent",
-            color: "rgba(255,255,255,.75)", fontSize: 13, fontWeight: 600,
-            fontFamily: "'Montserrat', sans-serif", cursor: "pointer",
-            transition: "background .15s",
-          }}
-        >
-          Iniciar sesión
-        </button>
-      </nav>
-
-      {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section style={{
-        minHeight: "100vh", background: "#0f172a",
-        display: "flex", alignItems: "center",
-        padding: "80px 48px 60px",
-        gap: 64,
-        flexWrap: "wrap",
-        justifyContent: "center",
-      }}>
-        {/* Texto */}
-        <div style={{ flex: "1 1 380px", maxWidth: 520 }}>
-
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            marginBottom: 24,
-            padding: "5px 12px 5px 8px", borderRadius: 20,
-            border: "1px solid rgba(201,169,97,.3)",
-            background: "rgba(201,169,97,.07)",
-          }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} />
-            <span style={{ color: C.gold, fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", fontFamily: "'Montserrat', sans-serif" }}>
-              Para escribanos de Mendoza
-            </span>
-          </div>
-
-          <h1 style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontSize: "clamp(28px, 4vw, 46px)",
-            fontWeight: 700, color: "#FDFCFA",
-            margin: "0 0 18px", lineHeight: 1.12,
-            letterSpacing: "-.025em",
-          }}>
-            Redacción notarial<br />
-            <span style={{ color: C.gold }}>asistida por IA.</span>
-          </h1>
-
-          <p style={{
-            fontSize: 16, color: "rgba(253,252,250,.55)",
-            margin: "0 0 14px", lineHeight: 1.7,
-          }}>
-            Generás un instrumento notarial en minutos: cargás las partes desde el DNI,
-            elegís la plantilla y exportás en DOCX con formato protocolar.
-          </p>
-          <p style={{
-            fontSize: 15, color: "rgba(253,252,250,.38)",
-            margin: "0 0 36px", lineHeight: 1.7,
-          }}>
-            Scriba, el asistente de IA, conoce la normativa mendocina vigente —
-            CCyC, UIF, ARCA, ATM — y te ayuda a completar y redactar sin salir del editor.
-          </p>
-
-          {/* Bullets rápidos */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 36 }}>
-            {[
-              "Más de 50 plantillas notariales listas para usar",
-              "Escaneo de DNI y tarjeta verde con la cámara",
-              "Expedientes vinculados a tu Google Drive",
-            ].map((t, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{
-                  width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
-                  background: "rgba(58,124,165,.2)", border: "1px solid rgba(58,124,165,.4)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#7ec8e3", fontSize: 10, fontWeight: 700,
-                }}>✓</div>
-                <span style={{ fontSize: 14, color: "rgba(253,252,250,.58)" }}>{t}</span>
+        {/* NAVBAR */}
+        <nav className="lnd-navbar">
+          <div className="lnd-navbar-inner">
+            <div className="lnd-brand">
+              <div className="lnd-logo">
+                <img src="/logo-pen-transparent1.png" alt="Notarial" />
+                <span className="lnd-name">Notarial</span>
               </div>
-            ))}
+              <span className="lnd-tagline">Fe Pública Digital</span>
+            </div>
+            <button className="lnd-btn-nav" onClick={onLogin}>Iniciar sesión</button>
           </div>
+        </nav>
 
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button
-              onClick={scrollToForm}
-              onMouseEnter={e => e.currentTarget.style.opacity = ".85"}
-              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-              style={{
-                padding: "13px 28px", borderRadius: 9,
-                background: C.cerulean, border: "none",
-                color: "#fff", fontSize: 14, fontWeight: 700,
-                fontFamily: "'Montserrat', sans-serif",
-                cursor: "pointer", transition: "opacity .15s",
-              }}
-            >
-              Solicitar acceso →
-            </button>
-            <button
-              onClick={onLogin}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.07)"}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-              style={{
-                padding: "13px 22px", borderRadius: 9,
-                background: "transparent", border: "1px solid rgba(255,255,255,.15)",
-                color: "rgba(255,255,255,.6)", fontSize: 14, fontWeight: 600,
-                fontFamily: "'Inter', sans-serif", cursor: "pointer",
-                transition: "background .15s",
-              }}
-            >
-              Ya tengo cuenta
-            </button>
-          </div>
-        </div>
-
-        {/* Mockup */}
-        <div style={{ flex: "1 1 420px", maxWidth: 500, display: "flex", justifyContent: "center" }}>
-          <EditorMockup />
-        </div>
-      </section>
-
-      {/* ── CÓMO FUNCIONA ──────────────────────────────────────────────────── */}
-      <section style={{ padding: "64px 48px", background: "#1e293b" }}>
-        <div style={{ maxWidth: 820, margin: "0 auto" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.3)", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 36, textAlign: "center" }}>
-            Flujo de trabajo
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 2 }}>
-            {[
-              {
-                n: "01",
-                titulo: "Elegís el instrumento",
-                texto: "Certificación de firma, poder, acta, escritura de compraventa, hipoteca. Más de 50 plantillas organizadas por tipo.",
-              },
-              {
-                n: "02",
-                titulo: "Cargás las partes",
-                texto: "Por DNI, escaneando el documento con la cámara, o dictándole a Scriba. CUIT, domicilio y concordancias se completan solos.",
-              },
-              {
-                n: "03",
-                titulo: "Generás y exportás",
-                texto: "DOCX con márgenes protocolares en segundos. Editá directamente en OnlyOffice antes de imprimir.",
-              },
-            ].map((paso, i, arr) => (
-              <div key={i} style={{
-                padding: "28px 28px",
-                borderRight: i < arr.length - 1 ? "1px solid rgba(255,255,255,.06)" : "none",
-              }}>
-                <div style={{
-                  fontFamily: "'Montserrat', sans-serif",
-                  fontSize: 11, fontWeight: 700, color: C.gold,
-                  letterSpacing: ".1em", marginBottom: 14,
-                }}>
-                  {paso.n}
-                </div>
-                <div style={{
-                  fontFamily: "'Montserrat', sans-serif",
-                  fontSize: 14, fontWeight: 700, color: "#FDFCFA", marginBottom: 10,
-                }}>
-                  {paso.titulo}
-                </div>
-                <div style={{ fontSize: 13, color: "rgba(253,252,250,.42)", lineHeight: 1.65 }}>
-                  {paso.texto}
-                </div>
+        {/* HERO */}
+        <section className="lnd-hero">
+          <div className="lnd-hero-inner">
+            <div>
+              <div className="lnd-badge">Para escribanos de Mendoza</div>
+              <h1 className="lnd-h1">
+                Redacción notarial<br />asistida por <em>IA.</em>
+              </h1>
+              <div className="lnd-flow">
+                <span className="lnd-flow-step">Elegís el instrumento</span>
+                <span className="lnd-flow-arrow">→</span>
+                <span className="lnd-flow-step">cargás las partes</span>
+                <span className="lnd-flow-arrow">→</span>
+                <span className="lnd-flow-step">exportás DOCX protocolar</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FORMULARIO + PRIVACIDAD ────────────────────────────────────────── */}
-      <section ref={formRef} style={{ padding: "64px 24px", background: C.warm }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", gap: 48, flexWrap: "wrap", alignItems: "flex-start" }}>
-
-          {/* Formulario */}
-          <div style={{ flex: "1 1 340px", maxWidth: 440 }}>
-            <h2 style={{
-              fontFamily: "'Montserrat', sans-serif",
-              fontSize: 22, fontWeight: 700, color: C.dark,
-              margin: "0 0 8px", letterSpacing: "-.02em",
-            }}>
-              Solicitar acceso
-            </h2>
-            <p style={{ fontSize: 14, color: "rgba(26,35,50,.5)", margin: "0 0 28px", lineHeight: 1.6 }}>
-              Disponible para escribanos de Mendoza. Completá el formulario y te contactamos.
-            </p>
-
-            {estado === "enviado" ? (
-              <div style={{
-                background: "#FDFCFA", borderRadius: 12,
-                border: "1px solid rgba(39,174,96,.2)",
-                padding: "36px 24px", textAlign: "center",
-              }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: "50%",
-                  background: "rgba(39,174,96,.1)", border: "1px solid rgba(39,174,96,.2)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  margin: "0 auto 14px", color: "#27ae60", fontSize: 16,
-                }}>✓</div>
-                <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 6 }}>
-                  Solicitud recibida
-                </div>
-                <div style={{ fontSize: 13, color: "rgba(26,35,50,.5)" }}>
-                  Te contactamos en los próximos días hábiles.
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={enviar} style={{
-                background: "#FDFCFA", borderRadius: 12,
-                border: "1px solid rgba(26,35,50,.08)",
-                padding: "28px 24px",
-                display: "flex", flexDirection: "column", gap: 18,
-              }}>
-                <div>
-                  <label style={lbl}>Nombre completo *</label>
-                  <input required value={form.nombre} onChange={e => set("nombre", e.target.value)}
-                    placeholder="Ej. María González" style={inp}
-                    onFocus={e => e.target.style.borderColor = C.cerulean}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
-                </div>
-                <div>
-                  <label style={lbl}>Correo electrónico *</label>
-                  <input required type="email" value={form.email} onChange={e => set("email", e.target.value)}
-                    placeholder="correo@ejemplo.com" style={inp}
-                    onFocus={e => e.target.style.borderColor = C.cerulean}
-                    onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
-                </div>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={lbl}>Registro</label>
-                    <input value={form.registro} onChange={e => set("registro", e.target.value)}
-                      placeholder="Ej. 853" style={inp}
-                      onFocus={e => e.target.style.borderColor = C.cerulean}
-                      onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={lbl}>WhatsApp</label>
-                    <input value={form.telefono} onChange={e => set("telefono", e.target.value)}
-                      placeholder="261 123-4567" style={inp}
-                      onFocus={e => e.target.style.borderColor = C.cerulean}
-                      onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
-                  </div>
-                </div>
-
-                {estado === "error" && (
-                  <div style={{ fontSize: 13, color: "#c0392b", padding: "10px 12px", borderRadius: 7, background: "rgba(192,57,43,.05)", border: "1px solid rgba(192,57,43,.15)" }}>
-                    Error al enviar. Intentá de nuevo.
-                  </div>
-                )}
-
-                <button type="submit" disabled={estado === "enviando"}
-                  onMouseEnter={e => { if (estado !== "enviando") e.currentTarget.style.opacity = ".85"; }}
-                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-                  style={{
-                    padding: "13px", borderRadius: 9,
-                    background: estado === "enviando" ? "rgba(58,124,165,.5)" : C.cerulean,
-                    border: "none", color: "#fff", fontSize: 14, fontWeight: 700,
-                    fontFamily: "'Montserrat', sans-serif",
-                    cursor: estado === "enviando" ? "default" : "pointer",
-                    transition: "opacity .15s",
-                  }}>
-                  {estado === "enviando" ? "Enviando..." : "Enviar solicitud"}
+              <ul className="lnd-bullets">
+                <li><strong>50+ plantillas notariales</strong> listas para Mendoza: poderes, escrituras, actas, certificaciones de firma.</li>
+                <li><strong>Scriba</strong> completa datos, sugiere cláusulas y consulta normativa vigente (CCyC, UIF, ARCA, ATM).</li>
+                <li><strong>Expedientes</strong> vinculados a Google Drive con organización por estado y registro.</li>
+              </ul>
+              <div className="lnd-ctas">
+                <button className="lnd-btn-primary" onClick={scrollToForm}>
+                  Solicitar acceso
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
-
-                <p style={{ margin: 0, fontSize: 11, color: "rgba(26,35,50,.32)", textAlign: "center", lineHeight: 1.5 }}>
-                  Tus datos se usan únicamente para contactarte.
-                </p>
-              </form>
-            )}
-          </div>
-
-          {/* Privacidad — al lado del formulario */}
-          <div id="privacidad" style={{ flex: "1 1 300px", maxWidth: 400, paddingTop: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(26,35,50,.35)", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 20 }}>
-              Privacidad y datos
-            </div>
-            {[
-              {
-                titulo: "Datos que recopilamos",
-                texto: "Nombre, apellido, DNI y domicilio de los requirentes. Se almacenan en Supabase con acceso exclusivo por registro notarial (Row Level Security).",
-              },
-              {
-                titulo: "Uso de Google Drive",
-                texto: "Solicitamos el alcance drive.file: solo creamos y gestionamos archivos propios de Notarial. No accedemos a ningún archivo preexistente en tu Drive.",
-              },
-              {
-                titulo: "Autenticación",
-                texto: "Email + contraseña o Google OAuth. Las credenciales las gestiona Supabase Auth — nunca las almacenamos en texto plano.",
-              },
-              {
-                titulo: "Eliminación",
-                texto: "Solicitá la baja a lojeda.notarial@gmail.com. Los datos se eliminan en un plazo máximo de 30 días hábiles.",
-              },
-            ].map((s, i) => (
-              <div key={i} style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.dark, marginBottom: 4 }}>{s.titulo}</div>
-                <div style={{ fontSize: 12, color: "rgba(26,35,50,.52)", lineHeight: 1.65 }}>{s.texto}</div>
+                <button className="lnd-btn-outline" onClick={onLogin}>Ya tengo cuenta</button>
               </div>
-            ))}
-            <div style={{ fontSize: 10, color: "rgba(26,35,50,.28)", marginTop: 12 }}>
-              Última actualización: junio de 2026
+            </div>
+            <div className="lnd-hero-visual">
+              <div className="lnd-screenshot-wrap">
+                <img src="/Screen-sample-3.png" alt="Editor notarial con variables resaltadas y panel de propiedades" />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
-      <footer style={{
-        background: "#0f172a", padding: "20px 32px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: 12,
-        borderTop: "1px solid rgba(255,255,255,.06)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <img src="/logo-pen-transparent1.png" alt="" style={{ height: 13, filter: "brightness(0) invert(1)" }}
-              onError={e => e.target.style.display = "none"} />
+        {/* CÓMO FUNCIONA */}
+        <section className="lnd-how">
+          <div className="lnd-how-inner">
+            <div className="lnd-eyebrow">Flujo de trabajo</div>
+            <div className="lnd-section-title">Tres pasos, sin fricción.</div>
+            <div className="lnd-steps">
+              {[
+                { n: "01", label: "Elegís el instrumento", desc: "Seleccionás el tipo de acto — escritura, poder, certificación, acta — desde la biblioteca de plantillas adaptadas a la normativa mendocina." },
+                { n: "02", label: "Cargás las partes", desc: "Escaneás el DNI con la cámara o ingresás los datos manualmente. Scriba completa los campos del documento y alerta si falta información requerida." },
+                { n: "03", label: "Generás y exportás", desc: "Revisás el borrador en el editor OnlyOffice integrado. Cuando está listo, exportás el DOCX protocolar y queda archivado en el registro." },
+              ].map(s => (
+                <div key={s.n} className="lnd-step">
+                  <div className="lnd-step-num">{s.n}</div>
+                  <div className="lnd-step-bar" />
+                  <div className="lnd-step-label">{s.label}</div>
+                  <div className="lnd-step-desc">{s.desc}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <span style={{ color: "rgba(255,255,255,.35)", fontSize: 12 }}>
-            © 2026 Notarial · <span style={{ fontStyle: "italic" }}>Fe Pública Digital</span>
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 20 }}>
-          <a href="#privacidad"
-            onMouseEnter={e => e.target.style.color = "rgba(255,255,255,.65)"}
-            onMouseLeave={e => e.target.style.color = "rgba(255,255,255,.35)"}
-            style={{ color: "rgba(255,255,255,.35)", fontSize: 12, textDecoration: "none" }}>
-            Privacidad
-          </a>
-          <button onClick={onLogin}
-            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,.65)"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.35)"}
-            style={{ background: "none", border: "none", color: "rgba(255,255,255,.35)", fontSize: 12, cursor: "pointer", padding: 0 }}>
-            Iniciar sesión
-          </button>
-        </div>
-      </footer>
+        </section>
 
-    </div>
+        {/* FEATURES */}
+        <section className="lnd-features">
+          <div className="lnd-features-inner">
+            <div className="lnd-eyebrow">Funcionalidades</div>
+            <div className="lnd-section-title">Herramientas para el estudio.</div>
+            <div className="lnd-grid">
+
+              <div className="lnd-card">
+                <div className="lnd-card-bar" />
+                <div className="lnd-card-title">Editor de documentos</div>
+                <div className="lnd-card-desc">Edición nativa en OnlyOffice con formato protocolar preservado. Más de 50 plantillas cubren los instrumentos más frecuentes en la práctica mendocina.</div>
+                <div className="lnd-tags">
+                  <span className="lnd-tag">50+ plantillas</span>
+                  <span className="lnd-tag">DOCX protocolar</span>
+                  <span className="lnd-tag">OnlyOffice</span>
+                </div>
+                <div className="lnd-card-img">
+                  <img src="/Screen-sample-3.png" alt="Editor con documento notarial" />
+                </div>
+              </div>
+
+              <div className="lnd-card">
+                <div className="lnd-card-bar" />
+                <div className="lnd-card-title">Scriba — Asistente IA</div>
+                <div className="lnd-card-desc">Entrenado en normativa mendocina vigente. Completa partes, sugiere cláusulas y verifica requisitos formales. No inventa: sólo aplica lo que la ley dice.</div>
+                <div className="lnd-tags">
+                  <span className="lnd-tag">CCyC</span>
+                  <span className="lnd-tag">UIF</span>
+                  <span className="lnd-tag">ARCA</span>
+                  <span className="lnd-tag">ATM</span>
+                </div>
+                <div className="lnd-card-img">
+                  <img src="/Screen-sample-1.png" alt="Panel Scriba con consultas sugeridas" />
+                </div>
+              </div>
+
+              <div className="lnd-card">
+                <div className="lnd-card-bar" />
+                <div className="lnd-card-title">Expedientes y Drive</div>
+                <div className="lnd-card-desc">Cada instrumento puede vincularse a un expediente. Los archivos se organizan automáticamente en tu Google Drive, sin apps intermediarias.</div>
+                <div className="lnd-tags">
+                  <span className="lnd-tag">Google Drive</span>
+                  <span className="lnd-tag">Por estado</span>
+                  <span className="lnd-tag">Búsqueda rápida</span>
+                </div>
+                <div className="lnd-card-img">
+                  <img src="/Screen-sample-2.png" alt="Modal de vinculación de expediente" />
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* SOLICITAR ACCESO */}
+        <section className="lnd-access" id="acceso" ref={formRef}>
+          <div className="lnd-access-inner">
+
+            <div>
+              <div className="lnd-eyebrow">Acceso anticipado</div>
+              <div className="lnd-section-title">Notarial está en desarrollo.</div>
+              <p className="lnd-access-intro">
+                Estamos incorporando escribanos de Mendoza para la etapa de prueba.
+                El acceso es gratuito durante el período piloto. Los datos que ingresás
+                se usan únicamente para coordinar el onboarding.
+              </p>
+              <div className="lnd-privacy">
+                <div className="lnd-privacy-title">Privacidad y datos</div>
+                <p>
+                  Tus datos personales se usan exclusivamente para gestionar tu acceso.
+                  No se comparten con terceros ni se usan con fines publicitarios.
+                  Podés solicitar la eliminación escribiendo a{" "}
+                  <a href="mailto:lojeda.notarial@gmail.com">lojeda.notarial@gmail.com</a>.
+                  El almacenamiento cumple con la Ley N.° 25.326 de Protección de Datos Personales.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              {estado === "enviado" ? (
+                <div className="lnd-success">
+                  <div className="lnd-success-icon">✓</div>
+                  <div className="lnd-success-title">Solicitud recibida</div>
+                  <div className="lnd-success-sub">Te contactamos en los próximos días hábiles.</div>
+                </div>
+              ) : (
+                <form className="lnd-form-card" onSubmit={enviar}>
+                  <div className="lnd-form-title">Solicitar acceso</div>
+
+                  <div className="lnd-form-group">
+                    <label className="lnd-label" htmlFor="lnd-nombre">Nombre completo</label>
+                    <input required className="lnd-input" id="lnd-nombre" type="text"
+                      placeholder="Ej. María González" value={form.nombre}
+                      onChange={e => set("nombre", e.target.value)} />
+                  </div>
+                  <div className="lnd-form-group">
+                    <label className="lnd-label" htmlFor="lnd-email">Correo electrónico</label>
+                    <input required className="lnd-input" id="lnd-email" type="email"
+                      placeholder="escribano@ejemplo.com" value={form.email}
+                      onChange={e => set("email", e.target.value)} />
+                  </div>
+                  <div className="lnd-form-group">
+                    <label className="lnd-label" htmlFor="lnd-registro">Número de registro</label>
+                    <input className="lnd-input" id="lnd-registro" type="text"
+                      placeholder="Ej. 1234 — 1.ª Circunscripción" value={form.registro}
+                      onChange={e => set("registro", e.target.value)} />
+                    <div className="lnd-hint">Registro notarial asignado por el Colegio de Escribanos de Mendoza.</div>
+                  </div>
+                  <div className="lnd-form-group">
+                    <label className="lnd-label" htmlFor="lnd-tel">Teléfono WhatsApp</label>
+                    <input className="lnd-input" id="lnd-tel" type="tel"
+                      placeholder="+54 9 261 000-0000" value={form.telefono}
+                      onChange={e => set("telefono", e.target.value)} />
+                    <div className="lnd-hint">Para coordinar el acceso y resolver dudas de configuración.</div>
+                  </div>
+
+                  {estado === "error" && (
+                    <div className="lnd-error">Error al enviar. Intentá de nuevo.</div>
+                  )}
+
+                  <button className="lnd-submit" type="submit" disabled={estado === "enviando"}>
+                    {estado === "enviando" ? "Enviando..." : "Enviar solicitud"}
+                  </button>
+                </form>
+              )}
+            </div>
+
+          </div>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="lnd-footer">
+          <div className="lnd-footer-inner">
+            <div>
+              <div className="lnd-footer-name">No<span>tarial</span></div>
+              <div className="lnd-footer-tagline">Fe Pública Digital</div>
+            </div>
+            <div className="lnd-footer-links">
+              <a href="#acceso">Privacidad</a>
+              <button onClick={onLogin}>Iniciar sesión</button>
+            </div>
+            <div className="lnd-footer-copy">© 2026 Notarial. Mendoza, Argentina.</div>
+          </div>
+        </footer>
+
+      </div>
+    </>
   );
 }
