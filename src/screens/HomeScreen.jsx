@@ -399,6 +399,11 @@ export function HomeScreen({ onGo }) {
                       borderRight:"1px solid rgba(26,35,50,.1)", background:C.warm,
                       display:"flex", flexDirection:"column", gap:14 }}>
 
+          <div style={{ fontSize:11, fontWeight:600, color:"rgba(26,35,50,.45)",
+            letterSpacing:".08em", textTransform:"uppercase", padding:"0 4px", marginBottom:-4 }}>
+            Filtros
+          </div>
+
           <SideSection label="Estado">
             {[["", "Todos", docs.length], ["borrador","Borrador", cnt("estado","borrador")],
               ["revision","En revisión", cnt("estado","revision")], ["completo","Completo", cnt("estado","completo")]
@@ -465,6 +470,12 @@ export function HomeScreen({ onGo }) {
         {/* ── CONTENIDO PRINCIPAL ─────────────────────────────────────────── */}
         <div style={{ flex:1, overflowY:"auto", padding:"24px 24px" }}>
           <div style={{ maxWidth:860, margin:"0 auto", display:"flex", flexDirection:"column", gap:S.lg }}>
+
+            {/* Título sección */}
+            <div style={{ fontSize:11, fontWeight:600, color:"rgba(26,35,50,.45)",
+              letterSpacing:".08em", textTransform:"uppercase", marginBottom:-8 }}>
+              Documentos
+            </div>
 
             {/* Saludo */}
             <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
