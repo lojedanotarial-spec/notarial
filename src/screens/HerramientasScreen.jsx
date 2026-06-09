@@ -79,7 +79,7 @@ export function HerramientasScreen({ onGo }) {
           ← Inicio
         </button>
         <span style={{ color: "#FDFCFA", fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 14 }}>
-          Herramientas
+          Utilidades
         </span>
       </div>
 
@@ -88,7 +88,7 @@ export function HerramientasScreen({ onGo }) {
 
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, color: C.muted, marginBottom: 28 }}>
-            Calculadoras y utilidades para la práctica notarial.
+            Calculadoras, consultas y utilidades para la práctica notarial.
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>

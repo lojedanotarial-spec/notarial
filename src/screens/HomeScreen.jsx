@@ -459,6 +459,41 @@ export function HomeScreen({ onGo }) {
               )}
             </div>
           </SideSection>
+
+          {/* ── Calculadoras ── */}
+          <div style={{ marginTop: 4 }}>
+            <div style={{ fontSize:11, fontWeight:600, color:"rgba(26,35,50,.45)",
+              letterSpacing:".08em", textTransform:"uppercase", padding:"0 16px", marginBottom:8 }}>
+              Utilidades
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:6, padding:"0 10px" }}>
+              {[
+                { id:"estimador_dnrpa",     label:"Estimador DNRPA",     desc:"Aranceles de transferencia", activo:false },
+                { id:"presupuesto_notarial", label:"Presupuesto Notarial", desc:"Honorarios y sellos ATM",    activo:false },
+                { id:"calculadora_cuit",    label:"Calculadora CUIT",     desc:"Desde DNI y género",         activo:true  },
+              ].map(tool => (
+                <div key={tool.id} onClick={() => onGo("herramientas")}
+                  style={{ padding:"9px 12px", borderRadius:8, cursor:"pointer",
+                    background: tool.activo ? C.ceruleanLight : "rgba(26,35,50,.03)",
+                    border: `1px solid ${tool.activo ? C.ceruleanMid : "rgba(26,35,50,.08)"}`,
+                    transition:"background .12s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = tool.activo ? "#d4e8f5" : "rgba(26,35,50,.06)"}
+                  onMouseLeave={e => e.currentTarget.style.background = tool.activo ? C.ceruleanLight : "rgba(26,35,50,.03)"}>
+                  <div style={{ fontSize:12, fontWeight:600, color:C.dark, fontFamily:"'Inter',sans-serif" }}>
+                    {tool.label}
+                  </div>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:2 }}>
+                    <span style={{ fontSize:11, color:C.muted, fontFamily:"'Inter',sans-serif" }}>{tool.desc}</span>
+                    {tool.activo
+                      ? <span style={{ fontSize:10, fontWeight:700, color:"#27ae60" }}>●</span>
+                      : <span style={{ fontSize:10, color:C.muted, fontFamily:"'Montserrat',sans-serif" }}>Próx.</span>
+                    }
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
 
         {/* ── CONTENIDO PRINCIPAL ─────────────────────────────────────────── */}
@@ -502,7 +537,10 @@ export function HomeScreen({ onGo }) {
                                  background:C.porcelain, fontSize:13, fontWeight:600, color:C.dark,
                                  cursor:"pointer", fontFamily:"'Inter', sans-serif", transition:"background .12s",
                                  display:"flex", alignItems:"center", gap:6 }}>
-                  🔧 Herramientas
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/>
+                  </svg>
+                  Utilidades
                 </button>
                 <button onClick={() => onGo("bulk")}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
