@@ -8,6 +8,7 @@ import { BulkScreen }    from "./screens/BulkScreen";
 import { AdminScreen }      from "./screens/AdminScreen";
 import { ExpedientesScreen }     from "./screens/ExpedientesScreen";
 import { ExpedienteDetailScreen } from "./screens/ExpedienteDetailScreen";
+import { HerramientasScreen }    from "./screens/HerramientasScreen";
 import { ScribaPanel }   from "./components/ScribaPanel";
 
 
@@ -106,6 +107,7 @@ function AppRouter() {
       {screen === "admin"        && <AdminScreen       onGo={handleGo} />}
       {screen === "expedientes"  && <ExpedientesScreen     onGo={handleGo} registroActivo={registroActivo} miUsuario={miUsuario} />}
       {screen === "expediente"   && <ExpedienteDetailScreen onGo={handleGo} params={params} />}
+      {screen === "herramientas" && <HerramientasScreen    onGo={handleGo} />}
 
       {/* Botón flotante Scriba */}
       <div className="no-print" style={{ position: "fixed", bottom: 24, right: 24, zIndex: 199 }}>

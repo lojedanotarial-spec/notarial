@@ -495,6 +495,15 @@ export function HomeScreen({ onGo }) {
                                  display:"flex", alignItems:"center", gap:6 }}>
                   📁 Expedientes
                 </button>
+                <button onClick={() => onGo("herramientas")}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
+                        onMouseLeave={e => e.currentTarget.style.background = C.porcelain}
+                        style={{ padding:"8px 16px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
+                                 background:C.porcelain, fontSize:13, fontWeight:600, color:C.dark,
+                                 cursor:"pointer", fontFamily:"'Inter', sans-serif", transition:"background .12s",
+                                 display:"flex", alignItems:"center", gap:6 }}>
+                  🔧 Herramientas
+                </button>
                 <button onClick={() => onGo("bulk")}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
                         onMouseLeave={e => e.currentTarget.style.background = C.porcelain}
