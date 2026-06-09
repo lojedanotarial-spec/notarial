@@ -2,9 +2,125 @@ import { useState, useEffect, useRef } from "react";
 import { C } from "../constants";
 import { supabase } from "../supabase";
 
+// Mockup visual del editor — represetación estilizada del producto
+function EditorMockup() {
+  return (
+    <div style={{
+      width: "100%", maxWidth: 480,
+      background: "#111827",
+      borderRadius: 14,
+      border: "1px solid rgba(255,255,255,.1)",
+      boxShadow: "0 32px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04)",
+      overflow: "hidden",
+      fontFamily: "'Inter', sans-serif",
+    }}>
+      {/* Barra superior */}
+      <div style={{
+        height: 38, background: "#0f172a",
+        display: "flex", alignItems: "center", padding: "0 14px", gap: 10,
+        borderBottom: "1px solid rgba(255,255,255,.07)",
+      }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          {["#ef4444","#f59e0b","#22c55e"].map(c => (
+            <div key={c} style={{ width: 9, height: 9, borderRadius: "50%", background: c, opacity: .7 }} />
+          ))}
+        </div>
+        <div style={{
+          flex: 1, height: 20, background: "rgba(255,255,255,.06)",
+          borderRadius: 4, display: "flex", alignItems: "center",
+          padding: "0 10px", fontSize: 10, color: "rgba(255,255,255,.3)",
+        }}>
+          Cert. firma — OJEDA LUCAS — 09-06-2026
+        </div>
+      </div>
+
+      {/* Contenido editor */}
+      <div style={{ display: "flex" }}>
+        {/* Panel izquierdo */}
+        <div style={{
+          width: 160, flexShrink: 0, padding: "14px 12px",
+          borderRight: "1px solid rgba(255,255,255,.06)",
+          display: "flex", flexDirection: "column", gap: 10,
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.25)", letterSpacing: ".08em", textTransform: "uppercase" }}>
+            Partes
+          </div>
+          {[
+            { nombre: "LUCAS OJEDA", rol: "Vendedor", dni: "28.441.320" },
+            { nombre: "ANA GÓMEZ", rol: "Compradora", dni: "31.220.114" },
+          ].map((p, i) => (
+            <div key={i} style={{
+              background: "rgba(255,255,255,.04)", borderRadius: 6,
+              padding: "8px 10px", border: "1px solid rgba(255,255,255,.07)",
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(253,252,250,.85)" }}>{p.nombre}</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,.35)", marginTop: 2 }}>{p.rol} · {p.dni}</div>
+            </div>
+          ))}
+          <div style={{ marginTop: 4 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.25)", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>
+              Documento
+            </div>
+            <div style={{ background: "rgba(58,124,165,.18)", borderRadius: 6, padding: "7px 10px", border: "1px solid rgba(58,124,165,.3)" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "#7ec8e3" }}>Cert. de firma F-08</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,.3)", marginTop: 2 }}>Compraventa · Automotor</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Documento */}
+        <div style={{ flex: 1, padding: "16px 14px", background: "#1e293b" }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,.2)", marginBottom: 10, letterSpacing: ".04em" }}>
+            VISTA PREVIA
+          </div>
+          <div style={{ fontSize: 10, lineHeight: 1.8, color: "rgba(253,252,250,.55)" }}>
+            <p style={{ margin: "0 0 8px" }}>
+              En la ciudad de Mendoza, a los{" "}
+              <span style={{ background: "rgba(201,169,97,.25)", color: "#c9a961", borderRadius: 3, padding: "1px 5px", fontWeight: 700 }}>
+                nueve días del mes de junio
+              </span>{" "}
+              de dos mil veintiséis...
+            </p>
+            <p style={{ margin: "0 0 8px" }}>
+              Ante mí,{" "}
+              <span style={{ background: "rgba(58,124,165,.25)", color: "#7ec8e3", borderRadius: 3, padding: "1px 5px", fontWeight: 700 }}>
+                ESCRIBANO/A REGISTRO Nº 853
+              </span>
+              , comparece{" "}
+              <span style={{ background: "rgba(58,124,165,.25)", color: "#7ec8e3", borderRadius: 3, padding: "1px 5px", fontWeight: 700 }}>
+                LUCAS OJEDA
+              </span>
+              , argentino, DNI 28.441.320...
+            </p>
+            <p style={{ margin: 0, color: "rgba(255,255,255,.22)" }}>
+              [el compareciente me exhibe el Formulario 08...]{" "}
+            </p>
+          </div>
+
+          {/* Scriba */}
+          <div style={{
+            marginTop: 14, background: "rgba(201,169,97,.07)",
+            border: "1px solid rgba(201,169,97,.2)", borderRadius: 8, padding: "8px 10px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+              <div style={{ width: 16, height: 16, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <img src="/Scriba-icon-1.png" alt="S" style={{ width: 16, height: 16, borderRadius: "50%" }} onError={e => e.target.style.display = "none"} />
+              </div>
+              <span style={{ fontSize: 9, fontWeight: 700, color: C.gold, letterSpacing: ".04em" }}>SCRIBA</span>
+            </div>
+            <div style={{ fontSize: 9, color: "rgba(253,252,250,.5)", lineHeight: 1.6 }}>
+              Documento listo. El formulario F-08 fue detectado correctamente. ¿Querés que complete el bloque INTERVIENE para el apoderado?
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LandingScreen({ onLogin }) {
   const [form, setForm] = useState({ nombre: "", email: "", registro: "", telefono: "" });
-  const [estado, setEstado] = useState("idle"); // idle | enviando | enviado | error
+  const [estado, setEstado] = useState("idle");
   const formRef = useRef();
 
   useEffect(() => {
@@ -54,35 +170,41 @@ export function LandingScreen({ onLogin }) {
   };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: C.warm }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: C.dark }}>
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        height: 54, background: "rgba(26,35,50,.97)", backdropFilter: "blur(10px)",
+        height: 52, background: "rgba(15,23,42,.95)", backdropFilter: "blur(12px)",
         display: "flex", alignItems: "center", padding: "0 32px",
         borderBottom: "1px solid rgba(255,255,255,.06)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo-pen-transparent1.png" alt="Notarial" style={{ height: 24 }} />
-          <div style={{ width: 1, height: 13, background: "rgba(255,255,255,.18)" }} />
-          <span style={{ color: "#FDFCFA", fontFamily: "'Montserrat', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: "-.01em" }}>
+          {/* Logo en círculo para que sea visible */}
+          <div style={{
+            width: 30, height: 30, borderRadius: "50%",
+            background: C.gold,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <img src="/logo-pen-transparent1.png" alt="" style={{ height: 18, filter: "brightness(0) invert(1)" }}
+              onError={e => e.target.style.display = "none"} />
+          </div>
+          <span style={{ color: "#FDFCFA", fontFamily: "'Montserrat', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "-.01em" }}>
             Notarial
           </span>
-          <span style={{ color: "rgba(255,255,255,.38)", fontSize: 11, fontStyle: "italic", letterSpacing: ".02em" }}>
-            Fe Pública Digital
-          </span>
+          <span style={{ color: "rgba(255,255,255,.3)", fontSize: 11, fontStyle: "italic" }}>Fe Pública Digital</span>
         </div>
         <button
           onClick={onLogin}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.55)"; e.currentTarget.style.color = "#fff"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,.22)"; e.currentTarget.style.color = "rgba(255,255,255,.8)"; }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.08)"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
           style={{
             marginLeft: "auto", padding: "7px 18px", borderRadius: 7,
-            border: "1px solid rgba(255,255,255,.22)", background: "transparent",
-            color: "rgba(255,255,255,.8)", fontSize: 13, fontWeight: 600,
+            border: "1px solid rgba(255,255,255,.18)", background: "transparent",
+            color: "rgba(255,255,255,.75)", fontSize: 13, fontWeight: 600,
             fontFamily: "'Montserrat', sans-serif", cursor: "pointer",
-            transition: "border-color .15s, color .15s",
+            transition: "background .15s",
           }}
         >
           Iniciar sesión
@@ -91,58 +213,81 @@ export function LandingScreen({ onLogin }) {
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <section style={{
-        minHeight: "100vh", background: C.dark,
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        padding: "120px 24px 90px", textAlign: "center",
-        position: "relative", overflow: "hidden",
+        minHeight: "100vh", background: "#0f172a",
+        display: "flex", alignItems: "center",
+        padding: "80px 48px 60px",
+        gap: 64,
+        flexWrap: "wrap",
+        justifyContent: "center",
       }}>
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          background: "radial-gradient(ellipse 80% 55% at 50% 38%, rgba(58,124,165,.1) 0%, transparent 68%)",
-        }} />
-
-        <div style={{ position: "relative", maxWidth: 660 }}>
+        {/* Texto */}
+        <div style={{ flex: "1 1 380px", maxWidth: 520 }}>
 
           <div style={{
-            display: "inline-block", marginBottom: 28,
-            padding: "4px 14px", borderRadius: 20,
-            border: "1px solid rgba(201,169,97,.32)",
+            display: "inline-flex", alignItems: "center", gap: 8,
+            marginBottom: 24,
+            padding: "5px 12px 5px 8px", borderRadius: 20,
+            border: "1px solid rgba(201,169,97,.3)",
             background: "rgba(201,169,97,.07)",
-            color: C.gold, fontSize: 11, fontWeight: 700,
-            letterSpacing: ".08em", textTransform: "uppercase",
-            fontFamily: "'Montserrat', sans-serif",
           }}>
-            Para escribanos de Mendoza
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.gold }} />
+            <span style={{ color: C.gold, fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", fontFamily: "'Montserrat', sans-serif" }}>
+              Para escribanos de Mendoza
+            </span>
           </div>
 
           <h1 style={{
             fontFamily: "'Montserrat', sans-serif",
-            fontSize: "clamp(30px, 5.5vw, 52px)",
+            fontSize: "clamp(28px, 4vw, 46px)",
             fontWeight: 700, color: "#FDFCFA",
-            margin: "0 0 22px", lineHeight: 1.13,
+            margin: "0 0 18px", lineHeight: 1.12,
             letterSpacing: "-.025em",
           }}>
-            El escritorio digital<br />del escribano.
+            Redacción notarial<br />
+            <span style={{ color: C.gold }}>asistida por IA.</span>
           </h1>
 
           <p style={{
-            fontSize: "clamp(15px, 2vw, 17px)",
-            color: "rgba(253,252,250,.58)",
-            margin: "0 auto 42px", lineHeight: 1.7,
-            maxWidth: 500,
+            fontSize: 16, color: "rgba(253,252,250,.55)",
+            margin: "0 0 14px", lineHeight: 1.7,
           }}>
-            Redacción asistida por IA, plantillas notariales, gestión de expedientes
-            y exportación DOCX — en una sola herramienta.
+            Generás un instrumento notarial en minutos: cargás las partes desde el DNI,
+            elegís la plantilla y exportás en DOCX con formato protocolar.
+          </p>
+          <p style={{
+            fontSize: 15, color: "rgba(253,252,250,.38)",
+            margin: "0 0 36px", lineHeight: 1.7,
+          }}>
+            Scriba, el asistente de IA, conoce la normativa mendocina vigente —
+            CCyC, UIF, ARCA, ATM — y te ayuda a completar y redactar sin salir del editor.
           </p>
 
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          {/* Bullets rápidos */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 36 }}>
+            {[
+              "Más de 50 plantillas notariales listas para usar",
+              "Escaneo de DNI y tarjeta verde con la cámara",
+              "Expedientes vinculados a tu Google Drive",
+            ].map((t, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                  background: "rgba(58,124,165,.2)", border: "1px solid rgba(58,124,165,.4)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#7ec8e3", fontSize: 10, fontWeight: 700,
+                }}>✓</div>
+                <span style={{ fontSize: 14, color: "rgba(253,252,250,.58)" }}>{t}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button
               onClick={scrollToForm}
               onMouseEnter={e => e.currentTarget.style.opacity = ".85"}
               onMouseLeave={e => e.currentTarget.style.opacity = "1"}
               style={{
-                padding: "13px 30px", borderRadius: 9,
+                padding: "13px 28px", borderRadius: 9,
                 background: C.cerulean, border: "none",
                 color: "#fff", fontSize: 14, fontWeight: 700,
                 fontFamily: "'Montserrat', sans-serif",
@@ -153,112 +298,70 @@ export function LandingScreen({ onLogin }) {
             </button>
             <button
               onClick={onLogin}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.45)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,.18)"}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.07)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
               style={{
-                padding: "13px 26px", borderRadius: 9,
-                background: "transparent", border: "1px solid rgba(255,255,255,.18)",
-                color: "rgba(255,255,255,.72)", fontSize: 14, fontWeight: 600,
+                padding: "13px 22px", borderRadius: 9,
+                background: "transparent", border: "1px solid rgba(255,255,255,.15)",
+                color: "rgba(255,255,255,.6)", fontSize: 14, fontWeight: 600,
                 fontFamily: "'Inter', sans-serif", cursor: "pointer",
-                transition: "border-color .15s",
+                transition: "background .15s",
               }}
             >
               Ya tengo cuenta
             </button>
           </div>
         </div>
+
+        {/* Mockup */}
+        <div style={{ flex: "1 1 420px", maxWidth: 500, display: "flex", justifyContent: "center" }}>
+          <EditorMockup />
+        </div>
       </section>
 
-      {/* ── FUNCIONALIDADES ────────────────────────────────────────────────── */}
-      <section style={{ padding: "80px 24px", background: C.warm }}>
-        <div style={{ maxWidth: 920, margin: "0 auto" }}>
-
-          <div style={{ textAlign: "center", marginBottom: 52 }}>
-            <h2 style={{
-              fontFamily: "'Montserrat', sans-serif",
-              fontSize: 26, fontWeight: 700, color: C.dark,
-              margin: "0 0 10px", letterSpacing: "-.02em",
-            }}>
-              Qué incluye
-            </h2>
-            <p style={{ fontSize: 14, color: "rgba(26,35,50,.5)", margin: 0, lineHeight: 1.6 }}>
-              Herramientas diseñadas para la práctica notarial diaria.
-            </p>
+      {/* ── CÓMO FUNCIONA ──────────────────────────────────────────────────── */}
+      <section style={{ padding: "64px 48px", background: "#1e293b" }}>
+        <div style={{ maxWidth: 820, margin: "0 auto" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.3)", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 36, textAlign: "center" }}>
+            Flujo de trabajo
           </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 2 }}>
             {[
               {
-                icon: (
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                  </svg>
-                ),
-                titulo: "Editor de documentos",
-                items: [
-                  "Más de 50 plantillas: certificaciones, poderes, actas, escrituras, hipotecas",
-                  "Exportación DOCX con márgenes y formato protocolar",
-                  "Edición nativa con OnlyOffice",
-                ],
+                n: "01",
+                titulo: "Elegís el instrumento",
+                texto: "Certificación de firma, poder, acta, escritura de compraventa, hipoteca. Más de 50 plantillas organizadas por tipo.",
               },
               {
-                icon: (
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
-                ),
-                titulo: "Scriba — asistente de IA",
-                items: [
-                  "Entrenado con normativa mendocina vigente: CCyC, UIF, ARCA, ATM, Ley de Avalúos",
-                  "Redacta, completa partes y sugiere cláusulas",
-                  "Escaneo de DNI y tarjetas verdes por foto",
-                ],
-                nota: "Verificá siempre antes de firmar.",
+                n: "02",
+                titulo: "Cargás las partes",
+                texto: "Por DNI, escaneando el documento con la cámara, o dictándole a Scriba. CUIT, domicilio y concordancias se completan solos.",
               },
               {
-                icon: (
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                  </svg>
-                ),
-                titulo: "Expedientes y Drive",
-                items: [
-                  "Expedientes vinculados a documentos del registro",
-                  "Archivos de cada expediente en tu Google Drive personal",
-                  "Acceso por estado: en trámite, completo, archivado",
-                ],
+                n: "03",
+                titulo: "Generás y exportás",
+                texto: "DOCX con márgenes protocolares en segundos. Editá directamente en OnlyOffice antes de imprimir.",
               },
-            ].map((f, i) => (
+            ].map((paso, i, arr) => (
               <div key={i} style={{
-                background: "#FDFCFA",
-                borderRadius: 14, border: "1px solid rgba(26,35,50,.07)",
-                padding: "28px 24px",
-                display: "flex", flexDirection: "column", gap: 16,
+                padding: "28px 28px",
+                borderRight: i < arr.length - 1 ? "1px solid rgba(255,255,255,.06)" : "none",
               }}>
-                <div style={{ color: C.cerulean }}>{f.icon}</div>
-                <div>
-                  <div style={{
-                    fontFamily: "'Montserrat', sans-serif",
-                    fontSize: 14, fontWeight: 700, color: C.dark, marginBottom: 12,
-                  }}>
-                    {f.titulo}
-                  </div>
-                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 7 }}>
-                    {f.items.map((item, j) => (
-                      <li key={j} style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
-                        <span style={{ color: C.cerulean, fontSize: 12, marginTop: 2, flexShrink: 0 }}>—</span>
-                        <span style={{ fontSize: 13, color: "rgba(26,35,50,.62)", lineHeight: 1.55 }}>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {f.nota && (
-                    <div style={{ fontSize: 11, color: "rgba(26,35,50,.38)", marginTop: 12, fontStyle: "italic" }}>
-                      {f.nota}
-                    </div>
-                  )}
+                <div style={{
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontSize: 11, fontWeight: 700, color: C.gold,
+                  letterSpacing: ".1em", marginBottom: 14,
+                }}>
+                  {paso.n}
+                </div>
+                <div style={{
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontSize: 14, fontWeight: 700, color: "#FDFCFA", marginBottom: 10,
+                }}>
+                  {paso.titulo}
+                </div>
+                <div style={{ fontSize: 13, color: "rgba(253,252,250,.42)", lineHeight: 1.65 }}>
+                  {paso.texto}
                 </div>
               </div>
             ))}
@@ -266,248 +369,169 @@ export function LandingScreen({ onLogin }) {
         </div>
       </section>
 
-      {/* ── CÓMO FUNCIONA ──────────────────────────────────────────────────── */}
-      <section style={{ padding: "72px 24px", background: C.dark }}>
-        <div style={{ maxWidth: 700, margin: "0 auto" }}>
-          <h2 style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontSize: 24, fontWeight: 700, color: "#FDFCFA",
-            margin: "0 0 52px", letterSpacing: "-.02em", textAlign: "center",
-          }}>
-            Cómo funciona
-          </h2>
-          {[
-            {
-              n: "01",
-              titulo: "Elegís el instrumento",
-              texto: "Certificación de firma, poder notarial, acta, escritura de compraventa, hipoteca — más de 50 tipos disponibles, organizados por familia.",
-            },
-            {
-              n: "02",
-              titulo: "Cargás las partes",
-              texto: "Por DNI manualmente, escaneando el documento con la cámara, o dictándole a Scriba. El sistema completa domicilio, CUIT y concordancias automáticamente.",
-            },
-            {
-              n: "03",
-              titulo: "Generás y exportás",
-              texto: "DOCX con formato protocolar en segundos. También podés editar el documento directamente en el editor antes de exportar.",
-            },
-          ].map((paso, i, arr) => (
-            <div key={i} style={{
-              display: "flex", gap: 24, alignItems: "flex-start",
-              padding: "28px 0",
-              borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,.07)" : "none",
-            }}>
-              <div style={{
-                fontFamily: "'Montserrat', sans-serif",
-                fontSize: 12, fontWeight: 700, color: C.gold,
-                letterSpacing: ".08em", minWidth: 28, paddingTop: 3,
-              }}>
-                {paso.n}
-              </div>
-              <div>
-                <div style={{
-                  fontFamily: "'Montserrat', sans-serif",
-                  fontSize: 15, fontWeight: 700, color: "#FDFCFA", marginBottom: 8,
-                }}>
-                  {paso.titulo}
-                </div>
-                <div style={{ fontSize: 13, color: "rgba(253,252,250,.5)", lineHeight: 1.65 }}>
-                  {paso.texto}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ── FORMULARIO + PRIVACIDAD ────────────────────────────────────────── */}
+      <section ref={formRef} style={{ padding: "64px 24px", background: C.warm }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", gap: 48, flexWrap: "wrap", alignItems: "flex-start" }}>
 
-      {/* ── FORMULARIO ─────────────────────────────────────────────────────── */}
-      <section ref={formRef} style={{ padding: "80px 24px", background: C.warm }}>
-        <div style={{ maxWidth: 460, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 36 }}>
+          {/* Formulario */}
+          <div style={{ flex: "1 1 340px", maxWidth: 440 }}>
             <h2 style={{
               fontFamily: "'Montserrat', sans-serif",
-              fontSize: 24, fontWeight: 700, color: C.dark,
-              margin: "0 0 10px", letterSpacing: "-.02em",
+              fontSize: 22, fontWeight: 700, color: C.dark,
+              margin: "0 0 8px", letterSpacing: "-.02em",
             }}>
               Solicitar acceso
             </h2>
-            <p style={{ fontSize: 14, color: "rgba(26,35,50,.52)", margin: 0, lineHeight: 1.65 }}>
-              Notarial está disponible para escribanos de Mendoza.<br />
-              Completá el formulario y te contactamos a la brevedad.
+            <p style={{ fontSize: 14, color: "rgba(26,35,50,.5)", margin: "0 0 28px", lineHeight: 1.6 }}>
+              Disponible para escribanos de Mendoza. Completá el formulario y te contactamos.
             </p>
+
+            {estado === "enviado" ? (
+              <div style={{
+                background: "#FDFCFA", borderRadius: 12,
+                border: "1px solid rgba(39,174,96,.2)",
+                padding: "36px 24px", textAlign: "center",
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: "rgba(39,174,96,.1)", border: "1px solid rgba(39,174,96,.2)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "0 auto 14px", color: "#27ae60", fontSize: 16,
+                }}>✓</div>
+                <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 6 }}>
+                  Solicitud recibida
+                </div>
+                <div style={{ fontSize: 13, color: "rgba(26,35,50,.5)" }}>
+                  Te contactamos en los próximos días hábiles.
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={enviar} style={{
+                background: "#FDFCFA", borderRadius: 12,
+                border: "1px solid rgba(26,35,50,.08)",
+                padding: "28px 24px",
+                display: "flex", flexDirection: "column", gap: 18,
+              }}>
+                <div>
+                  <label style={lbl}>Nombre completo *</label>
+                  <input required value={form.nombre} onChange={e => set("nombre", e.target.value)}
+                    placeholder="Ej. María González" style={inp}
+                    onFocus={e => e.target.style.borderColor = C.cerulean}
+                    onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
+                </div>
+                <div>
+                  <label style={lbl}>Correo electrónico *</label>
+                  <input required type="email" value={form.email} onChange={e => set("email", e.target.value)}
+                    placeholder="correo@ejemplo.com" style={inp}
+                    onFocus={e => e.target.style.borderColor = C.cerulean}
+                    onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
+                </div>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={lbl}>Registro</label>
+                    <input value={form.registro} onChange={e => set("registro", e.target.value)}
+                      placeholder="Ej. 853" style={inp}
+                      onFocus={e => e.target.style.borderColor = C.cerulean}
+                      onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={lbl}>WhatsApp</label>
+                    <input value={form.telefono} onChange={e => set("telefono", e.target.value)}
+                      placeholder="261 123-4567" style={inp}
+                      onFocus={e => e.target.style.borderColor = C.cerulean}
+                      onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
+                  </div>
+                </div>
+
+                {estado === "error" && (
+                  <div style={{ fontSize: 13, color: "#c0392b", padding: "10px 12px", borderRadius: 7, background: "rgba(192,57,43,.05)", border: "1px solid rgba(192,57,43,.15)" }}>
+                    Error al enviar. Intentá de nuevo.
+                  </div>
+                )}
+
+                <button type="submit" disabled={estado === "enviando"}
+                  onMouseEnter={e => { if (estado !== "enviando") e.currentTarget.style.opacity = ".85"; }}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                  style={{
+                    padding: "13px", borderRadius: 9,
+                    background: estado === "enviando" ? "rgba(58,124,165,.5)" : C.cerulean,
+                    border: "none", color: "#fff", fontSize: 14, fontWeight: 700,
+                    fontFamily: "'Montserrat', sans-serif",
+                    cursor: estado === "enviando" ? "default" : "pointer",
+                    transition: "opacity .15s",
+                  }}>
+                  {estado === "enviando" ? "Enviando..." : "Enviar solicitud"}
+                </button>
+
+                <p style={{ margin: 0, fontSize: 11, color: "rgba(26,35,50,.32)", textAlign: "center", lineHeight: 1.5 }}>
+                  Tus datos se usan únicamente para contactarte.
+                </p>
+              </form>
+            )}
           </div>
 
-          {estado === "enviado" ? (
-            <div style={{
-              background: "#FDFCFA", borderRadius: 14,
-              border: "1px solid rgba(39,174,96,.2)",
-              padding: "44px 28px", textAlign: "center",
-            }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: "50%",
-                background: "rgba(39,174,96,.1)", border: "1px solid rgba(39,174,96,.25)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 16px",
-                color: "#27ae60", fontSize: 18,
-              }}>✓</div>
-              <div style={{
-                fontFamily: "'Montserrat', sans-serif",
-                fontSize: 16, fontWeight: 700, color: C.dark, marginBottom: 8,
-              }}>
-                Solicitud recibida
-              </div>
-              <div style={{ fontSize: 13, color: "rgba(26,35,50,.52)", lineHeight: 1.6 }}>
-                Te contactamos en los próximos días hábiles.
-              </div>
+          {/* Privacidad — al lado del formulario */}
+          <div id="privacidad" style={{ flex: "1 1 300px", maxWidth: 400, paddingTop: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(26,35,50,.35)", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 20 }}>
+              Privacidad y datos
             </div>
-          ) : (
-            <form onSubmit={enviar} style={{
-              background: "#FDFCFA", borderRadius: 14,
-              border: "1px solid rgba(26,35,50,.08)",
-              padding: "32px 28px",
-              display: "flex", flexDirection: "column", gap: 20,
-            }}>
-              <div>
-                <label style={lbl}>Nombre completo *</label>
-                <input required value={form.nombre} onChange={e => set("nombre", e.target.value)}
-                  placeholder="Ej. María González" style={inp}
-                  onFocus={e => e.target.style.borderColor = C.cerulean}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
+            {[
+              {
+                titulo: "Datos que recopilamos",
+                texto: "Nombre, apellido, DNI y domicilio de los requirentes. Se almacenan en Supabase con acceso exclusivo por registro notarial (Row Level Security).",
+              },
+              {
+                titulo: "Uso de Google Drive",
+                texto: "Solicitamos el alcance drive.file: solo creamos y gestionamos archivos propios de Notarial. No accedemos a ningún archivo preexistente en tu Drive.",
+              },
+              {
+                titulo: "Autenticación",
+                texto: "Email + contraseña o Google OAuth. Las credenciales las gestiona Supabase Auth — nunca las almacenamos en texto plano.",
+              },
+              {
+                titulo: "Eliminación",
+                texto: "Solicitá la baja a lojeda.notarial@gmail.com. Los datos se eliminan en un plazo máximo de 30 días hábiles.",
+              },
+            ].map((s, i) => (
+              <div key={i} style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.dark, marginBottom: 4 }}>{s.titulo}</div>
+                <div style={{ fontSize: 12, color: "rgba(26,35,50,.52)", lineHeight: 1.65 }}>{s.texto}</div>
               </div>
-              <div>
-                <label style={lbl}>Correo electrónico *</label>
-                <input required type="email" value={form.email} onChange={e => set("email", e.target.value)}
-                  placeholder="correo@ejemplo.com" style={inp}
-                  onFocus={e => e.target.style.borderColor = C.cerulean}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
-              </div>
-              <div>
-                <label style={lbl}>Número de registro</label>
-                <input value={form.registro} onChange={e => set("registro", e.target.value)}
-                  placeholder="Ej. 853" style={inp}
-                  onFocus={e => e.target.style.borderColor = C.cerulean}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
-              </div>
-              <div>
-                <label style={lbl}>Teléfono WhatsApp</label>
-                <input value={form.telefono} onChange={e => set("telefono", e.target.value)}
-                  placeholder="Ej. 261 123-4567" style={inp}
-                  onFocus={e => e.target.style.borderColor = C.cerulean}
-                  onBlur={e => e.target.style.borderColor = "rgba(26,35,50,.15)"} />
-              </div>
-
-              {estado === "error" && (
-                <div style={{
-                  fontSize: 13, color: "#c0392b",
-                  padding: "10px 14px", borderRadius: 8,
-                  background: "rgba(192,57,43,.05)", border: "1px solid rgba(192,57,43,.18)",
-                }}>
-                  Hubo un error al enviar. Intentá de nuevo.
-                </div>
-              )}
-
-              <button type="submit" disabled={estado === "enviando"}
-                onMouseEnter={e => { if (estado !== "enviando") e.currentTarget.style.opacity = ".85"; }}
-                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-                style={{
-                  padding: "13px", borderRadius: 9,
-                  background: estado === "enviando" ? "rgba(58,124,165,.55)" : C.cerulean,
-                  border: "none", color: "#fff", fontSize: 14, fontWeight: 700,
-                  fontFamily: "'Montserrat', sans-serif",
-                  cursor: estado === "enviando" ? "default" : "pointer",
-                  transition: "opacity .15s",
-                }}>
-                {estado === "enviando" ? "Enviando..." : "Enviar solicitud"}
-              </button>
-
-              <p style={{ margin: 0, fontSize: 11, color: "rgba(26,35,50,.35)", textAlign: "center", lineHeight: 1.6 }}>
-                Tus datos se usan únicamente para contactarte. No se comparten con terceros.
-              </p>
-            </form>
-          )}
-        </div>
-      </section>
-
-      {/* ── PRIVACIDAD ─────────────────────────────────────────────────────── */}
-      <section id="privacidad" style={{
-        padding: "72px 24px", background: "#FDFCFA",
-        borderTop: "1px solid rgba(26,35,50,.08)",
-      }}>
-        <div style={{ maxWidth: 660, margin: "0 auto" }}>
-          <h2 style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontSize: 20, fontWeight: 700, color: C.dark,
-            margin: "0 0 32px", letterSpacing: "-.02em",
-          }}>
-            Política de privacidad
-          </h2>
-
-          {[
-            {
-              titulo: "Datos que recopilamos",
-              texto: "Recopilamos los datos ingresados por el usuario: nombre, apellido, DNI y domicilio de los requirentes intervinientes en los instrumentos notariales. Estos datos se almacenan en nuestra base de datos (Supabase, región EU-West) y son accesibles exclusivamente por el registro notarial correspondiente mediante políticas de seguridad a nivel de fila (Row Level Security).",
-            },
-            {
-              titulo: "Uso de Google Drive",
-              texto: "Notarial solicita acceso a Google Drive con el alcance drive.file, que permite exclusivamente crear y gestionar los archivos generados por la propia aplicación dentro de la carpeta «Notarial» en el Drive del usuario. No accedemos, leemos ni modificamos ningún archivo existente ajeno a los creados por Notarial.",
-            },
-            {
-              titulo: "Autenticación",
-              texto: "El acceso al sistema se realiza mediante correo electrónico y contraseña, o mediante Google OAuth. Las credenciales son gestionadas por Supabase Auth y nunca almacenadas en texto plano por nuestra aplicación.",
-            },
-            {
-              titulo: "Retención y eliminación",
-              texto: "Los datos se conservan mientras la cuenta del registro notarial esté activa. Ante solicitud de baja, los datos son eliminados de la base de datos en un plazo máximo de 30 días hábiles.",
-            },
-            {
-              titulo: "Contacto",
-              texto: "Para consultas sobre privacidad o solicitudes de eliminación de datos: lojeda.notarial@gmail.com",
-            },
-          ].map((s, i) => (
-            <div key={i} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: i < 4 ? "1px solid rgba(26,35,50,.06)" : "none" }}>
-              <div style={{
-                fontFamily: "'Montserrat', sans-serif",
-                fontSize: 13, fontWeight: 700, color: C.dark, marginBottom: 7,
-              }}>
-                {s.titulo}
-              </div>
-              <div style={{ fontSize: 13, color: "rgba(26,35,50,.58)", lineHeight: 1.72 }}>
-                {s.texto}
-              </div>
+            ))}
+            <div style={{ fontSize: 10, color: "rgba(26,35,50,.28)", marginTop: 12 }}>
+              Última actualización: junio de 2026
             </div>
-          ))}
-
-          <div style={{ fontSize: 11, color: "rgba(26,35,50,.3)", marginTop: 8 }}>
-            Última actualización: junio de 2026
           </div>
         </div>
       </section>
 
       {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
       <footer style={{
-        background: C.dark, padding: "22px 32px",
+        background: "#0f172a", padding: "20px 32px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         flexWrap: "wrap", gap: 12,
+        borderTop: "1px solid rgba(255,255,255,.06)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/logo-pen-transparent1.png" alt="Notarial" style={{ height: 18, opacity: .6 }} />
-          <span style={{ color: "rgba(255,255,255,.38)", fontSize: 12 }}>
-            © 2026 Notarial —{" "}
-            <span style={{ fontStyle: "italic" }}>Fe Pública Digital</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 22, height: 22, borderRadius: "50%", background: C.gold, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <img src="/logo-pen-transparent1.png" alt="" style={{ height: 13, filter: "brightness(0) invert(1)" }}
+              onError={e => e.target.style.display = "none"} />
+          </div>
+          <span style={{ color: "rgba(255,255,255,.35)", fontSize: 12 }}>
+            © 2026 Notarial · <span style={{ fontStyle: "italic" }}>Fe Pública Digital</span>
           </span>
         </div>
         <div style={{ display: "flex", gap: 20 }}>
           <a href="#privacidad"
-            onMouseEnter={e => e.target.style.color = "rgba(255,255,255,.7)"}
-            onMouseLeave={e => e.target.style.color = "rgba(255,255,255,.38)"}
-            style={{ color: "rgba(255,255,255,.38)", fontSize: 12, textDecoration: "none" }}>
+            onMouseEnter={e => e.target.style.color = "rgba(255,255,255,.65)"}
+            onMouseLeave={e => e.target.style.color = "rgba(255,255,255,.35)"}
+            style={{ color: "rgba(255,255,255,.35)", fontSize: 12, textDecoration: "none" }}>
             Privacidad
           </a>
           <button onClick={onLogin}
-            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,.7)"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.38)"}
-            style={{ background: "none", border: "none", color: "rgba(255,255,255,.38)", fontSize: 12, cursor: "pointer", padding: 0 }}>
+            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,.65)"}
+            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.35)"}
+            style={{ background: "none", border: "none", color: "rgba(255,255,255,.35)", fontSize: 12, cursor: "pointer", padding: 0 }}>
             Iniciar sesión
           </button>
         </div>
