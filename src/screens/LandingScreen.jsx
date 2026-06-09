@@ -49,9 +49,9 @@ const CSS = `
 
   /* ── HERO ───────────────────────────────────────────────────────── */
   .lnd-hero {
-    min-height: 100vh; background: #0f172a;
+    background: #0f172a;
     display: flex; align-items: center;
-    padding: 80px 40px 60px; position: relative; overflow: hidden;
+    padding: 120px 40px 100px; position: relative; overflow: hidden;
   }
   .lnd-hero::before {
     content: ''; position: absolute; inset: 0;
@@ -62,8 +62,8 @@ const CSS = `
   }
   .lnd-hero-inner {
     width: 100%; max-width: 1200px; margin: 0 auto;
-    display: grid; grid-template-columns: 55fr 45fr;
-    gap: 56px; align-items: center; position: relative; z-index: 1;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 64px; align-items: center; position: relative; z-index: 1;
   }
   .lnd-badge {
     display: inline-flex; align-items: center; gap: 7px;
@@ -91,11 +91,14 @@ const CSS = `
   }
   .lnd-flow-step { color: #94a3b8; }
   .lnd-flow-arrow { color: #c9a961; font-style: normal; font-family: 'Inter', sans-serif; }
-  .lnd-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 36px; }
-  .lnd-bullets li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #94a3b8; }
+  .lnd-bullets { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; }
+  .lnd-bullets li {
+    display: grid; grid-template-columns: 16px 1fr;
+    gap: 10px; font-size: 14px; color: #94a3b8; line-height: 1.55;
+  }
   .lnd-bullets li::before {
     content: '—'; color: #c9a961; font-family: 'Montserrat', sans-serif;
-    font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    font-weight: 700; padding-top: 1px;
   }
   .lnd-bullets li strong { color: #cbd5e1; }
   .lnd-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
@@ -120,8 +123,11 @@ const CSS = `
 
   .lnd-screenshot-wrap {
     border-radius: 10px; overflow: hidden;
-    box-shadow: 0 0 0 1px rgba(201,169,97,0.15), 0 32px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
+    box-shadow: 0 0 0 1px rgba(201,169,97,0.15), 0 40px 100px rgba(0,0,0,0.7), 0 8px 24px rgba(0,0,0,0.4);
+    transform: perspective(1000px) rotateY(-4deg) rotateX(2deg);
+    transition: transform 0.4s ease;
   }
+  .lnd-screenshot-wrap:hover { transform: perspective(1000px) rotateY(0deg) rotateX(0deg); }
   .lnd-screenshot-wrap img { display: block; width: 100%; height: auto; border-radius: 10px; }
 
   /* ── CÓMO FUNCIONA ──────────────────────────────────────────────── */
