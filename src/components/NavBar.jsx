@@ -244,12 +244,12 @@ export function NavBar({
           >
             <img src="/logo-pen-transparent1.png" alt="Notarial" style={{ height: 28, display: "block" }} />
             <div style={{ width: 1, height: 14, background: "rgba(253,252,250,.2)" }} />
-            <span style={{ color: "#FDFCFA", fontSize: 13, fontWeight: 700, letterSpacing: "-.01em" }}>
+            <span style={{ color: "#FDFCFA", fontSize: 15, fontFamily: "'Merriweather', Georgia, serif", fontWeight: 300, letterSpacing: ".01em" }}>
               Notarial
             </span>
           </button>
-          <span style={{ color: "rgba(253,252,250,.5)", fontSize: 12 }}>|</span>
-          <span style={{ color: "rgba(255,255,255,.5)", fontSize: 11, fontWeight: 400, fontStyle: "italic", letterSpacing: ".02em" }}>Fe Pública Digital</span>
+          <span style={{ color: "rgba(253,252,250,.2)", fontSize: 12 }}>|</span>
+          <span style={{ color: C.gold, fontSize: 10, fontFamily: "'Montserrat', sans-serif", fontWeight: 500, fontStyle: "italic", letterSpacing: ".04em" }}>Fe Pública Digital</span>
 
           <div style={{ position: "relative", marginLeft: "auto" }}>
             <button
