@@ -37,7 +37,16 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     nombresFormato     = "titlecase_upper",
     escribanoUppercase = true,
     registroFormato    = "letras",
+    nombresNegrita     = true,
+    nombresSubrayado   = true,
   } = estilos;
+
+  const fmtNombre = (str) => {
+    let s = str;
+    if (nombresSubrayado) s = `__${s}__`;
+    if (nombresNegrita)   s = `**${s}**`;
+    return s;
+  };
   // Si hay roles definidos para este template, ordenar partes por rol antes de asignar posiciones.
   // Así "Autorizado/a" siempre va a PARTE_2 aunque se haya cargado primero.
   if (rolesContextuales?.length) {
@@ -202,7 +211,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
       p.estadoCivil || null,
       dom ? `domicilio en ${dom}` : null,
     ].filter(Boolean).join(", ");
-    return `**__${art} ${nombre}__**, ${datos}`;
+    return `${art} ${fmtNombre(nombre)}, ${datos}`;
   };
 
   const autorizantes = partes.filter(p => p?.rol?.toUpperCase().startsWith("AUTORIZANTE"));
@@ -250,7 +259,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
         return p.genero==="M" ? (masc[n]||p.nacionalidad||"") : (p.nacionalidad||"");
       })();
       const dniP = fmtDni(p.nroDoc);
-      return [`**__${nombre}__**`, nac, dniP ? `Documento Nacional de Identidad número ${dniP}` : null].filter(Boolean).join(", ");
+      return [fmtNombre(nombre), nac, dniP ? `Documento Nacional de Identidad número ${dniP}` : null].filter(Boolean).join(", ");
     };
     const textos = autorizados.map(fmtAut);
     vars.AUTORIZADOS_TEXTO = textos.length === 1
