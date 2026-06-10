@@ -4,8 +4,9 @@ import { C, inp } from "../../constants";
 const ARANCEL_DNRPA = 0.01;
 const SELLOS = { particulares: 0.0125, habitualista: 0.01 };
 const GASTOS_DEF = [
-  { id: "verificacion", label: "Verificación policial", valor: 37000, nota: "Vehículos de 2 a 12 años. Varía por jurisdicción.", on: true },
-  { id: "gestoria",     label: "Gestoría / mandatario", valor: 75000, nota: "Opcional. Variable según gestor y zona.",           on: false },
+  { id: "arancel1",    label: "Arancel Nro. 1 (Res. 314/02)", valor: 1300,  nota: "Cargo fijo del registro seccional.", on: true },
+  { id: "verificacion", label: "Verificación policial",        valor: 37000, nota: "Vehículos de 2 a 12 años. Varía por jurisdicción.", on: true },
+  { id: "gestoria",     label: "Gestoría / mandatario",        valor: 75000, nota: "Opcional. Variable según gestor y zona.",           on: false },
 ];
 
 const fmt = n => n == null ? "—" : "$ " + Math.round(n).toLocaleString("es-AR");
@@ -214,7 +215,7 @@ export function EstimadorDNRPA({ onBack }) {
     const precio = parseMonto(precioVenta);
     if (!precio) return;
     const baseD = tablaDNRPA ? Math.max(precio, parseMonto(tablaDNRPA)) : precio;
-    const baseA = tablaATM   ? Math.max(precio, parseMonto(tablaATM))   : precio;
+    const baseA = tablaATM ? Math.max(precio, parseMonto(tablaATM)) : baseD;
     const arancelDNRPA = baseD * ARANCEL_DNRPA;
     const sellosMza    = baseA * SELLOS[tipo];
     const gastosLineas = GASTOS_DEF
@@ -308,32 +309,47 @@ export function EstimadorDNRPA({ onBack }) {
             <section>
               <SectionTitle>Valores del vehículo</SectionTitle>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+                {/* Valor tabla DNRPA — campo principal */}
+                <div style={{ background: "rgba(201,169,97,.07)", border: "1px solid rgba(201,169,97,.3)",
+                  borderRadius: 10, padding: "14px 14px 12px" }}>
+                  <Field
+                    label="Valor de tabla DNRPA"
+                    hint={<>El DNRPA usa el <strong>mayor</strong> entre el precio declarado y este valor fiscal. Sin él, el cálculo puede ser menor al real. <a
+                      href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador"
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ color: C.cerulean, textDecoration: "none", fontWeight: 600 }}>
+                      Consultarlo →
+                    </a></>}>
+                    <input value={tablaDNRPA} onChange={e => setTablaDNRPA(e.target.value)}
+                      placeholder="Ej: 5368000"
+                      style={{ ...inp, borderColor: tablaDNRPA ? "rgba(26,35,50,.14)" : "rgba(201,169,97,.5)" }}
+                    />
+                  </Field>
+                  {!tablaDNRPA && (
+                    <p style={{ fontSize: 10, color: "#a07c30", fontFamily: "'Inter',sans-serif",
+                      margin: "6px 0 0", lineHeight: 1.4 }}>
+                      ⚠ Sin este valor el arancel se calcula sobre el precio declarado y puede subestimarse.
+                    </p>
+                  )}
+                </div>
+
                 <Field label="Precio de venta declarado *"
                   hint="Valor que figura en el formulario 08">
                   <input value={precioVenta} onChange={e => setPrecioVenta(e.target.value)}
-                    placeholder="Ej: 10000000"
+                    placeholder="Ej: 4000000"
                     style={{ ...inp }}
                   />
                 </Field>
-                <Field label="Valor de tabla DNRPA (opcional)"
-                  hint={<>Si el precio de venta es menor al valor fiscal, se usa el mayor. <a
-                    href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador"
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ color: C.cerulean, textDecoration: "none", fontWeight: 600 }}>
-                    Consultar estimador oficial →
-                  </a></>}>
-                  <input value={tablaDNRPA} onChange={e => setTablaDNRPA(e.target.value)}
-                    placeholder="Ej: 12000000"
-                    style={{ ...inp }}
-                  />
-                </Field>
+
                 <Field label="Valor de tabla ATM Mendoza (opcional)"
-                  hint="Base para el impuesto de sellos. Si no lo ingresás, se usa el precio de venta.">
+                  hint="Base para el impuesto de sellos. Si no lo ingresás, se usa el mayor entre precio y tabla DNRPA.">
                   <input value={tablaATM} onChange={e => setTablaATM(e.target.value)}
-                    placeholder="Ej: 11500000"
+                    placeholder="Ej: 5368000"
                     style={{ ...inp }}
                   />
                 </Field>
+
               </div>
             </section>
 
