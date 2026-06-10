@@ -59,6 +59,61 @@ function ResultRow({ label, sub, valor, bold, muted }) {
   );
 }
 
+function VerificarModal({ dominio, valorDeclarado, onClose }) {
+  const fmtValor = v => v ? Math.round(parseMonto(v)).toLocaleString("es-AR") : "—";
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(26,35,50,.45)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      onClick={onClose}>
+      <div style={{ background: "#FDFCFA", borderRadius: 14, padding: "28px 28px 24px",
+        width: 360, maxWidth: "90vw", boxShadow: "0 8px 40px rgba(26,35,50,.2)" }}
+        onClick={e => e.stopPropagation()}>
+
+        <div style={{ fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 15,
+          color: C.dark, marginBottom: 6 }}>Verificar en estimador DNRPA</div>
+        <div style={{ fontSize: 12, color: C.muted, fontFamily: "'Inter',sans-serif",
+          marginBottom: 20, lineHeight: 1.5 }}>
+          Ingresá estos datos en el formulario oficial:
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+          {[
+            ["Dominio / patente", dominio || "—  (no escaneado)"],
+            ["Valor declarado",   "$ " + fmtValor(valorDeclarado)],
+            ["Provincia radicación", "MENDOZA"],
+          ].map(([label, val]) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between",
+              alignItems: "baseline", padding: "9px 12px",
+              background: "rgba(26,35,50,.03)", borderRadius: 8,
+              border: "1px solid rgba(26,35,50,.07)" }}>
+              <span style={{ fontSize: 11, color: C.muted, fontFamily: "'Inter',sans-serif" }}>{label}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.dark,
+                fontFamily: "'Montserrat',sans-serif" }}>{val}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador"
+            target="_blank" rel="noopener noreferrer"
+            style={{ flex: 1, display: "block", textAlign: "center",
+              padding: "11px 0", borderRadius: 9, background: C.dark, color: "#FDFCFA",
+              fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 13,
+              textDecoration: "none", letterSpacing: ".02em" }}>
+            Ir al estimador DNRPA →
+          </a>
+          <button onClick={onClose}
+            style={{ padding: "11px 16px", borderRadius: 9, border: "1px solid rgba(26,35,50,.15)",
+              background: "transparent", color: C.muted, fontFamily: "'Inter',sans-serif",
+              fontSize: 13, cursor: "pointer" }}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GroupLabel({ children }) {
   return (
     <div style={{ padding: "8px 20px 2px", background: "rgba(26,35,50,.03)",
@@ -422,6 +477,7 @@ export function EstimadorDNRPA({ onBack }) {
   );
 
   const [resultado, setResultado] = useState(null);
+  const [modalVerificar, setModalVerificar] = useState(false);
 
   // q para el auto-lookup: marca + modelo + tipo_desc para filtrar la variante correcta
   const qLookup = [marca, modelo, tipo_desc].filter(Boolean).join(" ");
@@ -470,6 +526,13 @@ export function EstimadorDNRPA({ onBack }) {
   return (
     <>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {modalVerificar && (
+        <VerificarModal
+          dominio={escaneado?.dominio}
+          valorDeclarado={precioVenta}
+          onClose={() => setModalVerificar(false)}
+        />
+      )}
       <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#f5f2ed" }}>
 
         {/* Header */}
@@ -746,17 +809,20 @@ export function EstimadorDNRPA({ onBack }) {
                   </div>
                 )}
 
-                <div style={{ padding: "8px 20px 14px", background: "rgba(26,35,50,.02)",
-                  borderTop: "1px solid rgba(26,35,50,.06)" }}>
+                <div style={{ padding: "10px 20px 14px", background: "rgba(26,35,50,.02)",
+                  borderTop: "1px solid rgba(26,35,50,.06)", display: "flex",
+                  alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                   <p style={{ fontSize: 10, color: C.muted, fontFamily: "'Inter',sans-serif",
-                    lineHeight: 1.6, margin: 0 }}>
-                    Estimación no oficial basada en tabla DNRPA 2026. Res. MJ 273/2024 — arancel 1% · Ley Mendoza 9597/2024 — sellos {resultado.tasaSellos}%.{" "}
-                    <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: C.cerulean, textDecoration: "none", fontWeight: 600 }}>
-                      Consultá valores oficiales en el DNRPA →
-                    </a>
+                    lineHeight: 1.6, margin: 0, flex: 1 }}>
+                    Estimación no oficial. Res. MJ 273/2024 — arancel 1% · Ley Mendoza 9597/2024 — sellos {resultado.tasaSellos}%.
                   </p>
+                  <button onClick={() => setModalVerificar(true)}
+                    style={{ flexShrink: 0, fontSize: 11, fontWeight: 600, color: C.cerulean,
+                      background: "rgba(58,124,165,.07)", border: "1px solid rgba(58,124,165,.25)",
+                      borderRadius: 7, padding: "6px 12px", cursor: "pointer",
+                      fontFamily: "'Montserrat',sans-serif", whiteSpace: "nowrap" }}>
+                    Verificar en DNRPA →
+                  </button>
                 </div>
               </div>
             )}
