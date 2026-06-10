@@ -135,6 +135,14 @@
       transition: border-color 0.2s, color 0.2s;
     }
     .btn-outline:hover { border-color: #94a3b8; color: #cbd5e1; }
+    .btn-gold {
+      font-family: var(--ff-brand); font-size: 13px; font-weight: 600;
+      letter-spacing: 0.06em; color: var(--gold); background: transparent;
+      border: 1px solid rgba(201,169,97,0.4); padding: 13px 26px; border-radius: 3px;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-gold:hover { background: rgba(201,169,97,0.08); border-color: var(--gold); }
 
     .hero-visual {}
     .screenshot-wrap {
@@ -392,7 +400,7 @@
             Solicitar acceso
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
-          <a href="/app" class="btn-outline">Ya tengo cuenta</a>
+          <a href="/app" class="btn-gold">Ya tengo cuenta</a>
         </div>
       </div>
       <div class="hero-visual">
