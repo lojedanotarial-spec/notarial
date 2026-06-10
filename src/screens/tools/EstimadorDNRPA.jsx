@@ -568,8 +568,11 @@ export function EstimadorDNRPA({ onBack }) {
                   borderTop: "1px solid rgba(26,35,50,.06)" }}>
                   <p style={{ fontSize: 10, color: C.muted, fontFamily: "'Inter',sans-serif",
                     lineHeight: 1.6, margin: 0 }}>
-                    Res. MJ 273/2024 — arancel DNRPA 1% · Ley Mendoza 9597/2024 — sellos {resultado.tasaSellos}%.
-                    Los valores son orientativos y no reemplazan el cálculo oficial del registro seccional.
+                    Estimación no oficial basada en tabla DNRPA 2026. Res. MJ 273/2024 — arancel 1% · Ley Mendoza 9597/2024 — sellos {resultado.tasaSellos}%.{" "}
+                    <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank" rel="noopener noreferrer"
+                      style={{ color: C.cerulean, textDecoration: "none", fontWeight: 600 }}>
+                      Consultá valores oficiales en el DNRPA →
+                    </a>
                   </p>
                 </div>
               </div>
