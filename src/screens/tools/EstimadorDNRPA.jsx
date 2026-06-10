@@ -124,29 +124,81 @@ function UploadZone({ onVehiculo, escaneando, setEscaneando }) {
   );
 }
 
-function VehiculoCard({ v, onClear }) {
-  const line1 = [v.marca, v.modelo].filter(Boolean).join(" ") || "Vehículo detectado";
-  const line2 = [v.anio && `${v.anio}`, v.dominio && `Patente ${v.dominio}`, v.tipo_desc].filter(Boolean).join(" · ");
+function VehiculoCard({ v, onClear, onAnio }) {
+  const titulo = [v.marca, v.modelo].filter(Boolean).join(" ") || "Vehículo detectado";
+  const chips = [
+    v.anio     && { label: "Año",     valor: v.anio,                warn: !v.anio },
+    v.dominio  && { label: "Dominio", valor: v.dominio },
+    v.tipo_desc && { label: "Tipo",   valor: v.tipo_desc },
+    v.color    && { label: "Color",   valor: v.color },
+  ].filter(Boolean);
+  const extras = [
+    v.chasis && { label: "Chasis", valor: v.chasis },
+    v.motor  && { label: "Motor",  valor: v.motor  },
+  ].filter(Boolean);
+
   return (
     <div style={{ background: "rgba(58,124,165,.06)", border: "1px solid rgba(58,124,165,.2)",
-      borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
-      <div style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(58,124,165,.12)",
-        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.cerulean}
-          strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="1" y="3" width="15" height="13" rx="2"/>
-          <path d="M16 8h4l3 3v5h-7V8z"/>
-          <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-        </svg>
+      borderRadius: 10, padding: "14px 16px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 7, background: "rgba(58,124,165,.12)",
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={C.cerulean}
+            strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="2"/>
+            <path d="M16 8h4l3 3v5h-7V8z"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.dark,
+            fontFamily: "'Montserrat',sans-serif" }}>{titulo}</div>
+
+          {/* chips principales */}
+          {chips.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {chips.map(({ label, valor }) => (
+                <div key={label} style={{ background: "#FDFCFA", border: "1px solid rgba(58,124,165,.2)",
+                  borderRadius: 6, padding: "3px 9px", display: "flex", gap: 5, alignItems: "baseline" }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase",
+                    letterSpacing: ".05em", color: C.muted, fontFamily: "'Montserrat',sans-serif" }}>
+                    {label}
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: C.dark,
+                    fontFamily: "'Montserrat',sans-serif" }}>{valor}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* chasis / motor */}
+          {extras.length > 0 && (
+            <div style={{ marginTop: 7, display: "flex", flexDirection: "column", gap: 2 }}>
+              {extras.map(({ label, valor }) => (
+                <div key={label} style={{ fontSize: 10, color: C.muted,
+                  fontFamily: "'Inter',sans-serif" }}>
+                  <span style={{ fontWeight: 700 }}>{label}:</span> {valor}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!v.anio && (
+            <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: "#c0392b", fontFamily: "'Inter',sans-serif",
+                flexShrink: 0 }}>⚠ Año no detectado:</span>
+              <input
+                type="number" min="1990" max="2026" placeholder="ej: 2010"
+                onChange={e => onAnio && onAnio(e.target.value)}
+                style={{ ...inp, width: 90, padding: "5px 10px",
+                  borderColor: "rgba(192,57,43,.35)", fontSize: 13 }}
+              />
+            </div>
+          )}
+        </div>
+        <button onClick={onClear} style={{ background: "none", border: "none", cursor: "pointer",
+          color: "rgba(26,35,50,.3)", fontSize: 20, lineHeight: 1, padding: 4, flexShrink: 0 }}>×</button>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.dark, fontFamily: "'Montserrat',sans-serif",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line1}</div>
-        {line2 && <div style={{ fontSize: 11, color: C.cerulean, fontFamily: "'Inter',sans-serif",
-          marginTop: 2 }}>{line2}</div>}
-      </div>
-      <button onClick={onClear} style={{ background: "none", border: "none", cursor: "pointer",
-        color: "rgba(26,35,50,.3)", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
     </div>
   );
 }
@@ -160,13 +212,13 @@ function TablaField({ vehiculo, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, se
   const [dropAbierto, setDropAbierto] = useState(false);
   const wrapRef = useRef();
 
-  // Auto-lookup cuando llega vehiculo desde Scriba
+  // Auto-lookup cuando llega vehiculo desde Scriba o cuando se ingresa el año manualmente
   useEffect(() => {
     if (!vehiculo) return;
     const q = [vehiculo.marca, vehiculo.modelo].filter(Boolean).join(" ");
     const a = vehiculo.anio ? String(vehiculo.anio) : anio;
     if (q && a) autoLookup(q, a);
-  }, [vehiculo]);
+  }, [vehiculo?.marca, vehiculo?.modelo, vehiculo?.anio]);
 
   async function autoLookup(q, a) {
     setBuscando(true);
@@ -412,7 +464,11 @@ export function EstimadorDNRPA({ onBack }) {
             <section>
               <SecTitle>Vehículo</SecTitle>
               {vehiculo ? (
-                <VehiculoCard v={vehiculo} onClear={() => handleVehiculo(null)} />
+                <VehiculoCard
+                  v={vehiculo}
+                  onClear={() => handleVehiculo(null)}
+                  onAnio={a => setVehiculo(prev => ({ ...prev, anio: a }))}
+                />
               ) : (
                 <>
                   <UploadZone onVehiculo={handleVehiculo} escaneando={escaneando} setEscaneando={setEsc} />

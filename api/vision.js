@@ -36,13 +36,13 @@ Instrucciones: el documento puede estar en cualquier orientación — rotalo men
   "tipo_documento": "tarjeta_verde",
   "vehiculo": {
     "marca": "MARCA EN MAYÚSCULAS",
-    "modelo": "modelo completo con versión",
+    "modelo": "modelo completo con versión (ej: GOL TREND 1.6, COROLLA XEI 2.0)",
     "tipo_desc": "SEDAN 5 PTAS | SEDAN 5 PUERTAS | HATCHBACK | SUV | MOTOCICLETA",
-    "dominio": "patente sin espacios ni guiones",
+    "dominio": "patente sin espacios ni guiones (ej: ABC123 o AA123BB)",
     "chasis": "número de chasis o VIN completo",
     "motor": "número de motor completo",
-    "anio": "",
-    "color": ""
+    "anio": "año modelo o año de fabricación — buscá el campo 'AÑO MOD', 'AÑO FAB', 'MODEL YEAR' o año que aparezca en la descripción del modelo. Devolvé solo el número de 4 dígitos (ej: 2010)",
+    "color": "color del vehículo si figura"
   },
   "titular": { "apellido": "", "nombre": "", "nro_doc": "solo números" },
   "notas": ""
