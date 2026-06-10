@@ -193,10 +193,12 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     const nac = p.genero==="M" ? (masc[n]||p.nacionalidad||"") : (p.nacionalidad||"");
     const dni = fmtDni(p.nroDoc);
     const dom = fmtDomicilio(p);
+    const fechaNacFmt = fmtFechaNac(p.fechaNac || "");
     const datos = [
       nac,
       dni ? `Documento Nacional de Identidad número ${dni}` : null,
       p.cuit ? `C.U.I.T./L. ${p.cuit}` : null,
+      fechaNacFmt ? `${p.genero === "M" ? "nacido" : "nacida"} el día ${fechaNacFmt}` : null,
       p.estadoCivil || null,
       dom ? `domicilio en ${dom}` : null,
     ].filter(Boolean).join(", ");
