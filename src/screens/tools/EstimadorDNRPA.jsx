@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { C, inp } from "../../constants";
 
-const ARANCEL_DNRPA  = 0.01;
-const ARANCEL_NRO1   = 1300;   // Res. 314/02 — siempre incluido
+const ARANCEL_DNRPA = 0.01;
+const ARANCEL_NRO1  = 1300;
 const SELLOS = { particulares: 0.0125, habitualista: 0.01 };
 
 const OPCIONALES = [
@@ -19,26 +19,16 @@ function debounce(fn, ms) {
   let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
 }
 
-// ── Sub-componentes ────────────────────────────────────────────────────────────
+// ── Helpers UI ─────────────────────────────────────────────────────────────────
 
-function Label({ children, sub }) {
+function SecTitle({ children, action }) {
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: C.dark, fontFamily: "'Montserrat',sans-serif" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase",
+        color: "rgba(26,35,50,.4)", fontFamily: "'Montserrat',sans-serif" }}>
         {children}
       </div>
-      {sub && <div style={{ fontSize: 11, color: C.muted, fontFamily: "'Inter',sans-serif", marginTop: 2 }}>
-        {sub}
-      </div>}
-    </div>
-  );
-}
-
-function SecTitle({ children }) {
-  return (
-    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase",
-      color: "rgba(26,35,50,.4)", fontFamily: "'Montserrat',sans-serif", marginBottom: 10 }}>
-      {children}
+      {action}
     </div>
   );
 }
@@ -50,8 +40,7 @@ function ResultRow({ label, sub, valor, bold, muted }) {
       <div>
         <div style={{ fontSize: 13, color: muted ? C.muted : C.dark,
           fontFamily: "'Inter',sans-serif", fontWeight: bold ? 700 : 400 }}>{label}</div>
-        {sub && <div style={{ fontSize: 11, color: C.muted, fontFamily: "'Inter',sans-serif",
-          marginTop: 1 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 11, color: C.muted, fontFamily: "'Inter',sans-serif", marginTop: 1 }}>{sub}</div>}
       </div>
       <span style={{ fontSize: 13, fontWeight: bold ? 700 : 600, color: muted ? C.muted : C.dark,
         fontFamily: "'Montserrat',sans-serif", flexShrink: 0, marginLeft: 12 }}>{valor}</span>
@@ -59,9 +48,9 @@ function ResultRow({ label, sub, valor, bold, muted }) {
   );
 }
 
-// ── Upload / Scriba ────────────────────────────────────────────────────────────
+// ── Botón escanear (cámara) ────────────────────────────────────────────────────
 
-function UploadZone({ onVehiculo, escaneando, setEscaneando }) {
+function ScanButton({ onScanned, escaneando, setEscaneando }) {
   const ref = useRef();
 
   async function procesar(file) {
@@ -79,157 +68,66 @@ function UploadZone({ onVehiculo, escaneando, setEscaneando }) {
         body: JSON.stringify({ imagen: { data: b64, mediaType: file.type } }),
       });
       const d = await resp.json();
-      onVehiculo(d?.tipo_documento === "tarjeta_verde" && d.vehiculo ? d.vehiculo : null);
-    } catch { onVehiculo(null); }
+      onScanned(d?.tipo_documento === "tarjeta_verde" && d.vehiculo ? d.vehiculo : null);
+    } catch { onScanned(null); }
     finally { setEscaneando(false); }
   }
 
   return (
-    <div
-      onDrop={e => { e.preventDefault(); if (e.dataTransfer.files[0]) procesar(e.dataTransfer.files[0]); }}
-      onDragOver={e => e.preventDefault()}
-      onClick={() => !escaneando && ref.current.click()}
-      style={{ border: "1.5px dashed rgba(26,35,50,.18)", borderRadius: 10, padding: "18px 16px",
-        textAlign: "center", cursor: escaneando ? "wait" : "pointer",
-        background: "#FDFCFA", transition: "border-color .15s" }}
-      onMouseEnter={e => { if (!escaneando) e.currentTarget.style.borderColor = C.cerulean; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(26,35,50,.18)"; }}
-    >
+    <>
       <input ref={ref} type="file" accept="image/*" style={{ display: "none" }}
         onChange={e => e.target.files[0] && procesar(e.target.files[0])} />
-      {escaneando ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 24, height: 24, border: `3px solid rgba(58,124,165,.2)`,
+      <button
+        onClick={() => !escaneando && ref.current.click()}
+        title="Escanear tarjeta verde o título"
+        style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px",
+          background: escaneando ? "rgba(58,124,165,.08)" : "#FDFCFA",
+          border: "1px solid rgba(58,124,165,.3)", borderRadius: 7, cursor: escaneando ? "wait" : "pointer" }}>
+        {escaneando ? (
+          <div style={{ width: 13, height: 13, border: "2px solid rgba(58,124,165,.2)",
             borderTopColor: C.cerulean, borderRadius: "50%", animation: "spin .7s linear infinite" }} />
-          <span style={{ fontSize: 13, color: C.cerulean, fontFamily: "'Inter',sans-serif" }}>
-            Leyendo documento...
-          </span>
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.cerulean}
-            strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        ) : (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.cerulean}
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
           </svg>
-          <span style={{ fontSize: 13, fontWeight: 600, color: C.dark, fontFamily: "'Montserrat',sans-serif" }}>
-            Escaneá la tarjeta verde o título
-          </span>
-          <span style={{ fontSize: 11, color: C.muted, fontFamily: "'Inter',sans-serif" }}>
-            Scriba lee los datos del vehículo automáticamente
-          </span>
-        </div>
-      )}
-    </div>
+        )}
+        <span style={{ fontSize: 11, fontWeight: 600, color: C.cerulean,
+          fontFamily: "'Montserrat',sans-serif" }}>
+          {escaneando ? "Leyendo..." : "Escanear doc"}
+        </span>
+      </button>
+    </>
   );
 }
 
-function VehiculoCard({ v, onClear, onAnio }) {
-  const titulo = [v.marca, v.modelo].filter(Boolean).join(" ") || "Vehículo detectado";
-  const chips = [
-    v.anio     && { label: "Año",     valor: v.anio,                warn: !v.anio },
-    v.dominio  && { label: "Dominio", valor: v.dominio },
-    v.tipo_desc && { label: "Tipo",   valor: v.tipo_desc },
-    v.color    && { label: "Color",   valor: v.color },
-  ].filter(Boolean);
-  const extras = [
-    v.chasis && { label: "Chasis", valor: v.chasis },
-    v.motor  && { label: "Motor",  valor: v.motor  },
-  ].filter(Boolean);
+// ── Valor tabla DNRPA ─────────────────────────────────────────────────────────
 
-  return (
-    <div style={{ background: "rgba(58,124,165,.06)", border: "1px solid rgba(58,124,165,.2)",
-      borderRadius: 10, padding: "14px 16px" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 7, background: "rgba(58,124,165,.12)",
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={C.cerulean}
-            strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="1" y="3" width="15" height="13" rx="2"/>
-            <path d="M16 8h4l3 3v5h-7V8z"/>
-            <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-          </svg>
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.dark,
-            fontFamily: "'Montserrat',sans-serif" }}>{titulo}</div>
-
-          {/* chips principales */}
-          {chips.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-              {chips.map(({ label, valor }) => (
-                <div key={label} style={{ background: "#FDFCFA", border: "1px solid rgba(58,124,165,.2)",
-                  borderRadius: 6, padding: "3px 9px", display: "flex", gap: 5, alignItems: "baseline" }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase",
-                    letterSpacing: ".05em", color: C.muted, fontFamily: "'Montserrat',sans-serif" }}>
-                    {label}
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: C.dark,
-                    fontFamily: "'Montserrat',sans-serif" }}>{valor}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* chasis / motor */}
-          {extras.length > 0 && (
-            <div style={{ marginTop: 7, display: "flex", flexDirection: "column", gap: 2 }}>
-              {extras.map(({ label, valor }) => (
-                <div key={label} style={{ fontSize: 10, color: C.muted,
-                  fontFamily: "'Inter',sans-serif" }}>
-                  <span style={{ fontWeight: 700 }}>{label}:</span> {valor}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!v.anio && (
-            <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, color: "#c0392b", fontFamily: "'Inter',sans-serif",
-                flexShrink: 0 }}>⚠ Año no detectado:</span>
-              <input
-                type="number" min="1990" max="2026" placeholder="ej: 2010"
-                onChange={e => onAnio && onAnio(e.target.value)}
-                style={{ ...inp, width: 90, padding: "5px 10px",
-                  borderColor: "rgba(192,57,43,.35)", fontSize: 13 }}
-              />
-            </div>
-          )}
-        </div>
-        <button onClick={onClear} style={{ background: "none", border: "none", cursor: "pointer",
-          color: "rgba(26,35,50,.3)", fontSize: 20, lineHeight: 1, padding: 4, flexShrink: 0 }}>×</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Valor tabla DNRPA: búsqueda o manual ──────────────────────────────────────
-
-function TablaField({ vehiculo, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaOrigen }) {
-  const [buscando, setBuscando] = useState(false);
-  const [busquedaQ, setBusquedaQ] = useState("");
-  const [opciones, setOpciones] = useState([]);
+function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaOrigen }) {
+  const [buscando, setBuscando]     = useState(false);
+  const [busquedaQ, setBusquedaQ]   = useState("");
+  const [opciones, setOpciones]     = useState([]);
   const [dropAbierto, setDropAbierto] = useState(false);
   const wrapRef = useRef();
 
-  // Auto-lookup cuando llega vehiculo desde Scriba o cuando se ingresa el año manualmente
+  // Auto-lookup cuando q (marca+modelo) y anio (4 dígitos) están completos
   useEffect(() => {
-    if (!vehiculo) return;
-    const q = [vehiculo.marca, vehiculo.modelo].filter(Boolean).join(" ");
-    const a = vehiculo.anio ? String(vehiculo.anio) : anio;
-    if (q && a) autoLookup(q, a);
-  }, [vehiculo?.marca, vehiculo?.modelo, vehiculo?.anio]);
+    if (q && /^\d{4}$/.test(anio)) autoLookup(q, anio);
+  }, [q, anio]);
 
-  async function autoLookup(q, a) {
+  async function autoLookup(query, year) {
     setBuscando(true);
+    setTablaOrigen(null);
     try {
-      const r    = await fetch(`/api/dnrpa-valuacion?q=${encodeURIComponent(q)}&anio=${a}`);
+      const r    = await fetch(`/api/dnrpa-valuacion?q=${encodeURIComponent(query)}&anio=${year}`);
       const data = await r.json();
       const best = Array.isArray(data) ? data.find(d => d.valor) : null;
       if (best?.valor) {
         setTablaDNRPA(String(best.valor));
         setTablaOrigen({ tipo: "auto", label: `${best.marca} ${best.modelo}` });
       } else {
+        setTablaDNRPA("");
         setTablaOrigen({ tipo: "notfound" });
       }
     } catch {
@@ -239,18 +137,16 @@ function TablaField({ vehiculo, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, se
     }
   }
 
-  // Búsqueda manual con autocomplete
-  const buscarOpciones = useCallback(debounce(async (q) => {
-    if (!q || q.length < 2) { setOpciones([]); return; }
+  const buscarOpciones = useCallback(debounce(async (text) => {
+    if (!text || text.length < 2) { setOpciones([]); return; }
     try {
-      const a   = anio || (vehiculo?.anio ? String(vehiculo.anio) : "");
-      const url = `/api/dnrpa-valuacion?q=${encodeURIComponent(q)}${a ? `&anio=${a}` : ""}`;
+      const url = `/api/dnrpa-valuacion?q=${encodeURIComponent(text)}${anio ? `&anio=${anio}` : ""}`;
       const r   = await fetch(url);
       const d   = await r.json();
       setOpciones(Array.isArray(d) ? d : []);
       setDropAbierto(true);
     } catch { setOpciones([]); }
-  }, 350), [anio, vehiculo]);
+  }, 350), [anio]);
 
   useEffect(() => { buscarOpciones(busquedaQ); }, [busquedaQ, buscarOpciones]);
 
@@ -269,16 +165,14 @@ function TablaField({ vehiculo, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, se
     }
   }
 
-  // ── Render según estado ──────────────────────────────────────────────────────
-
   if (buscando) {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px",
         background: "rgba(58,124,165,.04)", border: "1px solid rgba(58,124,165,.15)", borderRadius: 8 }}>
-        <div style={{ width: 16, height: 16, border: "2px solid rgba(58,124,165,.2)",
+        <div style={{ width: 14, height: 14, border: "2px solid rgba(58,124,165,.2)",
           borderTopColor: C.cerulean, borderRadius: "50%", animation: "spin .7s linear infinite", flexShrink: 0 }} />
         <span style={{ fontSize: 13, color: C.cerulean, fontFamily: "'Inter',sans-serif" }}>
-          Buscando valor de tabla DNRPA...
+          Buscando en tabla DNRPA...
         </span>
       </div>
     );
@@ -290,10 +184,8 @@ function TablaField({ vehiculo, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, se
         borderRadius: 8, padding: "12px 14px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 12, color: "#27ae60", fontWeight: 700,
-              fontFamily: "'Montserrat',sans-serif", marginBottom: 2 }}>
-              ✓ Valor de tabla encontrado
-            </div>
+            <div style={{ fontSize: 11, color: "#27ae60", fontWeight: 700,
+              fontFamily: "'Montserrat',sans-serif", marginBottom: 3 }}>✓ Encontrado en tabla DNRPA</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: C.dark,
               fontFamily: "'Montserrat',sans-serif" }}>{fmt(parseMonto(tablaDNRPA))}</div>
           </div>
@@ -307,18 +199,17 @@ function TablaField({ vehiculo, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, se
     );
   }
 
-  // Not found o vacío
   return (
     <div ref={wrapRef}>
       {tablaOrigen?.tipo === "notfound" && (
         <div style={{ background: "rgba(201,169,97,.08)", border: "1px solid rgba(201,169,97,.3)",
-          borderRadius: "8px 8px 0 0", padding: "10px 14px", borderBottom: "none" }}>
-          <div style={{ fontSize: 12, color: "#a07c30", fontFamily: "'Inter',sans-serif", lineHeight: 1.5 }}>
+          borderRadius: "8px 8px 0 0", padding: "9px 14px", borderBottom: "none" }}>
+          <div style={{ fontSize: 11, color: "#a07c30", fontFamily: "'Inter',sans-serif", lineHeight: 1.5 }}>
             ⚠ No encontramos este vehículo en nuestra tabla.{" "}
             <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank" rel="noopener noreferrer"
               style={{ color: C.cerulean, fontWeight: 600, textDecoration: "none" }}>
               Consultá el estimador oficial →
-            </a>{" "}y pegá el valor de tabla acá.
+            </a>{" "}e ingresá el valor acá.
           </div>
         </div>
       )}
@@ -327,28 +218,25 @@ function TablaField({ vehiculo, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, se
           value={tablaDNRPA || busquedaQ}
           onChange={e => {
             const val = e.target.value;
-            // Si parece un número → es el valor manual
             if (/^[\d.,\s]*$/.test(val)) {
               setTablaDNRPA(val);
               setBusquedaQ("");
               setTablaOrigen(null);
             } else {
-              // Es texto → búsqueda autocomplete
               setBusquedaQ(val);
               setTablaDNRPA("");
               setTablaOrigen(null);
             }
           }}
           placeholder={tablaOrigen?.tipo === "notfound"
-            ? "Ingresá el valor de tabla o buscá el modelo..."
-            : "Ingresá el valor o buscá el modelo (ej: volkswagen gol)"}
+            ? "Pegá el valor de tabla o buscá el modelo..."
+            : "Se completa automático — o buscá el modelo manualmente"}
           style={{
             ...inp,
             borderRadius: tablaOrigen?.tipo === "notfound" ? "0 0 8px 8px" : 8,
             borderColor: tablaOrigen?.tipo === "notfound" ? "rgba(201,169,97,.4)" : "rgba(26,35,50,.14)",
           }}
         />
-
         {dropAbierto && opciones.length > 0 && (
           <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 100,
             background: "#FDFCFA", border: "1px solid rgba(26,35,50,.12)", borderRadius: 8,
@@ -384,28 +272,49 @@ function TablaField({ vehiculo, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, se
 // ── Componente principal ───────────────────────────────────────────────────────
 
 export function EstimadorDNRPA({ onBack }) {
-  const [tipo, setTipo]           = useState("particulares");
-  const [precioVenta, setPrecio]  = useState("");
-  const [tablaDNRPA, setTabla]    = useState("");
-  const [tablaOrigen, setOrigen]  = useState(null);
-  const [tablaATM, setTablaATM]   = useState("");
-  const [opcionales, setOpc]      = useState(
+  // Datos del vehículo — siempre editables
+  const [marca, setMarca]   = useState("");
+  const [modelo, setModelo] = useState("");
+  const [anio, setAnio]     = useState("");
+  // Datos extra leídos por Scriba (solo informativos)
+  const [escaneado, setEscaneado] = useState(null); // { dominio, chasis, motor, color }
+  const [escaneando, setEscaneando] = useState(false);
+  const [scanError, setScanError]   = useState(false);
+
+  // Operación
+  const [tipo, setTipo]         = useState("particulares");
+  const [precioVenta, setPrecio] = useState("");
+
+  // Tabla DNRPA
+  const [tablaDNRPA, setTabla]   = useState("");
+  const [tablaOrigen, setOrigen] = useState(null);
+
+  // Opcionales
+  const [opcionales, setOpc] = useState(
     Object.fromEntries(OPCIONALES.map(o => [o.id, { on: o.on, valor: o.valor }]))
   );
-  const [vehiculo, setVehiculo]   = useState(null);
-  const [escaneando, setEsc]      = useState(false);
-  const [scanError, setScanErr]   = useState(false);
+
   const [resultado, setResultado] = useState(null);
 
-  const anioVehiculo = vehiculo?.anio ? String(vehiculo.anio) : "";
+  // q para el auto-lookup: se arma con marca + modelo
+  const qLookup = [marca, modelo].filter(Boolean).join(" ");
 
-  function handleVehiculo(v) {
-    setVehiculo(v);
-    setScanErr(!v);
-    if (!v) { setTabla(""); setOrigen(null); }
+  function handleScanned(v) {
+    if (!v) { setScanError(true); return; }
+    setScanError(false);
+    if (v.marca)  setMarca(v.marca);
+    if (v.modelo) setModelo(v.modelo);
+    if (v.anio)   setAnio(String(v.anio));
+    // guardar datos extra para mostrar como referencia
+    setEscaneado({
+      dominio: v.dominio || "",
+      chasis:  v.chasis  || "",
+      motor:   v.motor   || "",
+      color:   v.color   || "",
+    });
   }
 
-  const toggleOpc = id => setOpc(p => ({ ...p, [id]: { ...p[id], on: !p[id].on } }));
+  const toggleOpc   = id  => setOpc(p => ({ ...p, [id]: { ...p[id], on: !p[id].on } }));
   const setOpcValor = (id, val) => {
     const n = parseInt(val.replace(/\D/g, "")) || 0;
     setOpc(p => ({ ...p, [id]: { ...p[id], valor: n } }));
@@ -414,21 +323,15 @@ export function EstimadorDNRPA({ onBack }) {
   function calcular() {
     const precio = parseMonto(precioVenta);
     if (!precio) return;
-
-    const tablaD  = tablaDNRPA ? parseMonto(tablaDNRPA) : 0;
-    const baseD   = tablaD ? Math.max(precio, tablaD) : precio;
-    const baseA   = tablaATM ? Math.max(precio, parseMonto(tablaATM)) : baseD;
-
+    const tablaD = tablaDNRPA ? parseMonto(tablaDNRPA) : 0;
+    const baseD  = tablaD ? Math.max(precio, tablaD) : precio;
     const arancelDNRPA = baseD * ARANCEL_DNRPA;
-    const sellosMza    = baseA * SELLOS[tipo];
-
+    const sellosMza    = baseD * SELLOS[tipo];
     const extras = OPCIONALES
       .filter(o => opcionales[o.id].on)
       .map(o => ({ label: o.label, valor: opcionales[o.id].valor }));
-
     setResultado({
-      precio, baseD, baseA, tablaD,
-      arancelDNRPA, sellosMza, extras,
+      precio, baseD, tablaD, arancelDNRPA, sellosMza, extras,
       total: arancelDNRPA + sellosMza + ARANCEL_NRO1 + extras.reduce((s, x) => s + x.valor, 0),
       tasaSellos: SELLOS[tipo] * 100, tipo,
     });
@@ -443,42 +346,91 @@ export function EstimadorDNRPA({ onBack }) {
         <div style={{ background: C.dark, padding: "0 24px", height: 52, display: "flex",
           alignItems: "center", gap: 16, flexShrink: 0 }}>
           <button onClick={onBack} style={{ background: "transparent", border: "none",
-            color: "rgba(253,252,250,.6)", cursor: "pointer", fontSize: 13, fontFamily: "'Inter',sans-serif" }}>
+            color: "rgba(253,252,250,.6)", cursor: "pointer", fontSize: 13,
+            fontFamily: "'Inter',sans-serif" }}>
             ← Utilidades
           </button>
-          <span style={{ color: "#FDFCFA", fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 14 }}>
-            Estimador DNRPA
-          </span>
+          <span style={{ color: "#FDFCFA", fontFamily: "'Montserrat',sans-serif",
+            fontWeight: 700, fontSize: 14 }}>Estimador DNRPA</span>
           <span style={{ fontSize: 10, background: "rgba(58,124,165,.25)", color: "#7bbde0",
             padding: "2px 9px", borderRadius: 10, fontFamily: "'Montserrat',sans-serif",
-            fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase" }}>
-            Mendoza
-          </span>
+            fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase" }}>Mendoza</span>
         </div>
 
         {/* Contenido */}
         <div style={{ flex: 1, overflowY: "auto", padding: "28px 32px" }}>
           <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 22 }}>
 
-            {/* 1. Documento */}
+            {/* 1. Vehículo */}
             <section>
-              <SecTitle>Vehículo</SecTitle>
-              {vehiculo ? (
-                <VehiculoCard
-                  v={vehiculo}
-                  onClear={() => handleVehiculo(null)}
-                  onAnio={a => setVehiculo(prev => ({ ...prev, anio: a }))}
+              <SecTitle action={
+                <ScanButton
+                  onScanned={handleScanned}
+                  escaneando={escaneando}
+                  setEscaneando={setEscaneando}
                 />
-              ) : (
-                <>
-                  <UploadZone onVehiculo={handleVehiculo} escaneando={escaneando} setEscaneando={setEsc} />
-                  {scanError && (
-                    <p style={{ fontSize: 11, color: "#c0392b", fontFamily: "'Inter',sans-serif",
-                      marginTop: 6, textAlign: "center" }}>
-                      No se pudo leer el documento. Intentá con otra foto.
-                    </p>
-                  )}
-                </>
+              }>
+                Vehículo
+              </SecTitle>
+
+              <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                <div style={{ flex: 2 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.muted,
+                    fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Marca</div>
+                  <input value={marca} onChange={e => setMarca(e.target.value.toUpperCase())}
+                    placeholder="VOLKSWAGEN" style={{ ...inp }} />
+                </div>
+                <div style={{ flex: 3 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.muted,
+                    fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Modelo</div>
+                  <input value={modelo} onChange={e => setModelo(e.target.value.toUpperCase())}
+                    placeholder="GOL TREND 1.6" style={{ ...inp }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.muted,
+                    fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Año</div>
+                  <input
+                    value={anio}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setAnio(val);
+                      // resetear tabla cuando cambia el año
+                      if (val.length < 4) { setTabla(""); setOrigen(null); }
+                    }}
+                    placeholder="2010"
+                    maxLength={4}
+                    style={{ ...inp, textAlign: "center" }}
+                  />
+                </div>
+              </div>
+
+              {/* Datos extra de Scriba */}
+              {escaneado && (escaneado.dominio || escaneado.chasis || escaneado.motor || escaneado.color) && (
+                <div style={{ background: "rgba(58,124,165,.05)", border: "1px solid rgba(58,124,165,.15)",
+                  borderRadius: 8, padding: "9px 12px", display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
+                  {[
+                    escaneado.dominio && ["Dominio", escaneado.dominio],
+                    escaneado.color   && ["Color",   escaneado.color],
+                    escaneado.chasis  && ["Chasis",  escaneado.chasis],
+                    escaneado.motor   && ["Motor",   escaneado.motor],
+                  ].filter(Boolean).map(([label, valor]) => (
+                    <div key={label} style={{ display: "flex", gap: 5, alignItems: "baseline" }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase",
+                        letterSpacing: ".05em", color: C.muted, fontFamily: "'Montserrat',sans-serif" }}>
+                        {label}
+                      </span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: C.dark,
+                        fontFamily: "'Montserrat',sans-serif" }}>{valor}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {scanError && (
+                <p style={{ fontSize: 11, color: "#c0392b", fontFamily: "'Inter',sans-serif",
+                  marginTop: 6, textAlign: "center" }}>
+                  No se pudo leer el documento. Intentá con otra foto.
+                </p>
               )}
             </section>
 
@@ -487,16 +439,18 @@ export function EstimadorDNRPA({ onBack }) {
               <SecTitle>Tipo de transferencia</SecTitle>
               <div style={{ display: "flex", gap: 8 }}>
                 {[
-                  ["particulares", "Entre particulares",        "Sellos: 1,25%"],
+                  ["particulares", "Entre particulares",           "Sellos: 1,25%"],
                   ["habitualista", "Desde habitualista inscripto", "Sellos: 1%"],
                 ].map(([k, lbl, sub]) => (
                   <button key={k} onClick={() => setTipo(k)}
                     style={{ flex: 1, padding: "11px 14px", borderRadius: 10, border: "1.5px solid",
                       borderColor: tipo === k ? C.cerulean : "rgba(26,35,50,.12)",
-                      background: tipo === k ? "rgba(58,124,165,.06)" : "#FDFCFA", cursor: "pointer", textAlign: "left" }}>
+                      background: tipo === k ? "rgba(58,124,165,.06)" : "#FDFCFA",
+                      cursor: "pointer", textAlign: "left" }}>
                     <div style={{ fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 12,
                       color: tipo === k ? C.cerulean : C.dark }}>{lbl}</div>
-                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: C.muted, marginTop: 2 }}>{sub}</div>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: C.muted,
+                      marginTop: 2 }}>{sub}</div>
                   </button>
                 ))}
               </div>
@@ -504,30 +458,34 @@ export function EstimadorDNRPA({ onBack }) {
 
             {/* 3. Precio */}
             <section>
-              <Label sub="El valor que figura en el formulario 08">
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.muted,
+                fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>
                 Precio de venta declarado *
-              </Label>
+              </div>
               <input value={precioVenta} onChange={e => setPrecio(e.target.value)}
                 placeholder="Ej: 4000000" style={{ ...inp }} />
+              <div style={{ fontSize: 11, color: C.muted, fontFamily: "'Inter',sans-serif", marginTop: 4 }}>
+                El valor que figura en el formulario 08
+              </div>
             </section>
 
             {/* 4. Valor tabla DNRPA */}
             <section>
-              <Label sub={
-                !tablaDNRPA
-                  ? "El DNRPA usa el mayor entre el precio declarado y el valor fiscal del vehículo"
-                  : "Base del arancel DNRPA"
-              }>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.muted,
+                fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>
                 Valor de tabla DNRPA
-              </Label>
+              </div>
               <TablaField
-                vehiculo={vehiculo}
-                anio={anioVehiculo}
+                q={qLookup}
+                anio={anio}
                 tablaDNRPA={tablaDNRPA}
                 setTablaDNRPA={setTabla}
                 tablaOrigen={tablaOrigen}
                 setTablaOrigen={setOrigen}
               />
+              <div style={{ fontSize: 11, color: C.muted, fontFamily: "'Inter',sans-serif", marginTop: 4 }}>
+                Base del arancel DNRPA — se busca automático al ingresar marca, modelo y año
+              </div>
             </section>
 
             {/* 5. Opcionales */}
@@ -535,8 +493,8 @@ export function EstimadorDNRPA({ onBack }) {
               <SecTitle>Gastos adicionales</SecTitle>
               {OPCIONALES.map(o => (
                 <div key={o.id} style={{ background: "#FDFCFA", border: "1px solid rgba(26,35,50,.08)",
-                  borderRadius: 8, padding: "11px 14px", display: "flex", alignItems: "center", gap: 12,
-                  marginBottom: 8 }}>
+                  borderRadius: 8, padding: "11px 14px", display: "flex", alignItems: "center",
+                  gap: 12, marginBottom: 8 }}>
                   <input type="checkbox" checked={opcionales[o.id].on} onChange={() => toggleOpc(o.id)}
                     style={{ width: 16, height: 16, accentColor: C.cerulean, cursor: "pointer", flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
@@ -555,12 +513,13 @@ export function EstimadorDNRPA({ onBack }) {
               ))}
             </section>
 
-            {/* Botón */}
+            {/* Botón calcular */}
             <button onClick={calcular} disabled={!precioVenta.trim()}
               style={{ padding: "13px 0", borderRadius: 10, border: "none",
                 background: precioVenta.trim() ? C.dark : "rgba(26,35,50,.2)",
-                color: "#FDFCFA", fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 14,
-                cursor: precioVenta.trim() ? "pointer" : "default", letterSpacing: ".02em" }}>
+                color: "#FDFCFA", fontFamily: "'Montserrat',sans-serif", fontWeight: 700,
+                fontSize: 14, cursor: precioVenta.trim() ? "pointer" : "default",
+                letterSpacing: ".02em" }}>
               Calcular
             </button>
 
@@ -570,12 +529,14 @@ export function EstimadorDNRPA({ onBack }) {
                 borderRadius: 12, overflow: "hidden", marginBottom: 32 }}>
 
                 <div style={{ background: C.dark, padding: "14px 20px" }}>
-                  <div style={{ fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 13,
-                    color: "#FDFCFA" }}>Estimación de costos</div>
+                  <div style={{ fontFamily: "'Montserrat',sans-serif", fontWeight: 700,
+                    fontSize: 13, color: "#FDFCFA" }}>Estimación de costos</div>
                   <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11,
                     color: "rgba(253,252,250,.5)", marginTop: 2 }}>
-                    {vehiculo ? `${[vehiculo.marca,vehiculo.modelo].filter(Boolean).join(" ")}${vehiculo.anio ? ` (${vehiculo.anio})` : ""} · ` : ""}
-                    {resultado.tipo === "particulares" ? "Entre particulares" : "Habitualista"} · Mendoza · 2025
+                    {[marca, modelo].filter(Boolean).join(" ")}
+                    {anio ? ` (${anio})` : ""}{" · "}
+                    {resultado.tipo === "particulares" ? "Entre particulares" : "Habitualista"}{" · "}
+                    Mendoza · 2026
                   </div>
                 </div>
 
@@ -589,7 +550,7 @@ export function EstimadorDNRPA({ onBack }) {
                   />
                   <ResultRow
                     label={`Impuesto de sellos Mendoza (${resultado.tasaSellos}%)`}
-                    sub={`base: ${fmt(resultado.baseA)}`}
+                    sub={`base: ${fmt(resultado.baseD)}`}
                     valor={fmt(resultado.sellosMza)}
                   />
                   <ResultRow
@@ -600,7 +561,6 @@ export function EstimadorDNRPA({ onBack }) {
                   {resultado.extras.map(x => (
                     <ResultRow key={x.label} label={x.label} valor={fmt(x.valor)} />
                   ))}
-
                   <div style={{ height: 1, background: "rgba(26,35,50,.1)", margin: "10px 0 4px" }} />
                   <ResultRow label="Total estimado" valor={fmt(resultado.total)} bold />
                 </div>
@@ -611,9 +571,11 @@ export function EstimadorDNRPA({ onBack }) {
                     borderRadius: 8 }}>
                     <p style={{ fontSize: 11, color: "#a07c30", fontFamily: "'Inter',sans-serif",
                       margin: 0, lineHeight: 1.5 }}>
-                      ⚠ El arancel se calculó sobre el precio declarado porque no se ingresó el valor de tabla DNRPA.{" "}
+                      ⚠ No se ingresó el valor de tabla DNRPA — el arancel se calculó sobre el precio
+                      declarado y puede ser menor al real.{" "}
                       <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank"
-                        rel="noopener noreferrer" style={{ color: C.cerulean, fontWeight: 600, textDecoration: "none" }}>
+                        rel="noopener noreferrer"
+                        style={{ color: C.cerulean, fontWeight: 600, textDecoration: "none" }}>
                         Verificar en el estimador oficial →
                       </a>
                     </p>
@@ -625,7 +587,8 @@ export function EstimadorDNRPA({ onBack }) {
                   <p style={{ fontSize: 10, color: C.muted, fontFamily: "'Inter',sans-serif",
                     lineHeight: 1.6, margin: 0 }}>
                     Estimación no oficial basada en tabla DNRPA 2026. Res. MJ 273/2024 — arancel 1% · Ley Mendoza 9597/2024 — sellos {resultado.tasaSellos}%.{" "}
-                    <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank" rel="noopener noreferrer"
+                    <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank"
+                      rel="noopener noreferrer"
                       style={{ color: C.cerulean, textDecoration: "none", fontWeight: 600 }}>
                       Consultá valores oficiales en el DNRPA →
                     </a>
