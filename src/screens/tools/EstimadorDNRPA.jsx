@@ -128,7 +128,8 @@ function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaO
         setTablaOrigen({ tipo: "notfound" });
         return;
       }
-      const best = data.find(d => d.valor);
+      // preferir match exacto de año sobre fallback
+      const best = data.find(d => d.valor && !d.esFallback) || data.find(d => d.valor);
       if (best?.valor) {
         setTablaDNRPA(String(best.valor));
         setTablaOrigen({
@@ -205,7 +206,7 @@ function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaO
               fontFamily: "'Montserrat',sans-serif" }}>{fmt(parseMonto(tablaDNRPA))}</div>
             {tablaOrigen.esFallback && (
               <div style={{ fontSize: 10, color: "#a07c30", fontFamily: "'Inter',sans-serif", marginTop: 3 }}>
-                ⚠ El PDF no tiene valor para {tablaOrigen.anio} — se usó el año más cercano disponible ({tablaOrigen.anioUsado}).{" "}
+                ⚠ La tabla DNRPA no tiene valor exacto para {tablaOrigen.anio} — se usó el año más cercano disponible ({tablaOrigen.anioUsado}).{" "}
                 <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank"
                   rel="noopener noreferrer" style={{ color: C.cerulean, textDecoration: "none", fontWeight: 600 }}>
                   Verificar →
@@ -333,8 +334,8 @@ export function EstimadorDNRPA({ onBack }) {
 
   const [resultado, setResultado] = useState(null);
 
-  // q para el auto-lookup: se arma con marca + modelo
-  const qLookup = [marca, modelo].filter(Boolean).join(" ");
+  // q para el auto-lookup: marca + modelo + tipo_desc para filtrar la variante correcta
+  const qLookup = [marca, modelo, tipo_desc].filter(Boolean).join(" ");
 
   function handleScanned(v) {
     if (!v) { setScanError(true); return; }
