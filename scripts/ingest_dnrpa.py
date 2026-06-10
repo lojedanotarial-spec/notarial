@@ -130,7 +130,7 @@ def parse_pdf(pdf_bytes):
                     "marca":         marca or desc.split()[0],
                     "modelo":        modelo if modelo else desc,
                     "tipo_desc":     tipo_desc,
-                    "valores":       json.dumps(valores),
+                    "valores":       valores,   # dict, no json.dumps
                     "tabla_fecha":   str(date.today()),
                 })
 
