@@ -131,9 +131,14 @@ function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaO
       const best = data.find(d => d.valor);
       if (best?.valor) {
         setTablaDNRPA(String(best.valor));
-        setTablaOrigen({ tipo: "auto", label: `${best.marca} ${best.modelo}` });
+        setTablaOrigen({
+          tipo: "auto",
+          label: `${best.marca} ${best.modelo}`,
+          anioUsado: best.anioUsado,
+          esFallback: best.esFallback,
+          anio: year,
+        });
       } else {
-        // modelo encontrado pero sin valor para ese año
         const found = data[0];
         setTablaDNRPA("");
         setTablaOrigen({ tipo: "sinvalor", label: `${found.marca} ${found.modelo}`, anio: year });
@@ -193,9 +198,20 @@ function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaO
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 11, color: "#27ae60", fontWeight: 700,
-              fontFamily: "'Montserrat',sans-serif", marginBottom: 3 }}>✓ Encontrado en tabla DNRPA</div>
+              fontFamily: "'Montserrat',sans-serif", marginBottom: 3 }}>
+              ✓ Encontrado en tabla DNRPA
+            </div>
             <div style={{ fontSize: 20, fontWeight: 700, color: C.dark,
               fontFamily: "'Montserrat',sans-serif" }}>{fmt(parseMonto(tablaDNRPA))}</div>
+            {tablaOrigen.esFallback && (
+              <div style={{ fontSize: 10, color: "#a07c30", fontFamily: "'Inter',sans-serif", marginTop: 3 }}>
+                ⚠ El PDF no tiene valor para {tablaOrigen.anio} — se usó el año más cercano disponible ({tablaOrigen.anioUsado}).{" "}
+                <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank"
+                  rel="noopener noreferrer" style={{ color: C.cerulean, textDecoration: "none", fontWeight: 600 }}>
+                  Verificar →
+                </a>
+              </div>
+            )}
           </div>
           <button onClick={() => { setTablaDNRPA(""); setTablaOrigen(null); }}
             style={{ fontSize: 11, color: C.muted, background: "none", border: "1px solid rgba(26,35,50,.12)",
@@ -293,9 +309,10 @@ function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaO
 
 export function EstimadorDNRPA({ onBack }) {
   // Datos del vehículo — siempre editables
-  const [marca, setMarca]   = useState("");
-  const [modelo, setModelo] = useState("");
-  const [anio, setAnio]     = useState("");
+  const [marca, setMarca]         = useState("");
+  const [modelo, setModelo]       = useState("");
+  const [anio, setAnio]           = useState("");
+  const [tipo_desc, setTipoDesc]  = useState("");
   // Datos extra leídos por Scriba (solo informativos)
   const [escaneado, setEscaneado] = useState(null); // { dominio, chasis, motor, color }
   const [escaneando, setEscaneando] = useState(false);
@@ -322,9 +339,10 @@ export function EstimadorDNRPA({ onBack }) {
   function handleScanned(v) {
     if (!v) { setScanError(true); return; }
     setScanError(false);
-    if (v.marca)  setMarca(v.marca);
-    if (v.modelo) setModelo(v.modelo);
-    if (v.anio)   setAnio(String(v.anio));
+    if (v.marca)     setMarca(v.marca);
+    if (v.modelo)    setModelo(v.modelo);
+    if (v.anio)      setAnio(String(v.anio));
+    if (v.tipo_desc) setTipoDesc(v.tipo_desc);
     // guardar datos extra para mostrar como referencia
     setEscaneado({
       dominio:   v.dominio   || "",
@@ -394,37 +412,48 @@ export function EstimadorDNRPA({ onBack }) {
                 Vehículo
               </SecTitle>
 
-              <div style={{ background: "white", border: "1px solid rgba(26,35,50,.12)",
-                borderRadius: 10, padding: "14px 14px 10px", marginBottom: 10 }}>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <div style={{ flex: 2 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase",
-                      letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Marca</div>
-                    <input value={marca} onChange={e => { setMarca(e.target.value.toUpperCase()); setTabla(""); setOrigen(null); }}
-                      placeholder="VOLKSWAGEN" style={{ ...inp, background: "#f8f7f4" }} />
-                  </div>
-                  <div style={{ flex: 3 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase",
-                      letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Modelo</div>
-                    <input value={modelo} onChange={e => { setModelo(e.target.value.toUpperCase()); setTabla(""); setOrigen(null); }}
-                      placeholder="GOL TREND 1.6" style={{ ...inp, background: "#f8f7f4" }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase",
-                      letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Año</div>
-                    <input
-                      value={anio}
-                      onChange={e => {
-                        const val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                        setAnio(val);
-                        if (val.length < 4) { setTabla(""); setOrigen(null); }
-                      }}
-                      placeholder="2010"
-                      maxLength={4}
-                      style={{ ...inp, textAlign: "center", background: "#f8f7f4" }}
-                    />
-                  </div>
+              <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                <div style={{ flex: 2 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.dark, textTransform: "uppercase",
+                    letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Marca</div>
+                  <input value={marca} onChange={e => { setMarca(e.target.value.toUpperCase()); setTabla(""); setOrigen(null); }}
+                    placeholder="Ej: VOLKSWAGEN"
+                    style={{ ...inp, border: "1.5px solid rgba(26,35,50,.25)", background: "#fff" }} />
                 </div>
+                <div style={{ flex: 3 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.dark, textTransform: "uppercase",
+                    letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Modelo</div>
+                  <input value={modelo} onChange={e => { setModelo(e.target.value.toUpperCase()); setTabla(""); setOrigen(null); }}
+                    placeholder="Ej: GOL TREND 1.6"
+                    style={{ ...inp, border: "1.5px solid rgba(26,35,50,.25)", background: "#fff" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.dark, textTransform: "uppercase",
+                    letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Año</div>
+                  <input
+                    value={anio}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setAnio(val);
+                      if (val.length < 4) { setTabla(""); setOrigen(null); }
+                    }}
+                    placeholder="2010"
+                    maxLength={4}
+                    style={{ ...inp, textAlign: "center", border: "1.5px solid rgba(26,35,50,.25)", background: "#fff" }}
+                  />
+                </div>
+              </div>
+
+              {/* Tipo de carrocería */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.dark, textTransform: "uppercase",
+                  letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Tipo</div>
+                <input
+                  value={tipo_desc}
+                  onChange={e => setTipoDesc(e.target.value.toUpperCase())}
+                  placeholder="Ej: SEDAN 5 PUERTAS, HATCHBACK, SUV, PICKUP"
+                  style={{ ...inp, border: "1.5px solid rgba(26,35,50,.25)", background: "#fff" }}
+                />
               </div>
 
               {/* Datos extra de Scriba */}

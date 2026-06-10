@@ -16,9 +16,30 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function extractValor(valores, anio) {
-  if (!valores || !anio) return null;
+  if (!valores) return { valor: null, anioUsado: null };
+  if (!anio)    return { valor: null, anioUsado: null };
+
   const key = String(anio).toLowerCase() === "0km" ? "0km" : String(anio);
-  return valores[key] ?? null;
+
+  // Año exacto disponible
+  if (valores[key] != null) return { valor: valores[key], anioUsado: key };
+
+  // Fallback: año más cercano disponible
+  const yearNum = parseInt(anio);
+  if (isNaN(yearNum)) return { valor: null, anioUsado: null };
+
+  const disponibles = Object.keys(valores)
+    .filter(k => k !== "0km" && /^\d{4}$/.test(k))
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  if (disponibles.length === 0) return { valor: null, anioUsado: null };
+
+  // Tomar el más cercano (si el año pedido es más viejo que todos, usar el más antiguo)
+  const closest = disponibles.reduce((prev, curr) =>
+    Math.abs(curr - yearNum) < Math.abs(prev - yearNum) ? curr : prev
+  );
+  return { valor: valores[String(closest)], anioUsado: String(closest), esFallback: true };
 }
 
 export default async function handler(req, res) {
@@ -38,21 +59,20 @@ export default async function handler(req, res) {
 
     if (error || !data) return res.json(null);
 
-    const valor = extractValor(data.valores, anio);
+    const { valor, anioUsado, esFallback } = extractValor(data.valores, anio);
     const { valores: _, ...rest } = data;
-    return res.json({ ...rest, valor, anio: anio ?? null });
+    return res.json({ ...rest, valor, anio: anio ?? null, anioUsado, esFallback: !!esFallback });
   }
 
   // ── Búsqueda por texto ─────────────────────────────────────────────────────
   if (q) {
-    const terms = q.trim().split(/\s+/).filter(Boolean).slice(0, 6); // máximo 6 términos
+    const terms = q.trim().split(/\s+/).filter(Boolean).slice(0, 6);
 
     let query = supabase
       .from("dnrpa_valuaciones")
       .select("mtm, marca, modelo, tipo_desc, tipo_vehiculo, valores")
       .limit(12);
 
-    // AND de todos los términos sobre search_text (columna generada = marca || ' ' || modelo)
     for (const term of terms) {
       query = query.ilike("search_text", `%${term}%`);
     }
@@ -61,9 +81,9 @@ export default async function handler(req, res) {
     if (error) return res.status(500).json({ error: error.message });
 
     const results = (data || []).map(row => {
-      const valor = extractValor(row.valores, anio);
+      const { valor, anioUsado, esFallback } = extractValor(row.valores, anio);
       const { valores: _, ...rest } = row;
-      return { ...rest, valor, anio: anio ?? null };
+      return { ...rest, valor, anio: anio ?? null, anioUsado, esFallback: !!esFallback };
     });
 
     return res.json(results);
