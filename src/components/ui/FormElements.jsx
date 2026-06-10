@@ -1,10 +1,11 @@
 ﻿import { C } from "../../constants";
 
-export function Fg({ label, children, full }) {
+export function Fg({ label, children, full, alerta }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:4, gridColumn:full?"1/-1":undefined }}>
-      <label style={{ fontSize:11, fontWeight:500, color:C.dark, fontFamily:"'Inter', sans-serif" }}>
+      <label style={{ fontSize:11, fontWeight:500, color: alerta ? "#c0392b" : C.dark, fontFamily:"'Inter', sans-serif", display:"flex", alignItems:"center", gap:4 }}>
         {label}
+        {alerta && <span style={{ color:"#c0392b", fontWeight:700 }}>*</span>}
       </label>
       {children}
     </div>

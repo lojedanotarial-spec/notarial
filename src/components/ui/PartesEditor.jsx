@@ -695,9 +695,13 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     }}
                     placeholder="dd/mm/aaaa" maxLength={10}/>
                 </Fg>
-                <Fg label="Función en el acto">
+                <Fg label="Función en el acto" alerta={!!(rolesContextuales?.length && !p.rol)}>
                   {rolesContextuales?.length ? (
-                    <select style={inp} value={p.rol}
+                    <select
+                      style={{ ...inp,
+                        ...((!p.rol) ? { borderColor:"#e07070", boxShadow:"0 0 0 3px rgba(224,112,112,0.12)" } : {})
+                      }}
+                      value={p.rol}
                       onChange={e => upd(p.id, { rol: e.target.value })}>
                       <option value="">— sin especificar —</option>
                       {rolesContextuales.filter(Boolean).map(r => (

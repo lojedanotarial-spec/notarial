@@ -576,21 +576,33 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               <PanelSection
                 label="Partes"
                 onClick={() => setModal("partes")}
-                alerta={partes.some(p => !p.apellido || !p.nombre)}
+                alerta={
+                  partes.some(p => !p.apellido || !p.nombre) ||
+                  !!(ROLES_CONTEXTUALES[templateSlug] && partes.some(p => !p.rol))
+                }
               >
                 {partes.map((p, i) => {
                   const a0 = p.apellido ? p.apellido[0].toUpperCase() : "?";
                   const n0 = p.nombre   ? p.nombre[0].toUpperCase()   : "";
+                  const rolFaltante = !!(ROLES_CONTEXTUALES[templateSlug] && !p.rol);
                   return (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3, minWidth: 0 }}>
                       <div style={{
-                        width: 22, height: 22, borderRadius: "50%", background: "rgba(58,124,165,.12)",
+                        width: 22, height: 22, borderRadius: "50%",
+                        background: rolFaltante ? "rgba(192,57,43,.1)" : "rgba(58,124,165,.12)",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 9, fontWeight: 700, color: C.cerulean, flexShrink: 0,
+                        fontSize: 9, fontWeight: 700,
+                        color: rolFaltante ? "#c0392b" : C.cerulean,
+                        flexShrink: 0,
                       }}>{a0 + n0}</div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                         {p.apellido || "Sin nombre"}{p.nombre ? ", " + p.nombre : ""}
                       </span>
+                      {rolFaltante && (
+                        <span style={{ fontSize: 10, color: "#c0392b", background: "rgba(192,57,43,.08)", border: "1px solid rgba(192,57,43,.2)", borderRadius: 3, padding: "1px 5px", fontWeight: 600, flexShrink: 0 }}>
+                          sin rol
+                        </span>
+                      )}
                     </div>
                   );
                 })}
