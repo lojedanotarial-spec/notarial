@@ -86,29 +86,6 @@ def parse_vals(vals_str):
     return out
 
 
-def page_lines(page):
-    """
-    extract_text() trunca filas muy anchas (tabla de 36 cols).
-    Usamos extract_words() con posiciones X/Y para reconstruir
-    cada fila completa independientemente del ancho de página.
-    """
-    words = page.extract_words(x_tolerance=4, y_tolerance=4, keep_blank_chars=False)
-    if not words:
-        return []
-
-    # Agrupar por posición Y (tolerancia ±2 pts)
-    rows = {}
-    for w in words:
-        y_key = round(w["top"] / 2) * 2
-        rows.setdefault(y_key, []).append(w)
-
-    lines = []
-    for y_key in sorted(rows):
-        line = " ".join(w["text"] for w in sorted(rows[y_key], key=lambda w: w["x0"]))
-        lines.append(line.strip())
-    return lines
-
-
 def parse_pdf(pdf_bytes):
     records  = []
     seen_mtm = set()
@@ -121,7 +98,12 @@ def parse_pdf(pdf_bytes):
             if page_num % 25 == 0:
                 print(f"  Página {page_num}/{total} — {len(records)} registros")
 
-            for line in page_lines(page):
+            text = page.extract_text()
+            if not text:
+                continue
+
+            for raw_line in text.split('\n'):
+                line = raw_line.strip()
                 if not line:
                     continue
 
@@ -130,10 +112,10 @@ def parse_pdf(pdf_bytes):
                     _, mtm, tipo_v, desc, vals_str = m.groups()
                     valores = parse_vals(vals_str)
                 else:
-                    m = LINE_RE_NOVALS.match(line)
-                    if not m:
+                    m2 = LINE_RE_NOVALS.match(line)
+                    if not m2:
                         continue
-                    _, mtm, tipo_v, desc = m.groups()
+                    _, mtm, tipo_v, desc = m2.groups()
                     valores = {}
 
                 if mtm in seen_mtm:
