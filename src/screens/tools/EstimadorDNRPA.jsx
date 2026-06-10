@@ -10,6 +10,17 @@ const OPCIONALES = [
   { id: "gestoria",     label: "Gestoría / mandatario", valor: 75000, nota: "Opcional. Variable según gestor y zona.",        on: false },
 ];
 
+const TIPOS_CARROCERIA = [
+  "SEDAN 2 PUERTAS", "SEDAN 3 PUERTAS", "SEDAN 4 PUERTAS", "SEDAN 5 PUERTAS",
+  "HATCHBACK", "HATCHBACK 3 PUERTAS", "HATCHBACK 5 PUERTAS",
+  "RURAL 3 PUERTAS", "RURAL 5 PUERTAS",
+  "SUV", "SUV 5 PUERTAS",
+  "PICKUP", "PICKUP DOBLE CABINA", "PICKUP SIMPLE CABINA",
+  "CAMIONETA", "FURGON", "FURGONETA", "MINIVAN", "VAN",
+  "COUPE", "CONVERTIBLE", "ROADSTER",
+  "MOTOCICLETA", "CUATRICICLO", "TRICICLO",
+];
+
 const fmt = n => n == null ? "—" : "$ " + Math.round(n).toLocaleString("es-AR");
 function parseMonto(s) {
   const n = parseFloat(String(s).replace(/\./g, "").replace(",", ".").replace(/[^0-9.]/g, ""));
@@ -54,6 +65,68 @@ function GroupLabel({ children }) {
       borderTop: "1px solid rgba(26,35,50,.07)", borderBottom: "1px solid rgba(26,35,50,.04)" }}>
       <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase",
         color: "rgba(26,35,50,.35)", fontFamily: "'Montserrat',sans-serif" }}>{children}</span>
+    </div>
+  );
+}
+
+// ── Tipo de carrocería con autocomplete ───────────────────────────────────────
+
+function TipoField({ value, onChange }) {
+  const [open, setOpen]   = useState(false);
+  const [text, setText]   = useState(value);
+  const wrapRef           = useRef();
+
+  useEffect(() => { setText(value); }, [value]);
+
+  useEffect(() => {
+    const fn = e => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", fn);
+    return () => document.removeEventListener("mousedown", fn);
+  }, []);
+
+  const filtrados = text
+    ? TIPOS_CARROCERIA.filter(t => t.includes(text.toUpperCase()))
+    : TIPOS_CARROCERIA;
+
+  function seleccionar(tipo) {
+    setText(tipo);
+    onChange(tipo);
+    setOpen(false);
+  }
+
+  function handleChange(e) {
+    const val = e.target.value.toUpperCase();
+    setText(val);
+    onChange(val);
+    setOpen(true);
+  }
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <input
+        value={text}
+        onChange={handleChange}
+        onFocus={() => setOpen(true)}
+        placeholder="Ej: SEDAN 5 PUERTAS, SUV, PICKUP"
+        style={{ ...inp, border: "1.5px solid rgba(26,35,50,.25)", background: "#fff" }}
+      />
+      {open && filtrados.length > 0 && (
+        <div style={{ position: "absolute", top: "calc(100% + 3px)", left: 0, right: 0, zIndex: 200,
+          background: "#FDFCFA", border: "1px solid rgba(26,35,50,.14)", borderRadius: 8,
+          boxShadow: "0 4px 16px rgba(26,35,50,.1)", maxHeight: 220, overflowY: "auto" }}>
+          {filtrados.map(t => (
+            <button key={t} onMouseDown={() => seleccionar(t)}
+              style={{ display: "block", width: "100%", textAlign: "left", padding: "9px 14px",
+                background: "transparent", border: "none", borderBottom: "1px solid rgba(26,35,50,.05)",
+                fontSize: 13, color: C.dark, fontFamily: "'Montserrat',sans-serif",
+                fontWeight: 500, cursor: "pointer" }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(58,124,165,.06)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -466,11 +539,9 @@ export function EstimadorDNRPA({ onBack }) {
               <div style={{ marginBottom: 10 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: C.dark, textTransform: "uppercase",
                   letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Tipo</div>
-                <input
+                <TipoField
                   value={tipo_desc}
-                  onChange={e => setTipoDesc(e.target.value.toUpperCase())}
-                  placeholder="Ej: SEDAN 5 PUERTAS, HATCHBACK, SUV, PICKUP"
-                  style={{ ...inp, border: "1.5px solid rgba(26,35,50,.25)", background: "#fff" }}
+                  onChange={v => { setTipoDesc(v); setTabla(""); setOrigen(null); }}
                 />
               </div>
 
