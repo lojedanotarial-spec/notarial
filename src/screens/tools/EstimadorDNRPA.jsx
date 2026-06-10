@@ -307,10 +307,11 @@ export function EstimadorDNRPA({ onBack }) {
     if (v.anio)   setAnio(String(v.anio));
     // guardar datos extra para mostrar como referencia
     setEscaneado({
-      dominio: v.dominio || "",
-      chasis:  v.chasis  || "",
-      motor:   v.motor   || "",
-      color:   v.color   || "",
+      dominio:   v.dominio   || "",
+      tipo_desc: v.tipo_desc || "",
+      chasis:    v.chasis    || "",
+      motor:     v.motor     || "",
+      color:     v.color     || "",
     });
   }
 
@@ -405,14 +406,15 @@ export function EstimadorDNRPA({ onBack }) {
               </div>
 
               {/* Datos extra de Scriba */}
-              {escaneado && (escaneado.dominio || escaneado.chasis || escaneado.motor || escaneado.color) && (
+              {escaneado && (escaneado.dominio || escaneado.tipo_desc || escaneado.chasis || escaneado.motor || escaneado.color) && (
                 <div style={{ background: "rgba(58,124,165,.05)", border: "1px solid rgba(58,124,165,.15)",
                   borderRadius: 8, padding: "9px 12px", display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
                   {[
-                    escaneado.dominio && ["Dominio", escaneado.dominio],
-                    escaneado.color   && ["Color",   escaneado.color],
-                    escaneado.chasis  && ["Chasis",  escaneado.chasis],
-                    escaneado.motor   && ["Motor",   escaneado.motor],
+                    escaneado.dominio   && ["Dominio", escaneado.dominio],
+                    escaneado.tipo_desc && ["Tipo",    escaneado.tipo_desc],
+                    escaneado.color     && ["Color",   escaneado.color],
+                    escaneado.chasis    && ["Chasis",  escaneado.chasis],
+                    escaneado.motor     && ["Motor",   escaneado.motor],
                   ].filter(Boolean).map(([label, valor]) => (
                     <div key={label} style={{ display: "flex", gap: 5, alignItems: "baseline" }}>
                       <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase",
