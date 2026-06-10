@@ -111,12 +111,16 @@
       line-height: 1.08; letter-spacing: -0.025em; color: #f8fafc;
       margin-bottom: 20px;
     }
-    .hero-headline em { font-style: normal; color: var(--gold); }
+    .hero-headline em {
+      font-family: var(--ff-doc); font-style: italic;
+      font-weight: 400; color: var(--gold);
+    }
     .hero-sub {
-      font-size: 16px; color: #94a3b8; line-height: 1.7;
+      font-family: var(--ff-doc); font-size: 15px; font-weight: 400;
+      font-style: italic; color: #94a3b8; line-height: 1.8;
       margin-bottom: 36px; max-width: 480px;
     }
-    .hero-sub strong { color: #cbd5e1; font-weight: 500; }
+    .hero-sub strong { font-style: normal; color: #cbd5e1; font-weight: 700; }
     .hero-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .btn-primary {
       font-family: var(--ff-brand); font-size: 13px; font-weight: 600;
