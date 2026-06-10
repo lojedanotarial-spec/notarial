@@ -48,6 +48,16 @@ function ResultRow({ label, sub, valor, bold, muted }) {
   );
 }
 
+function GroupLabel({ children }) {
+  return (
+    <div style={{ padding: "8px 20px 2px", background: "rgba(26,35,50,.03)",
+      borderTop: "1px solid rgba(26,35,50,.07)", borderBottom: "1px solid rgba(26,35,50,.04)" }}>
+      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase",
+        color: "rgba(26,35,50,.35)", fontFamily: "'Montserrat',sans-serif" }}>{children}</span>
+    </div>
+  );
+}
+
 // ── Botón escanear (cámara) ────────────────────────────────────────────────────
 
 function ScanButton({ onScanned, escaneando, setEscaneando }) {
@@ -376,9 +386,10 @@ export function EstimadorDNRPA({ onBack }) {
     const extras = OPCIONALES
       .filter(o => opcionales[o.id].on)
       .map(o => ({ label: o.label, valor: opcionales[o.id].valor }));
+    const subtotalDNRPA = arancelDNRPA + ARANCEL_NRO1;
     setResultado({
-      precio, baseD, tablaD, arancelDNRPA, sellosMza, extras,
-      total: arancelDNRPA + sellosMza + ARANCEL_NRO1 + extras.reduce((s, x) => s + x.valor, 0),
+      precio, baseD, tablaD, arancelDNRPA, sellosMza, extras, subtotalDNRPA,
+      total: subtotalDNRPA + sellosMza + extras.reduce((s, x) => s + x.valor, 0),
       tasaSellos: SELLOS[tipo] * 100, tipo,
     });
   }
@@ -588,6 +599,7 @@ export function EstimadorDNRPA({ onBack }) {
               <div style={{ background: "#FDFCFA", border: "1px solid rgba(26,35,50,.12)",
                 borderRadius: 12, overflow: "hidden", marginBottom: 32 }}>
 
+                {/* Header */}
                 <div style={{ background: C.dark, padding: "14px 20px" }}>
                   <div style={{ fontFamily: "'Montserrat',sans-serif", fontWeight: 700,
                     fontSize: 13, color: "#FDFCFA" }}>Estimación de costos</div>
@@ -600,28 +612,49 @@ export function EstimadorDNRPA({ onBack }) {
                   </div>
                 </div>
 
+                {/* Grupo 1: Aranceles DNRPA */}
+                <GroupLabel>Aranceles DNRPA</GroupLabel>
                 <div style={{ padding: "4px 20px 8px" }}>
                   <ResultRow
-                    label="Arancel DNRPA (1%)"
+                    label="Transferencia (1%)"
                     sub={resultado.tablaD && resultado.tablaD > resultado.precio
                       ? `base: ${fmt(resultado.baseD)} (tabla DNRPA)`
                       : `base: ${fmt(resultado.precio)} (precio declarado)`}
                     valor={fmt(resultado.arancelDNRPA)}
                   />
                   <ResultRow
-                    label={`Impuesto de sellos Mendoza (${resultado.tasaSellos}%)`}
-                    sub={`base: ${fmt(resultado.baseD)}`}
-                    valor={fmt(resultado.sellosMza)}
-                  />
-                  <ResultRow
                     label="Arancel Nro. 1 (Res. 314/02)"
                     sub="Cargo fijo del registro seccional"
                     valor={fmt(ARANCEL_NRO1)}
                   />
-                  {resultado.extras.map(x => (
-                    <ResultRow key={x.label} label={x.label} valor={fmt(x.valor)} />
-                  ))}
-                  <div style={{ height: 1, background: "rgba(26,35,50,.1)", margin: "10px 0 4px" }} />
+                  <ResultRow label="Subtotal DNRPA" valor={fmt(resultado.subtotalDNRPA)} bold muted />
+                </div>
+
+                {/* Grupo 2: Impuesto provincial */}
+                <GroupLabel>Impuesto provincial — Mendoza</GroupLabel>
+                <div style={{ padding: "4px 20px 8px" }}>
+                  <ResultRow
+                    label={`Sellos (${resultado.tasaSellos}%)`}
+                    sub={`base: ${fmt(resultado.baseD)} · Ley 9597/2024`}
+                    valor={fmt(resultado.sellosMza)}
+                  />
+                </div>
+
+                {/* Grupo 3: Gastos adicionales (solo si hay alguno activo) */}
+                {resultado.extras.length > 0 && (
+                  <>
+                    <GroupLabel>Gastos adicionales</GroupLabel>
+                    <div style={{ padding: "4px 20px 8px" }}>
+                      {resultado.extras.map(x => (
+                        <ResultRow key={x.label} label={x.label} valor={fmt(x.valor)} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Total */}
+                <div style={{ padding: "4px 20px 12px",
+                  borderTop: "2px solid rgba(26,35,50,.1)" }}>
                   <ResultRow label="Total estimado" valor={fmt(resultado.total)} bold />
                 </div>
 
