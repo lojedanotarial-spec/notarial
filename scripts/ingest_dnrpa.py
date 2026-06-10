@@ -86,6 +86,29 @@ def parse_vals(vals_str):
     return out
 
 
+def page_lines(page):
+    """
+    extract_text() trunca filas muy anchas (tabla de 36 cols).
+    Usamos extract_words() con posiciones X/Y para reconstruir
+    cada fila completa independientemente del ancho de página.
+    """
+    words = page.extract_words(x_tolerance=4, y_tolerance=4, keep_blank_chars=False)
+    if not words:
+        return []
+
+    # Agrupar por posición Y (tolerancia ±2 pts)
+    rows = {}
+    for w in words:
+        y_key = round(w["top"] / 2) * 2
+        rows.setdefault(y_key, []).append(w)
+
+    lines = []
+    for y_key in sorted(rows):
+        line = " ".join(w["text"] for w in sorted(rows[y_key], key=lambda w: w["x0"]))
+        lines.append(line.strip())
+    return lines
+
+
 def parse_pdf(pdf_bytes):
     records  = []
     seen_mtm = set()
@@ -98,12 +121,7 @@ def parse_pdf(pdf_bytes):
             if page_num % 25 == 0:
                 print(f"  Página {page_num}/{total} — {len(records)} registros")
 
-            text = page.extract_text()
-            if not text:
-                continue
-
-            for raw_line in text.split('\n'):
-                line = raw_line.strip()
+            for line in page_lines(page):
                 if not line:
                     continue
 
