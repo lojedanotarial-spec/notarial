@@ -129,7 +129,13 @@ function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaO
         return;
       }
       // preferir match exacto de año sobre fallback
-      const best = data.find(d => d.valor && !d.esFallback) || data.find(d => d.valor);
+      // Entre los que tienen valor exacto, preferir el modelo con menos palabras extra respecto al query
+      const exactos = data.filter(d => d.valor && !d.esFallback);
+      const qWords  = new Set(query.toUpperCase().split(/\s+/));
+      const rankFn  = r => (r.marca + " " + r.modelo).toUpperCase().split(/\s+/).filter(w => !qWords.has(w)).length;
+      const best = exactos.sort((a, b) => rankFn(a) - rankFn(b))[0]
+        || data.find(d => d.valor && d.esFallback)
+        || null;
       if (best?.valor) {
         setTablaDNRPA(String(best.valor));
         setTablaOrigen({
