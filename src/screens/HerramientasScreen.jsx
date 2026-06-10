@@ -13,7 +13,7 @@ const TOOLS = [
         <circle cx="18.5" cy="18.5" r="2.5"/>
       </svg>
     ),
-    estado: "proximo",
+    estado: "activo",
     familia: "Automotor",
   },
   {
@@ -107,6 +107,7 @@ export function HerramientasScreen({ onGo }) {
                     cursor: activo ? "pointer" : "default",
                     transition: "box-shadow .15s, transform .15s",
                   }}
+                  onClick={() => { if (activo) onGo(tool.id); }}
                   onMouseEnter={e => { if (activo) { e.currentTarget.style.boxShadow = "0 4px 18px rgba(26,35,50,.1)"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}>
 

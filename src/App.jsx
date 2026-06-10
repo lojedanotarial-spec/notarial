@@ -9,6 +9,7 @@ import { AdminScreen }      from "./screens/AdminScreen";
 import { ExpedientesScreen }     from "./screens/ExpedientesScreen";
 import { ExpedienteDetailScreen } from "./screens/ExpedienteDetailScreen";
 import { HerramientasScreen }    from "./screens/HerramientasScreen";
+import { EstimadorDNRPA }        from "./screens/tools/EstimadorDNRPA";
 import { ScribaPanel }   from "./components/ScribaPanel";
 
 
@@ -107,7 +108,8 @@ function AppRouter() {
       {screen === "admin"        && <AdminScreen       onGo={handleGo} />}
       {screen === "expedientes"  && <ExpedientesScreen     onGo={handleGo} registroActivo={registroActivo} miUsuario={miUsuario} />}
       {screen === "expediente"   && <ExpedienteDetailScreen onGo={handleGo} params={params} />}
-      {screen === "herramientas" && <HerramientasScreen    onGo={handleGo} />}
+      {screen === "herramientas"    && <HerramientasScreen onGo={handleGo} />}
+      {screen === "estimador_dnrpa" && <EstimadorDNRPA     onBack={() => handleGo("herramientas")} />}
 
       {/* Botón flotante Scriba */}
       <div className="no-print" style={{ position: "fixed", bottom: 24, right: 24, zIndex: 199 }}>
