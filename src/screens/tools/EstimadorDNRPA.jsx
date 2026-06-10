@@ -122,13 +122,21 @@ function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaO
     try {
       const r    = await fetch(`/api/dnrpa-valuacion?q=${encodeURIComponent(query)}&anio=${year}`);
       const data = await r.json();
-      const best = Array.isArray(data) ? data.find(d => d.valor) : null;
+      if (!Array.isArray(data) || data.length === 0) {
+        // modelo no existe en la tabla
+        setTablaDNRPA("");
+        setTablaOrigen({ tipo: "notfound" });
+        return;
+      }
+      const best = data.find(d => d.valor);
       if (best?.valor) {
         setTablaDNRPA(String(best.valor));
         setTablaOrigen({ tipo: "auto", label: `${best.marca} ${best.modelo}` });
       } else {
+        // modelo encontrado pero sin valor para ese año
+        const found = data[0];
         setTablaDNRPA("");
-        setTablaOrigen({ tipo: "notfound" });
+        setTablaOrigen({ tipo: "sinvalor", label: `${found.marca} ${found.modelo}`, anio: year });
       }
     } catch {
       setTablaOrigen({ tipo: "notfound" });
@@ -201,11 +209,23 @@ function TablaField({ q, anio, tablaDNRPA, setTablaDNRPA, tablaOrigen, setTablaO
 
   return (
     <div ref={wrapRef}>
+      {tablaOrigen?.tipo === "sinvalor" && (
+        <div style={{ background: "rgba(201,169,97,.08)", border: "1px solid rgba(201,169,97,.3)",
+          borderRadius: "8px 8px 0 0", padding: "9px 14px", borderBottom: "none" }}>
+          <div style={{ fontSize: 11, color: "#a07c30", fontFamily: "'Inter',sans-serif", lineHeight: 1.5 }}>
+            ⚠ <strong>{tablaOrigen.label}</strong> está en nuestra tabla pero sin valor para {tablaOrigen.anio}.{" "}
+            <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank" rel="noopener noreferrer"
+              style={{ color: C.cerulean, fontWeight: 600, textDecoration: "none" }}>
+              Consultá el estimador oficial →
+            </a>{" "}e ingresá el valor acá.
+          </div>
+        </div>
+      )}
       {tablaOrigen?.tipo === "notfound" && (
         <div style={{ background: "rgba(201,169,97,.08)", border: "1px solid rgba(201,169,97,.3)",
           borderRadius: "8px 8px 0 0", padding: "9px 14px", borderBottom: "none" }}>
           <div style={{ fontSize: 11, color: "#a07c30", fontFamily: "'Inter',sans-serif", lineHeight: 1.5 }}>
-            ⚠ No encontramos este vehículo en nuestra tabla.{" "}
+            ⚠ Modelo no encontrado en nuestra tabla.{" "}
             <a href="https://www2.jus.gov.ar/dnrpa-site/#!/estimador" target="_blank" rel="noopener noreferrer"
               style={{ color: C.cerulean, fontWeight: 600, textDecoration: "none" }}>
               Consultá el estimador oficial →
@@ -374,34 +394,36 @@ export function EstimadorDNRPA({ onBack }) {
                 Vehículo
               </SecTitle>
 
-              <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-                <div style={{ flex: 2 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: C.muted,
-                    fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Marca</div>
-                  <input value={marca} onChange={e => setMarca(e.target.value.toUpperCase())}
-                    placeholder="VOLKSWAGEN" style={{ ...inp }} />
-                </div>
-                <div style={{ flex: 3 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: C.muted,
-                    fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Modelo</div>
-                  <input value={modelo} onChange={e => setModelo(e.target.value.toUpperCase())}
-                    placeholder="GOL TREND 1.6" style={{ ...inp }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: C.muted,
-                    fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Año</div>
-                  <input
-                    value={anio}
-                    onChange={e => {
-                      const val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                      setAnio(val);
-                      // resetear tabla cuando cambia el año
-                      if (val.length < 4) { setTabla(""); setOrigen(null); }
-                    }}
-                    placeholder="2010"
-                    maxLength={4}
-                    style={{ ...inp, textAlign: "center" }}
-                  />
+              <div style={{ background: "white", border: "1px solid rgba(26,35,50,.12)",
+                borderRadius: 10, padding: "14px 14px 10px", marginBottom: 10 }}>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <div style={{ flex: 2 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase",
+                      letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Marca</div>
+                    <input value={marca} onChange={e => { setMarca(e.target.value.toUpperCase()); setTabla(""); setOrigen(null); }}
+                      placeholder="VOLKSWAGEN" style={{ ...inp, background: "#f8f7f4" }} />
+                  </div>
+                  <div style={{ flex: 3 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase",
+                      letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Modelo</div>
+                    <input value={modelo} onChange={e => { setModelo(e.target.value.toUpperCase()); setTabla(""); setOrigen(null); }}
+                      placeholder="GOL TREND 1.6" style={{ ...inp, background: "#f8f7f4" }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: "uppercase",
+                      letterSpacing: ".05em", fontFamily: "'Montserrat',sans-serif", marginBottom: 5 }}>Año</div>
+                    <input
+                      value={anio}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                        setAnio(val);
+                        if (val.length < 4) { setTabla(""); setOrigen(null); }
+                      }}
+                      placeholder="2010"
+                      maxLength={4}
+                      style={{ ...inp, textAlign: "center", background: "#f8f7f4" }}
+                    />
+                  </div>
                 </div>
               </div>
 

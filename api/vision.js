@@ -37,7 +37,7 @@ Instrucciones: el documento puede estar en cualquier orientación — rotalo men
   "vehiculo": {
     "marca": "MARCA EN MAYÚSCULAS",
     "modelo": "modelo completo con versión (ej: GOL TREND 1.6, COROLLA XEI 2.0)",
-    "tipo_desc": "SEDAN 5 PTAS | SEDAN 5 PUERTAS | HATCHBACK | SUV | MOTOCICLETA",
+    "tipo_desc": "tipo de carrocería — buscá el campo 'TIPO', 'CARROCERIA' o 'DESCRIPCION' en la tarjeta. Ej: SEDAN 4 PUERTAS, SEDAN 5 PUERTAS, HATCHBACK 5 PUERTAS, SUV, PICKUP, RURAL, MOTOCICLETA",
     "dominio": "patente sin espacios ni guiones (ej: ABC123 o AA123BB)",
     "chasis": "número de chasis o VIN completo",
     "motor": "número de motor completo",
