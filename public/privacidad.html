@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Privacidad — Notarial</title>
+  <link rel="icon" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --dark:      #1a2332;
+      --hero-bg:   #0f172a;
+      --gold:      #c9a961;
+      --cerulean:  #3a7ca5;
+      --warm:      #e8e3d8;
+      --porcelain: #FDFCFA;
+      --text-light:#94a3b8;
+      --text-muted:#64748b;
+      --ff-brand:  'Montserrat', sans-serif;
+      --ff-ui:     'Inter', sans-serif;
+      --ff-doc:    'Merriweather', serif;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--ff-ui);
+      background: var(--hero-bg);
+      color: #e2e8f0;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 60px;
+      background: rgba(15,23,42,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(201,169,97,0.15);
+      display: flex; align-items: center; padding: 0 40px;
+    }
+    .navbar-inner {
+      width: 100%; max-width: 900px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .navbar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .navbar-brand img { height: 26px; }
+    .navbar-name {
+      font-family: var(--ff-doc); font-size: 17px; font-weight: 300;
+      color: #fff; letter-spacing: 0.01em;
+    }
+    .btn-nav {
+      font-family: var(--ff-brand); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--gold); background: transparent;
+      border: 1px solid rgba(201,169,97,0.4);
+      padding: 7px 18px; border-radius: 3px;
+      cursor: pointer; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-nav:hover { background: rgba(201,169,97,0.08); }
+
+    /* CONTENT */
+    .page {
+      max-width: 760px; margin: 0 auto;
+      padding: 110px 40px 80px;
+    }
+    .eyebrow {
+      font-family: var(--ff-brand); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 16px;
+    }
+    h1 {
+      font-family: var(--ff-doc); font-size: 32px; font-weight: 700;
+      color: #fff; line-height: 1.25; margin-bottom: 10px;
+    }
+    .updated {
+      font-size: 13px; color: var(--text-muted); margin-bottom: 48px;
+    }
+    h2 {
+      font-family: var(--ff-brand); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--gold); margin: 40px 0 12px;
+    }
+    p { font-size: 15px; color: #cbd5e1; margin-bottom: 14px; }
+    ul { padding-left: 20px; margin-bottom: 14px; }
+    li { font-size: 15px; color: #cbd5e1; margin-bottom: 6px; }
+    a { color: var(--cerulean); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .divider {
+      height: 1px; background: rgba(201,169,97,0.15);
+      margin: 48px 0;
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center; padding: 32px 40px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px; color: var(--text-muted);
+    }
+    footer a { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a class="navbar-brand" href="/">
+        <img src="/logo-pen-transparent1.png" alt="Notarial" />
+        <span class="navbar-name">Notarial</span>
+      </a>
+      <a class="btn-nav" href="/app">Ingresar</a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="eyebrow">Legal</div>
+    <h1>Política de Privacidad</h1>
+    <p class="updated">Última actualización: 11 de junio de 2026</p>
+
+    <p>
+      Esta Política de Privacidad describe cómo <strong>Notarial</strong> ("la aplicación", "nosotros")
+      recopila, usa y protege la información de los usuarios que acceden a través de
+      <a href="https://notarial.lat">notarial.lat</a>.
+    </p>
+
+    <h2>1. Información que recopilamos</h2>
+    <p>Al utilizar Notarial, podemos recopilar la siguiente información:</p>
+    <ul>
+      <li><strong>Datos de autenticación:</strong> dirección de correo electrónico y nombre de perfil, obtenidos a través de Google Sign-In o registro por email.</li>
+      <li><strong>Documentos e instrumentos notariales:</strong> el contenido que el usuario redacta o carga dentro de la aplicación.</li>
+      <li><strong>Datos de uso:</strong> información técnica sobre el uso de la aplicación (pantallas visitadas, acciones realizadas), sin identificación personal asociada.</li>
+    </ul>
+
+    <h2>2. Uso de Google Drive</h2>
+    <p>
+      Notarial solicita acceso al alcance <code>drive.file</code> de Google Drive. Este permiso permite
+      a la aplicación <strong>crear, leer y modificar únicamente los archivos que ella misma genera</strong>
+      en el Google Drive del usuario. La aplicación no puede acceder a ningún otro archivo del Drive
+      del usuario que no haya sido creado por Notarial.
+    </p>
+    <p>Este acceso se utiliza exclusivamente para:</p>
+    <ul>
+      <li>Guardar documentos notariales generados en la aplicación en la cuenta de Google Drive del usuario.</li>
+      <li>Recuperar documentos previamente guardados para su edición.</li>
+    </ul>
+    <p>
+      No compartimos el contenido del Google Drive del usuario con terceros, ni lo utilizamos para
+      fines distintos al almacenamiento y recuperación de documentos dentro de la aplicación.
+    </p>
+
+    <h2>3. Cómo usamos la información</h2>
+    <p>La información recopilada se utiliza para:</p>
+    <ul>
+      <li>Autenticar al usuario y gestionar su sesión.</li>
+      <li>Proveer las funcionalidades de redacción, almacenamiento y consulta de documentos.</li>
+      <li>Mejorar la experiencia de uso de la aplicación.</li>
+    </ul>
+    <p>No vendemos ni compartimos datos personales con terceros con fines comerciales.</p>
+
+    <h2>4. Almacenamiento y seguridad</h2>
+    <p>
+      Los datos de autenticación se gestionan a través de <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a>,
+      un proveedor de base de datos seguro con cifrado en tránsito (TLS) y en reposo.
+      Los documentos se almacenan en la cuenta de Google Drive del propio usuario.
+    </p>
+
+    <h2>5. Retención de datos</h2>
+    <p>
+      Los datos del usuario se conservan mientras la cuenta esté activa. El usuario puede solicitar
+      la eliminación de su cuenta y datos en cualquier momento contactándonos por email.
+    </p>
+
+    <h2>6. Derechos del usuario</h2>
+    <p>El usuario tiene derecho a:</p>
+    <ul>
+      <li>Acceder a los datos personales que almacenamos.</li>
+      <li>Solicitar la corrección o eliminación de sus datos.</li>
+      <li>Revocar el acceso de Notarial a su cuenta de Google desde <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</li>
+    </ul>
+
+    <h2>7. Servicios de terceros</h2>
+    <p>Notarial utiliza los siguientes servicios externos:</p>
+    <ul>
+      <li><strong>Google Sign-In / Google Drive</strong> — autenticación y almacenamiento de documentos.</li>
+      <li><strong>Supabase</strong> — base de datos y autenticación por email.</li>
+      <li><strong>Vercel</strong> — hosting de la aplicación.</li>
+      <li><strong>Anthropic (Claude)</strong> — asistente de redacción con IA (el contenido procesado no se usa para entrenar modelos).</li>
+    </ul>
+
+    <h2>8. Cambios a esta política</h2>
+    <p>
+      Podemos actualizar esta política ocasionalmente. Notificaremos los cambios significativos
+      por email o mediante un aviso en la aplicación.
+    </p>
+
+    <div class="divider"></div>
+
+    <h2>Contacto</h2>
+    <p>
+      Para consultas sobre privacidad o solicitudes de datos, contactanos a:<br />
+      <a href="mailto:lojeda@gruposimpli.com">lojeda@gruposimpli.com</a>
+    </p>
+  </main>
+
+  <footer>
+    <p><a href="/">Notarial</a> · <a href="/privacidad">Privacidad</a> · © 2026</p>
+  </footer>
+
+</body>
+</html>
