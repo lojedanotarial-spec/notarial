@@ -739,7 +739,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
           {/* Botonera — siempre en un contenedor de ancho fijo, sin layout shifts */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
             {mensajes.length > 0 && (
-              <button onClick={() => { setMensajes([]); cargarHistorial?.(); }} title="Volver"
+              <button onClick={handleNueva} title="Volver"
                 style={{ background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)", borderRadius: 6, width: 28, height: 28, color: "rgba(255,255,255,.85)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 3L5 8l5 5"/></svg>
               </button>
