@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
-export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serverUrl }) {
+export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serverUrl, onEdit }) {
   const editorRef        = useRef(null);
   const reconnectTimer   = useRef(null);
   const documentTitleRef = useRef(documentTitle);
@@ -73,6 +73,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
           reconnectTimer.current = setTimeout(() => createEditor(), 12000);
         },
         onWarning: (e) => console.warn("[OO] warning:", e),
+        onDocumentStateChange: (e) => { if (e?.data) onEdit?.(); },
       },
     });
   }, [documentUrl, documentKey, serverUrl]);

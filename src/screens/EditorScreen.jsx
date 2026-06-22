@@ -106,9 +106,16 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const pendingInsertRef  = useRef(null);
   const [isDirty,          setIsDirty]          = useState(false);
   const [showVarHighlight, setShowVarHighlight] = useState(true);
+  const [hasOoEdits,       setHasOoEdits]       = useState(false);
+  const [pendingRegen,     setPendingRegen]      = useState(false);
+  const hasOoEditsRef     = useRef(false);
   const generatedOnceRef  = useRef(false);
   const handleGenerarRef  = useRef(null);
   const generateAfterRef  = useRef(false);
+  // Si abrimos un doc existente, saltamos el auto-generate hasta saber si tiene DOCX guardado
+  const skipAutoGenerateRef = useRef(!!params?.docId);
+
+  useEffect(() => { hasOoEditsRef.current = hasOoEdits; }, [hasOoEdits]);
 
   const [partes,        setPartes]        = useState(() => params?.partes?.length ? params.partes : [PARTE_VACIA()]);
   const [vehiculos,     setVehiculos]     = useState([]);
@@ -232,6 +239,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       setDocumentUrl(publicUrl);
       setDocumentKey(key);
       generatedOnceRef.current = true;
+      setHasOoEdits(false);
+      setPendingRegen(false);
       setIsDirty(false);
     } catch (e) {
       alert("Error al generar el documento: " + e.message);
@@ -245,18 +254,26 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
 
   // Auto-generate once on mount (delay lets the admin escribano effect settle first)
+  // Si hay docId, skipAutoGenerateRef arranca en true — cargar() lo resetea si no hay document_key guardado
   useEffect(() => {
-    const t = setTimeout(() => handleGenerarRef.current?.(), 800);
+    const t = setTimeout(() => {
+      if (!skipAutoGenerateRef.current) handleGenerarRef.current?.();
+    }, 800);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mark dirty + auto-generate si viene de un modal (flag generateAfterRef)
+  // Si el doc fue editado en OO, mostrar confirmación en lugar de regenerar automático
   useEffect(() => {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
     if (generateAfterRef.current) {
       generateAfterRef.current = false;
-      handleGenerarRef.current?.();
+      if (hasOoEditsRef.current) {
+        setPendingRegen(true);
+      } else {
+        handleGenerarRef.current?.();
+      }
     }
   }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight, estilos]);
 
@@ -264,7 +281,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   useEffect(() => {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
-    handleGenerarRef.current?.();
+    if (hasOoEditsRef.current) {
+      setPendingRegen(true);
+    } else {
+      handleGenerarRef.current?.();
+    }
   }, [vehiculos, extravars]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
@@ -284,6 +305,20 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       if (data.template_key) setTemplateKey(data.template_key);
       if (data.template_id)  setTemplateId(data.template_id);
       if (data.tipo_acto)    setTemplateSlug(data.tipo_acto);
+
+      if (data.document_key) {
+        // Hay un DOCX guardado — abrirlo directamente sin regenerar
+        const { data: urlData } = supabase.storage
+          .from("oo-docs")
+          .getPublicUrl(`${data.document_key}.docx`);
+        setDocumentUrl(urlData.publicUrl);
+        setDocumentKey(data.document_key);
+        setHasOoEdits(true); // conservar posibles ediciones anteriores
+        // skipAutoGenerateRef ya arrancó en true, lo dejamos así
+      } else {
+        // Doc antiguo sin DOCX guardado — dejar que el auto-generate lo cree
+        skipAutoGenerateRef.current = false;
+      }
     }
     cargar();
   }, [params.docId]);
@@ -488,6 +523,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     contenido: contenidoParaGuardar,
     templateKey,
     templateId,
+    documentKey,
     registroNumero: miUsuario?.registro || registroActivo,
     usuarioId: usuario?.id,
     initialDocId: params?.docId,
@@ -542,6 +578,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             documentKey={documentKey}
             documentTitle={docTitle}
             serverUrl={ONLYOFFICE_URL}
+            onEdit={() => setHasOoEdits(true)}
           />
         </div>
 
@@ -554,10 +591,57 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               padding: "10px 14px 8px", borderBottom: "1px solid rgba(26,35,50,.08)",
               fontSize: 11, fontWeight: 700, color: "rgba(26,35,50,.5)",
               textTransform: "uppercase", letterSpacing: ".07em", flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
             }}>
               Propiedades del acto
+              {hasOoEdits && !pendingRegen && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3,
+                  background: "rgba(58,124,165,.1)", color: "#3a7ca5",
+                  letterSpacing: ".04em", textTransform: "uppercase",
+                }}>
+                  Editado
+                </span>
+              )}
             </div>
             <div style={{ flex: 1, overflowY: "auto" }}>
+
+              {/* Banner de confirmación cuando hay ediciones OO y se cambia una variable */}
+              {pendingRegen && (
+                <div style={{
+                  margin: "10px 14px 2px", padding: "10px 12px",
+                  background: "rgba(224,160,50,.1)", border: "1px solid rgba(201,169,97,.4)",
+                  borderRadius: 8,
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#7a5c1e", marginBottom: 4 }}>
+                    ¿Regenerar el documento?
+                  </div>
+                  <div style={{ fontSize: 11, color: "#7a5c1e", lineHeight: 1.5, marginBottom: 10 }}>
+                    El documento tiene ediciones de texto manuales. Si regenerás, esas ediciones se van a perder y el texto vuelve al template con las nuevas variables.
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={() => { setHasOoEdits(false); setPendingRegen(false); handleGenerarRef.current?.(); }}
+                      style={{
+                        flex: 1, fontSize: 11, fontWeight: 700, padding: "6px 0", borderRadius: 5,
+                        background: "#c9a961", color: "#fff", border: "none", cursor: "pointer",
+                      }}
+                    >
+                      Sí, regenerar
+                    </button>
+                    <button
+                      onClick={() => setPendingRegen(false)}
+                      style={{
+                        flex: 1, fontSize: 11, fontWeight: 600, padding: "6px 0", borderRadius: 5,
+                        background: "transparent", color: "#7a5c1e",
+                        border: "1px solid rgba(201,169,97,.5)", cursor: "pointer",
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <PanelSection label="Escribano" onClick={() => setModal("escribano")}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>{escribano.nombre || "Sin nombre"}</div>
