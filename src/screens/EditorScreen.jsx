@@ -1,11 +1,10 @@
 ﻿import { useAutoguardado } from "../hooks/useAutoguardado";
 import { useAuth } from "../context/AuthContext";
 import {
-  C, FUENTES, INTERLINEADOS, MESES_LABEL,
+  C, FUENTES, INTERLINEADOS,
   PARTE_VACIA, ESCRIBANO_INI, FECHA_HOY, PROTOCOLO_INI, INSTRUMENTO_INI,
   ELABELS, inp,
 } from "../constants";
-import { diaLetras, anioLetras, gen } from "../utils";
 import { NavBar }  from "../components/NavBar";
 import { Modal }   from "../components/Modal";
 import { Btn }     from "../components/ui/Btn";
@@ -16,7 +15,7 @@ import { ModalFormulario, fmtNumFormulario } from "../components/modals/ModalFor
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato, ESTILOS_DEFAULT } from "../components/modals/ModalFormato";
 import { ModalAgregarExpediente } from "../components/modals/ModalAgregarExpediente";
-import { buildDocxCertFirmaF08, buildDocxBlanco } from "../utils/buildDocx";
+import { buildDocxBlanco } from "../utils/buildDocx";
 import { buildDocxGenerico } from "../utils/buildDocxGenerico";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
@@ -195,31 +194,24 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       });
   }, [templateId]);
 
-  const SLUGS_CON_GENERADOR = ["cert_firma_f08", "certFirmaF08", "cert_firma", "certFirma"];
-
   const handleGenerar = useCallback(async () => {
-    const instrTexto  = instrumento.descripcion || "el instrumento adjunto a la presente Actuación Notarial";
-    const fechaLetras = diaLetras(fecha.dia) + " días del mes de " + MESES_LABEL[fecha.mes] + " de " + anioLetras(fecha.anio);
     setGenerating(true);
     try {
-      const blob = SLUGS_CON_GENERADOR.includes(templateSlug)
-        ? await buildDocxCertFirmaF08({
+      const extravarsConFormulario = {
+        NUMERO_FORMULARIO: fmtNumFormulario(formulario),
+        DOMINIO: formulario.dominio || "",
+        TIPO_FORMULARIO: formulario.tipo || "",
+        ...extravars,
+      };
+      const blob = templateContenido
+        ? await buildDocxGenerico({
+            contenido: templateContenido,
             partes, escribano, fecha, protocolo, instrumento,
-            instrTexto, fechaLetras, gen,
-            showRol: ["cert_firma_f08", "certFirmaF08"].includes(templateSlug),
             margenKey, fontSize, fuente, interlineado, estilos,
-            showVarHighlight,
-            extravars: { NUMERO_FORMULARIO: fmtNumFormulario(formulario), DOMINIO: formulario.dominio, TIPO_FORMULARIO: formulario.tipo },
+            extravars: extravarsConFormulario, vehiculos,
+            rolesContextuales: ROLES_CONTEXTUALES[templateSlug] || null,
           })
-        : templateContenido
-          ? await buildDocxGenerico({
-              contenido: templateContenido,
-              partes, escribano, fecha, protocolo, instrumento,
-              margenKey, fontSize, fuente, interlineado, estilos,
-              extravars, vehiculos,
-              rolesContextuales: ROLES_CONTEXTUALES[templateSlug] || null,
-            })
-          : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente, estilos });
+        : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente, estilos });
 
       const key      = `doc-${Date.now()}`;
       const filePath = `${key}.docx`;
@@ -247,7 +239,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     } finally {
       setGenerating(false);
     }
-  }, [partes, vehiculos, extravars, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight, templateContenido, templateSlug, estilos]);
+  }, [partes, vehiculos, extravars, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, templateContenido, templateSlug, estilos]);
 
   // Keep ref updated so the mount effect can call the latest version
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);

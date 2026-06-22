@@ -32,6 +32,41 @@ const fmtDomicilio = (p) => [
   p.pais,
 ].filter(Boolean).join(", ");
 
+const fmtNacionalidad = (nac, genero) => {
+  if (!nac) return "";
+  const nl = nac.toLowerCase().trim();
+  if (genero === "M") {
+    const map = { argentina:"argentino", uruguaya:"uruguayo", chilena:"chileno",
+      boliviana:"boliviano", peruana:"peruano", paraguaya:"paraguayo",
+      "brasileña":"brasileño", venezolana:"venezolano", colombiana:"colombiano" };
+    return map[nl] || nac;
+  }
+  return nac;
+};
+
+const fmtCuit = (c) => {
+  if (!c) return "";
+  const pts = c.split("-");
+  return pts[0] + "-" + (pts[1] ? Number(pts[1]).toLocaleString("es-AR") : "") + "-" + (pts[2] || "");
+};
+
+const F08_ROL_INFO = {
+  "VENDEDOR":                 { g:0, o:0 }, "VENDEDORA":                 { g:0, o:0 },
+  "CO-VENDEDOR":              { g:0, o:1 }, "CO-VENDEDORA":              { g:0, o:1 },
+  "CÓNYUGE DEL VENDEDOR":     { g:0, o:2 }, "CONYUGE DEL VENDEDOR":      { g:0, o:2 },
+  "CÓNYUGE DE LA VENDEDORA":  { g:0, o:2 }, "CONYUGE DE LA VENDEDORA":   { g:0, o:2 },
+  "COMPRADOR":                { g:1, o:0 }, "COMPRADORA":                { g:1, o:0 },
+  "CO-COMPRADOR":             { g:1, o:1 }, "CO-COMPRADORA":             { g:1, o:1 },
+  "CÓNYUGE DEL COMPRADOR":    { g:1, o:2 }, "CONYUGE DEL COMPRADOR":     { g:1, o:2 },
+  "CÓNYUGE DE LA COMPRADORA": { g:1, o:2 }, "CONYUGE DE LA COMPRADORA":  { g:1, o:2 },
+};
+
+const ordenarF08 = (ps) => [...ps].filter(Boolean).sort((a, b) => {
+  const iA = F08_ROL_INFO[(a.rol||"").toUpperCase()] || { g:9, o:9 };
+  const iB = F08_ROL_INFO[(b.rol||"").toUpperCase()] || { g:9, o:9 };
+  return iA.g !== iB.g ? iA.g - iB.g : iA.o - iB.o;
+});
+
 export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo = {}, instrumento = {}, extravars = {}, rolesContextuales = null, vehiculos = [], estilos = {} }) {
   const {
     nombresFormato     = "titlecase_upper",
@@ -140,25 +175,6 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_CUIT`]            = p.cuit         || "";
     vars[`PARTE_${n}_CUIT_LABEL`]      = p.cuit ? `, C.U.I.T./L. ${p.cuit}` : "";
     vars[`PARTE_${n}_ESTADO_CIVIL`]    = p.estadoCivil  || "";
-    // Concordancia de género en la nacionalidad
-    const fmtNacionalidad = (nac, genero) => {
-      if (!nac) return "";
-      const n = nac.toLowerCase().trim();
-      if (genero === "M") {
-        if (n === "argentina")  return "argentino";
-        if (n === "uruguaya")   return "uruguayo";
-        if (n === "chilena")    return "chileno";
-        if (n === "boliviana")  return "boliviano";
-        if (n === "peruana")    return "peruano";
-        if (n === "paraguaya")  return "paraguayo";
-        if (n === "brasileña")  return "brasileño";
-        if (n === "venezolana") return "venezolano";
-        if (n === "colombiana") return "colombiano";
-        // si ya está en masculino o no reconocemos, devolver tal cual
-        return nac;
-      }
-      return nac; // femenino: devolver tal cual
-    };
     vars[`PARTE_${n}_NACIONALIDAD`]    = fmtNacionalidad(p.nacionalidad, p.genero);
     vars[`PARTE_${n}_DOMICILIO`]       = domicilio;
     vars[`PARTE_${n}_ROL`]             = (p.rol || "").toUpperCase();
@@ -318,6 +334,60 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars.TIPO_VEHICULO_MIN = tipos.length === 1
       ? (tipos[0] === "MOTOVEHÍCULO" ? "moto vehículo" : "vehículo")
       : "vehículos";
+  }
+
+  // ── Bloque F08 (Certificación de firma en Formulario 08) ──────────────────
+  {
+    const pf08 = ordenarF08(partes);
+    if (pf08.length > 0) {
+      let bloque = "";
+      pf08.forEach((p, idx) => {
+        const art     = p.genero === "M" ? "el señor" : "la señora";
+        const elLaQue = p.genero === "M" ? "el que"   : "la que";
+        const nacidoA = p.genero === "M" ? "nacido"   : "nacida";
+
+        const nFmt = nombresFormato === "uppercase" ? (p.nombre||"").toUpperCase() : toTitleCase(p.nombre);
+        const aFmt = nombresFormato === "titlecase_both" ? toTitleCase(p.apellido) : (p.apellido||"").toUpperCase();
+        let nombreStr = [nFmt, aFmt].filter(Boolean).join(" ");
+        if (nombresSubrayado) nombreStr = `__${nombreStr}__`;
+        if (nombresNegrita)   nombreStr = `**${nombreStr}**`;
+
+        const nac  = fmtNacionalidad(p.nacionalidad, p.genero);
+        const dni  = fmtDni(p.nroDoc);
+        const cuit = fmtCuit(p.cuit);
+        const fn   = fmtFechaNac(p.fechaNac);
+        const dom  = fmtDomicilio(p);
+        const rol  = (p.rol || "").toUpperCase();
+
+        bloque += idx === 0
+          ? `ha sido puesta en mi presencia por ${art} `
+          : `; y ${art} `;
+
+        bloque += nombreStr;
+        if (nac) bloque += `, ${nac}`;
+        bloque += `, con ${p.tipoDoc || "Documento Nacional de Identidad"} número ${dni}`;
+        if (cuit) bloque += `, con C.U.I.T./L. número ${cuit}`;
+        if (fn)   bloque += `, ${nacidoA} el ${fn}`;
+        if (p.estadoCivil) bloque += `, quien manifiesta ser de estado civil ${p.estadoCivil}`;
+        if (dom) bloque += `, con domicilio en ${dom}, de ésta Provincia de Mendoza`;
+        bloque += `; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, cuya copia archivo en ésta escribanía ${elLaQue} firma en su carácter de **${rol}**`;
+        const interv = textoInterviene(p);
+        if (interv) bloque += interv;
+      });
+
+      const acta  = protocolo.nroActa  || "";
+      const libro = protocolo.nroLibro || "";
+      if (pf08.length > 1) {
+        bloque += `; y cuyas identidades justifican conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhiben los documentos anteriormente relacionados cuyas copias archivo en esta escribanía.- Los comparecientes manifiestan no tener su capacidad de ejercicio restringida por sentencia alguna.- Los requerimientos respectivos han sido formalizados en Acta número ${acta} Libro de Requerimientos para Certificaciones de Firmas número ${libro}.-`;
+      } else {
+        const elLaComp = pf08[0]?.genero === "M" ? "El compareciente" : "La compareciente";
+        bloque += `; y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.- ${elLaComp} manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.- El requerimiento respectivo ha sido formalizado en Acta número ${acta} Libro de Requerimientos para Certificaciones de Firmas número ${libro}.-`;
+      }
+
+      vars.PARTES_F08_BLOQUE = bloque;
+    } else {
+      vars.PARTES_F08_BLOQUE = "";
+    }
   }
 
   // Variables extra del template (inyectadas desde el editor)
