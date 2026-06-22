@@ -1,19 +1,42 @@
-﻿import { useState } from "react";
+﻿import { useState, useEffect } from "react";
 import { C, DEPARTAMENTOS, MESES_LABEL, inp } from "../../constants";
 import { diaLetras, anioLetras } from "../../utils";
 import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../supabase";
 import { Modal } from "../Modal";
 import { Btn }   from "../ui/Btn";
 import { Fg, Warn } from "../ui/FormElements";
 
 export function ModalEscribano({ escribano, onApply, onClose }) {
-  const { miembros } = useAuth();
-  const [sel, setSel] = useState(
-    miembros.findIndex(e => e.nombre === escribano.nombre) ?? 0
-  );
+  const { miembros: ctxMiembros, registroActivo } = useAuth();
+  const [miembros, setMiembros] = useState(ctxMiembros);
+  const [sel, setSel] = useState(() => {
+    const idx = ctxMiembros.findIndex(e => e.nombre === escribano.nombre);
+    return idx >= 0 ? idx : 0;
+  });
+
+  // Si el contexto no tiene miembros cargados (admin que abrió el editor
+  // sin pasar por AdminScreen), hacer el fetch directamente.
+  useEffect(() => {
+    if (ctxMiembros.length > 0) { setMiembros(ctxMiembros); return; }
+    if (!registroActivo) return;
+    supabase
+      .from("registros")
+      .select("*")
+      .eq("registro", registroActivo)
+      .order("rol")
+      .then(({ data }) => {
+        if (data?.length) {
+          setMiembros(data);
+          const idx = data.findIndex(e => e.nombre === escribano.nombre);
+          setSel(idx >= 0 ? idx : 0);
+        }
+      });
+  }, [ctxMiembros, registroActivo]);
 
   function aplicar() {
     const m = miembros[sel];
+    if (!m) return;
     const ROL_CARACTER = {
       titular:   m.genero === "f" ? "Notaria Titular"   : "Notario Titular",
       adscripta: "Notaria Adscripta",
