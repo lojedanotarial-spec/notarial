@@ -59,6 +59,8 @@ function ResultRow({ label, sub, valor, bold, muted }) {
   );
 }
 
+// TODO: nosotros podemos calcular sin patente, dnrpa solo con patente.
+// es un punto válido de venta — proponer interfaz acorde.
 function VerificarModal({ dominio, valorDeclarado, onClose }) {
   const fmtValor = v => v ? Math.round(parseMonto(v)).toLocaleString("es-AR") : "—";
   return (

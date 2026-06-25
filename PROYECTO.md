@@ -1,6 +1,6 @@
 # Notarial v2 — Documentación de Proyecto
 
-> Última actualización: 9 junio 2026
+> Última actualización: 24 junio 2026
 
 ---
 
@@ -8,7 +8,7 @@
 
 Sistema de gestión y generación de documentos notariales para escribanos argentinos. Permite redactar, editar y exportar instrumentos notariales con asistencia de IA (Scriba), integración con OnlyOffice para edición DOCX profesional, base de datos de requirentes, biblioteca de plantillas y gestión de expedientes con Drive.
 
-Desarrollado para escribanos de Mendoza; orientado inicialmente al Registro 0000 (admin/test) y escalable a múltiples registros.
+Desarrollado para escribanos de Mendoza; orientado inicialmente al Registro 9876 (admin/test) y escalable a múltiples registros.
 
 ---
 
@@ -100,7 +100,7 @@ supabase.co                   Base de datos Supabase (ver §Base de Datos)
 
 | Feature | Estado | Notas |
 |---|---|---|
-| Builder genérico con sistema de variables `{{VAR}}` | ✅ | `buildDocxGenerico.js` — parsea `**bold**`, `__underline__`, `{{VAR}}` |
+| Builder genérico con sistema de variables `{{VAR}}` | ✅ | `buildDocxGenerico.js` — parsea `**bold**`, `__underline__`, `~~userdata~~`, `{{VAR}}` |
 | Variables dinámicas de negrita/subrayado | ✅ | `VARS_BOLD_DYN` / `VARS_UNDERLINE_DYN` según `estilos` del usuario |
 | 50+ plantillas operativas | ✅ | Certificados, poderes, actas, escrituras, hipotecas, autorizaciones |
 | Cert firma F08 — reescrito al texto de Fátima | ✅ | Orden VENTA/COMPRA, bloque INTERVIENE para apoderados |
@@ -148,6 +148,7 @@ Configuración que afecta a todos los documentos generados. Persiste en el estad
 | `registroFormato` | letras / numero | Registro como "ochocientos..." o "853" |
 | `fechaNegrita` | true/false | Fecha en letras en negrita |
 | `vehiculoNegrita` | true/false | Datos del vehículo en negrita |
+| `showVarHighlight` | true/false | Resaltado de variables: vacías en rojo, datos de usuario en amarillo. **Default: false.** |
 
 ### Expedientes
 
@@ -247,7 +248,7 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | Interlineado configurable | ✅ |
 | Reconexión automática si OO cae | ✅ |
 | Exportar DOCX directamente | ✅ |
-| Resaltado de variables (vacías en rojo, completas en negro) | ✅ |
+| Resaltado de variables (opt-in) | ✅ | Toggle en ModalFormato; **apagado por defecto**; vacías → texto rojo, datos usuario → fondo amarillo Word |
 | Idioma es-AR en OO y en el DOCX | ✅ |
 | Supresión del dialog "cambios sin guardar" de OO | ✅ |
 | `callbackUrl` configurado en OO | ✅ |
@@ -552,6 +553,42 @@ Deploy automático en Vercel al hacer push a `main`.
 43. `HerramientasScreen` — pantalla de utilidades con grid de herramientas categorizadas (Automotor/General/Identidad); badges de estado "Disponible" / "Próximamente"
 44. HomeScreen rediseño — layout 3 columnas: FILTROS (izq, 210px) · DOCUMENTOS (centro) · UTILIDADES (der, 192px); panel derecho con 4 cards de herramientas + "Ver todas →"; títulos de sección FILTROS / DOCUMENTOS
 45. Admin movido al avatar dropdown (solo visible para is_admin); removido botón Admin y botón Utilidades del navbar
+46. Fix `ESCRIBANO_REGISTRO_LETRAS` — `parseInt("0000") = 0`, `!0 = true` retornaba `""`. Fix: `if (!n) return raw` (devuelve el string crudo en lugar de vacío)
+47. Admin registro cambiado de "0000" a "9876" — Fabián McLeod; registro test más realista
+48. Admin flow rediseñado — Admin loguea directo a HomeScreen (no AdminScreen); muestra "Registro 9876" bajo el saludo; botón "Cambiar registro" en header solo para `esAdmin`; AuthContext auto-carga `registroActivo` desde `registros_id` del usuario
+49. `cert_firma` — ocultar "Función en el acto" en ModalPartes (`showRol={false}` en EditorScreen); quitar "el que firma en su carácter de ****" del bloque `PARTES_CF_BLOQUE`
+50. `showVarHighlight` movido de NavBar muerto a ModalFormato — toggle "Marcar variables faltantes en rojo"; ahora vive en el objeto `estilos` y llega a `buildDocxGenerico`
+51. Marcador `~~texto~~` — nuevo marcador en `parsearSegmentos`: `fromUser = true` → color azul (2E75B6) cuando `showVarHighlight`. Permite distinguir datos del usuario (azul) de variables vacías (rojo) en el documento
+52. `~~...~~` aplicado a todos los constructores de bloque — `PARTES_CF_BLOQUE`, `PARTES_F08_BLOQUE`, `AUTORIZANTE_TEXTO` (`fmtPersonaAut`), `AUTORIZADOS_TEXTO` (`fmtAut`), `PARTE_N_IDENTIDAD`, `PARTE_N_IDENTIDAD_ACTA` — todos envuelven nombre, nac, DNI, CUIT, fechaNac, estadoCivil, domicilio, rol, acta, libro con `~~`
+53. Fix bug resaltado — `~~~~` (valor vacío envuelto en `~~`) causaba que el motor de regex spanneara todo el texto siguiente como `fromUser`. Fix doble: regex con lookbehind/lookahead `(?<!~)~~(?!~)` + guard en emisión (`valor ? \`~~${valor}~~\` : ""`) para DNI, rol, acta, libro vacíos
+54. Estilo resaltado cambiado de texto azul a **fondo amarillo nativo Word** (`highlight: "yellow"` en TextRun) — visible en regular e itálica, independiente del peso de fuente
+55. `showVarHighlight` default cambiado a `false` — el documento sale limpio por defecto; el usuario activa el resaltado desde Formato cuando lo necesita
+
+---
+
+## Sistema de marcadores en constructores de texto
+
+Regla: **todo constructor de bloque que incluya datos del usuario debe envolver cada valor con `~~valor~~`.**
+
+| Marcador | Seg. resultado | Efecto con showVarHighlight |
+|----------|----------------|----------------------------|
+| `**texto**` | `bold: true` | — |
+| `__texto__` | `underline: true` | — |
+| `~~texto~~` | `fromUser: true` | fondo amarillo (`highlight: "yellow"`) |
+| `{{VAR}}` vacía | `emptyVar: true` | texto rojo (C0392B) |
+| `{{VAR}}` con valor | `fromVar: true` | — |
+
+**Nota regex:** La regex usa `(?<!~)~~(?!~)(.+?)(?<!~)~~(?!~)` con lookbehind/lookahead para evitar que `~~~~` (valor vacío) cause falsos matches que pintan todo el bloque. Los valores potencialmente vacíos (DNI, rol, acta, libro) también tienen guard en emisión: `val ? \`~~${val}~~\` : ""`.
+
+Los marcadores son anidables: `~~**__Juan PÉREZ__**~~` = bold + underline + azul.
+
+Constructores que deben usar `~~` (todos implementados al 24/06/26):
+- `PARTES_CF_BLOQUE` — cert_firma
+- `PARTES_F08_BLOQUE` — F08/F08-Moto
+- `AUTORIZANTE_TEXTO` (via `fmtPersonaAut`)
+- `AUTORIZADOS_TEXTO` (via `fmtAut`)
+- `PARTE_N_IDENTIDAD`
+- `PARTE_N_IDENTIDAD_ACTA`
 
 ---
 

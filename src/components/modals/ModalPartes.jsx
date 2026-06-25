@@ -7,20 +7,13 @@ import { useAuth } from "../../context/AuthContext";
 export function ModalPartes({ partes, onApply, onClose, showRol = true, rolesContextuales }) {
   const { usuario, registroActivo } = useAuth();
   const [draft, setDraft] = useState(partes.map(p => ({ ...p })));
-  const [guardando, setGuardando] = useState(false);
 
-  async function handleGuardar() {
-    setGuardando(true);
-    // Aplicar al documento siempre, independientemente del resultado del CRM
+  function handleGuardar() {
     onApply(draft);
-    try {
-      await guardarPartesEnCRM(draft, usuario?.registro_numero || registroActivo);
-    } catch (e) {
-      console.warn("Error al guardar partes en CRM:", e);
-    } finally {
-      setGuardando(false);
-      onClose();
-    }
+    onClose();
+    // CRM save en background — no bloquea el modal
+    guardarPartesEnCRM(draft, usuario?.registro_numero || registroActivo)
+      .catch(e => console.warn("Error al guardar partes en CRM:", e));
   }
 
   return (
@@ -28,9 +21,7 @@ export function ModalPartes({ partes, onApply, onClose, showRol = true, rolesCon
       footer={
         <>
           <Btn onClick={onClose}>Cancelar</Btn>
-          <Btn primary onClick={handleGuardar} disabled={guardando}>
-            {guardando ? "Guardando..." : "Guardar"}
-          </Btn>
+          <Btn primary onClick={handleGuardar}>Guardar</Btn>
         </>
       }>
       <PartesEditor partes={draft} onChange={setDraft} showRol={showRol} rolesContextuales={rolesContextuales} />

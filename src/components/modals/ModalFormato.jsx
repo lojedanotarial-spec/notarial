@@ -24,6 +24,8 @@ export const ESTILOS_DEFAULT = {
   escribanoUppercase:  true,
   // Registro
   registroFormato:     "letras", // "letras" | "numero"
+  // Visualización
+  showVarHighlight:    false,
 };
 
 function Toggle({ label, checked, onChange }) {
@@ -135,6 +137,9 @@ export function ModalFormato({ estilos: inicial, onApply, onClose }) {
         <SecTitle>Énfasis automático</SecTitle>
         <Toggle label="Fecha en negrita (TRES días de JUNIO...)" checked={e.fechaNegrita} onChange={v => upd("fechaNegrita", v)}/>
         <Toggle label="Datos del vehículo en negrita" checked={e.vehiculoNegrita} onChange={v => upd("vehiculoNegrita", v)}/>
+
+        <SecTitle>Visualización</SecTitle>
+        <Toggle label="Marcar variables faltantes en rojo" checked={e.showVarHighlight} onChange={v => upd("showVarHighlight", v)}/>
 
       </div>
     </Modal>

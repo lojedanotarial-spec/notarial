@@ -469,9 +469,25 @@ export function HomeScreen({ onGo }) {
                 <h1 style={{ fontSize:20, fontWeight:700, color:C.dark, margin:"0 0 3px", letterSpacing:"-.02em" }}>
                   {saludo()}, {nombre}
                 </h1>
+                {esAdmin && registroActivo && (
+                  <p style={{ margin:"0 0 2px", fontSize:11, fontWeight:600,
+                              color:C.cerulean, letterSpacing:".03em" }}>
+                    Registro {registroActivo}
+                  </p>
+                )}
                 <p style={{ ...T.l2, margin:0 }}>{fechaHoy()}</p>
               </div>
               <div style={{ display:"flex", gap:8 }}>
+                {esAdmin && (
+                  <button onClick={() => onGo("admin")}
+                          onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
+                          onMouseLeave={e => e.currentTarget.style.background = C.porcelain}
+                          style={{ padding:"8px 16px", borderRadius:8, border:"1px solid rgba(26,35,50,.12)",
+                                   background:C.porcelain, fontSize:13, fontWeight:600, color:C.dark,
+                                   cursor:"pointer", fontFamily:"'Inter', sans-serif", transition:"background .12s" }}>
+                    Cambiar registro
+                  </button>
+                )}
                 <button onClick={() => onGo("expedientes")}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.05)"}
                         onMouseLeave={e => e.currentTarget.style.background = C.porcelain}

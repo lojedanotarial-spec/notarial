@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { C } from "../../constants";
 
-export function Btn({ children, primary, danger, onClick }) {
+export function Btn({ children, primary, danger, onClick, disabled }) {
   const [hover, setHover] = useState(false);
   return (
     <button
+      type="button"
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
+      disabled={disabled}
+      onMouseEnter={() => !disabled && setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         padding:     "8px 18px",
@@ -14,7 +16,8 @@ export function Btn({ children, primary, danger, onClick }) {
         fontSize:    13,
         fontWeight:  500,
         fontFamily:  "'Inter', sans-serif",
-        cursor:      "pointer",
+        cursor:      disabled ? "not-allowed" : "pointer",
+        opacity:     disabled ? 0.5 : 1,
         background:  primary
           ? (hover ? "#2e3f52" : C.dark)
           : danger

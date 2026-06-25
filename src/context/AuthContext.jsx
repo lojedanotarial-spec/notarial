@@ -25,6 +25,15 @@ export function AuthProvider({ children }) {
       setMiUsuario({ nombre: "Admin", apellido: "", is_admin: true });
       setMiembros([]);
       setPerfilCargado(true);
+      // Cargar registro propio del admin como default (si tiene registros_id asignado)
+      if (u.registros_id) {
+        supabase
+          .from("registros")
+          .select("registro")
+          .eq("id", u.registros_id)
+          .single()
+          .then(({ data }) => { if (data?.registro) setRegistroActivo(data.registro); });
+      }
       return;
     }
 

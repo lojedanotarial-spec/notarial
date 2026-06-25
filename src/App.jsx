@@ -57,12 +57,7 @@ function AppRouter() {
     setScreen(targetScreen);
   };
 
-  // Admin va directo al selector de registro
-  useEffect(() => {
-    if (session && usuario?.is_admin && screen === "home") {
-      setScreen("admin");
-    }
-  }, [session, usuario]);
+  // Admin va directo al home; cambia registro desde el botón en HomeScreen
 
   if (cargando) return (
     <div style={{

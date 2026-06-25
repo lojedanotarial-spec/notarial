@@ -132,9 +132,10 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     ESCRIBANO_TITULO:           escribanoTitulo,
     ESCRIBANO_CIRCUNSCRIPCION:  escribano.circunscripcion || "primera",
     ESCRIBANO_REGISTRO_LETRAS:  (() => {
-      const n = parseInt(escribano.registro || "0");
-      if (!n) return "";
-      if (registroFormato === "numero") return String(n);
+      const raw = String(escribano.registro || "");
+      const n = parseInt(raw);
+      if (!n) return raw;
+      if (registroFormato === "numero") return raw;
       return numeroALetras(n).replace(/ CON 00\/100$/, "").toLowerCase();
     })(),
     // "del" para titular, "al" para adscripto/a
@@ -187,24 +188,24 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
 
     // Identidad completa — la fórmula notarial estándar
     const identidadPartes = [
-      `${genArticulo} ${apellidoNombre}`,
-      p.nacionalidad ? `de nacionalidad ${p.nacionalidad}` : null,
-      p.estadoCivil  ? `estado civil ${p.estadoCivil}` : null,
-      domicilio      ? `con domicilio en ${domicilio}` : null,
-      dni            ? `DNI Nro. ${dni}` : null,
-      p.cuit         ? `CUIL/CUIT ${p.cuit}` : null,
+      `${genArticulo} ~~${apellidoNombre}~~`,
+      p.nacionalidad ? `de nacionalidad ~~${p.nacionalidad}~~` : null,
+      p.estadoCivil  ? `estado civil ~~${p.estadoCivil}~~` : null,
+      domicilio      ? `con domicilio en ~~${domicilio}~~` : null,
+      dni            ? `DNI Nro. ~~${dni}~~` : null,
+      p.cuit         ? `CUIL/CUIT ~~${p.cuit}~~` : null,
     ].filter(Boolean);
     vars[`PARTE_${n}_IDENTIDAD`] = identidadPartes.join(", ");
 
     // Identidad en formato acta notarial (estructura de Fatima)
     const identidadActa = [
-      apellidoNombre,
-      p.nacionalidad || null,
-      dni ? `Documento Nacional de Identidad número ${dni}` : null,
-      p.cuit ? `CUIT/CUIL ${p.cuit}` : null,
-      vars[`PARTE_${n}_FECHA_NAC`] ? `${vars[`PARTE_${n}_NACIDO_A`]} el día ${vars[`PARTE_${n}_FECHA_NAC`]}` : null,
-      p.estadoCivil ? `quien manifiesta ser de estado de familia ${p.estadoCivil}` : null,
-      domicilio ? `con domicilio en ${domicilio}` : null,
+      `~~${apellidoNombre}~~`,
+      p.nacionalidad ? `~~${p.nacionalidad}~~` : null,
+      dni ? `Documento Nacional de Identidad número ~~${dni}~~` : null,
+      p.cuit ? `CUIT/CUIL ~~${p.cuit}~~` : null,
+      vars[`PARTE_${n}_FECHA_NAC`] ? `${vars[`PARTE_${n}_NACIDO_A`]} el día ~~${vars[`PARTE_${n}_FECHA_NAC`]}~~` : null,
+      p.estadoCivil ? `quien manifiesta ser de estado de familia ~~${p.estadoCivil}~~` : null,
+      domicilio ? `con domicilio en ~~${domicilio}~~` : null,
     ].filter(Boolean).join(", ");
     vars[`PARTE_${n}_IDENTIDAD_ACTA`] = identidadActa;
   });
@@ -220,14 +221,14 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     const dom = fmtDomicilio(p);
     const fechaNacFmt = fmtFechaNac(p.fechaNac || "");
     const datos = [
-      nac,
-      dni ? `Documento Nacional de Identidad número ${dni}` : null,
-      p.cuit ? `C.U.I.T./L. ${p.cuit}` : null,
-      fechaNacFmt ? `${p.genero === "M" ? "nacido" : "nacida"} el día ${fechaNacFmt}` : null,
-      p.estadoCivil || null,
-      dom ? `domicilio en ${dom}` : null,
+      nac ? `~~${nac}~~` : null,
+      dni ? `Documento Nacional de Identidad número ~~${dni}~~` : null,
+      p.cuit ? `C.U.I.T./L. ~~${p.cuit}~~` : null,
+      fechaNacFmt ? `${p.genero === "M" ? "nacido" : "nacida"} el día ~~${fechaNacFmt}~~` : null,
+      p.estadoCivil ? `~~${p.estadoCivil}~~` : null,
+      dom ? `domicilio en ~~${dom}~~` : null,
     ].filter(Boolean).join(", ");
-    return `${art} ${fmtNombre(nombre)}, ${datos}`;
+    return `${art} ~~${fmtNombre(nombre)}~~, ${datos}`;
   };
 
   const autorizantes = partes.filter(p => p?.rol?.toUpperCase().startsWith("AUTORIZANTE"));
@@ -275,7 +276,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
         return p.genero==="M" ? (masc[n]||p.nacionalidad||"") : (p.nacionalidad||"");
       })();
       const dniP = fmtDni(p.nroDoc);
-      return [fmtNombre(nombre), nac, dniP ? `Documento Nacional de Identidad número ${dniP}` : null].filter(Boolean).join(", ");
+      return [`~~${fmtNombre(nombre)}~~`, nac ? `~~${nac}~~` : null, dniP ? `Documento Nacional de Identidad número ~~${dniP}~~` : null].filter(Boolean).join(", ");
     };
     const textos = autorizados.map(fmtAut);
     vars.AUTORIZADOS_TEXTO = textos.length === 1
@@ -363,14 +364,14 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
           ? `ha sido puesta en mi presencia por ${art} `
           : `; y ${art} `;
 
-        bloque += nombreStr;
-        if (nac) bloque += `, ${nac}`;
-        bloque += `, con ${p.tipoDoc || "Documento Nacional de Identidad"} número ${dni}`;
-        if (cuit) bloque += `, con C.U.I.T./L. número ${cuit}`;
-        if (fn)   bloque += `, ${nacidoA} el ${fn}`;
-        if (p.estadoCivil) bloque += `, quien manifiesta ser de estado civil ${p.estadoCivil}`;
-        if (dom) bloque += `, con domicilio en ${dom}, de ésta Provincia de Mendoza`;
-        bloque += `; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, cuya copia archivo en ésta escribanía ${elLaQue} firma en su carácter de **${rol}**`;
+        bloque += `~~${nombreStr}~~`;
+        if (nac) bloque += `, ~~${nac}~~`;
+        bloque += `, con ${p.tipoDoc || "Documento Nacional de Identidad"} número ${dni ? `~~${dni}~~` : ""}`;
+        if (cuit) bloque += `, con C.U.I.T./L. número ~~${cuit}~~`;
+        if (fn)   bloque += `, ${nacidoA} el ~~${fn}~~`;
+        if (p.estadoCivil) bloque += `, quien manifiesta ser de estado civil ~~${p.estadoCivil}~~`;
+        if (dom) bloque += `, con domicilio en ~~${dom}~~, de ésta Provincia de Mendoza`;
+        bloque += `; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto, cuya copia archivo en ésta escribanía ${elLaQue} firma en su carácter de **${rol ? `~~${rol}~~` : ""}**`;
         const interv = textoInterviene(p);
         if (interv) bloque += interv;
       });
@@ -378,15 +379,66 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
       const acta  = protocolo.nroActa  || "";
       const libro = protocolo.nroLibro || "";
       if (pf08.length > 1) {
-        bloque += `; y cuyas identidades justifican conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhiben los documentos anteriormente relacionados cuyas copias archivo en esta escribanía.- Los comparecientes manifiestan no tener su capacidad de ejercicio restringida por sentencia alguna.- Los requerimientos respectivos han sido formalizados en Acta número ${acta} Libro de Requerimientos para Certificaciones de Firmas número ${libro}.-`;
+        bloque += `; y cuyas identidades justifican conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhiben los documentos anteriormente relacionados cuyas copias archivo en esta escribanía.- Los comparecientes manifiestan no tener su capacidad de ejercicio restringida por sentencia alguna.- Los requerimientos respectivos han sido formalizados en Acta número ${acta ? `~~${acta}~~` : ""} Libro de Requerimientos para Certificaciones de Firmas número ${libro ? `~~${libro}~~` : ""}.-`;
       } else {
         const elLaComp = pf08[0]?.genero === "M" ? "El compareciente" : "La compareciente";
-        bloque += `; y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.- ${elLaComp} manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.- El requerimiento respectivo ha sido formalizado en Acta número ${acta} Libro de Requerimientos para Certificaciones de Firmas número ${libro}.-`;
+        bloque += `; y cuya identidad justifica conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.- ${elLaComp} manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.- El requerimiento respectivo ha sido formalizado en Acta número ${acta ? `~~${acta}~~` : ""} Libro de Requerimientos para Certificaciones de Firmas número ${libro ? `~~${libro}~~` : ""}.-`;
       }
 
       vars.PARTES_F08_BLOQUE = bloque;
     } else {
       vars.PARTES_F08_BLOQUE = "";
+    }
+  }
+
+  // ── Bloque Certificación de Firma (cert_firma) ───────────────────────────────
+  {
+    const pcf = partes.filter(p => p);
+    if (pcf.length > 0) {
+      let bloque = "";
+      pcf.forEach((p, idx) => {
+        const art     = p.genero === "M" ? "el señor" : "la señora";
+        const nacidoA = p.genero === "M" ? "nacido"   : "nacida";
+
+        const nFmt = nombresFormato === "uppercase" ? (p.nombre||"").toUpperCase() : toTitleCase(p.nombre);
+        const aFmt = nombresFormato === "titlecase_both" ? toTitleCase(p.apellido) : (p.apellido||"").toUpperCase();
+        let nombreStr = [nFmt, aFmt].filter(Boolean).join(" ");
+        if (nombresSubrayado) nombreStr = `__${nombreStr}__`;
+        if (nombresNegrita)   nombreStr = `**${nombreStr}**`;
+
+        const nac  = fmtNacionalidad(p.nacionalidad, p.genero);
+        const dni  = fmtDni(p.nroDoc);
+        const cuit = fmtCuit(p.cuit);
+        const fn   = fmtFechaNac(p.fechaNac);
+        const dom  = fmtDomicilio(p);
+
+        bloque += idx === 0
+          ? `ha sido puesta en mi presencia por ${art} `
+          : `; y ${art} `;
+
+        bloque += `~~${nombreStr}~~`;
+        if (nac) bloque += `, ~~${nac}~~`;
+        bloque += `, con ${p.tipoDoc || "Documento Nacional de Identidad"} número ${dni ? `~~${dni}~~` : ""}`;
+        if (cuit) bloque += `, C.U.I.T./L. ~~${cuit}~~`;
+        if (fn)   bloque += `, ${nacidoA} el ~~${fn}~~`;
+        if (p.estadoCivil) bloque += `, quien manifiesta ser de estado de familia ~~${p.estadoCivil}~~`;
+        if (dom)  bloque += `, con domicilio en ~~${dom}~~, de esta Provincia de Mendoza`;
+        bloque += `; datos que surgen del Documento Nacional de Identidad que he tenido a la vista para este acto`;
+      });
+
+      const acta  = protocolo.nroActa  || "";
+      const libro = protocolo.nroLibro || "";
+      const nombreLibro = protocolo.libro || "Libro de Requerimientos para Certificaciones de Firmas";
+      if (pcf.length > 1) {
+        bloque += `; y cuyas identidades justifican conforme al artículo 306, incisos a) del Código Civil y Comercial de la Nación, me exhiben los documentos anteriormente relacionados cuyas copias archivo en esta escribanía.- Los comparecientes manifiestan no tener su capacidad de ejercicio restringida por sentencia alguna.- Los requerimientos respectivos han sido formalizados en Acta número ${acta ? `~~${acta}~~` : ""} del ${nombreLibro} número ${libro ? `~~${libro}~~` : ""}.-`;
+      } else {
+        const elLaComp = pcf[0]?.genero === "M" ? "El compareciente" : "La compareciente";
+        bloque += `; y cuya identidad justifica conforme al artículo 306, inciso a) del Código Civil y Comercial de la Nación, me exhibe el documento anteriormente relacionado cuya copia archivo en esta escribanía.- ${elLaComp} manifiesta no tener su capacidad de ejercicio restringida por sentencia alguna.- El requerimiento respectivo ha sido formalizado en Acta número ${acta ? `~~${acta}~~` : ""} del ${nombreLibro} número ${libro ? `~~${libro}~~` : ""}.-`;
+      }
+
+      vars.PARTES_CF_BLOQUE = bloque;
+    } else {
+      vars.PARTES_CF_BLOQUE = "";
     }
   }
 

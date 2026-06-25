@@ -521,13 +521,15 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                       {x.apellido || "Parte " + (idx + 1)}
                     </div>
-                    <div style={{
-                      fontSize: 10,
-                      color: x.rol ? "rgba(26,35,50,.6)" : "rgba(26,35,50,.35)",
-                      fontStyle: x.rol ? "normal" : "italic",
-                    }}>
-                      {x.rol || "sin rol asignado"}
-                    </div>
+                    {showRol && (
+                      <div style={{
+                        fontSize: 10,
+                        color: x.rol ? "rgba(26,35,50,.6)" : "rgba(26,35,50,.35)",
+                        fontStyle: x.rol ? "normal" : "italic",
+                      }}>
+                        {x.rol || "sin rol asignado"}
+                      </div>
+                    )}
                   </div>
                 </div>
                 {(
@@ -695,25 +697,27 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     }}
                     placeholder="dd/mm/aaaa" maxLength={10}/>
                 </Fg>
-                <Fg label="Función en el acto" alerta={!!(rolesContextuales?.length && !p.rol)}>
-                  {rolesContextuales?.length ? (
-                    <select
-                      style={{ ...inp,
-                        ...((!p.rol) ? { borderColor:"#e07070", boxShadow:"0 0 0 3px rgba(224,112,112,0.12)" } : {})
-                      }}
-                      value={p.rol}
-                      onChange={e => upd(p.id, { rol: e.target.value })}>
-                      <option value="">— sin especificar —</option>
-                      {rolesContextuales.filter(Boolean).map(r => (
-                        <option key={r} value={r.toUpperCase()}>{r}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input style={inp} value={p.rol}
-                      onChange={e => upd(p.id, { rol: e.target.value.toUpperCase() })}
-                      placeholder="ej: VENDEDOR, COMPRADOR, AUTORIZADO..."/>
-                  )}
-                </Fg>
+                {showRol && (
+                  <Fg label="Función en el acto" alerta={!!(rolesContextuales?.length && !p.rol)}>
+                    {rolesContextuales?.length ? (
+                      <select
+                        style={{ ...inp,
+                          ...((!p.rol) ? { borderColor:"#e07070", boxShadow:"0 0 0 3px rgba(224,112,112,0.12)" } : {})
+                        }}
+                        value={p.rol}
+                        onChange={e => upd(p.id, { rol: e.target.value })}>
+                        <option value="">— sin especificar —</option>
+                        {rolesContextuales.filter(Boolean).map(r => (
+                          <option key={r} value={r.toUpperCase()}>{r}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input style={inp} value={p.rol}
+                        onChange={e => upd(p.id, { rol: e.target.value.toUpperCase() })}
+                        placeholder="ej: VENDEDOR, COMPRADOR, AUTORIZADO..."/>
+                    )}
+                  </Fg>
+                )}
                 <Fg label="Calle">
                   <input style={inp} value={p.calle}
                     onChange={e => upd(p.id, { calle: e.target.value })} placeholder="ingrese calle"/>

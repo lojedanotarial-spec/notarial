@@ -28,3 +28,5 @@ scripts/*.csv
 scripts/*.docx
 scripts/~$*
 scripts/raw_response.txt
+
+.vercel

@@ -53,38 +53,55 @@ function limpiarVarsVacias(texto, vars) {
  * Parsea texto con marcadores de formato y variables:
  *   **texto**     → negrita
  *   __texto__     → subrayado
+ *   ~~texto~~     → dato ingresado por el usuario (seg.fromUser = true → azul con showVarHighlight)
  *   {{VAR}}       → sustitución (con bold/underline automáticos según VARS_*)
- * Los marcadores son anidables: __**texto**__ = negrita + subrayado
+ *
+ * Los marcadores son anidables: ~~**__nombre__**~~ = nombre negrita+subrayado+azul.
+ * Los constructores de bloque en templateVars.js (PARTES_CF_BLOQUE, PARTES_F08_BLOQUE,
+ * AUTORIZANTE_TEXTO, AUTORIZADOS_TEXTO, PARTE_N_IDENTIDAD, PARTE_N_IDENTIDAD_ACTA) deben
+ * envolver todos los valores ingresados por el usuario con ~~ para que el resaltado funcione.
+ *
+ * Colores con showVarHighlight activado:
+ *   rojo  (C0392B) → variable del template sin valor ({{VAR}} vacía)
+ *   azul  (2E75B6) → dato de parte/persona ingresado en modal
+ *   sin color      → texto fijo del template
  */
-function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false, boldVars = VARS_BOLD, underlineVars = VARS_UNDERLINE) {
+function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false, boldVars = VARS_BOLD, underlineVars = VARS_UNDERLINE, ctxFromUser = false) {
   const segments = [];
-  const re = /\*\*(.+?)\*\*|__(.+?)__|{{([^}]+)}}/gs;
+  // ~~texto~~ = dato ingresado por el usuario (coloreable con showVarHighlight)
+  const re = /\*\*(.+?)\*\*|__(.+?)__|(?<!~)~~(?!~)(.+?)(?<!~)~~(?!~)|{{([^}]+)}}/gs;
   let last = 0, m;
 
   while ((m = re.exec(texto)) !== null) {
     if (m.index > last) {
       const plain = texto.slice(last, m.index);
-      if (plain) segments.push({ text: plain, bold: ctxBold, underline: ctxUnderline });
+      if (plain) segments.push({ text: plain, bold: ctxBold, underline: ctxUnderline, fromUser: ctxFromUser });
     }
 
     if (m[1] !== undefined) {
       // **bold**
-      segments.push(...parsearSegmentos(m[1], vars, true, ctxUnderline, boldVars, underlineVars));
+      segments.push(...parsearSegmentos(m[1], vars, true, ctxUnderline, boldVars, underlineVars, ctxFromUser));
     } else if (m[2] !== undefined) {
       // __underline__
-      segments.push(...parsearSegmentos(m[2], vars, ctxBold, true, boldVars, underlineVars));
+      segments.push(...parsearSegmentos(m[2], vars, ctxBold, true, boldVars, underlineVars, ctxFromUser));
     } else if (m[3] !== undefined) {
+      // ~~dato de usuario~~
+      segments.push(...parsearSegmentos(m[3], vars, ctxBold, ctxUnderline, boldVars, underlineVars, true));
+    } else if (m[4] !== undefined) {
       // {{VAR}}
-      const key = m[3];
-      const val = vars[key] !== undefined ? String(vars[key]) : `{{${key}}}`;
+      const key = m[4];
+      const found = vars[key] !== undefined;
+      const val = found ? String(vars[key]) : `{{${key}}}`;
       if (val) {
-        const boldVar = ctxBold || boldVars.has(key);
-        const ulVar   = ctxUnderline || underlineVars.has(key);
-        // Si el valor contiene marcadores de formato, procesarlos recursivamente
-        if (val.includes("**") || val.includes("__")) {
-          segments.push(...parsearSegmentos(val, vars, boldVar, ulVar, boldVars, underlineVars));
+        const boldVar  = ctxBold || boldVars.has(key);
+        const ulVar    = ctxUnderline || underlineVars.has(key);
+        const emptyVar = !found || val === "";
+        if (val.includes("**") || val.includes("__") || val.includes("~~")) {
+          const sub = parsearSegmentos(val, vars, boldVar, ulVar, boldVars, underlineVars, ctxFromUser);
+          sub.forEach(s => { s.fromVar = true; s.emptyVar = emptyVar; });
+          segments.push(...sub);
         } else {
-          segments.push({ text: val, bold: boldVar, underline: ulVar });
+          segments.push({ text: val, bold: boldVar, underline: ulVar, fromVar: true, emptyVar, fromUser: ctxFromUser });
         }
       }
     }
@@ -94,7 +111,7 @@ function parsearSegmentos(texto, vars, ctxBold = false, ctxUnderline = false, bo
 
   if (last < texto.length) {
     const plain = texto.slice(last);
-    if (plain) segments.push({ text: plain, bold: ctxBold, underline: ctxUnderline });
+    if (plain) segments.push({ text: plain, bold: ctxBold, underline: ctxUnderline, fromUser: ctxFromUser });
   }
 
   return segments;
@@ -124,11 +141,12 @@ export async function buildDocxGenerico({
   estilos = {},
 }) {
   const {
-    nombresNegrita   = true,
-    nombresSubrayado = true,
-    fechaNegrita     = true,
-    vehiculoNegrita  = true,
-    escribanoNegrita = true,
+    nombresNegrita    = true,
+    nombresSubrayado  = true,
+    fechaNegrita      = true,
+    vehiculoNegrita   = true,
+    escribanoNegrita  = true,
+    showVarHighlight  = false,
   } = estilos;
 
   // VARS_BOLD dinámico según estilos
@@ -162,7 +180,11 @@ export async function buildDocxGenerico({
     vars.TIPO_VEHICULO_MIN = tv === "MOTOVEHÍCULO" ? "moto vehículo" : "vehículo";
   }
 
-  const lineas = (contenido || "").split("\n");
+  // Documentos notariales no tienen puntos y aparte: sin \n literales ni saltos múltiples
+  const lineas = (contenido || "")
+    .replace(/\\n/g, " ")
+    .replace(/\r?\n(\r?\n)+/g, "\n")
+    .split("\n");
   const lang = { value: "es-AR", eastAsia: "es-AR", bidi: "es-AR" };
 
   const parrafos = lineas.map(linea => {
@@ -182,6 +204,8 @@ export async function buildDocxGenerico({
         bold:      seg.bold,
         underline: seg.underline ? { type: UnderlineType.SINGLE } : undefined,
         language:  lang,
+        color:     showVarHighlight && seg.fromVar && seg.emptyVar ? "C0392B" : undefined,
+        highlight: showVarHighlight && seg.fromUser ? "yellow" : undefined,
       })),
     });
   });

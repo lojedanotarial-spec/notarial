@@ -104,7 +104,6 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const pluginWindowRef   = useRef(null);
   const pendingInsertRef  = useRef(null);
   const [isDirty,          setIsDirty]          = useState(false);
-  const [showVarHighlight, setShowVarHighlight] = useState(true);
   const [hasOoEdits,       setHasOoEdits]       = useState(false);
   const [pendingRegen,     setPendingRegen]      = useState(false);
   const hasOoEditsRef     = useRef(false);
@@ -267,7 +266,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         handleGenerarRef.current?.();
       }
     }
-  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, showVarHighlight, estilos]);
+  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, estilos]);
 
   // Vehiculos y extravars siempre regeneran — no dependen del flag
   useEffect(() => {
@@ -556,8 +555,6 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         onGo={handleGo}
         onFormato={() => setModal("formato")}
         onExpediente={handleAbrirExpediente}
-        showVarHighlight={showVarHighlight}
-        onToggleVarHighlight={() => { generateAfterRef.current = true; setShowVarHighlight(v => !v); }}
       />
 
       {/* BODY */}
@@ -802,7 +799,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
       {modal === "formulario"  && <ModalFormulario formulario={formulario} onApply={v => { setFormulario(v); generateAfterRef.current = true; }} onClose={() => setModal(null)}/>}
       {modal === "expediente"  && <ModalAgregarExpediente docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} userId={usuario?.id} nombreSugerido={nombreExpediente} onClose={() => setModal(null)} onGo={onGo} />}
-      {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
+      {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={templateSlug !== "cert_firma"} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
       {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={applyAndGen(setProtocolo)}   onClose={() => setModal(null)}/>}
