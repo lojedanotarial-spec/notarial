@@ -10,7 +10,13 @@ import { ExpedientesScreen }     from "./screens/ExpedientesScreen";
 import { ExpedienteDetailScreen } from "./screens/ExpedienteDetailScreen";
 import { HerramientasScreen }    from "./screens/HerramientasScreen";
 import { EstimadorDNRPA }        from "./screens/tools/EstimadorDNRPA";
+import { PresupuestoNotarial }   from "./screens/tools/PresupuestoNotarial";
+import { CalculadoraCuit }       from "./screens/tools/CalculadoraCuit";
 import { ScribaPanel }   from "./components/ScribaPanel";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { FeedbackButton } from "./components/FeedbackButton";
+import { LogsScreen }    from "./screens/LogsScreen";
+import { logError }      from "./utils/logger";
 
 
 const globalStyles = [
@@ -56,6 +62,17 @@ function AppRouter() {
     setParams(targetParams);
     setScreen(targetScreen);
   };
+
+  useEffect(() => {
+    const onError = (e) => logError("js_error", e.message, { stack: e.error?.stack, screen });
+    const onRejection = (e) => logError("unhandled_rejection", String(e.reason), { stack: e.reason?.stack, screen });
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, [screen]);
 
   // Admin va directo al home; cambia registro desde el botón en HomeScreen
 
@@ -104,7 +121,12 @@ function AppRouter() {
       {screen === "expedientes"  && <ExpedientesScreen     onGo={handleGo} registroActivo={registroActivo} miUsuario={miUsuario} />}
       {screen === "expediente"   && <ExpedienteDetailScreen onGo={handleGo} params={params} />}
       {screen === "herramientas"    && <HerramientasScreen onGo={handleGo} />}
-      {screen === "estimador_dnrpa" && <EstimadorDNRPA     onBack={() => handleGo("herramientas")} />}
+      {screen === "estimador_dnrpa"     && <EstimadorDNRPA      onBack={() => handleGo("herramientas")} />}
+      {screen === "presupuesto_notarial" && <PresupuestoNotarial onBack={() => handleGo("herramientas")} />}
+      {screen === "calculadora_cuit"     && <CalculadoraCuit     onBack={() => handleGo("herramientas")} />}
+      {screen === "logs"                 && <LogsScreen          onBack={() => handleGo("admin")} />}
+
+      <FeedbackButton screen={screen} />
 
       {/* Botón flotante Scriba */}
       <div className="no-print" style={{ position: "fixed", bottom: 24, right: 24, zIndex: 199 }}>
@@ -147,7 +169,9 @@ export default function App() {
   return (
     <AuthProvider>
       <style>{globalStyles}</style>
-      <AppRouter />
+      <ErrorBoundary>
+        <AppRouter />
+      </ErrorBoundary>
     </AuthProvider>
   );
 }

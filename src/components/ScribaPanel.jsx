@@ -3,6 +3,7 @@ import { C } from "../constants";
 import { aplicarTildesNombre } from "../utils/tildesNombres";
 import { useScribaConversacion } from "../hooks/useScribaConversacion";
 import { useAuth } from "../context/AuthContext";
+import { logScriba } from "../utils/logger";
 
 function renderMarkdown(text) {
   if (!text) return null;
@@ -648,6 +649,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     // Sin imagen: flujo normal de Scriba
     const nuevosMensajes = [...mensajes, { role: "user", content: pregunta }];
     setMensajes(nuevosMensajes);
+    const t0 = Date.now();
     try {
       const res = await fetch("/api/scriba", {
         method: "POST",
@@ -666,8 +668,10 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
       setMensajes(mensajesFinales);
       guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+      logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: pregunta, response: data.respuesta, duration_ms: Date.now() - t0 });
     } catch (e) {
       setError(e.message);
+      logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: pregunta, error: e.message, duration_ms: Date.now() - t0 });
     } finally {
       setCargando(false);
     }

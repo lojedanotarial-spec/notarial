@@ -141,8 +141,3 @@ export const inp = {
   boxSizing:    "border-box",
 };
 
-// ── TEMPLATES ─────────────────────────────────────────────────────────────────
-export const TEMPLATES = [
-  { key: "certFirma",    label: "Certificación de Firma",        familia: "cert" },
-  { key: "certFirmaF08", label: "Certificación de Firma - F08",  familia: "cert" },
-];

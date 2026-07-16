@@ -197,10 +197,10 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     setGenerating(true);
     try {
       const extravarsConFormulario = {
+        ...extravars,
         NUMERO_FORMULARIO: fmtNumFormulario(formulario),
         DOMINIO: formulario.dominio || "",
         TIPO_FORMULARIO: formulario.tipo || "",
-        ...extravars,
       };
       const blob = templateContenido
         ? await buildDocxGenerico({
@@ -233,6 +233,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       setHasOoEdits(false);
       setPendingRegen(false);
       setIsDirty(false);
+      // Si un modal guardó mientras la generación estaba en curso, regenerar con los nuevos datos
+      if (generateAfterRef.current) {
+        generateAfterRef.current = false;
+        setTimeout(() => handleGenerarRef.current?.(), 0);
+      }
     } catch (e) {
       alert("Error al generar el documento: " + e.message);
     } finally {
@@ -244,14 +249,21 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);
 
 
-  // Auto-generate once on mount (delay lets the admin escribano effect settle first)
-  // Si hay docId, skipAutoGenerateRef arranca en true — cargar() lo resetea si no hay document_key guardado
+  // Auto-generate once: espera a que el template esté cargado Y el escribano esté listo.
+  // Si hay docId, skipAutoGenerateRef arranca en true — cargar() lo resetea si no hay document_key.
   useEffect(() => {
+    if (skipAutoGenerateRef.current) return;
+    if (generatedOnceRef.current) return;
+    if (templateId && !templateContenido) return; // esperar que el template llegue de Supabase
+    if (miUsuario?.is_admin && registroActivo && miembros.length === 0) return; // admin: esperar miembros
+
     const t = setTimeout(() => {
-      if (!skipAutoGenerateRef.current) handleGenerarRef.current?.();
-    }, 800);
+      if (!generatedOnceRef.current && !skipAutoGenerateRef.current) {
+        handleGenerarRef.current?.();
+      }
+    }, 50);
     return () => clearTimeout(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [templateContenido, templateId, miUsuario?.is_admin, registroActivo, miembros, escribano]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mark dirty + auto-generate si viene de un modal (flag generateAfterRef)
   // Si el doc fue editado en OO, mostrar confirmación en lugar de regenerar automático
@@ -266,7 +278,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         handleGenerarRef.current?.();
       }
     }
-  }, [partes, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, estilos]);
+  }, [partes, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, estilos]);
 
   // Vehiculos y extravars siempre regeneran — no dependen del flag
   useEffect(() => {
@@ -690,7 +702,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               </PanelSection>
 
               {["cert_firma_f08","certFirmaF08"].includes(templateSlug) ? (
-                <PanelSection label={`Formulario 0${formulario.tipo}`} onClick={() => setModal("formulario")}>
+                <PanelSection label="Datos de formulario" alerta={!formulario.numero} onClick={() => setModal("formulario")}>
                   {formulario.numero ? (
                     <>
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.dark }}>N.° {fmtNumFormulario(formulario)}</div>

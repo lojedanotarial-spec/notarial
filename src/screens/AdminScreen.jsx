@@ -42,8 +42,25 @@ export function AdminScreen({ onGo }) {
       <div style={{ flex:1, overflowY:"auto", padding:"24px 20px" }}>
         <div style={{ maxWidth:700, margin:"0 auto", display:"flex", flexDirection:"column", gap:16 }}>
 
-          <div style={{ fontSize:20, fontWeight:700, color:C.dark, letterSpacing:"-.02em" }}>
-            ¿Qué registro querés ver?
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ fontSize:20, fontWeight:700, color:C.dark, letterSpacing:"-.02em" }}>
+              ¿Qué registro querés ver?
+            </div>
+            <button
+              onClick={() => onGo("logs")}
+              style={{
+                padding:"6px 14px", borderRadius:8,
+                border:"1.5px solid rgba(26,35,50,.15)",
+                background:"transparent", cursor:"pointer",
+                fontFamily:"'Montserrat', sans-serif", fontSize:11,
+                fontWeight:700, color:"rgba(26,35,50,.5)",
+                transition:"all .12s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(26,35,50,.4)"; e.currentTarget.style.color="rgba(26,35,50,.85)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(26,35,50,.15)"; e.currentTarget.style.color="rgba(26,35,50,.5)"; }}
+            >
+              Ver logs
+            </button>
           </div>
 
           {/* BUSCADOR */}

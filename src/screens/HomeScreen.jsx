@@ -649,15 +649,15 @@ export function HomeScreen({ onGo }) {
           </div>
 
           {[
-            { id:"estimador_dnrpa",      label:"Estimador DNRPA",      desc:"Aranceles de transferencia automotor", activo:false },
-            { id:"presupuesto_notarial", label:"Presupuesto Notarial",  desc:"Honorarios y sellos ATM",              activo:false },
+            { id:"estimador_dnrpa",      label:"Estimador DNRPA",      desc:"Aranceles de transferencia automotor", activo:true  },
+            { id:"presupuesto_notarial", label:"Presupuesto Notarial",  desc:"Honorarios y sellos ATM",              activo:true  },
             { id:"calculadora_cuit",     label:"Calculadora CUIT/CUIL", desc:"Desde DNI y género",                   activo:true  },
             { id:"informe_dominio",      label:"Informe de Dominio",    desc:"Estado registral de automotor",         activo:false },
           ].map(tool => (
-            <div key={tool.id} onClick={() => onGo("herramientas")}
+            <div key={tool.id} onClick={() => tool.activo ? onGo(tool.id) : onGo("herramientas")}
               style={{ padding:"10px 12px", borderRadius:9, cursor:"pointer",
-                background: tool.activo ? C.ceruleanLight : C.porcelain,
-                border: `1px solid ${tool.activo ? C.ceruleanMid : "rgba(26,35,50,.09)"}`,
+                background: tool.activo ? "#FDFCFA" : C.porcelain,
+                border: `1px solid ${tool.activo ? "rgba(26,35,50,.11)" : "rgba(26,35,50,.07)"}`,
                 transition:"box-shadow .12s" }}
               onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(26,35,50,.08)"}
               onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>

@@ -1,6 +1,6 @@
 # Notarial v2 — Documentación de Proyecto
 
-> Última actualización: 24 junio 2026
+> Última actualización: 25 junio 2026
 
 ---
 
@@ -281,27 +281,45 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 
 ~~- [ ] **RLS expedientes insert**~~ ✅ Resuelto 8/6/26 — política `expedientes_acceso` (FOR ALL) reemplazada por SELECT/UPDATE/DELETE con ownership check + INSERT con `auth.uid() IS NOT NULL`; código usa `session.user.id`.
 
-### Features próximas
+### Features próximas (alta prioridad)
 
-- [ ] **Landing page + Google OAuth producción** — página de inicio pública con descripción del producto + privacy policy; necesaria para que Google apruebe el OAuth en producción (actualmente en modo test)
-- [ ] **Historial de conversaciones Scriba** — listar y cargar conversaciones previas desde Supabase (tabla `scriba_conversaciones` ya existe)
-- [ ] **Estimador DNRPA** — replicar cálculo cliente (porcentajes en código, montos fijos en Supabase para actualización anual); el sitio DNRPA es 100% JS cliente sin API pública
+- [x] **Google OAuth producción** — ✅ en producción
+- [ ] **Mejoras UI Scriba** — UX del panel de IA: historial de conversaciones, navegación, presentación de respuestas
+- [ ] **Landing page** — página de inicio pública con descripción del producto
 
 ### Features mediano plazo
 
 - [ ] **Insertar en OO confirmado** — validar end-to-end cuando el servidor OO esté estable (fix ya deployado, pendiente confirmación)
 - [ ] **Guardado de ediciones OO** — persistir los cambios hechos en OO de vuelta a Supabase (callback de OO → Supabase Storage)
-- [ ] **Calculador de presupuesto notarial** — calcular sellos ATM + honorarios desde valor del acto
+- [x] **Calculador de presupuesto notarial** — ✅ implementado y actualizado (25-26/06/26) — `PresupuestoNotarial.jsx` en `/herramientas`. Cubre 20+ actos. Datos: Ley 5053-8100 (honorarios, vigente 25-03-26), Ley Imp. 9680 (sellos 2% inm / 1% gral), Tasas Registro con tramos reales (COD 620-628), tasas municipales 18 departamentos (planilla Colegio Feb 2026), Aportes Colegio 0,4% mín $108.450 (desde 01-07-26). Permite edición manual de valores con override/restaurar. Pendiente: **revisión de datos por la escribana** — ver `scripts/datos_sensibles.md`.
+- [ ] **Revisión datos presupuesto** — la escribana debe verificar los valores marcados ⚠️ en `scripts/datos_sensibles.md`, especialmente: LLANA ($9.000/hoja), DILIGENC_FIJ ($135.000 + 0,2%), ESTUDIO_FIJ ($135.000 + 0,3%), herencia/declaratoria (actualmente a mínimo fijo, posiblemente incorrecto), afectación bien de familia (Art. referenciado puede estar mal).
 - [ ] **Sync requirentes CRM** — botón "Sincronizar" en ModalPartes (placeholder visible, sin backend)
 - [ ] **F04 model** — plantilla F-04 (diferente a F-08; `ModalFormulario` ya tiene el selector)
 
-### Features largo plazo
+### Sistema de recordatorios para datos sensibles
 
+La plataforma tiene datos que cambian periódicamente (aranceles, sellos, tasas). El inventario completo está en `scripts/datos_sensibles.md`.
+
+**Cadencias a seguir:**
+| Fuente | Cadencia | Mes clave |
+|--------|----------|-----------|
+| Ley Impositiva Mendoza (ATM) — sellos y tasas registro | Anual | Diciembre |
+| Tabla honorarios — Colegio de Escribanos | Trimestral | Mar, Jun, Sep, Dic |
+| Planilla reparticiones municipales — Colegio | Trimestral | Mar, Jun, Sep, Dic |
+| Cartilla aportes — Colegio | Al publicarse | — |
+| Normativa ARCA/AFIP (ITI/retenciones) | Al publicarse | — |
+
+**Implementación propuesta (backlog):**
+- [ ] **Indicador de datos frescos** — mostrar en el presupuesto (solo admin) "Datos al: [fecha]" con warning si > 90 días. La fecha se hardcodea en las constantes del archivo.
+- [ ] **Recordatorio trimestral automatizado** — usar `/schedule` para crear un agente cloud que alerte en marzo/junio/septiembre/diciembre que hay que pedir tabla actualizada al Colegio.
+
+### Features largo plazo / baja prioridad
+
+- [ ] **Estimador DNRPA** — cálculo de costos transferencia automotor; pausado
 - [ ] **Tutorial/onboarding liviano** — primer flujo guiado para nuevos usuarios
 - [ ] **Más modelos de Fátima** — subir plantillas adicionales con el texto real de la escribana
 - [ ] **Plantillas por registro (ModeloScreen)** — edición de plantillas HTML custom por registro
 - [ ] **Panel admin completo** — AdminScreen básico, sin gestión de plantillas ni usuarios
-- [ ] **Google test users** — agregar usuarios cuando sea necesario; Fátima ya está habilitada
 
 ---
 
@@ -563,6 +581,7 @@ Deploy automático en Vercel al hacer push a `main`.
 53. Fix bug resaltado — `~~~~` (valor vacío envuelto en `~~`) causaba que el motor de regex spanneara todo el texto siguiente como `fromUser`. Fix doble: regex con lookbehind/lookahead `(?<!~)~~(?!~)` + guard en emisión (`valor ? \`~~${valor}~~\` : ""`) para DNI, rol, acta, libro vacíos
 54. Estilo resaltado cambiado de texto azul a **fondo amarillo nativo Word** (`highlight: "yellow"` en TextRun) — visible en regular e itálica, independiente del peso de fuente
 55. `showVarHighlight` default cambiado a `false` — el documento sale limpio por defecto; el usuario activa el resaltado desde Formato cuando lo necesita
+56. Fix bug ModalFormulario — `formulario` no estaba en el array de deps del useEffect que dispara auto-regeneración; guardar el formulario F-08 no regeneraba el documento
 
 ---
 
