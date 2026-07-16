@@ -1,5 +1,5 @@
 ﻿import { useEffect } from "react";
-import { MESES_ORD, ANIOS_LETRAS } from "./constants";
+import { MESES_ORD, ANIOS_LETRAS } from "./constants.js";
 
 export function useClickOutside(ref, cb) {
   useEffect(() => {

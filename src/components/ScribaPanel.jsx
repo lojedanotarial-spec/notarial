@@ -376,7 +376,7 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
   );
 }
 
-function LoadingDots() {
+function LoadingDots({ label }) {
   return (
     <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
       <div style={{ flexShrink: 0, marginRight: 8, marginTop: 2 }}>
@@ -384,15 +384,18 @@ function LoadingDots() {
       </div>
       <div style={{
         background: "#f8f6f2", borderRadius: "14px 14px 14px 4px",
-        padding: "12px 16px", display: "flex", gap: 4, alignItems: "center",
+        padding: "12px 16px", display: "flex", gap: 8, alignItems: "center",
       }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: "rgba(26,35,50,.3)",
-            animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
-          }}/>
-        ))}
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: "rgba(26,35,50,.3)",
+              animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+            }}/>
+          ))}
+        </div>
+        {label && <span style={{ fontSize: 11, color: "rgba(26,35,50,.45)" }}>{label}</span>}
       </div>
     </div>
   );
@@ -412,24 +415,57 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
   const [input,     setInput]     = useState("");
   const [cargando,  setCargando]  = useState(false);
   const [error,     setError]     = useState(null);
-  const [imagen,    setImagen]    = useState(null); // { data, mediaType, nombre }
+  const [archivos,  setArchivos]  = useState([]); // [{ data, mediaType, nombre }]
+  const [progresoEscaneo, setProgresoEscaneo] = useState(""); // "" | "2/3"
+  const [pdfsContexto, setPdfsContexto] = useState([]); // [{ data, mediaType:'application/pdf', nombre, sizeBytes }]
   const [expandido, setExpandido] = useState(false);
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
   const fileRef    = useRef(null);
+  const fileContextoRef = useRef(null);
   const iniciadoRef = useRef(false);
 
-  function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
+  const LIMITE_PDFS_CONTEXTO = 2.4 * 1024 * 1024; // ~2.4MB crudos → deja margen dentro del límite de body de Vercel (~4.5MB)
 
+  function handleFileContexto(e) {
+    const files = Array.from(e.target.files || []).filter(f => f.type === "application/pdf");
+    e.target.value = "";
+    if (!files.length) return;
+
+    const actual = pdfsContexto.reduce((s, p) => s + p.sizeBytes, 0);
+    const nuevo = files.reduce((s, f) => s + f.size, 0);
+    if (actual + nuevo > LIMITE_PDFS_CONTEXTO) {
+      alert("Los PDFs adjuntados son demasiado pesados en conjunto. Adjuntá menos archivos o archivos más livianos (límite ~2.4MB en total).");
+      return;
+    }
+
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const base64 = ev.target.result.split(",")[1];
+        setPdfsContexto(prev => [...prev, { data: base64, mediaType: "application/pdf", nombre: file.name, sizeBytes: file.size }]);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function quitarPdfContexto(idx) {
+    setPdfsContexto(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function handleFile(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    files.forEach(agregarArchivo);
+  }
+
+  function agregarArchivo(file) {
     // PDFs: enviar directo sin comprimir
     if (file.type === "application/pdf") {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = ev.target.result.split(",")[1];
-        setImagen({ data: base64, mediaType: "application/pdf", nombre: file.name });
+        setArchivos(prev => [...prev, { data: base64, mediaType: "application/pdf", nombre: file.name }]);
       };
       reader.readAsDataURL(file);
       return;
@@ -447,9 +483,44 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
-      setImagen({ data: base64, mediaType: "image/jpeg", nombre: file.name });
+      setArchivos(prev => [...prev, { data: base64, mediaType: "image/jpeg", nombre: file.name }]);
     };
     img.src = url;
+  }
+
+  function quitarArchivo(idx) {
+    setArchivos(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  // Consolida N resultados de /api/vision en un solo vehículo (primer-no-vacío-gana,
+  // igual que ScanVehiculoBtn en ModalVehiculos.jsx) y una lista de personas sin duplicar por DNI
+  function fusionarResultadosVision(resultados) {
+    const personas = [];
+    const vistoDni = new Set();
+    let vehiculo = null;
+    const notas = [];
+
+    const limpia = p => {
+      const { _rol_sugerido, ...rest } = p;
+      return { ...rest, rol: rest.rol || _rol_sugerido || "" };
+    };
+    const agregarPersona = (p) => {
+      const persona = limpia(p);
+      const dni = (persona.nro_doc || "").replace(/\D/g, "");
+      if (dni && vistoDni.has(dni)) return;
+      if (dni) vistoDni.add(dni);
+      personas.push(persona);
+    };
+
+    for (const datos of resultados) {
+      const esVehiculo = ["tarjeta_verde", "titulo_automotor"].includes(datos.tipo_documento);
+      if (esVehiculo && datos.vehiculo && !vehiculo) vehiculo = datos.vehiculo;
+      if (esVehiculo && datos.titular?.nro_doc) agregarPersona(datos.titular);
+      (datos.personas || []).forEach(agregarPersona);
+      if (datos.notas) notas.push(datos.notas);
+    }
+
+    return { vehiculo, personas, notas: notas.join(" ") };
   }
 
   useEffect(() => {
@@ -551,102 +622,123 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
 
   async function enviar(texto) {
     const pregunta = (texto || input).trim();
-    if ((!pregunta && !imagen) || cargando) return;
+    if ((!pregunta && !archivos.length && !pdfsContexto.length) || cargando) return;
 
     // Intentar manejar localmente antes de llamar a la API
-    if (!imagen && manejarActualizacionLocal(pregunta)) {
+    if (!archivos.length && !pdfsContexto.length && manejarActualizacionLocal(pregunta)) {
       setInput("");
       return;
     }
 
-    const imgActual = imagen;
+    const archivosActuales = archivos;
+    const pdfsContextoActuales = pdfsContexto;
     setInput("");
-    setImagen(null);
+    setArchivos([]);
+    setPdfsContexto([]);
     setCargando(true);
     setError(null);
 
-    // Si hay imagen, procesarla con el endpoint de visión dedicado
-    if (imgActual) {
-      const textoUsuario = pregunta || `Leé este documento: ${imgActual.nombre}`;
-      const nuevosMensajes = [...mensajes, { role: "user", content: textoUsuario, imagen: { nombre: imgActual.nombre } }];
+    // Si hay archivos, procesarlos con el endpoint de visión dedicado (uno por uno)
+    if (archivosActuales.length) {
+      const nombres = archivosActuales.map(a => a.nombre).join(", ");
+      const textoUsuario = pregunta || (archivosActuales.length > 1 ? `Leé estos documentos: ${nombres}` : `Leé este documento: ${nombres}`);
+      const nuevosMensajes = [...mensajes, {
+        role: "user", content: textoUsuario,
+        imagen: { nombre: archivosActuales.length > 1 ? `${archivosActuales.length} archivos` : archivosActuales[0].nombre },
+      }];
       setMensajes(nuevosMensajes);
       try {
-        const datos = await procesarImagen(imgActual);
-        const esVehiculo = ["tarjeta_verde","titulo_automotor"].includes(datos.tipo_documento);
+        const resultados = [];
+        for (let i = 0; i < archivosActuales.length; i++) {
+          if (archivosActuales.length > 1) setProgresoEscaneo(`${i + 1}/${archivosActuales.length}`);
+          resultados.push(await procesarImagen(archivosActuales[i]));
+        }
 
-        // Dorso de tarjeta verde: tiene personas con _rol_sugerido pero sin vehiculo
-        if (esVehiculo && !datos.vehiculo && datos.personas?.length) {
-          const personas = datos.personas;
-          const resumen = personas.map(p =>
-            `**${[p.apellido, p.nombre].filter(Boolean).join(" ")}** — DNI ${p.nro_doc || ""}${p._rol_sugerido ? ` *(${p._rol_sugerido})*` : ""}`
-          ).join("\n");
-          const respuesta = `Dorso de tarjeta verde leído.\n\n${resumen}\n\nPodés agregar cada persona como parte del documento.`;
-          // Limpiar _rol_sugerido del primer dato para la acción pero pasarlo como rol
-          const limpia = p => { const { _rol_sugerido, ...rest } = p; return { ...rest, rol: _rol_sugerido || "" }; };
-          const accion = personas.length === 1
-            ? { tipo: "completar_parte", datos: limpia(personas[0]) }
-            : { tipo: "completar_parte", datos: limpia(personas[0]), personas_adicionales: personas.slice(1).map(limpia) };
-          const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
-          setMensajes(mensajesFinales);
-          guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
-        } else if (esVehiculo && datos.vehiculo) {
-          // Documento de vehículo — poblar extravars del template
-          const v = datos.vehiculo;
+        const { vehiculo, personas, notas } = fusionarResultadosVision(resultados);
+
+        const lineasVehiculo = [];
+        if (vehiculo) {
           const vehiculoData = {
-            marca:         (v.marca     || "").toUpperCase(),
-            modelo:        (v.modelo    || "").toUpperCase(),
-            tipo_desc:     (v.tipo_desc || "").toUpperCase(),
-            dominio:       (v.dominio   || "").toUpperCase(),
-            chasis:        (v.chasis    || "").toUpperCase(),
-            motor:         (v.motor     || "").toUpperCase(),
+            marca:         (vehiculo.marca     || "").toUpperCase(),
+            modelo:        (vehiculo.modelo    || "").toUpperCase(),
+            tipo_desc:     (vehiculo.tipo_desc || "").toUpperCase(),
+            dominio:       (vehiculo.dominio   || "").toUpperCase(),
+            chasis:        (vehiculo.chasis    || "").toUpperCase(),
+            motor:         (vehiculo.motor     || "").toUpperCase(),
             tipo_vehiculo: "VEHÍCULO",
           };
           window.dispatchEvent(new CustomEvent("scriba:completar_vehiculo", { detail: vehiculoData }));
-
-          const lineas = [
-            `**Documento leído:** ${datos.tipo_documento === "tarjeta_verde" ? "Tarjeta verde" : "Título automotor"}`,
-            v.marca    ? `Marca: **${v.marca}**`                : null,
-            v.modelo   ? `Modelo: **${v.modelo}**`             : null,
-            v.dominio  ? `Dominio: **${v.dominio}**`           : null,
-            v.chasis   ? `Chasis: ${v.chasis}`                  : null,
-            v.motor    ? `Motor: ${v.motor}`                    : null,
-          ].filter(Boolean);
-
-          const respuesta = lineas.join("\n") + "\n\nDatos cargados en el documento.";
-
-          // Si hay titular, ofrecer cargarlo como parte también
-          const accion = datos.titular?.nro_doc
-            ? { tipo: "completar_parte", datos: datos.titular }
-            : null;
-
-          const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
-          setMensajes(mensajesFinales);
-          guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
-        } else {
-          // Documento de identidad — flujo original
-          const personas = datos.personas || [];
-          const resumen = personas.length
-            ? personas.map(p => `**${p.apellido || ""} ${p.nombre || ""}** — DNI ${p.nro_doc || ""}${p.fecha_nac ? `, nacido/a ${p.fecha_nac}` : ""}${p.estado_civil ? `, ${p.estado_civil}` : ""}`).join("\n")
-            : "No encontré datos de personas en el documento.";
-          const respuesta = `Documento leído: ${datos.tipo_documento || "documento"}.\n\n${resumen}${datos.notas ? `\n\n${datos.notas}` : ""}`;
-          const accion = personas.length === 1
-            ? { tipo: "completar_parte", datos: personas[0] }
-            : personas.length > 1
-            ? { tipo: "completar_parte", datos: personas[0], personas_adicionales: personas.slice(1) }
-            : null;
-          const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
-          setMensajes(mensajesFinales);
-          guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+          lineasVehiculo.push(
+            "**Vehículo leído:**",
+            vehiculo.marca   ? `Marca: **${vehiculo.marca}**`   : null,
+            vehiculo.modelo  ? `Modelo: **${vehiculo.modelo}**` : null,
+            vehiculo.dominio ? `Dominio: **${vehiculo.dominio}**` : null,
+            vehiculo.chasis  ? `Chasis: ${vehiculo.chasis}`     : null,
+            vehiculo.motor   ? `Motor: ${vehiculo.motor}`       : null,
+          );
         }
+
+        const resumenPersonas = personas.length
+          ? personas.map(p => `**${[p.apellido, p.nombre].filter(Boolean).join(" ")}** — DNI ${p.nro_doc || ""}${p.fecha_nac ? `, nacido/a ${p.fecha_nac}` : ""}${p.estado_civil ? `, ${p.estado_civil}` : ""}${p.rol ? ` *(${p.rol})*` : ""}`).join("\n")
+          : null;
+
+        const bloques = [...lineasVehiculo.filter(Boolean), resumenPersonas].filter(Boolean);
+        const respuesta = (bloques.length ? bloques.join("\n\n") : "No encontré datos para cargar en los documentos adjuntos.")
+          + (notas ? `\n\n${notas}` : "");
+
+        const accion = personas.length
+          ? { tipo: "completar_parte", datos: personas[0], personas_adicionales: personas.slice(1) }
+          : null;
+
+        const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
+        setMensajes(mensajesFinales);
+        guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
       } catch (e) {
         setError(e.message);
+      } finally {
+        setCargando(false);
+        setProgresoEscaneo("");
+      }
+      return;
+    }
+
+    // Si hay PDFs de contexto, mandarlos al chat normal como bloques "document" (no OCR)
+    if (pdfsContextoActuales.length) {
+      const nombres = pdfsContextoActuales.map(p => p.nombre).join(", ");
+      const textoUsuario = pregunta || `Redactá o respondé basándote en estos documentos: ${nombres}`;
+      const nuevosMensajes = [...mensajes, { role: "user", content: textoUsuario, imagen: { nombre: nombres } }];
+      setMensajes(nuevosMensajes);
+      const t0 = Date.now();
+      try {
+        const res = await fetch("/api/scriba", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mensaje: textoUsuario,
+            mensajes_anteriores: mensajes,
+            contexto: contexto || null,
+            registroId: registroId || null,
+            userToken: session?.access_token || null,
+            documentos_adjuntos: pdfsContextoActuales.map(p => ({ data: p.data, mediaType: p.mediaType, nombre: p.nombre })),
+          }),
+        });
+        let data;
+        try { data = await res.json(); } catch { throw new Error(`Error del servidor (${res.status})`); }
+        if (!res.ok) throw new Error(data.error || "Error del servidor");
+        const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
+        setMensajes(mensajesFinales);
+        guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+        logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, response: data.respuesta, duration_ms: Date.now() - t0 });
+      } catch (e) {
+        setError(e.message);
+        logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, error: e.message, duration_ms: Date.now() - t0 });
       } finally {
         setCargando(false);
       }
       return;
     }
 
-    // Sin imagen: flujo normal de Scriba
+    // Sin adjuntos: flujo normal de Scriba
     const nuevosMensajes = [...mensajes, { role: "user", content: pregunta }];
     setMensajes(nuevosMensajes);
     const t0 = Date.now();
@@ -858,7 +950,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             />
             );
           })}
-          {cargando && <LoadingDots />}
+          {cargando && <LoadingDots label={progresoEscaneo ? `Escaneando ${progresoEscaneo}` : null} />}
 
           {error && (
             <div style={{
@@ -875,23 +967,53 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
 
         {/* Input */}
         <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(26,35,50,.08)", flexShrink: 0 }}>
-          {imagen && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8, marginBottom: 8,
-              background: "rgba(58,124,165,.06)", border: "1px solid rgba(58,124,165,.2)",
-              borderRadius: 8, padding: "6px 10px",
-            }}>
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={C.cerulean} strokeWidth="1.5">
-                <rect x="2" y="1" width="12" height="14" rx="1.5"/>
-                <path d="M5 5h6M5 8h6M5 11h4" strokeLinecap="round"/>
-              </svg>
-              <span style={{ fontSize: 11, color: C.cerulean, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {imagen.nombre}
-              </span>
-              <button onClick={() => setImagen(null)} style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "rgba(26,35,50,.4)", fontSize: 16, lineHeight: 1, padding: "0 2px",
-              }}>×</button>
+          {archivos.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+              {archivos.map((a, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  background: "rgba(58,124,165,.06)", border: "1px solid rgba(58,124,165,.2)",
+                  borderRadius: 8, padding: "6px 10px",
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke={C.cerulean} strokeWidth="1.5">
+                    <rect x="2" y="1" width="12" height="14" rx="1.5"/>
+                    <path d="M5 5h6M5 8h6M5 11h4" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: 11, color: C.cerulean, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {a.nombre}
+                  </span>
+                  <button onClick={() => quitarArchivo(i)} style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "rgba(26,35,50,.4)", fontSize: 16, lineHeight: 1, padding: "0 2px",
+                  }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {pdfsContexto.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#a07c30", letterSpacing: ".03em" }}>
+                DOCUMENTOS DE REFERENCIA
+              </div>
+              {pdfsContexto.map((p, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  background: "rgba(201,169,97,.1)", border: "1px solid rgba(201,169,97,.35)",
+                  borderRadius: 8, padding: "6px 10px",
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#a07c30" strokeWidth="1.5">
+                    <rect x="2" y="1" width="12" height="14" rx="1.5"/>
+                    <path d="M5 5h6M5 8h6M5 11h4" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: 11, color: "#a07c30", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {p.nombre}
+                  </span>
+                  <button onClick={() => quitarPdfContexto(i)} style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "rgba(26,35,50,.4)", fontSize: 16, lineHeight: 1, padding: "0 2px",
+                  }}>×</button>
+                </div>
+              ))}
             </div>
           )}
           <div style={{
@@ -899,12 +1021,12 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             background: "#fff", border: "1.5px solid rgba(26,35,50,.22)",
             borderRadius: 10, padding: "8px 10px",
           }}>
-            <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: "none" }} onChange={handleFile} />
-            <button onClick={() => fileRef.current?.click()} title="Adjuntar documento"
+            <input ref={fileRef} type="file" accept="image/*,.pdf" multiple style={{ display: "none" }} onChange={handleFile} />
+            <button onClick={() => fileRef.current?.click()} title="Adjuntar DNI/tarjeta verde para escanear"
               style={{
                 width: 28, height: 28, borderRadius: 6, border: "none",
-                background: imagen ? "rgba(58,124,165,.15)" : "transparent",
-                color: imagen ? C.cerulean : "rgba(26,35,50,.35)",
+                background: archivos.length ? "rgba(58,124,165,.15)" : "transparent",
+                color: archivos.length ? C.cerulean : "rgba(26,35,50,.35)",
                 cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, transition: "all .15s",
               }}>
@@ -912,12 +1034,26 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 <path d="M13 9l-5 5a4 4 0 01-5.66-5.66l6-6a2.5 2.5 0 013.54 3.54l-6.01 6a1 1 0 01-1.41-1.41l5-5" strokeLinecap="round"/>
               </svg>
             </button>
+            <input ref={fileContextoRef} type="file" accept=".pdf" multiple style={{ display: "none" }} onChange={handleFileContexto} />
+            <button onClick={() => fileContextoRef.current?.click()} title="Adjuntar PDF de referencia (no se escanea como identidad)"
+              style={{
+                width: 28, height: 28, borderRadius: 6, border: "none",
+                background: pdfsContexto.length ? "rgba(201,169,97,.18)" : "transparent",
+                color: pdfsContexto.length ? "#a07c30" : "rgba(26,35,50,.35)",
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, transition: "all .15s",
+              }}>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M9 1H4a1.5 1.5 0 00-1.5 1.5v11A1.5 1.5 0 004 15h8a1.5 1.5 0 001.5-1.5V5.5L9 1z"/>
+                <path d="M9 1v4.5H13.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
             <textarea
               ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKey}
-              placeholder={imagen ? "Agregá instrucciones (opcional)..." : "Consultá sobre normativa, requisitos, impuestos..."}
+              placeholder={(archivos.length || pdfsContexto.length) ? "Agregá instrucciones (opcional)..." : "Consultá sobre normativa, requisitos, impuestos..."}
               disabled={cargando}
               rows={1}
               style={{
@@ -934,11 +1070,11 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             />
             <button
               onClick={() => enviar()}
-              disabled={(!input.trim() && !imagen) || cargando}
+              disabled={(!input.trim() && !archivos.length && !pdfsContexto.length) || cargando}
               style={{
                 width: 32, height: 32, borderRadius: 8, border: "none",
-                background: (input.trim() || imagen) && !cargando ? C.cerulean : "rgba(26,35,50,.12)",
-                color: "#fff", cursor: (input.trim() || imagen) && !cargando ? "pointer" : "default",
+                background: (input.trim() || archivos.length || pdfsContexto.length) && !cargando ? C.cerulean : "rgba(26,35,50,.12)",
+                color: "#fff", cursor: (input.trim() || archivos.length || pdfsContexto.length) && !cargando ? "pointer" : "default",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, transition: "background .15s",
               }}
@@ -949,7 +1085,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             </button>
           </div>
           <div style={{ fontSize: 10, color: "rgba(26,35,50,.55)", marginTop: 6, textAlign: "center" }}>
-            Enter para enviar · Shift+Enter para nueva línea · 📎 para adjuntar documento
+            Enter para enviar · Shift+Enter para nueva línea · 📎 escanear DNI/vehículo · 📄 adjuntar PDF de referencia
           </div>
           <div style={{
             fontSize: 10, color: C.cerulean,

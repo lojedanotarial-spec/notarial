@@ -1,5 +1,5 @@
-import { diaLetras, anioLetras, numeroALetras } from "../utils";
-import { textoInterviene } from "./buildInterviene";
+import { diaLetras, anioLetras, numeroALetras } from "../utils.js";
+import { textoInterviene } from "./buildInterviene.js";
 
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const MESES_UP = MESES.map(m => m.toUpperCase());

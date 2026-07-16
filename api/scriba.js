@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { buildVars, sustituirVars } from "../src/utils/templateVars.js";
 
 const SUPABASE_URL      = "https://eueqluhhgvukovoyorrw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1ZXFsdWhoZ3Z1a292b3lvcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjI3NjQsImV4cCI6MjA5MjE5ODc2NH0.RklZOhSt8DqUhRCqlLNQ0OyLNrUGKYXHaogOkRLCz6E";
@@ -79,6 +80,17 @@ const DB_TOOLS = [
         estado:    { type: "string", description: "Estado del documento: borrador, revision, o completo" },
         titulo:    { type: "string", description: "Texto a buscar en el título del documento" },
       },
+    },
+  },
+  {
+    name: "leer_documento",
+    description: "Recupera el CONTENIDO COMPLETO de un documento/acto ya redactado y guardado en el protocolo (no un archivo subido por el escribano). Usala DESPUÉS de llamar a buscar_documentos y de que el escribano confirme cuál documento específico quiere usar como referencia o comparación. No la llames especulativamente sobre un resultado sin confirmar, salvo que solo haya un resultado inequívoco o el escribano haya dado el id exacto.",
+    input_schema: {
+      type: "object",
+      properties: {
+        documento_id: { type: "string", description: "El id (uuid) exacto del documento, tal como viene en los resultados de buscar_documentos." },
+      },
+      required: ["documento_id"],
     },
   },
 ];
@@ -1382,14 +1394,18 @@ Cuando el editor tiene un documento abierto, el contexto incluye el CONTENIDO AC
 4. Las variables del sistema son EXACTAMENTE: {{ESCRIBANO_NOMBRE}}, {{ESCRIBANO_REGISTRO}}, {{ESCRIBANO_CARACTER}}, {{FECHA_DIA_LETRAS}}, {{FECHA_MES_LETRAS}}, {{FECHA_ANIO_LETRAS}}, {{FECHA_CIUDAD}}, {{PROTOCOLO_LIBRO}}, {{PROTOCOLO_ACTA}}, {{INSTRUMENTO}}, {{PARTE_1_IDENTIDAD}}, {{PARTE_1_COMPLETO}}, {{PARTE_1_DNI}}, {{PARTE_1_ROL}}, y lo mismo con PARTE_2_, PARTE_3_, etc.
 5. No uses ningún otro formato de variable ({ROL}, __ROL__, [ROL], etc.) — solo el formato {{NOMBRE_VARIABLE}}
 
-Si el escribano pide generar un instrumento desde cero (sin documento abierto), usá 'abrir_editor' o respondé con el texto directamente.`;
+Si el escribano pide generar un instrumento desde cero (sin documento abierto), usá 'abrir_editor' o respondé con el texto directamente.
+
+## Referenciar documentos ya guardados en el protocolo
+
+Cuando el escribano quiera usar un documento anterior como referencia o comparación (ej: "basate en el boleto que hice el mes pasado", "fijate cómo redacté la última compraventa de Pérez"), llamá primero a 'buscar_documentos', mostrale los títulos candidatos y esperá que confirme cuál es — salvo que haya un único resultado inequívoco o el escribano haya dado el id exacto. Solo entonces llamá a 'leer_documento' con el id confirmado. No la llames especulativamente sobre resultados sin confirmar.`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, userToken = null, imagen = null } = req.body;
+  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, userToken = null, documentos_adjuntos = [] } = req.body;
 
   if (!mensaje?.trim()) {
     return res.status(400).json({ error: "Mensaje requerido" });
@@ -1416,6 +1432,10 @@ export default async function handler(req, res) {
 
   const contextoNote = contexto
     ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${rolesCtx}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables — ESTE ES EL ÚNICO DOCUMENTO QUE PODÉS MODIFICAR):\n${contexto.templateContenido}\n\nATENCIÓN: Si te piden modificar el documento, usá ESTE texto como base. No generes un instrumento diferente. No cambies el tipo de acto.` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
+    : "";
+
+  const adjuntosNote = documentos_adjuntos.length
+    ? `\n\n[DOCUMENTOS PDF ADJUNTOS EN ESTE MENSAJE]\nEl escribano adjuntó ${documentos_adjuntos.length} documento(s) PDF como contexto/referencia libre (ej: un boleto anterior, un plano, un contrato similar) — NO son DNIs ni tarjetas verdes, no intentes extraer datos de identidad de ellos. Usalos como fuente de información para redactar, comparar o citar datos relevantes, salvo que el escribano indique explícitamente lo contrario.`
     : "";
 
   const INSERTAR_TOOL = [{
@@ -1494,12 +1514,16 @@ const COMPLETAR_PARTE_TOOL = [{
 }];
 
 const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL];
-  const ultimoMensaje = imagen
+  const ultimoMensaje = documentos_adjuntos.length
     ? {
         role: "user",
         content: [
-          { type: "image", source: { type: "base64", media_type: imagen.mediaType, data: imagen.data } },
-          { type: "text", text: mensaje || "Leé este documento y extraé todos los datos relevantes de las personas que aparecen." },
+          ...documentos_adjuntos.map(d => ({
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: d.data },
+            title: d.nombre || undefined,
+          })),
+          { type: "text", text: mensaje || "Redactá o respondé basándote en los documentos adjuntos." },
         ],
       }
     : { role: "user", content: mensaje };
@@ -1538,7 +1562,7 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
     }
     if (name === "buscar_documentos") {
       let q = sb.from("documentos")
-        .select("titulo, tipo_acto, estado, created_at, partes")
+        .select("id, titulo, tipo_acto, estado, created_at, partes")
         .order("updated_at", { ascending: false })
         .limit(10);
       if (registroId) q = q.eq("registro_id", registroId);
@@ -1548,6 +1572,28 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
       const { data, error } = await q;
       if (error) return { error: error.message };
       return { total: data?.length || 0, documentos: data || [] };
+    }
+    if (name === "leer_documento") {
+      let query = sb.from("documentos").select("id, titulo, tipo_acto, contenido, partes, template_id").eq("id", input.documento_id);
+      if (registroId) query = query.eq("registro_id", registroId);
+      const { data, error } = await query.maybeSingle();
+      if (error) return { error: error.message };
+      if (!data) return { error: "No encontré ese documento (verificá el id o puede que no tengas acceso)." };
+
+      const { data: tpl, error: tplError } = await sb.from("templates").select("contenido").eq("id", data.template_id).maybeSingle();
+      if (tplError || !tpl?.contenido) return { error: "No pude reconstruir el texto: falta la plantilla asociada.", titulo: data.titulo };
+
+      const c = data.contenido || {};
+      const vars = buildVars({
+        partes:      (data.partes?.length ? data.partes : c.partes) || [],
+        escribano:   c.escribano   || {},
+        fecha:       c.fecha       || {},
+        protocolo:   c.protocolo   || {},
+        instrumento: c.instrumento || {},
+      });
+      const textoPlano = sustituirVars(tpl.contenido, vars)
+        .replace(/\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~/g, "$1$2$3");
+      return { titulo: data.titulo, tipo_acto: data.tipo_acto, contenido: textoPlano.slice(0, 30000) };
     }
     return { error: "Herramienta desconocida" };
   }
@@ -1565,7 +1611,7 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
           },
           {
             type: "text",
-            text: fechaNota + contextoNote,
+            text: fechaNota + contextoNote + adjuntosNote,
           },
         ],
         tools,
