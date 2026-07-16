@@ -350,10 +350,12 @@ Todas las tablas usan RLS con `auth.uid()`. Las consultas desde serverless (Verc
 **Expedientes — política actual:**
 ```sql
 -- SELECT/UPDATE/DELETE: usuario_id = auth.uid() OR registro tiene ese usuario como miembro
--- INSERT: requiere usuario_id = auth.uid() en el body de la insert
+-- INSERT: solo exige auth.uid() IS NOT NULL (no valida usuario_id — el código ya lo manda bien)
 ```
 
-> ⚠️ Hay un bug activo: las inserts en ExpedientesScreen y ExpedienteDetailScreen no incluyen `usuario_id`, causando RLS violation. Fix pendiente: agregar `usuario_id: (await supabase.auth.getUser()).data.user?.id`.
+✅ Verificado 13/07/26 directo contra Supabase: no hay bug activo. `ExpedientesScreen.jsx` y `ModalAgregarExpediente.jsx` mandan `usuario_id` correctamente en el insert, y las políticas en vivo ya están separadas por comando (select/update/delete con ownership + insert laxo).
+
+> ⚠️ Hallazgo nuevo (13/07/26): varias tablas (`usuarios`, `registros`, `personas`, `documentos`, `templates`) tienen **dos generaciones de políticas RLS conviviendo** — viejas (pre-helpers `es_admin()`/`mi_registro()`) sin dropear cuando se agregaron las nuevas. En la mayoría es redundancia inofensiva (políticas permisivas se combinan con OR), pero en **`templates`** hay riesgo real: la política vieja `"templates globales o de su registro"` es `FOR ALL` sin chequear `es_admin()`, lo que en la práctica anula la restricción de "solo admin escribe" de `templates_write` — un escribano no-admin podría potencialmente escribir sobre templates globales o de su propio registro. Ver `scripts/rls_completo.sql` (actualizado para documentar el estado real) — pendiente decidir si se dropea la política vieja de `templates` en la base en vivo.
 
 **Scripts SQL relevantes:**
 - `scripts/crear_expedientes.sql` — esquema completo de expedientes
