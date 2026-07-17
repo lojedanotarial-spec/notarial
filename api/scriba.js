@@ -1298,6 +1298,7 @@ Cuando el usuario pide cambiar el rol, el estado civil u otro dato de una parte 
 - Para cambiar el rol: mandá todos los datos de la parte + "rol": "vendedor" (o el nuevo rol)
 - Para cambiar el estado civil: mandá todos los datos de la parte + "estado_civil": "soltero"
 - No uses 'modificar_documento' para cambiar datos de partes — ese tool es solo para cambios de texto en el cuerpo del documento
+- No uses 'modificar_documento' para completar precio, seña, plazo, cláusulas especiales u otros campos propios del template — para eso existe 'completar_extravars' (ver [CAMPOS DEL TEMPLATE] en el contexto activo). 'modificar_documento' preserva TODAS las {{VARIABLES}} intactas, así que nunca les va a poner el valor real aunque el escribano te lo dicte.
 
 ## Rol de las partes — REGLA CRÍTICA
 
@@ -1430,8 +1431,12 @@ export default async function handler(req, res) {
     ? `\nRoles en este instrumento: ${contexto.rolesPartes.map((r,i) => r ? `PARTE_${i+1} = ${r}` : null).filter(Boolean).join(", ")}\nCuando el usuario identifique el rol de una persona (ej: "es el autorizado", "es la autorizante"), usá parte_index en completar_parte para posicionarla correctamente (0 = PARTE_1, 1 = PARTE_2, etc.). Esto reemplaza la búsqueda por DNI y posiciona a la persona exactamente donde corresponde.`
     : "";
 
+  const camposExtraCtx = contexto?.camposExtra?.length
+    ? `\n\n[CAMPOS DEL TEMPLATE]\nEste template tiene campos propios que NO son variables del sistema ni datos de partes — se completan con la herramienta 'completar_extravars', usando estos nombres EXACTOS:\n${contexto.camposExtra.map(c => `- ${c.name}${c.label ? ` (${c.label})` : ""}${c.required ? " [requerido]" : ""}`).join("\n")}\nCuando el escribano te dicte precio, seña, plazo, cláusulas u otro dato que corresponda a uno de estos campos, usá 'completar_extravars' — NUNCA 'modificar_documento' para esto.`
+    : "";
+
   const contextoNote = contexto
-    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${rolesCtx}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables — ESTE ES EL ÚNICO DOCUMENTO QUE PODÉS MODIFICAR):\n${contexto.templateContenido}\n\nATENCIÓN: Si te piden modificar el documento, usá ESTE texto como base. No generes un instrumento diferente. No cambies el tipo de acto.` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
+    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${rolesCtx}${camposExtraCtx}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables — ESTE ES EL ÚNICO DOCUMENTO QUE PODÉS MODIFICAR):\n${contexto.templateContenido}\n\nATENCIÓN: Si te piden modificar el documento, usá ESTE texto como base. No generes un instrumento diferente. No cambies el tipo de acto.` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
     : "";
 
   const adjuntosNote = documentos_adjuntos.length
@@ -1513,7 +1518,23 @@ const COMPLETAR_PARTE_TOOL = [{
   },
 }];
 
-const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL];
+const COMPLETAR_EXTRAVARS_TOOL = [{
+  name: "completar_extravars",
+  description: "Completa campos específicos del template activo que NO son datos de partes ni texto libre del cuerpo — cosas como precio, seña, saldo, plazo de escritura, cláusulas especiales, quién designa al escribano, etc. Usá SOLO los nombres de variable listados en '[CAMPOS DEL TEMPLATE]' del contexto activo — si un campo que el escribano menciona no está en esa lista, no existe para este template, no lo inventes. NUNCA uses modificar_documento para esto.",
+  input_schema: {
+    type: "object",
+    properties: {
+      valores: {
+        type: "object",
+        description: "Mapa variable -> valor. Las claves deben ser EXACTAMENTE los nombres listados en '[CAMPOS DEL TEMPLATE]' (ej: PRECIO_NUMEROS, PLAZO_ESCRITURACION). El valor va como texto ya formateado para aparecer en el documento.",
+      },
+      mensaje: { type: "string", description: "Resumen breve de qué campos completaste" },
+    },
+    required: ["valores", "mensaje"],
+  },
+}];
+
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_EXTRAVARS_TOOL];
   const ultimoMensaje = documentos_adjuntos.length
     ? {
         role: "user",
@@ -1652,6 +1673,15 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
           return res.status(200).json({
             respuesta: msg,
             accion: { tipo: "completar_parte", datos: datosConIdx },
+          });
+        }
+
+        const completarExtravars = toolUses.find(t => t.name === "completar_extravars");
+        if (completarExtravars && toolUses.length === 1) {
+          const { valores, mensaje: msg } = completarExtravars.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "completar_extravars", valores },
           });
         }
 

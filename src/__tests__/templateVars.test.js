@@ -42,6 +42,12 @@ const ctx = (overrides = {}) => buildVars({
   ...overrides,
 });
 
+// Quita solo el marcador ~~fromUser~~ (resaltado de datos de usuario, agregado
+// en v0.9.0) para poder testear el CONTENIDO de los bloques sin acoplarse a
+// los detalles de showVarHighlight. Deja intactos **bold**/__underline__,
+// que sí son parte de lo que estos tests verifican.
+const sinTilde = (texto) => (texto || "").replace(/~~/g, "");
+
 // ── 1. Edge cases ─────────────────────────────────────────────────────────────
 
 describe("edge cases", () => {
@@ -290,7 +296,7 @@ describe("PARTE_N_IDENTIDAD_ACTA", () => {
     const vars = ctx({
       partes: [mkParte({ calle: "Calle Falsa", numero: "123", nroDoc: "27345678" })],
     });
-    const acta = vars.PARTE_1_IDENTIDAD_ACTA;
+    const acta = sinTilde(vars.PARTE_1_IDENTIDAD_ACTA);
     expect(acta).toContain("Carlos GARCIA");
     expect(acta).toContain("Documento Nacional de Identidad número 27.345.678");
     expect(acta).toContain("domicilio en Calle Falsa, 123");
@@ -300,7 +306,7 @@ describe("PARTE_N_IDENTIDAD_ACTA", () => {
     const vars = ctx({
       partes: [mkParte({ fechaNac: "1980-03-10", genero: "F" })],
     });
-    expect(vars.PARTE_1_IDENTIDAD_ACTA).toContain("nacida el día 10 de marzo de 1980");
+    expect(sinTilde(vars.PARTE_1_IDENTIDAD_ACTA)).toContain("nacida el día 10 de marzo de 1980");
   });
 
   it("sin DNI omite la sección DNI", () => {
@@ -353,9 +359,9 @@ describe("escribano", () => {
     expect(vars.ESCRIBANO_REGISTRO_LETRAS).toBe("5");
   });
 
-  it("ESCRIBANO_REGISTRO_LETRAS vacío si registro es 0 o no existe", () => {
+  it("ESCRIBANO_REGISTRO_LETRAS devuelve el string crudo si registro es 0 (fix #46, no vacío)", () => {
     const vars = ctx({ escribano: { ...escribanoTitular, registro: "0" } });
-    expect(vars.ESCRIBANO_REGISTRO_LETRAS).toBe("");
+    expect(vars.ESCRIBANO_REGISTRO_LETRAS).toBe("0");
   });
 
   it("ESCRIBANO_CIRCUNSCRIPCION se pasa tal cual", () => {
@@ -638,7 +644,7 @@ describe("PARTES_F08_BLOQUE", () => {
       estilos: { nombresNegrita: false, nombresSubrayado: false },
     });
     // El nombre no lleva marcadores; el ROL sí lleva **ROL** (siempre)
-    expect(vars.PARTES_F08_BLOQUE).toContain("por el señor Carlos GARCIA,");
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toContain("por el señor Carlos GARCIA,");
     expect(vars.PARTES_F08_BLOQUE).not.toContain("**__");
   });
 
@@ -669,7 +675,7 @@ describe("PARTES_F08_BLOQUE", () => {
 
   it("ROL en negrita y uppercase: **VENDEDOR**", () => {
     const vars = ctx({ partes: [mkParte({ rol: "vendedor" })] });
-    expect(vars.PARTES_F08_BLOQUE).toContain("**VENDEDOR**");
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toContain("**VENDEDOR**");
   });
 
   it("cierre singular masculino: 'El compareciente manifiesta'", () => {
@@ -697,8 +703,8 @@ describe("PARTES_F08_BLOQUE", () => {
       partes:    [mkParte({ rol: "VENDEDOR" })],
       protocolo: { nroActa: "99", nroLibro: "12" },
     });
-    expect(vars.PARTES_F08_BLOQUE).toContain("Acta número 99");
-    expect(vars.PARTES_F08_BLOQUE).toContain("Libro de Requerimientos para Certificaciones de Firmas número 12");
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toContain("Acta número 99");
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toContain("Libro de Requerimientos para Certificaciones de Firmas número 12");
   });
 
   it("segunda parte masculina: conector '; y el señor'", () => {
@@ -731,15 +737,15 @@ describe("PARTES_F08_BLOQUE", () => {
   it("'nacido' para M, 'nacida' para F con fechaNac", () => {
     const mVars = ctx({ partes: [mkParte({ rol: "VENDEDOR",  genero: "M", fechaNac: "1980-06-15" })] });
     const fVars = ctx({ partes: [mkParte({ rol: "VENDEDORA", genero: "F", fechaNac: "1980-06-15" })] });
-    expect(mVars.PARTES_F08_BLOQUE).toContain("nacido el 15 de junio de 1980");
-    expect(fVars.PARTES_F08_BLOQUE).toContain("nacida el 15 de junio de 1980");
+    expect(sinTilde(mVars.PARTES_F08_BLOQUE)).toContain("nacido el 15 de junio de 1980");
+    expect(sinTilde(fVars.PARTES_F08_BLOQUE)).toContain("nacida el 15 de junio de 1980");
   });
 
   it("CUIT formateado con puntos cuando está presente", () => {
     const vars = ctx({
       partes: [mkParte({ rol: "VENDEDOR", cuit: "20-27345678-4" })],
     });
-    expect(vars.PARTES_F08_BLOQUE).toContain("C.U.I.T./L. número 20-27.345.678-4");
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toContain("C.U.I.T./L. número 20-27.345.678-4");
   });
 
   it("sin CUIT: no aparece C.U.I.T. en el bloque", () => {
@@ -751,7 +757,7 @@ describe("PARTES_F08_BLOQUE", () => {
     const vars = ctx({
       partes: [mkParte({ rol: "VENDEDOR", estadoCivil: "casado" })],
     });
-    expect(vars.PARTES_F08_BLOQUE).toContain("quien manifiesta ser de estado civil casado");
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toContain("quien manifiesta ser de estado civil casado");
   });
 
   it("sin estadoCivil: no aparece 'estado civil' en el bloque", () => {
@@ -763,7 +769,7 @@ describe("PARTES_F08_BLOQUE", () => {
     const vars = ctx({
       partes: [mkParte({ rol: "VENDEDOR", calle: "Av. España", numero: "500", localidad: "Mendoza" })],
     });
-    expect(vars.PARTES_F08_BLOQUE).toContain("con domicilio en Av. España, 500, Mendoza, de ésta Provincia de Mendoza");
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toContain("con domicilio en Av. España, 500, Mendoza, de ésta Provincia de Mendoza");
   });
 
   it("sin domicilio: no aparece 'con domicilio en' en el bloque", () => {
@@ -775,13 +781,13 @@ describe("PARTES_F08_BLOQUE", () => {
     const vars = ctx({
       partes: [mkParte({ rol: "VENDEDOR", genero: "M", nacionalidad: "argentina" })],
     });
-    expect(vars.PARTES_F08_BLOQUE).toContain(", argentino,");
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toContain(", argentino,");
   });
 
   it("sin nacionalidad: no aparece coma extra de nationalidad", () => {
     const vars = ctx({ partes: [mkParte({ rol: "VENDEDOR", nacionalidad: undefined })] });
     // Debe ir directo a ", con Documento"
-    expect(vars.PARTES_F08_BLOQUE).toMatch(/\*\*, con Documento Nacional/);
+    expect(sinTilde(vars.PARTES_F08_BLOQUE)).toMatch(/\*\*, con Documento Nacional/);
   });
 
   // ── Ordenamiento F08 ──────────────────────────────────────────────────────

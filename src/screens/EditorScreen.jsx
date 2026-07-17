@@ -370,6 +370,15 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     return () => window.removeEventListener("scriba:completar_vehiculo", handler);
   }, []);
 
+  // Completar campos propios del template (extravars) desde Scriba — ej. precio, seña, plazo
+  useEffect(() => {
+    const handler = (e) => {
+      setExtravars(prev => ({ ...prev, ...e.detail }));
+    };
+    window.addEventListener("scriba:completar_extravars", handler);
+    return () => window.removeEventListener("scriba:completar_extravars", handler);
+  }, []);
+
   useEffect(() => {
     const handler = (e) => {
       const d = e.detail;
@@ -516,9 +525,12 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   useEffect(() => {
     if (!onScribaContexto) return;
-    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido, rolesPartes: ROLES_CONTEXTUALES[templateSlug] || null });
+    const camposExtra = templateVarsSchema
+      .filter(v => !v.name.startsWith("VEHICULO_"))
+      .map(v => ({ name: v.name, label: v.label, required: v.required }));
+    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido, rolesPartes: ROLES_CONTEXTUALES[templateSlug] || null, camposExtra });
     return () => onScribaContexto(null);
-  }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido]);
+  }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido, templateVarsSchema]);
 
   const { docId: autoDocId, indicador, guardarAhora, hayPendiente } = useAutoguardado({
     titulo: docTitle,

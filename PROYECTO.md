@@ -233,7 +233,7 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | Historial de conversaciones en UI | ❌ | Pendiente: listado y carga de conversaciones previas |
 | Insertar en OO confirmado | ⚠️ | Ver estado actual en §Plugin OO |
 | Persistencia del chat al cerrar el panel + aviso de respuesta pendiente | ❌ | Pedido 13/07/26: si se cierra el panel de Scriba no debería perder el contexto de la conversación, y si se cierra mientras está procesando, el avatar/globo debería avisar que llegó una respuesta. Sin diseñar todavía. |
-| Completar variables custom de template (extravars) | ❌ | **BUG activo (13/07/26):** `modificar_documento` preserva TODAS las `{{VAR}}` sin distinguir variables de sistema de extravars propios del template (ej. `PRECIO_NUMEROS`, `SENIA_LETRAS`, `PLAZO_ESCRITURACION` en `boleto_compraventa`). Scriba no tiene ningún tool para setear `extravars` (eso solo se llena a mano en el panel derecho), así que nunca puede completar esos campos aunque el escribano se los dicte en el chat — aunque diga "listo, cargué todo", el documento queda igual. Sin fix. |
+| Completar variables custom de template (extravars) | ✅ | **Resuelto 17/07/26.** Nuevo tool `completar_extravars` — el contexto activo ahora incluye `[CAMPOS DEL TEMPLATE]` (nombres exactos de `templateVarsSchema`, ej. `PRECIO_NUMEROS`, `PLAZO_ESCRITURACION`); Scriba llama `completar_extravars({valores, mensaje})`, se muestra un botón "Aplicar al documento" (mismo patrón que `modificar_documento`), y `EditorScreen` mergea en `extravars` vía `scriba:completar_extravars` — la regeneración es automática (ya estaba en el efecto `[vehiculos, extravars]`). System prompt actualizado para que `modificar_documento` nunca se use para esto. |
 
 **Estado del botón "Insertar en documento":**
 - Fix deployado (27/05/26): timeout fallback de 3s en el plugin + cola de inserción
@@ -288,10 +288,10 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | `utils.test.js` | Cálculo CUIL, CIENTO, regex estado civil | ✅ |
 | `localHandler.test.js` | Handler local Scriba (estado civil, rol, extendidos) | ✅ |
 | `tildesNombres.test.js` | Lookup tildes en nombres propios | ✅ |
-| `templateVars.test.js` | Variables de plantilla, ROL uppercase, nombres | ⚠️ 12 fallando |
-| **Total** | **163 tests** | 151 ✅ / 12 ❌ |
+| `templateVars.test.js` | Variables de plantilla, ROL uppercase, nombres | ✅ |
+| **Total** | **163 tests** | ✅ todos pasan |
 
-> ⚠️ Los 12 tests que fallan (todos en `templateVars.test.js`, sobre `PARTES_F08_BLOQUE`) están **desactualizados desde el commit `2c026f7`** (sistema de resaltado `~~texto~~`): el bloque F08 ahora envuelve nacionalidad/DNI/etc. en marcadores `~~` y los tests viejos esperan el texto plano sin ellos (ej. esperan `", argentino,"` pero sale `", ~~argentino~~,"`). No es un bug del documento final — el `~~` se limpia al generar el DOCX real. Pendiente: actualizar las aserciones de esos 12 tests.
+> ✅ (17/07/26) Los 12 tests que fallaban por el marcador `~~texto~~` (sistema de resaltado, desde `2c026f7`) fueron arreglados con un helper `sinTilde()` en el test file — quita solo `~~` antes de comparar contenido, sin tocar `**`/`__` que sí son parte de lo que esos tests verifican. Se aprovechó para también actualizar el test de `ESCRIBANO_REGISTRO_LETRAS` que esperaba el comportamiento viejo (pre fix #46).
 
 ---
 
@@ -300,8 +300,8 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 ### ⚠️ Bugs activos
 
 ~~- [ ] **RLS expedientes insert**~~ ✅ Resuelto 8/6/26 — política `expedientes_acceso` (FOR ALL) reemplazada por SELECT/UPDATE/DELETE con ownership check + INSERT con `auth.uid() IS NOT NULL`; código usa `session.user.id`. Re-verificado 13/07/26 contra la base en vivo — sigue resuelto.
-- [ ] **Scriba no completa extravars custom del template** — ver detalle en tabla de §Scriba (IA). Sin fix.
-- [ ] **12 tests desactualizados en `templateVars.test.js`** — ver §Tests.
+~~- [ ] **Scriba no completa extravars custom del template**~~ ✅ Resuelto 17/07/26 — nuevo tool `completar_extravars` (ver §Scriba (IA) y §API Serverless).
+~~- [ ] **12 tests desactualizados en `templateVars.test.js`**~~ ✅ Resuelto 17/07/26 — ver §Tests.
 
 ### Features próximas (alta prioridad)
 
@@ -409,7 +409,8 @@ Timeout: 60s (maxDuration en Vercel)
 | `buscar_documentos` | Busca en tabla `documentos` del registro (incluye `id` desde 17/07/26) |
 | `leer_documento` | (17/07/26) Trae el texto completo reconstruido de un documento guardado, dado su `id` — usar tras confirmar con `buscar_documentos` |
 | `insertar_en_documento` | Devuelve texto limpio para insertar en OO abierto |
-| `modificar_documento` | Reemplaza el contenido completo del documento (preserva `{{VARIABLES}}` — ver bug de extravars en §Scriba) |
+| `modificar_documento` | Reemplaza el contenido completo del documento (preserva `{{VARIABLES}}`) |
+| `completar_extravars` | (17/07/26) Setea campos propios del template (precio, seña, plazo, etc.) — usa los nombres exactos de `templateVarsSchema`, pasados en `contexto.camposExtra` |
 
 **Adjuntos (17/07/26):** `documentos_adjuntos` en el body — array de `{data, mediaType, nombre}` PDFs enviados como bloques `type:"document"` nativos de Anthropic, para contexto de redacción libre (reemplazó el camino viejo de `imagen` que estaba muerto — el frontend nunca llegaba a mandarlo a este endpoint, siempre desviaba a `/api/vision`).
 
@@ -630,6 +631,8 @@ Deploy automático en Vercel al hacer push a `main`.
 65. Scriba — tool `leer_documento`: reconstruye el texto completo de un acto guardado reusando `buildVars`/`sustituirVars` de `templateVars.js` desde el serverless; requiere confirmar el documento con `buscar_documentos` primero
 66. Fix imports sin extensión (`"../utils"`, `"./buildInterviene"`, `"./constants"`) en `templateVars.js`/`utils.js` — Vite los tolera pero Node/Vercel no los resuelve (confirmado con smoke test real); agregadas extensiones `.js` explícitas, sin cambios de comportamiento en el browser
 67. RLS — auditoría completa contra la base en vivo: bug de insert en expedientes ya estaba resuelto (doc desactualizada); encontradas 2 generaciones de políticas conviviendo en 5 tablas; dropeada política vieja de `templates` que anulaba el chequeo de `es_admin()` en escritura
+68. Scriba — tool `completar_extravars`: permite completar precio/seña/plazo/cláusulas y demás campos propios del template (antes imposible, `modificar_documento` preserva `{{VARIABLES}}` a propósito); contexto activo incluye `camposExtra` con los nombres exactos de `templateVarsSchema`
+69. Fix 12 tests desactualizados en `templateVars.test.js` — helper `sinTilde()` para no acoplar los tests de contenido al marcador `~~` de resaltado; actualizado también el test de `ESCRIBANO_REGISTRO_LETRAS` al comportamiento correcto post fix #46
 
 ---
 

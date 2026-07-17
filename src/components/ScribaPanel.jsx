@@ -135,6 +135,33 @@ function BtnAplicar({ contenido }) {
   );
 }
 
+function BtnAplicarExtravars({ valores }) {
+  const [aplicado, setAplicado] = useState(false);
+
+  function aplicar() {
+    window.dispatchEvent(new CustomEvent("scriba:completar_extravars", { detail: valores }));
+    setAplicado(true);
+    setTimeout(() => setAplicado(false), 2500);
+  }
+
+  return (
+    <button onClick={aplicar} style={{
+      marginTop: 4, display: "flex", alignItems: "center", gap: 5,
+      background: aplicado ? "rgba(58,124,165,.12)" : C.cerulean,
+      border: "1px solid " + (aplicado ? "rgba(58,124,165,.4)" : C.cerulean),
+      borderRadius: 6, padding: "5px 10px",
+      fontSize: 11, fontWeight: 700, fontFamily: "'Montserrat', sans-serif",
+      color: aplicado ? C.cerulean : "#fff",
+      cursor: "pointer", transition: "all .15s",
+    }}>
+      {aplicado
+        ? <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg> Aplicado</>
+        : <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 3L5 7l-2-2" strokeLinecap="round" strokeLinejoin="round"/></svg> Aplicar al documento</>
+      }
+    </button>
+  );
+}
+
 function BtnInsertar({ texto }) {
   const [insertado, setInsertado] = useState(false);
 
@@ -303,6 +330,24 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
               Documento modificado — listo para aplicar
             </div>
             <BtnAplicar contenido={accion.contenido} />
+          </div>
+        )}
+        {!esUser && accion?.tipo === "completar_extravars" && (
+          <div style={{
+            marginTop: 8,
+            background: "rgba(58,124,165,.06)",
+            border: "1px solid rgba(58,124,165,.2)",
+            borderRadius: 8, padding: "10px 12px",
+          }}>
+            <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginBottom: 6, fontWeight: 600 }}>
+              Campos a completar en el documento
+            </div>
+            <div style={{ fontSize: 12, color: C.dark, lineHeight: 1.7, marginBottom: 6 }}>
+              {Object.entries(accion.valores || {}).map(([nombre, valor]) => (
+                <div key={nombre}><strong>{nombre}:</strong> {String(valor)}</div>
+              ))}
+            </div>
+            <BtnAplicarExtravars valores={accion.valores} />
           </div>
         )}
         {!esUser && accion?.tipo === "insertar_texto" && (
