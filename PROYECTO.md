@@ -92,6 +92,7 @@ supabase.co                   Base de datos Supabase (ver §Base de Datos)
 | `ModalFormulario` | Selecciona tipo de formulario F-08 / F-08 Moto / F-04 con número y dominio |
 | `ModalAgregarExpediente` | Desde el editor: vincula documento a expediente existente o crea uno nuevo |
 | `ModalOtros` | Campos adicionales por template (extravars de texto libre) |
+| `ModalDescripcionInmueble` | (17/07/26) Se engancha por nombre de campo `DESCRIPCION_INMUEBLE` en cualquier template — ubicación, superficie, medidas por rumbo cardinal (hasta 8, con lindero) y ochavas opcionales; genera el párrafo de texto y guarda también los datos estructurados para poder reabrir y editar |
 
 ---
 
@@ -642,6 +643,7 @@ Deploy automático en Vercel al hacer push a `main`.
 72. Scriba — adjuntar documentos unificado en un solo botón: se eliminan los botones/estados separados de "escanear identidad" y "PDF de referencia"; ahora Scriba mira cada adjunto y decide con `extraer_documento` (identidad/vehículo, reusa el prompt especializado de `api/vision.js` vía `extraerDocumento()`) o lectura directa (referencia libre) o pregunta si no está seguro — corrige de raíz el bug de frente/dorso tratados como personas distintas
 73. `api/vision.js` refactorizado: lógica de extracción factorizada en `extraerDocumento(imagenes)`, soporta N imágenes en una llamada (fusiona si son el mismo documento); handler HTTP intacto para `ModalVehiculos.jsx`
 74. Nuevo tool `completar_vehiculo` — antes el vehículo se auto-aplicaba sin confirmación; ahora pasa por botón "Cargar datos del vehículo" como el resto de las acciones de Scriba
+75. `ModalDescripcionInmueble` — reemplaza el textarea libre de "Descripción del inmueble" (se enganchaba por nombre de variable `DESCRIPCION_INMUEBLE`) por un builder estructurado: ubicación, superficie, hasta 8 medidas por rumbo cardinal con lindero, ochavas opcionales; genera el texto y guarda la estructura para reeditar
 
 ---
 

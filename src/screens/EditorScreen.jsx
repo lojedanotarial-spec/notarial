@@ -15,6 +15,7 @@ import { ModalFormulario, fmtNumFormulario } from "../components/modals/ModalFor
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato, ESTILOS_DEFAULT } from "../components/modals/ModalFormato";
 import { ModalAgregarExpediente } from "../components/modals/ModalAgregarExpediente";
+import { ModalDescripcionInmueble } from "../components/modals/ModalDescripcionInmueble";
 import { buildDocxBlanco } from "../utils/buildDocx";
 import { buildDocxGenerico } from "../utils/buildDocxGenerico";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
@@ -91,6 +92,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const { miUsuario, miembros, registroActivo } = useAuth();
   const [modal,        setModal]        = useState(null);
   const [propiedadesExpandido, setPropiedadesExpandido] = useState(false);
+  const [inmuebleEstructurado, setInmuebleEstructurado] = useState(null); // {ubicacion, superficie, medidas, ochavas} — datos crudos para reabrir el modal a editar
   const [estado,       setEstado]       = useState("borrador");
   const [estilos,      setEstilos]      = useState(ESTILOS_DEFAULT);
   // Aliases para compatibilidad con código existente
@@ -784,12 +786,33 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                   {templateVarsSchema.filter(v => !v.name.startsWith("VEHICULO_")).map(v => (
                     <div key={v.name} style={{
                       marginBottom: 10,
-                      gridColumn: propiedadesExpandido && v.type === "texto_largo" ? "1 / -1" : undefined,
+                      gridColumn: propiedadesExpandido && (v.type === "texto_largo" || v.name === "DESCRIPCION_INMUEBLE") ? "1 / -1" : undefined,
                     }}>
                       <label style={{ fontSize: 11, fontWeight: 600, color: C.dark, display: "block", marginBottom: 3 }}>
                         {v.label}{v.required && <span style={{ color: "#c0392b" }}> *</span>}
                       </label>
-                      {v.type === "texto_largo" ? (
+                      {v.name === "DESCRIPCION_INMUEBLE" ? (
+                        <div>
+                          {extravars[v.name] && (
+                            <div style={{
+                              fontSize: 12, color: C.dark, lineHeight: 1.5, background: "#f8f6f2",
+                              borderRadius: 6, padding: "8px 10px", marginBottom: 6,
+                            }}>
+                              {extravars[v.name]}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => setModal("descripcionInmueble")}
+                            style={{
+                              width: "100%", padding: "7px 10px", borderRadius: 6,
+                              border: "1px solid rgba(26,35,50,.18)", background: "#fff",
+                              fontSize: 12, fontWeight: 600, color: C.cerulean, cursor: "pointer",
+                              fontFamily: "'Inter', sans-serif",
+                            }}>
+                            {extravars[v.name] ? "Editar descripción" : "Describir inmueble..."}
+                          </button>
+                        </div>
+                      ) : v.type === "texto_largo" ? (
                         <textarea
                           value={extravars[v.name] || ""}
                           placeholder={v.placeholder || ""}
@@ -853,6 +876,16 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       {modal === "formulario"  && <ModalFormulario formulario={formulario} onApply={v => { setFormulario(v); generateAfterRef.current = true; }} onClose={() => setModal(null)}/>}
       {modal === "expediente"  && <ModalAgregarExpediente docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} userId={usuario?.id} nombreSugerido={nombreExpediente} onClose={() => setModal(null)} onGo={onGo} />}
       {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={templateSlug !== "cert_firma"} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
+      {modal === "descripcionInmueble" && (
+        <ModalDescripcionInmueble
+          datos={inmuebleEstructurado}
+          onApply={(texto, estructurado) => {
+            setInmuebleEstructurado(estructurado);
+            setExtravars(prev => ({ ...prev, DESCRIPCION_INMUEBLE: texto }));
+          }}
+          onClose={() => setModal(null)}
+        />
+      )}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
       {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={applyAndGen(setProtocolo)}   onClose={() => setModal(null)}/>}
