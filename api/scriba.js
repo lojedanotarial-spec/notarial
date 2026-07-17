@@ -1691,7 +1691,7 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
   try {
     for (let i = 0; i < 5; i++) {
       const response = await client.messages.create({
-        model: "claude-sonnet-4-6",
+        model: "claude-opus-4-8",
         max_tokens: 4096,
         system: [
           {
