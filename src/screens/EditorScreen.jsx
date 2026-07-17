@@ -608,7 +608,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               title={propiedadesExpandido ? "Contraer panel" : "Expandir panel"}
               style={{
                 position: "absolute", left: -11, top: "50%", transform: "translateY(-50%)",
-                width: 16, height: 44, borderRadius: "8px 0 0 8px", zIndex: 5,
+                width: 16, height: 44, borderRadius: "8px 0 0 8px", zIndex: 210,
                 border: "1px solid rgba(26,35,50,.15)", borderRight: "none",
                 background: C.porcelain, color: "rgba(26,35,50,.45)",
                 cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
