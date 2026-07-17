@@ -842,7 +842,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       {/* Panel */}
       <div style={{
         position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 201,
-        width: expandido ? "75vw" : 420, maxWidth: "100vw",
+        width: expandido ? "75vw" : 480, maxWidth: "100vw",
         transition: "width .2s ease",
         background: "#FDFCFA",
         display: "flex", flexDirection: "column",
