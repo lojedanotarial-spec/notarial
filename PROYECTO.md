@@ -1,6 +1,6 @@
 # Notarial v2 — Documentación de Proyecto
 
-> Última actualización: 25 junio 2026
+> Última actualización: 17 julio 2026
 
 ---
 
@@ -78,6 +78,7 @@ supabase.co                   Base de datos Supabase (ver §Base de Datos)
 | `AdminScreen` | admin (avatar dropdown) | Gestión de registros (escribanos) |
 | `HerramientasScreen` | "Ver todas →" en panel Utilidades | Grid de herramientas/calculadoras con estado (disponible / próximamente) |
 | `LoteDocScreen` | desde BulkScreen | Formulario de medidas catastrales para cada lote |
+| `LogsScreen` | admin (desde AdminScreen) | Observabilidad: 3 tabs — Errores JS, Scriba, Feedback (17/07/26) |
 
 ---
 
@@ -204,7 +205,7 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 
 | Feature | Estado | Notas |
 |---|---|---|
-| Respuestas en streaming | ✅ | `claude-opus-4-5` por defecto |
+| Respuesta vía Claude Messages API | ✅ | `claude-sonnet-4-6`; NO es streaming (respuesta completa vía `res.json()`) |
 | Generar instrumentos notariales completos | ✅ | max_tokens elevado; conoce 50+ plantillas |
 | Contexto del documento activo | ✅ | Recibe partes, fecha, protocolo, instrumento, vehiculos del editor |
 | Abrir editor desde Scriba (tool use) | ✅ | `abrir_editor` abre SelectorScreen con template correcto |
@@ -212,9 +213,12 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | Completar parte con posición exacta | ✅ | `parte_index` permite a Scriba posicionar partes exactas |
 | Modificar documento completo | ✅ | Tool `modificar_documento` + btn "Aplicar" |
 | Leer DNI/documento con foto | ✅ | Sube imagen → Claude Vision extrae datos → completa partes |
+| **Múltiples DNI/tarjetas verdes en un mensaje** | ✅ | (17/07/26) `ScribaPanel.jsx` — fusiona N resultados de `/api/vision` en un solo `completar_parte` (dedup por DNI) + merge de vehículo primer-no-vacío-gana; progreso "Escaneando i/N" |
+| **PDFs de contexto para redactar** | ✅ | (17/07/26) Botón separado del escaneo de identidad; manda bloques `type:"document"` nativos de Anthropic a `/api/scriba` (no pasa por `/api/vision`); validación de tamaño client-side (~2.4MB, límite de body de Vercel Hobby) |
+| **Referenciar documentos guardados** | ✅ | (17/07/26) Tool `leer_documento` — reconstruye el texto completo de un acto ya guardado reusando `buildVars`/`sustituirVars` de `templateVars.js`; requiere confirmar el documento con `buscar_documentos` primero. Limitación: no incluye vehículos/extravars del template (solo partes/fecha/protocolo/instrumento) |
 | Consultar personas del registro | ✅ | `buscar_personas` con RLS y JWT del usuario |
-| Consultar documentos del registro | ✅ | `buscar_documentos` |
-| Persistencia de conversaciones | ✅ | Tabla `scriba_conversaciones` en Supabase |
+| Consultar documentos del registro | ✅ | `buscar_documentos` (incluye `id` desde 17/07/26, necesario para `leer_documento`) |
+| Persistencia de conversaciones | ✅ | Tabla `scriba_conversaciones` en Supabase — ⚠️ solo guarda `{role, content}` como texto; imágenes/PDFs/acciones adjuntas NO sobreviven a un reload (aplica también a las 3 features nuevas de arriba) |
 | Prompt caching | ✅ | System prompt cacheado → ~90% reducción de latencia en llamadas consecutivas |
 | Renderizado de markdown | ✅ | Respuestas de Scriba con formato (bold, listas, tablas) |
 | Fecha/hora actual en el system prompt | ✅ | `new Date()` inyectado en cada llamada |
@@ -228,6 +232,8 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | Etiquetado epistémico | ✅ | Norma/Análisis/Doctrina/Jurisprudencia/Fuente admin |
 | Historial de conversaciones en UI | ❌ | Pendiente: listado y carga de conversaciones previas |
 | Insertar en OO confirmado | ⚠️ | Ver estado actual en §Plugin OO |
+| Persistencia del chat al cerrar el panel + aviso de respuesta pendiente | ❌ | Pedido 13/07/26: si se cierra el panel de Scriba no debería perder el contexto de la conversación, y si se cierra mientras está procesando, el avatar/globo debería avisar que llegó una respuesta. Sin diseñar todavía. |
+| Completar variables custom de template (extravars) | ❌ | **BUG activo (13/07/26):** `modificar_documento` preserva TODAS las `{{VAR}}` sin distinguir variables de sistema de extravars propios del template (ej. `PRECIO_NUMEROS`, `SENIA_LETRAS`, `PLAZO_ESCRITURACION` en `boleto_compraventa`). Scriba no tiene ningún tool para setear `extravars` (eso solo se llena a mano en el panel derecho), así que nunca puede completar esos campos aunque el escribano se los dicte en el chat — aunque diga "listo, cargué todo", el documento queda igual. Sin fix. |
 
 **Estado del botón "Insertar en documento":**
 - Fix deployado (27/05/26): timeout fallback de 3s en el plugin + cola de inserción
@@ -263,6 +269,18 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | Cálculo automático de CUIT/CUIL | ✅ |
 | Sync desde CRM externo | ❌ (placeholder en UI) |
 
+### Observabilidad y Feedback (implementado 17/07/26, sin documentar hasta ahora)
+
+| Feature | Estado | Notas |
+|---|---|---|
+| Captura de errores JS globales | ✅ | `App.jsx` — listeners de `window.error` y `window.unhandledrejection`, logueados vía `logError()` |
+| `ErrorBoundary` | ✅ | Envuelve toda la app en `App.jsx`; pantalla de fallback "Algo salió mal" en vez de página en blanco; loguea `react_boundary` con el component stack |
+| `FeedbackButton` | ✅ | Botón flotante global (todas las pantallas); categorías error/sugerencia/consulta; guarda en `feedback_reports` |
+| `LogsScreen` | ✅ | Pantalla admin (accedida desde AdminScreen) con 3 tabs: Errores JS, Scriba, Feedback |
+| Logging de llamadas a Scriba | ✅ | `logScriba()` en cada llamada a `/api/scriba` — slug, screen, input, respuesta, duración, error |
+
+**Tablas Supabase:** `error_logs`, `scriba_logs`, `feedback_reports` (todas vía `src/utils/logger.js` — inserts silenciosos, nunca rompen la app si fallan).
+
 ### Tests
 
 | Suite | Tests | Estado |
@@ -270,8 +288,10 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | `utils.test.js` | Cálculo CUIL, CIENTO, regex estado civil | ✅ |
 | `localHandler.test.js` | Handler local Scriba (estado civil, rol, extendidos) | ✅ |
 | `tildesNombres.test.js` | Lookup tildes en nombres propios | ✅ |
-| `templateVars.test.js` | Variables de plantilla, ROL uppercase, nombres | ✅ |
-| **Total** | **35 tests** | ✅ todos pasan |
+| `templateVars.test.js` | Variables de plantilla, ROL uppercase, nombres | ⚠️ 12 fallando |
+| **Total** | **163 tests** | 151 ✅ / 12 ❌ |
+
+> ⚠️ Los 12 tests que fallan (todos en `templateVars.test.js`, sobre `PARTES_F08_BLOQUE`) están **desactualizados desde el commit `2c026f7`** (sistema de resaltado `~~texto~~`): el bloque F08 ahora envuelve nacionalidad/DNI/etc. en marcadores `~~` y los tests viejos esperan el texto plano sin ellos (ej. esperan `", argentino,"` pero sale `", ~~argentino~~,"`). No es un bug del documento final — el `~~` se limpia al generar el DOCX real. Pendiente: actualizar las aserciones de esos 12 tests.
 
 ---
 
@@ -279,22 +299,27 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 
 ### ⚠️ Bugs activos
 
-~~- [ ] **RLS expedientes insert**~~ ✅ Resuelto 8/6/26 — política `expedientes_acceso` (FOR ALL) reemplazada por SELECT/UPDATE/DELETE con ownership check + INSERT con `auth.uid() IS NOT NULL`; código usa `session.user.id`.
+~~- [ ] **RLS expedientes insert**~~ ✅ Resuelto 8/6/26 — política `expedientes_acceso` (FOR ALL) reemplazada por SELECT/UPDATE/DELETE con ownership check + INSERT con `auth.uid() IS NOT NULL`; código usa `session.user.id`. Re-verificado 13/07/26 contra la base en vivo — sigue resuelto.
+- [ ] **Scriba no completa extravars custom del template** — ver detalle en tabla de §Scriba (IA). Sin fix.
+- [ ] **12 tests desactualizados en `templateVars.test.js`** — ver §Tests.
 
 ### Features próximas (alta prioridad)
 
 - [x] **Google OAuth producción** — ✅ en producción
 - [ ] **Mejoras UI Scriba** — UX del panel de IA: historial de conversaciones, navegación, presentación de respuestas
-- [ ] **Landing page** — página de inicio pública con descripción del producto
+- [ ] **Persistencia del chat de Scriba + aviso de respuesta pendiente** — no perder contexto al cerrar el panel; avisar en el globo si la respuesta llega mientras estaba cerrado. Pedido 13/07/26, sin diseñar.
+- [🔄] **Landing page** — `public/landing.html` se modificó fuerte el 13/07/26 (135 líneas), estado de avance sin confirmar
 
 ### Features mediano plazo
 
 - [ ] **Insertar en OO confirmado** — validar end-to-end cuando el servidor OO esté estable (fix ya deployado, pendiente confirmación)
 - [ ] **Guardado de ediciones OO** — persistir los cambios hechos en OO de vuelta a Supabase (callback de OO → Supabase Storage)
 - [x] **Calculador de presupuesto notarial** — ✅ implementado y actualizado (25-26/06/26) — `PresupuestoNotarial.jsx` en `/herramientas`. Cubre 20+ actos. Datos: Ley 5053-8100 (honorarios, vigente 25-03-26), Ley Imp. 9680 (sellos 2% inm / 1% gral), Tasas Registro con tramos reales (COD 620-628), tasas municipales 18 departamentos (planilla Colegio Feb 2026), Aportes Colegio 0,4% mín $108.450 (desde 01-07-26). Permite edición manual de valores con override/restaurar. Pendiente: **revisión de datos por la escribana** — ver `scripts/datos_sensibles.md`.
+- [x] **Calculadora CUIT/CUIL standalone** — ✅ (13/07/26) `CalculadoraCuit.jsx` en `/herramientas`, además de la que ya usaba Scriba internamente
 - [ ] **Revisión datos presupuesto** — la escribana debe verificar los valores marcados ⚠️ en `scripts/datos_sensibles.md`, especialmente: LLANA ($9.000/hoja), DILIGENC_FIJ ($135.000 + 0,2%), ESTUDIO_FIJ ($135.000 + 0,3%), herencia/declaratoria (actualmente a mínimo fijo, posiblemente incorrecto), afectación bien de familia (Art. referenciado puede estar mal).
 - [ ] **Sync requirentes CRM** — botón "Sincronizar" en ModalPartes (placeholder visible, sin backend)
 - [ ] **F04 model** — plantilla F-04 (diferente a F-08; `ModalFormulario` ya tiene el selector)
+- [ ] **Informe de Dominio** — nueva card en `HerramientasScreen` (familia Automotor), estado "próximo", sin implementar
 
 ### Sistema de recordatorios para datos sensibles
 
@@ -342,6 +367,9 @@ La plataforma tiene datos que cambian periódicamente (aranceles, sellos, tasas)
 | `expedientes` | Expedientes notariales (nombre, tipo_acto, estado, usuario_id, registro_id) |
 | `expediente_documentos` | Vinculación N:M entre documentos y expedientes |
 | `expediente_archivos` | Metadata de archivos en Google Drive por expediente |
+| `error_logs` | Errores JS/React capturados globalmente (17/07/26) |
+| `scriba_logs` | Log de cada llamada a `/api/scriba` (input, respuesta, duración, error) |
+| `feedback_reports` | Feedback de escribanos vía `FeedbackButton` (error/sugerencia/consulta) |
 
 ### RLS (Row Level Security)
 
@@ -378,9 +406,12 @@ Timeout: 60s (maxDuration en Vercel)
 |---|---|
 | `abrir_editor` | Navega a SelectorScreen con template + partes + fecha pre-cargados |
 | `buscar_personas` | Busca en tabla `personas` por DNI o nombre |
-| `buscar_documentos` | Busca en tabla `documentos` del registro |
+| `buscar_documentos` | Busca en tabla `documentos` del registro (incluye `id` desde 17/07/26) |
+| `leer_documento` | (17/07/26) Trae el texto completo reconstruido de un documento guardado, dado su `id` — usar tras confirmar con `buscar_documentos` |
 | `insertar_en_documento` | Devuelve texto limpio para insertar en OO abierto |
-| `modificar_documento` | Reemplaza el contenido completo del documento |
+| `modificar_documento` | Reemplaza el contenido completo del documento (preserva `{{VARIABLES}}` — ver bug de extravars en §Scriba) |
+
+**Adjuntos (17/07/26):** `documentos_adjuntos` en el body — array de `{data, mediaType, nombre}` PDFs enviados como bloques `type:"document"` nativos de Anthropic, para contexto de redacción libre (reemplazó el camino viejo de `imagen` que estaba muerto — el frontend nunca llegaba a mandarlo a este endpoint, siempre desviaba a `/api/vision`).
 
 **Optimización:** El system prompt usa Prompt Caching de Anthropic (`cache_control: ephemeral`) — la primera llamada tarda ~2s, las siguientes ~200ms para el mismo system prompt.
 
@@ -471,11 +502,13 @@ VITE_ONLYOFFICE_URL=https://onlyoffice.notarial.lat
 ```bash
 npm install
 npm run dev       # Vite dev server en localhost:5173
-npm run test      # Vitest (35 tests)
+npm run test      # Vitest (163 tests, 12 desactualizados — ver §Tests)
 npm run build     # Build de producción
 ```
 
 Deploy automático en Vercel al hacer push a `main`.
+
+> ⚠️ El remote de GitHub (`lojedanotarial-spec/notarial.git`) requiere la cuenta `gh` **`lojedanotarial-spec`**, no la de trabajo (`lojeda-simpli`) — esa no tiene permiso de push a este repo. Si `git push` da 403, correr `gh auth switch --hostname github.com --user lojedanotarial-spec`.
 
 ---
 
@@ -586,6 +619,17 @@ Deploy automático en Vercel al hacer push a `main`.
 54. Estilo resaltado cambiado de texto azul a **fondo amarillo nativo Word** (`highlight: "yellow"` en TextRun) — visible en regular e itálica, independiente del peso de fuente
 55. `showVarHighlight` default cambiado a `false` — el documento sale limpio por defecto; el usuario activa el resaltado desde Formato cuando lo necesita
 56. Fix bug ModalFormulario — `formulario` no estaba en el array de deps del useEffect que dispara auto-regeneración; guardar el formulario F-08 no regeneraba el documento
+57. Fix F08 — `extravars` se spreadeaba DESPUÉS de `NUMERO_FORMULARIO`/`DOMINIO`/`TIPO_FORMULARIO` en `EditorScreen.jsx` y los pisaba silenciosamente; ahora va primero, los datos del formulario ganan
+58. Fix auto-generate al montar — antes disparaba a los 800ms fijo sin esperar datos; ahora espera a que `templateContenido` llegue de Supabase y (admin) a que carguen los `miembros` del registro, evitando generar con variables vacías/stale
+59. Sistema de logs — `logger.js` (`logError`/`logScriba`/`logFeedback`), `LogsScreen` (admin, 3 tabs), `ErrorBoundary` (fallback global), `FeedbackButton` (flotante global) — tablas `error_logs`/`scriba_logs`/`feedback_reports`
+60. `robots.txt` + `<meta name="robots" content="noindex,nofollow">` en `index.html` — la app privada (`/app`) no debe indexarse en buscadores; landing (`/`) y `/privacidad` sí
+61. Herramientas — `PresupuestoNotarial.jsx` y `CalculadoraCuit.jsx` activas en `/herramientas`; "Informe de Dominio" agregado como card "próximo"
+62. Limpieza — eliminados `buildDocxCertFirmaF08` y los templates `certFirma.js`/`certFirmaF08.js` (muertos tras la unificación a `buildDocxGenerico` de la sesión anterior); `TEMPLATES` sin uso removido de `constants.js`
+63. Scriba — múltiples DNI/tarjetas verdes en un mensaje: `ScribaPanel.jsx` fusiona N resultados de `/api/vision` (fan-out secuencial con progreso "Escaneando i/N") en un solo `completar_parte` con dedup por DNI; vehículo con regla primer-no-vacío-gana (mismo patrón que `ModalVehiculos.jsx`)
+64. Scriba — PDFs de contexto: botón separado del escaneo de identidad; `api/scriba.js` reemplaza el camino muerto de `imagen` por `documentos_adjuntos` → bloques `type:"document"` nativos de Anthropic; validación de tamaño client-side (~2.4MB, límite de body de Vercel Hobby)
+65. Scriba — tool `leer_documento`: reconstruye el texto completo de un acto guardado reusando `buildVars`/`sustituirVars` de `templateVars.js` desde el serverless; requiere confirmar el documento con `buscar_documentos` primero
+66. Fix imports sin extensión (`"../utils"`, `"./buildInterviene"`, `"./constants"`) en `templateVars.js`/`utils.js` — Vite los tolera pero Node/Vercel no los resuelve (confirmado con smoke test real); agregadas extensiones `.js` explícitas, sin cambios de comportamiento en el browser
+67. RLS — auditoría completa contra la base en vivo: bug de insert en expedientes ya estaba resuelto (doc desactualizada); encontradas 2 generaciones de políticas conviviendo en 5 tablas; dropeada política vieja de `templates` que anulaba el chequeo de `es_admin()` en escritura
 
 ---
 
