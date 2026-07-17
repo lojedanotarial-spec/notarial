@@ -834,16 +834,17 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       <div
         onClick={onClose}
         style={{
-          position: "fixed", inset: 0, zIndex: 200,
+          position: "fixed", top: 0, left: 0, bottom: 0, right: contexto?.panelPropiedadesAncho || 0, zIndex: 200,
           background: "rgba(0,0,0,.35)",
+          transition: "right .2s ease",
         }}
       />
 
       {/* Panel */}
       <div style={{
-        position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 201,
+        position: "fixed", top: 0, right: contexto?.panelPropiedadesAncho || 0, bottom: 0, zIndex: 201,
         width: expandido ? "75vw" : 480, maxWidth: "100vw",
-        transition: "width .2s ease",
+        transition: "width .2s ease, right .2s ease",
         background: "#FDFCFA",
         display: "flex", flexDirection: "column",
         boxShadow: "-8px 0 40px rgba(0,0,0,.18)",

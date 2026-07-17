@@ -529,9 +529,9 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     const camposExtra = templateVarsSchema
       .filter(v => !v.name.startsWith("VEHICULO_"))
       .map(v => ({ name: v.name, label: v.label, required: v.required }));
-    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido, rolesPartes: ROLES_CONTEXTUALES[templateSlug] || null, camposExtra });
+    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido, rolesPartes: ROLES_CONTEXTUALES[templateSlug] || null, camposExtra, panelPropiedadesAncho: propiedadesExpandido ? 480 : 240 });
     return () => onScribaContexto(null);
-  }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido, templateVarsSchema]);
+  }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido, templateVarsSchema, propiedadesExpandido]);
 
   const { docId: autoDocId, indicador, guardarAhora, hayPendiente } = useAutoguardado({
     titulo: docTitle,
