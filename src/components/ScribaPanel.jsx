@@ -545,6 +545,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
   const inputRef   = useRef(null);
   const fileRef    = useRef(null);
   const iniciadoRef = useRef(false);
+  const ultimoFalloRef = useRef(null);
 
   const LIMITE_ADJUNTOS = 2.4 * 1024 * 1024; // ~2.4MB crudos → deja margen dentro del límite de body de Vercel (~4.5MB)
 
@@ -621,6 +622,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     iniciadoRef.current = false;
     setMensajes([]);
     setError(null);
+    ultimoFalloRef.current = null;
     await nueva();
     inputRef.current?.focus();
   }
@@ -681,27 +683,12 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     return true;
   }
 
-  async function enviar(texto) {
-    const pregunta = (texto || input).trim();
-    if ((!pregunta && !archivos.length) || cargando) return;
-
-    // Intentar manejar localmente antes de llamar a la API
-    if (!archivos.length && manejarActualizacionLocal(pregunta)) {
-      setInput("");
-      return;
-    }
-
-    const archivosActuales = archivos;
-    setInput("");
-    setArchivos([]);
+  async function procesarEnvio(textoUsuario, archivosActuales, mensajesBase) {
     setCargando(true);
     setError(null);
 
     const nombres = archivosActuales.map(a => a.nombre).join(", ");
-    const textoUsuario = pregunta || (archivosActuales.length
-      ? (archivosActuales.length > 1 ? `Miral estos archivos: ${nombres}` : `Miral este archivo: ${nombres}`)
-      : "");
-    const nuevosMensajes = [...mensajes, {
+    const nuevosMensajes = [...mensajesBase, {
       role: "user", content: textoUsuario,
       ...(archivosActuales.length ? { imagen: { nombre: archivosActuales.length > 1 ? `${archivosActuales.length} archivos` : nombres } } : {}),
     }];
@@ -713,7 +700,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mensaje: textoUsuario,
-          mensajes_anteriores: mensajes,
+          mensajes_anteriores: mensajesBase,
           contexto: contexto || null,
           registroId: registroId || null,
           userToken: session?.access_token || null,
@@ -727,12 +714,43 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       setMensajes(mensajesFinales);
       guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
       logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, response: data.respuesta, duration_ms: Date.now() - t0 });
+      ultimoFalloRef.current = null;
     } catch (e) {
       setError(e.message);
+      ultimoFalloRef.current = { textoUsuario, archivosActuales, mensajesBase };
       logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, error: e.message, duration_ms: Date.now() - t0 });
     } finally {
       setCargando(false);
     }
+  }
+
+  async function enviar(texto) {
+    const pregunta = (texto || input).trim();
+    if ((!pregunta && !archivos.length) || cargando) return;
+
+    // Intentar manejar localmente antes de llamar a la API
+    if (!archivos.length && manejarActualizacionLocal(pregunta)) {
+      setInput("");
+      return;
+    }
+
+    const archivosActuales = archivos;
+    const mensajesBase = mensajes;
+    setInput("");
+    setArchivos([]);
+
+    const nombres = archivosActuales.map(a => a.nombre).join(", ");
+    const textoUsuario = pregunta || (archivosActuales.length
+      ? (archivosActuales.length > 1 ? `Miral estos archivos: ${nombres}` : `Miral este archivo: ${nombres}`)
+      : "");
+
+    await procesarEnvio(textoUsuario, archivosActuales, mensajesBase);
+  }
+
+  function reintentar() {
+    if (!ultimoFalloRef.current || cargando) return;
+    const { textoUsuario, archivosActuales, mensajesBase } = ultimoFalloRef.current;
+    procesarEnvio(textoUsuario, archivosActuales, mensajesBase);
   }
 
   function handleKey(e) {
@@ -924,8 +942,20 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
               background: "#fef2f2", border: "1px solid #fecaca",
               borderRadius: 8, padding: "10px 13px",
               fontSize: 12, color: "#b91c1c", marginBottom: 12,
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
             }}>
-              Error: {error}
+              <span>Error: {error}</span>
+              <button
+                onClick={reintentar}
+                disabled={cargando}
+                style={{
+                  flexShrink: 0, background: "#b91c1c", color: "#fff", border: "none",
+                  borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 600,
+                  cursor: cargando ? "default" : "pointer", opacity: cargando ? 0.6 : 1,
+                }}
+              >
+                Reintentar
+              </button>
             </div>
           )}
 
