@@ -1401,7 +1401,20 @@ Si el escribano pide generar un instrumento desde cero (sin documento abierto), 
 
 ## Referenciar documentos ya guardados en el protocolo
 
-Cuando el escribano quiera usar un documento anterior como referencia o comparación (ej: "basate en el boleto que hice el mes pasado", "fijate cómo redacté la última compraventa de Pérez"), llamá primero a 'buscar_documentos', mostrale los títulos candidatos y esperá que confirme cuál es — salvo que haya un único resultado inequívoco o el escribano haya dado el id exacto. Solo entonces llamá a 'leer_documento' con el id confirmado. No la llames especulativamente sobre resultados sin confirmar.`;
+Cuando el escribano quiera usar un documento anterior como referencia o comparación (ej: "basate en el boleto que hice el mes pasado", "fijate cómo redacté la última compraventa de Pérez"), llamá primero a 'buscar_documentos', mostrale los títulos candidatos y esperá que confirme cuál es — salvo que haya un único resultado inequívoco o el escribano haya dado el id exacto. Solo entonces llamá a 'leer_documento' con el id confirmado. No la llames especulativamente sobre resultados sin confirmar.
+
+## Revisión y auditoría de documentos (boletos, contratos, escrituras de terceros)
+
+Cuando el escribano te pida analizar, revisar o auditar un documento adjunto (no una plantilla propia del sistema) — ej: "revisá este boleto", "hacé un análisis de este contrato" — no te limites a resumir el contenido. Recorré metódicamente estos puntos y reportá solo lo que efectivamente encontrás (no inventes problemas si el documento está bien):
+
+1. **CUIT/CUIL**: cualquier CUIT/CUIL que aparezca, verificalo con la herramienta 'validar_cuit'. Nunca lo juzgues de memoria ni por el prefijo — el cálculo del dígito verificador a mano es propenso a error, incluso para vos. Si la herramienta dice inválido, recién ahí es una observación real.
+2. **Cierre de la poligonal**: si el documento describe medidas perimetrales por puntos (ej: puntos 1-2, 2-3, 3-4...), verificá que estén TODOS los lados consecutivos necesarios para cerrar el polígono (con N puntos hacen falta N lados). Si falta alguno, señalalo explícitamente — es un hallazgo técnico real, no cosmético.
+3. **Aritmética de precio**: si hay un precio total desglosado en pagos parciales (seña, anticipo, saldo, cuotas), sumá los componentes y confirmá que el total cierra. Si el texto afirma que una suma parcial "completa el X%" del total, calculá ese porcentaje exactamente — no lo des por buena.
+4. **Contradicciones entre cláusulas**: buscá específicamente si dos cláusulas distintas regulan lo mismo de forma incompatible (ej: quién designa al escribano actuante, plazos de escrituración fijados de dos formas distintas que puedan no coincidir).
+5. **Plazos en blanco con efecto legal**: si hay fechas o plazos sin completar, evaluá si alguna cláusula depende de ese plazo para funcionar (ej: mora automática, cláusula penal) — señalalo como algo más que un detalle estético.
+6. **Garantías de saldos diferidos**: si queda un saldo de precio pendiente de pago DESPUÉS de la transferencia de dominio o entrega de posesión, señalá si el documento prevé alguna garantía real (hipoteca u otra) para asegurarlo.
+
+Ordená los hallazgos por relevancia (contradicciones y errores numéricos primero, erratas de redacción al final) y sé preciso con los números — mostrá el cálculo, no solo la conclusión.`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -1572,6 +1585,18 @@ const EXTRAER_DOCUMENTO_TOOL = [{
   },
 }];
 
+const VALIDAR_CUIT_TOOL = [{
+  name: "validar_cuit",
+  description: "Verifica matemáticamente si un CUIT/CUIL es válido (dígito verificador correcto según el algoritmo oficial de ARCA). Usala SIEMPRE que necesites confirmar un CUIT/CUIL leído de un documento o dictado por el escribano — nunca calcules ni juzgues un CUIT 'a ojo' o por el prefijo, el cálculo mental de este algoritmo es propenso a error. No confirma que el CUIT le pertenezca a esa persona ni que esté activo, solo que el número es matemáticamente consistente.",
+  input_schema: {
+    type: "object",
+    properties: {
+      cuit: { type: "string", description: "El CUIT/CUIL a verificar, con o sin guiones (ej: '23-10907305-9' o '23109073059')." },
+    },
+    required: ["cuit"],
+  },
+}];
+
 const COMPLETAR_EXTRAVARS_TOOL = [{
   name: "completar_extravars",
   description: "Completa campos específicos del template activo que NO son datos de partes ni texto libre del cuerpo — cosas como precio, seña, saldo, plazo de escritura, cláusulas especiales, quién designa al escribano, etc. Usá SOLO los nombres de variable listados en '[CAMPOS DEL TEMPLATE]' del contexto activo — si un campo que el escribano menciona no está en esa lista, no existe para este template, no lo inventes. NUNCA uses modificar_documento para esto.",
@@ -1588,7 +1613,7 @@ const COMPLETAR_EXTRAVARS_TOOL = [{
   },
 }];
 
-const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL];
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...VALIDAR_CUIT_TOOL];
   const ultimoMensaje = documentos_adjuntos.length
     ? {
         role: "user",
@@ -1685,6 +1710,28 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
         return { error: e.message };
       }
     }
+    if (name === "validar_cuit") {
+      const digits = (input.cuit || "").replace(/\D/g, "");
+      if (digits.length !== 11) {
+        return { valido: false, motivo: `Debe tener 11 dígitos (2 de prefijo + 8 de DNI + 1 verificador); tiene ${digits.length}.` };
+      }
+      const nums = digits.split("").map(Number);
+      const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+      const suma = nums.slice(0, 10).reduce((acc, n, i) => acc + n * pesos[i], 0);
+      const resto = suma % 11;
+      let calculado = 11 - resto;
+      if (calculado === 11) calculado = 0;
+      const cuitNormalizado = `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}`;
+      if (calculado === 10) {
+        return { valido: false, motivo: "El algoritmo da dígito verificador 10, que no es válido en ningún CUIT real — el número tipeado tiene un error.", cuit_normalizado: cuitNormalizado };
+      }
+      return {
+        valido: calculado === nums[10],
+        digito_calculado: calculado,
+        digito_declarado: nums[10],
+        cuit_normalizado: cuitNormalizado,
+      };
+    }
     return { error: "Herramienta desconocida" };
   }
 
@@ -1692,8 +1739,8 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
     for (let i = 0; i < 5; i++) {
       const response = await client.messages.create({
         model: "claude-sonnet-5",
-        max_tokens: 4096,
-        thinking: { type: "disabled" },
+        max_tokens: 8192,
+        thinking: { type: "adaptive" },
         system: [
           {
             type: "text",
