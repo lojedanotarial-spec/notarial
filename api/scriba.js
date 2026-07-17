@@ -1,7 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import mammoth from "mammoth";
 import { buildVars, sustituirVars, contarClausulas } from "../src/utils/templateVars.js";
 import { extraerDocumento } from "./vision.js";
+
+const DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 const SUPABASE_URL      = "https://eueqluhhgvukovoyorrw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1ZXFsdWhoZ3Z1a292b3lvcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjI3NjQsImV4cCI6MjA5MjE5ODc2NH0.RklZOhSt8DqUhRCqlLNQ0OyLNrUGKYXHaogOkRLCz6E";
@@ -1556,7 +1559,7 @@ export default async function handler(req, res) {
     : "";
 
   const adjuntosNote = documentos_adjuntos.length
-    ? `\n\n[ARCHIVOS ADJUNTOS EN ESTE MENSAJE]\nEl escribano adjuntó ${documentos_adjuntos.length} archivo(s), numerados [Adjunto 0], [Adjunto 1], etc. en el mensaje. Pueden ser CUALQUIER cosa — documento de identidad (DNI en cualquier formato, pasaporte, licencia, partida), de un vehículo (tarjeta verde, título, física o digital), o un documento de referencia libre (boleto anterior, contrato, plano, ticket, recibo, cualquier otro papel con información útil). Mirá cada uno y decidí:\n- ¿Parece identidad o vehículo? → llamá a 'extraer_documento' con los índices correspondientes (juntos si son caras del mismo documento) ANTES de intentar leerlo vos mismo — es más preciso.\n- ¿Es otra cosa con información útil? → leelo vos directamente y usalo como contexto para redactar, comparar o responder.\n- ¿Genuinamente no podés determinar qué es o para qué lo quiere el escribano? → preguntale en vez de adivinar.`
+    ? `\n\n[ARCHIVOS ADJUNTOS EN ESTE MENSAJE]\nEl escribano adjuntó ${documentos_adjuntos.length} archivo(s), numerados [Adjunto 0], [Adjunto 1], etc. en el mensaje. Pueden ser CUALQUIER cosa — documento de identidad (DNI en cualquier formato, pasaporte, licencia, partida), de un vehículo (tarjeta verde, título, física o digital), o un documento de referencia libre en PDF, Word (.docx) o imagen (boleto anterior, contrato, plano, ticket, recibo, cualquier otro papel con información útil). Mirá cada uno y decidí:\n- ¿Parece identidad o vehículo? → llamá a 'extraer_documento' con los índices correspondientes (juntos si son caras del mismo documento) ANTES de intentar leerlo vos mismo — es más preciso.\n- ¿Es otra cosa con información útil? → leelo vos directamente y usalo como contexto para redactar, comparar o responder.\n- ¿Genuinamente no podés determinar qué es o para qué lo quiere el escribano? → preguntale en vez de adivinar.`
     : "";
 
   const INSERTAR_TOOL = [{
@@ -1715,21 +1718,39 @@ const COMPLETAR_EXTRAVARS_TOOL = [{
 }];
 
 const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...VALIDAR_CUIT_TOOL];
-  const ultimoMensaje = documentos_adjuntos.length
-    ? {
-        role: "user",
-        content: [
-          ...documentos_adjuntos.flatMap((d, i) => {
-            const esPdf = d.mediaType === "application/pdf";
-            const bloque = esPdf
-              ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: d.data }, title: d.nombre || undefined }
-              : { type: "image", source: { type: "base64", media_type: d.mediaType, data: d.data } };
-            return [{ type: "text", text: `[Adjunto ${i}: ${d.nombre || (esPdf ? "documento.pdf" : "imagen")}]` }, bloque];
-          }),
-          { type: "text", text: mensaje || "Mirá los archivos adjuntos y decidí qué hacer con ellos." },
-        ],
+  async function construirUltimoMensaje() {
+    if (!documentos_adjuntos.length) return { role: "user", content: mensaje };
+    const bloques = await Promise.all(documentos_adjuntos.map(async (d, i) => {
+      const esPdf = d.mediaType === "application/pdf";
+      const esDocx = d.mediaType === DOCX_MEDIA_TYPE;
+      let bloque, etiqueta;
+      if (esPdf) {
+        bloque = { type: "document", source: { type: "base64", media_type: "application/pdf", data: d.data }, title: d.nombre || undefined };
+        etiqueta = "documento.pdf";
+      } else if (esDocx) {
+        let texto;
+        try {
+          texto = (await mammoth.extractRawText({ buffer: Buffer.from(d.data, "base64") })).value;
+        } catch (e) {
+          texto = `[No se pudo extraer el texto de este .docx: ${e.message}]`;
+        }
+        bloque = { type: "document", source: { type: "text", media_type: "text/plain", data: texto }, title: d.nombre || undefined };
+        etiqueta = "documento.docx";
+      } else {
+        bloque = { type: "image", source: { type: "base64", media_type: d.mediaType, data: d.data } };
+        etiqueta = "imagen";
       }
-    : { role: "user", content: mensaje };
+      return [{ type: "text", text: `[Adjunto ${i}: ${d.nombre || etiqueta}]` }, bloque];
+    }));
+    return {
+      role: "user",
+      content: [
+        ...bloques.flat(),
+        { type: "text", text: mensaje || "Mirá los archivos adjuntos y decidí qué hacer con ellos." },
+      ],
+    };
+  }
+  const ultimoMensaje = await construirUltimoMensaje();
 
   let messages = [
     ...mensajes_anteriores.map(m => ({ role: m.role, content: m.content })),
@@ -1833,7 +1854,7 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL,
       const imagenes = (input.indices || [])
         .map(i => documentos_adjuntos[i])
         .filter(Boolean)
-        .filter(d => d.mediaType !== "application/pdf")
+        .filter(d => d.mediaType !== "application/pdf" && d.mediaType !== DOCX_MEDIA_TYPE)
         .map(d => ({ data: d.data, mediaType: d.mediaType }));
       if (!imagenes.length) return { error: "No encontré esos adjuntos como imágenes para analizar." };
       try {

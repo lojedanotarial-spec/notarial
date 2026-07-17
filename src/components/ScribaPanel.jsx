@@ -601,13 +601,17 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     files.forEach(agregarArchivo);
   }
 
+  const DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
   function agregarArchivo(file) {
-    // PDFs: enviar directo sin comprimir
-    if (file.type === "application/pdf") {
+    // PDFs y Word (.docx): enviar directo sin comprimir
+    const esDocx = file.type === DOCX_MEDIA_TYPE || file.name?.toLowerCase().endsWith(".docx");
+    if (file.type === "application/pdf" || esDocx) {
+      const mediaType = file.type === "application/pdf" ? "application/pdf" : DOCX_MEDIA_TYPE;
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = ev.target.result.split(",")[1];
-        setArchivos(prev => [...prev, { data: base64, mediaType: "application/pdf", nombre: file.name, sizeBytes: file.size }]);
+        setArchivos(prev => [...prev, { data: base64, mediaType, nombre: file.name, sizeBytes: file.size }]);
       };
       reader.readAsDataURL(file);
       return;
@@ -1029,7 +1033,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             background: "#fff", border: "1.5px solid rgba(26,35,50,.22)",
             borderRadius: 10, padding: "8px 10px",
           }}>
-            <input ref={fileRef} type="file" accept="image/*,.pdf" multiple style={{ display: "none" }} onChange={handleFile} />
+            <input ref={fileRef} type="file" accept="image/*,.pdf,.docx" multiple style={{ display: "none" }} onChange={handleFile} />
             <button onClick={() => fileRef.current?.click()} title="Adjuntar documento (Scriba identifica de qué se trata)"
               style={{
                 width: 28, height: 28, borderRadius: 6, border: "none",
