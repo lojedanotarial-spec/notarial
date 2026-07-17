@@ -92,16 +92,11 @@ CREATE POLICY "scriba_conv_acceso" ON scriba_conversaciones
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 6. TEMPLATES — 3 políticas activas hoy — ⚠️⚠️ RIESGO REAL, no solo redundancia
+-- 6. TEMPLATES — 2 políticas (resuelto 17/07/26)
 -- ─────────────────────────────────────────────────────────────────────────────
--- Vieja: "templates globales o de su registro"  FOR ALL
---   USING (tipo = 'global' OR registro_id = (SELECT registro_numero FROM usuarios WHERE id = auth.uid()))
---   ⚠️ Esta política NO chequea es_admin() y es FOR ALL (incluye UPDATE/DELETE).
---   Como las políticas permisivas se combinan con OR, esto ANULA en la práctica
---   la restricción de "solo admin escribe" que sí impone templates_write más abajo:
---   cualquier escribano (no admin) podría escribir sobre templates 'global' o de
---   su propio registro. Pendiente decidir si dropear esta política vieja
---   (requiere confirmación explícita antes de tocar la base en vivo).
+-- La política vieja "templates globales o de su registro" (FOR ALL, sin chequeo
+-- de es_admin()) se dropeó en producción el 17/07/26 — ya no convive con las
+-- nuevas. Hoy solo escribe quien sea es_admin().
 DROP POLICY IF EXISTS "templates_select" ON templates;
 CREATE POLICY "templates_select" ON templates
   FOR SELECT USING (
