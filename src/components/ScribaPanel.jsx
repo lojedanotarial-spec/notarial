@@ -230,6 +230,28 @@ function BtnInsertar({ texto }) {
 
 const LINEAS_MAX = 25;
 
+function mapearPartesParaEditor(partesAccion) {
+  return partesAccion?.map(p => ({
+    id:          Date.now() + Math.random(),
+    apellido:    (p.apellido || "").toUpperCase(),
+    nombre:      aplicarTildesNombre((p.nombre || "").toUpperCase()),
+    genero:      p.genero      || "",
+    nacionalidad:p.nacionalidad|| "",
+    tipoDoc:     p.tipo_doc    || "DNI",
+    nroDoc:      p.nro_doc     || "",
+    cuit:        p.cuit        || "",
+    fechaNac:    p.fecha_nac   || "",
+    estadoCivil: p.estado_civil|| "",
+    calle:       p.calle       || "",
+    numero:      p.numero      || "",
+    piso:        p.piso        || "",
+    dpto:        p.dpto        || "",
+    localidad:   p.localidad   || "",
+    departamento:p.departamento|| "Ciudad",
+    rol:         p.rol         || "",
+  }));
+}
+
 function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPartes }) {
   const esUser = msg.role === "user";
   const accion = msg.accion;
@@ -448,25 +470,7 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
         {!esUser && accion?.tipo === "abrir_editor" && (
           <button
             onClick={() => {
-              const partes = accion.partes?.map(p => ({
-                id:          Date.now() + Math.random(),
-                apellido:    (p.apellido || "").toUpperCase(),
-                nombre:      aplicarTildesNombre((p.nombre || "").toUpperCase()),
-                genero:      p.genero      || "",
-                nacionalidad:p.nacionalidad|| "",
-                tipoDoc:     p.tipo_doc    || "DNI",
-                nroDoc:      p.nro_doc     || "",
-                cuit:        p.cuit        || "",
-                fechaNac:    p.fecha_nac   || "",
-                estadoCivil: p.estado_civil|| "",
-                calle:       p.calle       || "",
-                numero:      p.numero      || "",
-                piso:        p.piso        || "",
-                dpto:        p.dpto        || "",
-                localidad:   p.localidad   || "",
-                departamento:p.departamento|| "Ciudad",
-                rol:         p.rol         || "",
-              }));
+              const partes = mapearPartesParaEditor(accion.partes);
               onGo?.("editor", {
                 templateSlug: accion.slug,
                 templateId:   accion.templateId,
@@ -492,6 +496,39 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
               <path d="M5 3V2M11 3V2M2 7h12" strokeLinecap="round"/>
             </svg>
             Abrir en editor — {accion.nombre}
+          </button>
+        )}
+        {!esUser && accion?.tipo === "crear_documento_libre" && (
+          <button
+            onClick={() => {
+              const partes = mapearPartesParaEditor(accion.partes);
+              onGo?.("editor", {
+                templateSlug: "documento_libre",
+                templateId:   null,
+                templateContenidoLibre: accion.contenido,
+                variablesLibres: accion.campos_libres || [],
+                partes:       partes?.length ? partes : undefined,
+                fecha:        accion.fecha  || undefined,
+              });
+            }}
+            style={{
+              marginTop: 8, display: "flex", alignItems: "center", gap: 6,
+              background: "#c9a961", border: "none",
+              borderRadius: 8, padding: "8px 14px",
+              fontSize: 12, fontWeight: 700, fontFamily: "'Montserrat', sans-serif",
+              color: "#fff", cursor: "pointer",
+              alignSelf: "flex-start",
+              boxShadow: "0 2px 8px rgba(201,169,97,.35)",
+              transition: "opacity .15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = ".85"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="3" width="12" height="10" rx="1.5"/>
+              <path d="M5 3V2M11 3V2M2 7h12" strokeLinecap="round"/>
+            </svg>
+            Abrir borrador libre
           </button>
         )}
         {!esUser && <BtnCopiar texto={accion?.tipo === "insertar_texto" ? accion.texto : msg.content} />}

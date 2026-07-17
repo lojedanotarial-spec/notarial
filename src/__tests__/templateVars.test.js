@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildVars, sustituirVars } from "../utils/templateVars";
+import { buildVars, sustituirVars, contarClausulas } from "../utils/templateVars";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -905,5 +905,49 @@ describe("sustituirVars", () => {
 
   it("variable undefined deja el placeholder", () => {
     expect(sustituirVars("{{EXISTE}} {{NO_EXISTE}}", { EXISTE: "ok" })).toBe("ok {{NO_EXISTE}}");
+  });
+});
+
+// ── contarClausulas ────────────────────────────────────────────────────────────
+
+describe("contarClausulas", () => {
+  it("texto vacío o nulo da 0", () => {
+    expect(contarClausulas("")).toBe(0);
+    expect(contarClausulas(null)).toBe(0);
+    expect(contarClausulas(undefined)).toBe(0);
+  });
+
+  it("cuenta cláusulas numeradas tipo PRIMERA.- SEGUNDA.-", () => {
+    const texto = [
+      "PRIMERA.- Objeto: se vende el inmueble.",
+      "Texto de relleno que no es una cláusula.",
+      "SEGUNDA: Precio y forma de pago.",
+      "TERCERA — Entrega de posesión.",
+    ].join("\n");
+    expect(contarClausulas(texto)).toBe(3);
+  });
+
+  it("cuenta líneas título en mayúsculas (ES_TITULO)", () => {
+    const texto = [
+      "BOLETO DE COMPRAVENTA",
+      "Por una parte el señor Carlos Alberto Funes...",
+      "CLAUSULA PENAL",
+    ].join("\n");
+    expect(contarClausulas(texto)).toBe(2);
+  });
+
+  it("no cuenta líneas cortas en mayúsculas ni texto mixto", () => {
+    const texto = ["DNI", "Esto es una oración normal en minúsculas."].join("\n");
+    expect(contarClausulas(texto)).toBe(0);
+  });
+
+  it("contenido mixto: numeradas + títulos + texto normal", () => {
+    const texto = [
+      "CONTRATO DE LOCACIÓN",
+      "PRIMERA.- Objeto de la locación.",
+      "El locador entrega el inmueble en las condiciones actuales.",
+      "SEGUNDA.- Precio del alquiler.",
+    ].join("\n");
+    expect(contarClausulas(texto)).toBe(3);
   });
 });

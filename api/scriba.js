@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import { buildVars, sustituirVars } from "../src/utils/templateVars.js";
+import { buildVars, sustituirVars, contarClausulas } from "../src/utils/templateVars.js";
 import { extraerDocumento } from "./vision.js";
 
 const SUPABASE_URL      = "https://eueqluhhgvukovoyorrw.supabase.co";
@@ -94,6 +94,17 @@ const DB_TOOLS = [
       required: ["documento_id"],
     },
   },
+  {
+    name: "leer_template_base",
+    description: "Recupera el CONTENIDO EN BLANCO (con {{VARIABLES}} sin sustituir) de uno de los templates fijos del sistema, para comparar su estructura de cláusulas contra un documento de referencia o lo que pide el escribano — ANTES de decidir redactar algo desde cero. Distinta de 'leer_documento': esta lee una plantilla vacía del sistema, no un acto ya redactado.",
+    input_schema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", description: "Slug exacto del template, uno de los listados en 'abrir_editor'." },
+      },
+      required: ["slug"],
+    },
+  },
 ];
 
 const ABRIR_EDITOR_TOOL = [{
@@ -147,6 +158,75 @@ const ABRIR_EDITOR_TOOL = [{
       },
     },
     required: ["slug", "mensaje"],
+  },
+}];
+
+const CREAR_DOCUMENTO_LIBRE_TOOL = [{
+  name: "crear_documento_libre",
+  description: "Abre el editor con un documento redactado desde cero por vos (no un template fijo del sistema), cuando ya confirmaste con 'leer_template_base'/'buscar_documentos'/'leer_documento' que ningún template ni precedente cubre adecuadamente el caso. El cuerpo debe llevar {{VARIABLES}} (reutilizando los nombres estándar del sistema donde aplique) y marcadores de formato como el resto de los templates.",
+  input_schema: {
+    type: "object",
+    properties: {
+      contenido: {
+        type: "string",
+        description: "Cuerpo completo del documento, con {{VARIABLES}} y marcadores **negrita**/__subrayado__/~~dato ingresado por el usuario~~. Un salto de línea por párrafo.",
+      },
+      campos_libres: {
+        type: "array",
+        description: "Campos propios de este documento (no partes, no vars estándar) que deben aparecer editables en el panel de Propiedades del acto — ej: precio, seña, plazo. Mismo shape que 'variables_json' de los templates fijos.",
+        items: {
+          type: "object",
+          properties: {
+            name:        { type: "string", description: "Nombre EXACTO de la {{VARIABLE}} usada en el contenido, en MAYÚSCULAS_CON_GUION_BAJO. Nunca empezar con PARTE_, ESCRIBANO_, FECHA_, PROTOCOLO_, INSTRUMENTO o VEHICULO_." },
+            label:       { type: "string", description: "Etiqueta legible para mostrar en el panel." },
+            type:        { type: "string", description: "'texto' (default) o 'texto_largo' para textarea. No usar 'seleccion' todavía." },
+            placeholder: { type: "string" },
+            required:    { type: "boolean" },
+          },
+          required: ["name", "label"],
+        },
+      },
+      mensaje: {
+        type: "string",
+        description: "Mensaje breve para mostrar al escribano antes de abrir el editor, aclarando que es un borrador libre (no un template del sistema).",
+      },
+      partes: {
+        type: "array",
+        description: "Personas a pre-cargar como partes del acto, mismo shape que en 'abrir_editor'.",
+        items: {
+          type: "object",
+          properties: {
+            apellido:    { type: "string" },
+            nombre:      { type: "string" },
+            genero:      { type: "string", description: "M o F" },
+            tipo_doc:    { type: "string", description: "DNI, LC, LE, PAS, etc." },
+            nro_doc:     { type: "string" },
+            cuit:        { type: "string" },
+            fecha_nac:   { type: "string" },
+            estado_civil:{ type: "string" },
+            nacionalidad:{ type: "string" },
+            calle:       { type: "string" },
+            numero:      { type: "string" },
+            piso:        { type: "string" },
+            dpto:        { type: "string" },
+            localidad:   { type: "string" },
+            departamento:{ type: "string" },
+            rol:         { type: "string", description: "Rol en el acto" },
+          },
+        },
+      },
+      fecha: {
+        type: "object",
+        description: "Fecha del acto. Si no se especificó, omitir (se usa la fecha de hoy).",
+        properties: {
+          dia:    { type: "number" },
+          mes:    { type: "number", description: "0=enero, 11=diciembre" },
+          anio:   { type: "number" },
+          ciudad: { type: "string" },
+        },
+      },
+    },
+    required: ["contenido", "mensaje"],
   },
 }];
 
@@ -1313,6 +1393,27 @@ Flujo obligatorio cuando se extrae o busca una persona:
 
 Si el usuario ya especificó el rol en su mensaje ("leé este DNI, es el autorizado"), podés confirmar en una sola pregunta breve.
 
+## Antes de redactar desde cero — buscar un template o precedente que ya sirva
+
+Antes de generar un instrumento nuevo (sobre todo si el escribano adjuntó un documento de referencia, ej. un boleto ajeno que quiere usar de modelo), no redactes de una. Seguí este orden:
+
+1. Identificá el tipo de acto pedido y elegí 1-3 slugs candidatos entre los listados en 'abrir_editor'.
+2. Llamá a 'leer_template_base' sobre esos candidatos para ver su contenido en blanco (con {{VARIABLES}} sin sustituir).
+3. Si hay un documento de referencia adjunto o el escribano mencionó un acto anterior, llamá también a 'buscar_documentos' + 'leer_documento' para comparar contra precedentes reales ya redactados.
+4. **Comparar por estructura, no por la etiqueta del tipo de acto**: enumerá qué cláusulas/temas tiene cada candidato (precio/seña/plazo, declaración UIF, garantías, entrega de posesión, etc.) contra lo que pide la referencia, antes de concluir si hay un match adecuado. El campo 'clausulas_aprox' que devuelve 'leer_template_base' es solo una referencia numérica, no reemplaza este análisis.
+5. Si un candidato cubre razonablemente el caso → recomendá usar 'abrir_editor' con ese slug (aclarando qué falta o difiere respecto a la referencia). NO redactes libre en ese caso.
+6. Nunca elijas redacción libre en silencio: mostrale siempre al escribano qué templates/precedentes consideraste y por qué no alcanzaban, antes de pasar a redactar con 'crear_documento_libre'.
+
+## Redacción libre — solo cuando ningún template ni precedente alcanza
+
+Usá 'crear_documento_libre' únicamente después de haber hecho el paso anterior y haber concluido que no hay un template ni precedente adecuado. Decíselo explícitamente al escribano ("no encontré un template que cubra esto adecuadamente, armé un borrador libre").
+
+Al redactar el 'contenido':
+- Reusá los nombres de variable ESTÁNDAR del sistema para todo lo que mapee a datos estructurados: 'PARTE_n_APELLIDO', 'PARTE_n_NOMBRE', 'PARTE_n_DNI', 'PARTE_n_CUIT', 'PARTE_n_DOMICILIO', 'PARTE_n_ROL', etc. (n = 1, 2, 3...), 'FECHA_DIA'/'FECHA_MES'/'FECHA_ANIO'/'FECHA_CIUDAD', 'ESCRIBANO_NOMBRE'/'ESCRIBANO_REGISTRO', 'PROTOCOLO_LIBRO'/'PROTOCOLO_ACTA', 'INSTRUMENTO'.
+- Para datos genuinamente propios de este documento sin nombre estándar (precio, seña, plazo, cláusula especial), inventá un nombre nuevo en MAYÚSCULAS_CON_GUION_BAJO Y agregalo a 'campos_libres' para que aparezca editable en el panel de Propiedades del acto — nunca uses los prefijos reservados 'PARTE_', 'ESCRIBANO_', 'FECHA_', 'PROTOCOLO_', 'INSTRUMENTO', 'VEHICULO_' para estos nombres nuevos, porque chocan en silencio con las variables del sistema.
+- Marcadores de formato: **negrita**, __subrayado__, ~~dato ingresado por el usuario~~ (envolvé nombres, fechas y montos concretos con ~~), {{VARIABLE}} para sustitución. Un salto de línea por párrafo — los documentos notariales no llevan doble salto ("punto y aparte"). Evitá escribir una oración larga entera en MAYÚSCULAS salvo que quieras que aparezca centrada como título (así se auto-detecta).
+- No generes campos de tipo "seleccion" en 'campos_libres' todavía — esa opción no se renderiza como desplegable en el panel, usá "texto" simple.
+
 ## Generación de instrumentos
 
 Podés generar borradores completos de: compraventa (urbana/rural/zona frontera), donación, permuta, hipoteca, poderes (general/especial/irrevocable), cesión de derechos, constitución de sociedad (SRL/SA/SAS), actas notariales, certificación de firmas, declaratoria de herederos, rectificación de escritura.
@@ -1613,7 +1714,7 @@ const COMPLETAR_EXTRAVARS_TOOL = [{
   },
 }];
 
-const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...VALIDAR_CUIT_TOOL];
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...VALIDAR_CUIT_TOOL];
   const ultimoMensaje = documentos_adjuntos.length
     ? {
         role: "user",
@@ -1682,10 +1783,27 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
       if (error) return { error: error.message };
       if (!data) return { error: "No encontré ese documento (verificá el id o puede que no tengas acceso)." };
 
+      const c = data.contenido || {};
+
+      // Documento libre (sin template_id): el cuerpo vive en el propio jsonb, no en 'templates'
+      if (!data.template_id) {
+        if (!c.templateContenidoLibre) return { error: "No pude reconstruir el texto: documento libre sin contenido guardado.", titulo: data.titulo };
+        const varsLibre = buildVars({
+          partes:      (data.partes?.length ? data.partes : c.partes) || [],
+          escribano:   c.escribano   || {},
+          fecha:       c.fecha       || {},
+          protocolo:   c.protocolo   || {},
+          instrumento: c.instrumento || {},
+          extravars:   c.extravarsLibre || {},
+        });
+        const textoLibre = sustituirVars(c.templateContenidoLibre, varsLibre)
+          .replace(/\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~/g, "$1$2$3");
+        return { titulo: data.titulo, tipo_acto: data.tipo_acto, contenido: textoLibre.slice(0, 30000) };
+      }
+
       const { data: tpl, error: tplError } = await sb.from("templates").select("contenido").eq("id", data.template_id).maybeSingle();
       if (tplError || !tpl?.contenido) return { error: "No pude reconstruir el texto: falta la plantilla asociada.", titulo: data.titulo };
 
-      const c = data.contenido || {};
       const vars = buildVars({
         partes:      (data.partes?.length ? data.partes : c.partes) || [],
         escribano:   c.escribano   || {},
@@ -1696,6 +1814,20 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
       const textoPlano = sustituirVars(tpl.contenido, vars)
         .replace(/\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~/g, "$1$2$3");
       return { titulo: data.titulo, tipo_acto: data.tipo_acto, contenido: textoPlano.slice(0, 30000) };
+    }
+    if (name === "leer_template_base") {
+      const template = TEMPLATES_MAP[input.slug];
+      if (!template) return { error: "Slug no reconocido." };
+      const { data: tpl, error } = await sb.from("templates").select("contenido, variables_json").eq("id", template.id).maybeSingle();
+      if (error) return { error: error.message };
+      if (!tpl?.contenido) return { error: "Ese template no tiene contenido cargado." };
+      return {
+        slug: input.slug,
+        nombre: template.nombre,
+        contenido: tpl.contenido.slice(0, 30000),
+        variables_json: tpl.variables_json || [],
+        clausulas_aprox: contarClausulas(tpl.contenido),
+      };
     }
     if (name === "extraer_documento") {
       const imagenes = (input.indices || [])
@@ -1808,6 +1940,21 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
           return res.status(200).json({
             respuesta: msg,
             accion: { tipo: "completar_extravars", valores },
+          });
+        }
+
+        const crearDocumentoLibre = toolUses.find(t => t.name === "crear_documento_libre");
+        if (crearDocumentoLibre && toolUses.length === 1) {
+          const { contenido, campos_libres, mensaje: msg, partes, fecha } = crearDocumentoLibre.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: {
+              tipo: "crear_documento_libre",
+              contenido,
+              campos_libres: campos_libres || [],
+              partes: partes?.length ? partes : null,
+              fecha: fecha || null,
+            },
           });
         }
 

@@ -173,9 +173,15 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     }
   }, [miUsuario?.is_admin, registroActivo, miembros]);
 
-  const [templateContenido, setTemplateContenido] = useState("");
-  const [templateVarsSchema, setTemplateVarsSchema] = useState([]); // [{name,label,type,placeholder,required}]
-  const [extravars, setExtravars] = useState({});                   // {VARIABLE_NAME: valor}
+  // Documento libre (crear_documento_libre de Scriba): sin templateId, el cuerpo y el
+  // esquema de campos vienen directo por params en vez de un fetch a Supabase.
+  const [templateContenido, setTemplateContenido] = useState(() => params?.templateContenidoLibre || "");
+  const [templateVarsSchema, setTemplateVarsSchema] = useState(() => params?.variablesLibres || []); // [{name,label,type,placeholder,required}]
+  const [extravars, setExtravars] = useState(() => {
+    const init = {};
+    (params?.variablesLibres || []).forEach(v => { init[v.name] = ""; });
+    return init;
+  }); // {VARIABLE_NAME: valor}
 
   // Cargar nombre, contenido y variables_json del template desde Supabase
   useEffect(() => {
@@ -312,6 +318,13 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       if (data.template_id)  setTemplateId(data.template_id);
       if (data.tipo_acto)    setTemplateSlug(data.tipo_acto);
 
+      // Documento libre (sin template_id): el cuerpo/esquema/valores viven en el propio jsonb
+      if (!data.template_id && c.templateContenidoLibre) {
+        setTemplateContenido(c.templateContenidoLibre);
+        setTemplateVarsSchema(c.variablesLibres || []);
+        setExtravars(c.extravarsLibres || {});
+      }
+
       if (data.document_key) {
         // Hay un DOCX guardado — abrirlo directamente sin regenerar
         const { data: urlData } = supabase.storage
@@ -330,8 +343,15 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   }, [params.docId]);
 
   const contenidoParaGuardar = useMemo(
-    () => ({ partes, escribano, fecha, protocolo, instrumento }),
-    [partes, escribano, fecha, protocolo, instrumento]
+    () => ({
+      partes, escribano, fecha, protocolo, instrumento,
+      ...(templateId ? {} : {
+        templateContenidoLibre: templateContenido,
+        variablesLibres: templateVarsSchema,
+        extravarsLibres: extravars,
+      }),
+    }),
+    [partes, escribano, fecha, protocolo, instrumento, templateId, templateContenido, templateVarsSchema, extravars]
   );
 
   useEffect(() => {
@@ -541,6 +561,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     contenido: contenidoParaGuardar,
     templateKey,
     templateId,
+    tipoActo: templateSlug,
     documentKey,
     registroNumero: miUsuario?.registro || registroActivo,
     usuarioId: usuario?.id,

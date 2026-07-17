@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 
 const DEBOUNCE = 2000;
 
-export function useAutoguardado({ titulo, estado, contenido, templateKey, templateId, documentKey, registroNumero, usuarioId, initialDocId }) {
+export function useAutoguardado({ titulo, estado, contenido, templateKey, templateId, tipoActo, documentKey, registroNumero, usuarioId, initialDocId }) {
   const [docId,          setDocId]          = useState(initialDocId || null);
   const [guardando,      setGuardando]      = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState(null);
@@ -29,6 +29,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
       contenido,
       template_key: templateKey || "",
       ...(templateId    ? { template_id:  templateId  } : {}),
+      ...(tipoActo      ? { tipo_acto:    tipoActo    } : {}),
       ...(documentKey   ? { document_key: documentKey } : {}),
       registro_id:  registroNumero,
       usuario_id:   usuarioId,
@@ -63,7 +64,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
     } finally {
       setGuardando(false);
     }
-  }, [docId, titulo, estado, contenido, registroNumero, usuarioId, templateKey, documentKey]);
+  }, [docId, titulo, estado, contenido, registroNumero, usuarioId, templateKey, tipoActo, documentKey]);
 
   // Debounce — guarda 2s después del último cambio
   useEffect(() => {

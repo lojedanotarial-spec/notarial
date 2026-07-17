@@ -457,3 +457,13 @@ export function sustituirVars(texto, vars) {
   result = result.replace(/,\s*,/g, ",").replace(/,\s*;/g, ";").replace(/\(\s*\)/g, "");
   return result;
 }
+
+// Conteo aproximado de cláusulas de un template — ancla objetiva para que Scriba
+// compare estructura (no reemplaza el juicio semántico de qué cubre cada cláusula).
+export function contarClausulas(texto) {
+  if (!texto) return 0;
+  const lineas = texto.split("\n").map(l => l.trim()).filter(Boolean);
+  const NUMERAL = /^(PRIMER[AO]|SEGUND[AO]|TERCER[AO]|CUART[AO]|QUINT[AO]|SEXT[AO]|S[ÉE]PTIM[AO]|OCTAV[AO]|NOVEN[AO]|D[ÉE]CIM[AO][\s\w]*)\s*[:.\-—]/i;
+  const TITULO = /^[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]{5,}$/;
+  return lineas.filter(l => NUMERAL.test(l) || TITULO.test(l)).length;
+}
