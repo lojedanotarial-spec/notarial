@@ -162,6 +162,43 @@ function BtnAplicarExtravars({ valores }) {
   );
 }
 
+function BtnAplicarVehiculo({ vehiculo }) {
+  const [aplicado, setAplicado] = useState(false);
+
+  function aplicar() {
+    const v = vehiculo || {};
+    const vehiculoData = {
+      marca:         (v.marca     || "").toUpperCase(),
+      modelo:        (v.modelo    || "").toUpperCase(),
+      tipo_desc:     (v.tipo_desc || "").toUpperCase(),
+      dominio:       (v.dominio   || "").toUpperCase(),
+      chasis:        (v.chasis    || "").toUpperCase(),
+      motor:         (v.motor     || "").toUpperCase(),
+      tipo_vehiculo: "VEHÍCULO",
+    };
+    window.dispatchEvent(new CustomEvent("scriba:completar_vehiculo", { detail: vehiculoData }));
+    setAplicado(true);
+    setTimeout(() => setAplicado(false), 2500);
+  }
+
+  return (
+    <button onClick={aplicar} style={{
+      marginTop: 4, display: "flex", alignItems: "center", gap: 5,
+      background: aplicado ? "rgba(58,124,165,.12)" : C.cerulean,
+      border: "1px solid " + (aplicado ? "rgba(58,124,165,.4)" : C.cerulean),
+      borderRadius: 6, padding: "5px 10px",
+      fontSize: 11, fontWeight: 700, fontFamily: "'Montserrat', sans-serif",
+      color: aplicado ? C.cerulean : "#fff",
+      cursor: "pointer", transition: "all .15s",
+    }}>
+      {aplicado
+        ? <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg> Aplicado</>
+        : <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 3L5 7l-2-2" strokeLinecap="round" strokeLinejoin="round"/></svg> Cargar datos del vehículo</>
+      }
+    </button>
+  );
+}
+
 function BtnInsertar({ texto }) {
   const [insertado, setInsertado] = useState(false);
 
@@ -350,6 +387,48 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
             <BtnAplicarExtravars valores={accion.valores} />
           </div>
         )}
+        {!esUser && accion?.tipo === "completar_vehiculo" && (
+          <div style={{
+            marginTop: 8,
+            background: "rgba(58,124,165,.06)",
+            border: "1px solid rgba(58,124,165,.2)",
+            borderRadius: 8, padding: "10px 12px",
+          }}>
+            <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginBottom: 8, fontWeight: 600 }}>
+              Vehículo leído
+            </div>
+            <div style={{ fontSize: 12, color: C.dark, lineHeight: 1.7, marginBottom: 6 }}>
+              {accion.vehiculo?.marca   && <div><strong>Marca:</strong> {accion.vehiculo.marca}</div>}
+              {accion.vehiculo?.modelo  && <div><strong>Modelo:</strong> {accion.vehiculo.modelo}</div>}
+              {accion.vehiculo?.dominio && <div><strong>Dominio:</strong> {accion.vehiculo.dominio}</div>}
+            </div>
+            <BtnAplicarVehiculo vehiculo={accion.vehiculo} />
+            {accion.titular?.nro_doc && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(26,35,50,.1)" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.cerulean, marginBottom: 4 }}>Titular</div>
+                <div style={{ fontSize: 12, color: C.dark, lineHeight: 1.7, marginBottom: 6 }}>
+                  {accion.titular.apellido && <div><strong>Apellido:</strong> {accion.titular.apellido}</div>}
+                  {accion.titular.nombre   && <div><strong>Nombre:</strong> {accion.titular.nombre}</div>}
+                  {accion.titular.nro_doc  && <div><strong>DNI:</strong> {accion.titular.nro_doc}</div>}
+                </div>
+                <button onClick={() => {
+                    window.dispatchEvent(new CustomEvent("scriba:completar_parte", { detail: accion.titular }));
+                    const nombre = [accion.titular.apellido, accion.titular.nombre].filter(Boolean).join(", ");
+                    onConfirmarAccion?.(`Listo, agregué a **${nombre || "el titular"}** como parte al documento.`);
+                  }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5, padding: "5px 10px",
+                    background: C.cerulean, border: "none", borderRadius: 6,
+                    fontSize: 11, fontWeight: 700, color: "#FDFCFA", cursor: "pointer",
+                    fontFamily: "'Montserrat', sans-serif",
+                  }}>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Agregar como parte
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         {!esUser && accion?.tipo === "insertar_texto" && (
           <div style={{
             marginTop: 8,
@@ -460,47 +539,27 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
   const [input,     setInput]     = useState("");
   const [cargando,  setCargando]  = useState(false);
   const [error,     setError]     = useState(null);
-  const [archivos,  setArchivos]  = useState([]); // [{ data, mediaType, nombre }]
-  const [progresoEscaneo, setProgresoEscaneo] = useState(""); // "" | "2/3"
-  const [pdfsContexto, setPdfsContexto] = useState([]); // [{ data, mediaType:'application/pdf', nombre, sizeBytes }]
+  const [archivos,  setArchivos]  = useState([]); // [{ data, mediaType, nombre, sizeBytes }]
   const [expandido, setExpandido] = useState(false);
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
   const fileRef    = useRef(null);
-  const fileContextoRef = useRef(null);
   const iniciadoRef = useRef(false);
 
-  const LIMITE_PDFS_CONTEXTO = 2.4 * 1024 * 1024; // ~2.4MB crudos → deja margen dentro del límite de body de Vercel (~4.5MB)
-
-  function handleFileContexto(e) {
-    const files = Array.from(e.target.files || []).filter(f => f.type === "application/pdf");
-    e.target.value = "";
-    if (!files.length) return;
-
-    const actual = pdfsContexto.reduce((s, p) => s + p.sizeBytes, 0);
-    const nuevo = files.reduce((s, f) => s + f.size, 0);
-    if (actual + nuevo > LIMITE_PDFS_CONTEXTO) {
-      alert("Los PDFs adjuntados son demasiado pesados en conjunto. Adjuntá menos archivos o archivos más livianos (límite ~2.4MB en total).");
-      return;
-    }
-
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const base64 = ev.target.result.split(",")[1];
-        setPdfsContexto(prev => [...prev, { data: base64, mediaType: "application/pdf", nombre: file.name, sizeBytes: file.size }]);
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function quitarPdfContexto(idx) {
-    setPdfsContexto(prev => prev.filter((_, i) => i !== idx));
-  }
+  const LIMITE_ADJUNTOS = 2.4 * 1024 * 1024; // ~2.4MB crudos → deja margen dentro del límite de body de Vercel (~4.5MB)
 
   function handleFile(e) {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
+    if (!files.length) return;
+
+    const actual = archivos.reduce((s, a) => s + (a.sizeBytes || 0), 0);
+    const nuevo = files.reduce((s, f) => s + f.size, 0);
+    if (actual + nuevo > LIMITE_ADJUNTOS) {
+      alert("Los archivos adjuntados son demasiado pesados en conjunto. Adjuntá menos archivos o archivos más livianos (límite ~2.4MB en total).");
+      return;
+    }
+
     files.forEach(agregarArchivo);
   }
 
@@ -510,7 +569,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = ev.target.result.split(",")[1];
-        setArchivos(prev => [...prev, { data: base64, mediaType: "application/pdf", nombre: file.name }]);
+        setArchivos(prev => [...prev, { data: base64, mediaType: "application/pdf", nombre: file.name, sizeBytes: file.size }]);
       };
       reader.readAsDataURL(file);
       return;
@@ -528,44 +587,13 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
-      setArchivos(prev => [...prev, { data: base64, mediaType: "image/jpeg", nombre: file.name }]);
+      setArchivos(prev => [...prev, { data: base64, mediaType: "image/jpeg", nombre: file.name, sizeBytes: Math.round(base64.length * 0.75) }]);
     };
     img.src = url;
   }
 
   function quitarArchivo(idx) {
     setArchivos(prev => prev.filter((_, i) => i !== idx));
-  }
-
-  // Consolida N resultados de /api/vision en un solo vehículo (primer-no-vacío-gana,
-  // igual que ScanVehiculoBtn en ModalVehiculos.jsx) y una lista de personas sin duplicar por DNI
-  function fusionarResultadosVision(resultados) {
-    const personas = [];
-    const vistoDni = new Set();
-    let vehiculo = null;
-    const notas = [];
-
-    const limpia = p => {
-      const { _rol_sugerido, ...rest } = p;
-      return { ...rest, rol: rest.rol || _rol_sugerido || "" };
-    };
-    const agregarPersona = (p) => {
-      const persona = limpia(p);
-      const dni = (persona.nro_doc || "").replace(/\D/g, "");
-      if (dni && vistoDni.has(dni)) return;
-      if (dni) vistoDni.add(dni);
-      personas.push(persona);
-    };
-
-    for (const datos of resultados) {
-      const esVehiculo = ["tarjeta_verde", "titulo_automotor"].includes(datos.tipo_documento);
-      if (esVehiculo && datos.vehiculo && !vehiculo) vehiculo = datos.vehiculo;
-      if (esVehiculo && datos.titular?.nro_doc) agregarPersona(datos.titular);
-      (datos.personas || []).forEach(agregarPersona);
-      if (datos.notas) notas.push(datos.notas);
-    }
-
-    return { vehiculo, personas, notas: notas.join(" ") };
   }
 
   useEffect(() => {
@@ -595,18 +623,6 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
     setError(null);
     await nueva();
     inputRef.current?.focus();
-  }
-
-  async function procesarImagen(imgActual) {
-    const res = await fetch("/api/vision", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imagen: imgActual }),
-    });
-    let data;
-    try { data = await res.json(); } catch { throw new Error(`Error del servidor (${res.status})`); }
-    if (!res.ok) throw new Error(data.error || "Error procesando documento");
-    return data;
   }
 
   // Manejar localmente actualizaciones simples de datos de partes sin llamar a la API
@@ -667,124 +683,28 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
 
   async function enviar(texto) {
     const pregunta = (texto || input).trim();
-    if ((!pregunta && !archivos.length && !pdfsContexto.length) || cargando) return;
+    if ((!pregunta && !archivos.length) || cargando) return;
 
     // Intentar manejar localmente antes de llamar a la API
-    if (!archivos.length && !pdfsContexto.length && manejarActualizacionLocal(pregunta)) {
+    if (!archivos.length && manejarActualizacionLocal(pregunta)) {
       setInput("");
       return;
     }
 
     const archivosActuales = archivos;
-    const pdfsContextoActuales = pdfsContexto;
     setInput("");
     setArchivos([]);
-    setPdfsContexto([]);
     setCargando(true);
     setError(null);
 
-    // Si hay archivos, procesarlos con el endpoint de visión dedicado (uno por uno)
-    if (archivosActuales.length) {
-      const nombres = archivosActuales.map(a => a.nombre).join(", ");
-      const textoUsuario = pregunta || (archivosActuales.length > 1 ? `Leé estos documentos: ${nombres}` : `Leé este documento: ${nombres}`);
-      const nuevosMensajes = [...mensajes, {
-        role: "user", content: textoUsuario,
-        imagen: { nombre: archivosActuales.length > 1 ? `${archivosActuales.length} archivos` : archivosActuales[0].nombre },
-      }];
-      setMensajes(nuevosMensajes);
-      try {
-        const resultados = [];
-        for (let i = 0; i < archivosActuales.length; i++) {
-          if (archivosActuales.length > 1) setProgresoEscaneo(`${i + 1}/${archivosActuales.length}`);
-          resultados.push(await procesarImagen(archivosActuales[i]));
-        }
-
-        const { vehiculo, personas, notas } = fusionarResultadosVision(resultados);
-
-        const lineasVehiculo = [];
-        if (vehiculo) {
-          const vehiculoData = {
-            marca:         (vehiculo.marca     || "").toUpperCase(),
-            modelo:        (vehiculo.modelo    || "").toUpperCase(),
-            tipo_desc:     (vehiculo.tipo_desc || "").toUpperCase(),
-            dominio:       (vehiculo.dominio   || "").toUpperCase(),
-            chasis:        (vehiculo.chasis    || "").toUpperCase(),
-            motor:         (vehiculo.motor     || "").toUpperCase(),
-            tipo_vehiculo: "VEHÍCULO",
-          };
-          window.dispatchEvent(new CustomEvent("scriba:completar_vehiculo", { detail: vehiculoData }));
-          lineasVehiculo.push(
-            "**Vehículo leído:**",
-            vehiculo.marca   ? `Marca: **${vehiculo.marca}**`   : null,
-            vehiculo.modelo  ? `Modelo: **${vehiculo.modelo}**` : null,
-            vehiculo.dominio ? `Dominio: **${vehiculo.dominio}**` : null,
-            vehiculo.chasis  ? `Chasis: ${vehiculo.chasis}`     : null,
-            vehiculo.motor   ? `Motor: ${vehiculo.motor}`       : null,
-          );
-        }
-
-        const resumenPersonas = personas.length
-          ? personas.map(p => `**${[p.apellido, p.nombre].filter(Boolean).join(" ")}** — DNI ${p.nro_doc || ""}${p.fecha_nac ? `, nacido/a ${p.fecha_nac}` : ""}${p.estado_civil ? `, ${p.estado_civil}` : ""}${p.rol ? ` *(${p.rol})*` : ""}`).join("\n")
-          : null;
-
-        const bloques = [...lineasVehiculo.filter(Boolean), resumenPersonas].filter(Boolean);
-        const respuesta = (bloques.length ? bloques.join("\n\n") : "No encontré datos para cargar en los documentos adjuntos.")
-          + (notas ? `\n\n${notas}` : "");
-
-        const accion = personas.length
-          ? { tipo: "completar_parte", datos: personas[0], personas_adicionales: personas.slice(1) }
-          : null;
-
-        const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: respuesta, accion }];
-        setMensajes(mensajesFinales);
-        guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
-      } catch (e) {
-        setError(e.message);
-      } finally {
-        setCargando(false);
-        setProgresoEscaneo("");
-      }
-      return;
-    }
-
-    // Si hay PDFs de contexto, mandarlos al chat normal como bloques "document" (no OCR)
-    if (pdfsContextoActuales.length) {
-      const nombres = pdfsContextoActuales.map(p => p.nombre).join(", ");
-      const textoUsuario = pregunta || `Redactá o respondé basándote en estos documentos: ${nombres}`;
-      const nuevosMensajes = [...mensajes, { role: "user", content: textoUsuario, imagen: { nombre: nombres } }];
-      setMensajes(nuevosMensajes);
-      const t0 = Date.now();
-      try {
-        const res = await fetch("/api/scriba", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mensaje: textoUsuario,
-            mensajes_anteriores: mensajes,
-            contexto: contexto || null,
-            registroId: registroId || null,
-            userToken: session?.access_token || null,
-            documentos_adjuntos: pdfsContextoActuales.map(p => ({ data: p.data, mediaType: p.mediaType, nombre: p.nombre })),
-          }),
-        });
-        let data;
-        try { data = await res.json(); } catch { throw new Error(`Error del servidor (${res.status})`); }
-        if (!res.ok) throw new Error(data.error || "Error del servidor");
-        const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
-        setMensajes(mensajesFinales);
-        guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
-        logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, response: data.respuesta, duration_ms: Date.now() - t0 });
-      } catch (e) {
-        setError(e.message);
-        logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, error: e.message, duration_ms: Date.now() - t0 });
-      } finally {
-        setCargando(false);
-      }
-      return;
-    }
-
-    // Sin adjuntos: flujo normal de Scriba
-    const nuevosMensajes = [...mensajes, { role: "user", content: pregunta }];
+    const nombres = archivosActuales.map(a => a.nombre).join(", ");
+    const textoUsuario = pregunta || (archivosActuales.length
+      ? (archivosActuales.length > 1 ? `Miral estos archivos: ${nombres}` : `Miral este archivo: ${nombres}`)
+      : "");
+    const nuevosMensajes = [...mensajes, {
+      role: "user", content: textoUsuario,
+      ...(archivosActuales.length ? { imagen: { nombre: archivosActuales.length > 1 ? `${archivosActuales.length} archivos` : nombres } } : {}),
+    }];
     setMensajes(nuevosMensajes);
     const t0 = Date.now();
     try {
@@ -792,11 +712,12 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mensaje: pregunta,
+          mensaje: textoUsuario,
           mensajes_anteriores: mensajes,
           contexto: contexto || null,
           registroId: registroId || null,
           userToken: session?.access_token || null,
+          documentos_adjuntos: archivosActuales.map(a => ({ data: a.data, mediaType: a.mediaType, nombre: a.nombre })),
         }),
       });
       let data;
@@ -805,10 +726,10 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
       setMensajes(mensajesFinales);
       guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
-      logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: pregunta, response: data.respuesta, duration_ms: Date.now() - t0 });
+      logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, response: data.respuesta, duration_ms: Date.now() - t0 });
     } catch (e) {
       setError(e.message);
-      logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: pregunta, error: e.message, duration_ms: Date.now() - t0 });
+      logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, error: e.message, duration_ms: Date.now() - t0 });
     } finally {
       setCargando(false);
     }
@@ -996,7 +917,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             />
             );
           })}
-          {cargando && <LoadingDots label={progresoEscaneo ? `Escaneando ${progresoEscaneo}` : null} />}
+          {cargando && <LoadingDots />}
 
           {error && (
             <div style={{
@@ -1036,39 +957,13 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
               ))}
             </div>
           )}
-          {pdfsContexto.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#a07c30", letterSpacing: ".03em" }}>
-                DOCUMENTOS DE REFERENCIA
-              </div>
-              {pdfsContexto.map((p, i) => (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  background: "rgba(201,169,97,.1)", border: "1px solid rgba(201,169,97,.35)",
-                  borderRadius: 8, padding: "6px 10px",
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#a07c30" strokeWidth="1.5">
-                    <rect x="2" y="1" width="12" height="14" rx="1.5"/>
-                    <path d="M5 5h6M5 8h6M5 11h4" strokeLinecap="round"/>
-                  </svg>
-                  <span style={{ fontSize: 11, color: "#a07c30", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {p.nombre}
-                  </span>
-                  <button onClick={() => quitarPdfContexto(i)} style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    color: "rgba(26,35,50,.4)", fontSize: 16, lineHeight: 1, padding: "0 2px",
-                  }}>×</button>
-                </div>
-              ))}
-            </div>
-          )}
           <div style={{
             display: "flex", gap: 8, alignItems: "flex-end",
             background: "#fff", border: "1.5px solid rgba(26,35,50,.22)",
             borderRadius: 10, padding: "8px 10px",
           }}>
             <input ref={fileRef} type="file" accept="image/*,.pdf" multiple style={{ display: "none" }} onChange={handleFile} />
-            <button onClick={() => fileRef.current?.click()} title="Adjuntar DNI/tarjeta verde para escanear"
+            <button onClick={() => fileRef.current?.click()} title="Adjuntar documento (Scriba identifica de qué se trata)"
               style={{
                 width: 28, height: 28, borderRadius: 6, border: "none",
                 background: archivos.length ? "rgba(58,124,165,.15)" : "transparent",
@@ -1080,26 +975,12 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
                 <path d="M13 9l-5 5a4 4 0 01-5.66-5.66l6-6a2.5 2.5 0 013.54 3.54l-6.01 6a1 1 0 01-1.41-1.41l5-5" strokeLinecap="round"/>
               </svg>
             </button>
-            <input ref={fileContextoRef} type="file" accept=".pdf" multiple style={{ display: "none" }} onChange={handleFileContexto} />
-            <button onClick={() => fileContextoRef.current?.click()} title="Adjuntar PDF de referencia (no se escanea como identidad)"
-              style={{
-                width: 28, height: 28, borderRadius: 6, border: "none",
-                background: pdfsContexto.length ? "rgba(201,169,97,.18)" : "transparent",
-                color: pdfsContexto.length ? "#a07c30" : "rgba(26,35,50,.35)",
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0, transition: "all .15s",
-              }}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M9 1H4a1.5 1.5 0 00-1.5 1.5v11A1.5 1.5 0 004 15h8a1.5 1.5 0 001.5-1.5V5.5L9 1z"/>
-                <path d="M9 1v4.5H13.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
             <textarea
               ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKey}
-              placeholder={(archivos.length || pdfsContexto.length) ? "Agregá instrucciones (opcional)..." : "Consultá sobre normativa, requisitos, impuestos..."}
+              placeholder={archivos.length ? "Agregá instrucciones (opcional)..." : "Consultá sobre normativa, requisitos, impuestos..."}
               disabled={cargando}
               rows={1}
               style={{
@@ -1116,11 +997,11 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             />
             <button
               onClick={() => enviar()}
-              disabled={(!input.trim() && !archivos.length && !pdfsContexto.length) || cargando}
+              disabled={(!input.trim() && !archivos.length) || cargando}
               style={{
                 width: 32, height: 32, borderRadius: 8, border: "none",
-                background: (input.trim() || archivos.length || pdfsContexto.length) && !cargando ? C.cerulean : "rgba(26,35,50,.12)",
-                color: "#fff", cursor: (input.trim() || archivos.length || pdfsContexto.length) && !cargando ? "pointer" : "default",
+                background: (input.trim() || archivos.length) && !cargando ? C.cerulean : "rgba(26,35,50,.12)",
+                color: "#fff", cursor: (input.trim() || archivos.length) && !cargando ? "pointer" : "default",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, transition: "background .15s",
               }}
@@ -1131,7 +1012,7 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
             </button>
           </div>
           <div style={{ fontSize: 10, color: "rgba(26,35,50,.55)", marginTop: 6, textAlign: "center" }}>
-            Enter para enviar · Shift+Enter para nueva línea · 📎 escanear DNI/vehículo · 📄 adjuntar PDF de referencia
+            Enter para enviar · Shift+Enter para nueva línea · 📎 adjuntar (DNI, vehículo, boleto, contrato, cualquier documento)
           </div>
           <div style={{
             fontSize: 10, color: C.cerulean,

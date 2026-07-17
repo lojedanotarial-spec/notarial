@@ -2,34 +2,22 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+const PROMPT_EXTRACCION = `Analizá este/estos documento/s argentino/s.
 
-  const { imagen } = req.body;
-  if (!imagen?.data || !imagen?.mediaType) return res.status(400).json({ error: "Imagen requerida" });
-
-  try {
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1500,
-      messages: [{
-        role: "user",
-        content: [
-          { type: "image", source: { type: "base64", media_type: imagen.mediaType, data: imagen.data } },
-          { type: "text", text: `Analizá este documento argentino.
+Si recibís más de una imagen, pueden ser distintas caras del MISMO documento (ej: frente y dorso de una tarjeta verde, o dos fotos del mismo DNI) o documentos de personas distintas (ej: DNI del comprador y DNI del vendedor). Si reconocés que dos imágenes corresponden a la MISMA persona (mismo nombre y/o DNI), fusioná sus datos en una sola entrada dentro de "personas" — NUNCA la dupliques. Si son personas distintas, devolvé una entrada por cada una.
 
 IDENTIFICAR TIPO — seguí este orden:
 
-A) ¿Ves "DOMINIO", "CHASIS", "MOTOR", "MARCA", "MODELO" con valores técnicos? (frente de tarjeta verde/cédula de vehículo)
+A) ¿Ves "DOMINIO", "CHASIS", "MOTOR", "MARCA", "MODELO" con valores técnicos? (frente de tarjeta verde/cédula de vehículo, física o digital)
    → usá FORMATO A — VEHÍCULO FRENTE
 
 B) ¿Ves "TITULAR:" seguido de un nombre, "AUTORIZADO:" seguido de otro nombre, y el logo DNRPA? (dorso de tarjeta verde)
    → usá FORMATO B — VEHÍCULO DORSO
 
-C) ¿Es DNI, LE, LC, pasaporte, licencia, partida de nacimiento/matrimonio?
+C) ¿Es DNI (libreta vieja, tarjeta nueva, o digital desde la app Mi Argentina), LE, LC, pasaporte, licencia, partida de nacimiento/matrimonio?
    → usá FORMATO C — PERSONA
 
-Instrucciones: el documento puede estar en cualquier orientación — rotalo mentalmente. Si un dato no se lee con certeza, dejá el campo vacío.
+Instrucciones: el documento puede estar en cualquier orientación — rotalo mentalmente. Puede ser físico, digital (foto de pantalla), viejo o nuevo formato. Si un dato no se lee con certeza, dejá el campo vacío.
 
 ═══ FORMATO A — VEHÍCULO FRENTE (dominio, chasis, motor) ═══
 {
@@ -103,15 +91,35 @@ Instrucciones: el documento puede estar en cualquier orientación — rotalo men
   "notas": ""
 }
 
-Respondé SOLO con el JSON válido del formato que corresponda, sin texto adicional.` }
-        ]
-      }],
-    });
+Respondé SOLO con el JSON válido del formato que corresponda, sin texto adicional.`;
 
-    const texto = response.content.find(c => c.type === "text")?.text || "{}";
-    const jsonMatch = texto.match(/\{[\s\S]*\}/);
-    const datos = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+// imagenes: [{ data, mediaType }, ...] — 1 o más imágenes del mismo o distintos documentos
+export async function extraerDocumento(imagenes) {
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1500,
+    messages: [{
+      role: "user",
+      content: [
+        ...imagenes.map(img => ({ type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data } })),
+        { type: "text", text: PROMPT_EXTRACCION },
+      ],
+    }],
+  });
 
+  const texto = response.content.find(c => c.type === "text")?.text || "{}";
+  const jsonMatch = texto.match(/\{[\s\S]*\}/);
+  return jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const { imagen } = req.body;
+  if (!imagen?.data || !imagen?.mediaType) return res.status(400).json({ error: "Imagen requerida" });
+
+  try {
+    const datos = await extraerDocumento([{ data: imagen.data, mediaType: imagen.mediaType }]);
     return res.status(200).json(datos);
   } catch (e) {
     console.error("Vision error:", e);

@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { buildVars, sustituirVars } from "../src/utils/templateVars.js";
+import { extraerDocumento } from "./vision.js";
 
 const SUPABASE_URL      = "https://eueqluhhgvukovoyorrw.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1ZXFsdWhoZ3Z1a292b3lvcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjI3NjQsImV4cCI6MjA5MjE5ODc2NH0.RklZOhSt8DqUhRCqlLNQ0OyLNrUGKYXHaogOkRLCz6E";
@@ -1363,17 +1364,18 @@ Cuando calculés, mostrá solo el CUIT/CUIL resultante, sin pasos intermedios. S
 
 ---
 
-## Lectura de documentos de identidad y civiles
+## Lectura de documentos de identidad, vehículos y otros archivos adjuntos
 
-Cuando el escribano te comparte una imagen o PDF de un documento (DNI, licencia de conducir, partida de nacimiento, matrimonio, divorcio, defunción, pasaporte, etc.):
+Cuando el escribano adjunta uno o más archivos (imagen o PDF), NO asumas de entrada qué son — pueden ser un documento de identidad, un vehículo, o cualquier otra cosa (boleto, contrato, plano, ticket, recibo). Mirá cada uno (vienen numerados [Adjunto N]) y decidí:
 
-1. Leé el documento con atención y extraé TODOS los datos visibles de las personas
-2. Usá la herramienta 'completar_parte' para devolver los datos estructurados
-3. El DNI: solo los números sin puntos ni guiones (ej: "31645431")
-4. La fecha de nacimiento en formato dd/mm/aaaa
+1. **¿Parece identidad (DNI en cualquier formato, licencia, partida, pasaporte) o vehículo (tarjeta verde, título)?** → llamá a 'extraer_documento' con los índices correspondientes ANTES de leerlo vos mismo — tiene un análisis especializado más preciso que tu propia lectura. Si son frente y dorso del mismo documento, pasá ambos índices juntos en la misma llamada para que se fusionen y no se dupliquen como personas distintas. Con el resultado, usá 'completar_parte' (personas) o 'completar_vehiculo' (vehículos, con el campo 'titular' si vino en el dorso).
+2. **¿Es otra cosa con información útil (boleto anterior, contrato, plano, ticket)?** → leelo vos directamente, sin pasar por 'extraer_documento', y usalo como contexto para redactar, comparar o responder.
+3. **¿Genuinamente no podés determinar qué es o para qué lo quiere el escribano?** → preguntale en vez de adivinar.
 
-**CRÍTICO — mensajes con "Documento leído:" en el historial:**
-Cuando en el historial de la conversación ves un mensaje tuyo que comienza con "Documento leído:", eso significa que ya procesaste previamente el documento via Vision. Los datos de la persona están en ese mensaje. NO pidas el documento de nuevo ni digas que no recibiste la imagen. Simplemente usá los datos que ya están en el historial para responder la pregunta del usuario.
+El DNI: solo los números sin puntos ni guiones (ej: "31645431"). La fecha de nacimiento en formato dd/mm/aaaa.
+
+**CRÍTICO — datos ya extraídos en el historial de la conversación:**
+Si en el historial ya extrajiste los datos de una persona o vehículo (por vos mismo o vía 'extraer_documento'), NO vuelvas a pedir el documento ni digas que no lo recibiste. Usá los datos que ya están en el historial para responder.
 
 Ejemplo: si el usuario dice "añade el estado civil soltero" después de que ya leíste un DNI, actualizá los datos de esa persona con estado civil "soltero" y usá 'completar_parte' con todos los datos del historial más el estado civil nuevo. Nunca pidas la imagen de nuevo en ese contexto.
 
@@ -1440,7 +1442,7 @@ export default async function handler(req, res) {
     : "";
 
   const adjuntosNote = documentos_adjuntos.length
-    ? `\n\n[DOCUMENTOS PDF ADJUNTOS EN ESTE MENSAJE]\nEl escribano adjuntó ${documentos_adjuntos.length} documento(s) PDF como contexto/referencia libre (ej: un boleto anterior, un plano, un contrato similar) — NO son DNIs ni tarjetas verdes, no intentes extraer datos de identidad de ellos. Usalos como fuente de información para redactar, comparar o citar datos relevantes, salvo que el escribano indique explícitamente lo contrario.`
+    ? `\n\n[ARCHIVOS ADJUNTOS EN ESTE MENSAJE]\nEl escribano adjuntó ${documentos_adjuntos.length} archivo(s), numerados [Adjunto 0], [Adjunto 1], etc. en el mensaje. Pueden ser CUALQUIER cosa — documento de identidad (DNI en cualquier formato, pasaporte, licencia, partida), de un vehículo (tarjeta verde, título, física o digital), o un documento de referencia libre (boleto anterior, contrato, plano, ticket, recibo, cualquier otro papel con información útil). Mirá cada uno y decidí:\n- ¿Parece identidad o vehículo? → llamá a 'extraer_documento' con los índices correspondientes (juntos si son caras del mismo documento) ANTES de intentar leerlo vos mismo — es más preciso.\n- ¿Es otra cosa con información útil? → leelo vos directamente y usalo como contexto para redactar, comparar o responder.\n- ¿Genuinamente no podés determinar qué es o para qué lo quiere el escribano? → preguntale en vez de adivinar.`
     : "";
 
   const INSERTAR_TOOL = [{
@@ -1518,6 +1520,58 @@ const COMPLETAR_PARTE_TOOL = [{
   },
 }];
 
+const COMPLETAR_VEHICULO_TOOL = [{
+  name: "completar_vehiculo",
+  description: "Usá esta herramienta con los datos que te devolvió 'extraer_documento' cuando identificó una tarjeta verde o título automotor (frente, dorso, o ambos ya fusionados). No la llames más de una vez para el mismo vehículo.",
+  input_schema: {
+    type: "object",
+    properties: {
+      vehiculo: {
+        type: "object",
+        description: "Datos del vehículo extraídos del documento",
+        properties: {
+          marca:     { type: "string" },
+          modelo:    { type: "string" },
+          tipo_desc: { type: "string", description: "Tipo de vehículo, ej: AUTOMOVIL, MOTOVEHICULO" },
+          dominio:   { type: "string" },
+          chasis:    { type: "string" },
+          motor:     { type: "string" },
+        },
+      },
+      titular: {
+        type: "object",
+        description: "Datos del titular si figuran en el documento (normalmente en el dorso)",
+        properties: {
+          apellido:     { type: "string" },
+          nombre:       { type: "string" },
+          nro_doc:      { type: "string" },
+          tipo_doc:     { type: "string" },
+          genero:       { type: "string" },
+          fecha_nac:    { type: "string" },
+        },
+      },
+      mensaje: { type: "string", description: "Resumen breve de lo que encontraste" },
+    },
+    required: ["vehiculo", "mensaje"],
+  },
+}];
+
+const EXTRAER_DOCUMENTO_TOOL = [{
+  name: "extraer_documento",
+  description: "Analiza uno o más archivos adjuntos de este mensaje con un extractor especializado (más preciso que tu propia lectura) para documentos de identidad (DNI en cualquier formato — libreta vieja, tarjeta, o digital de la app Mi Argentina — pasaporte, licencia, partidas) y de vehículos (tarjeta verde o título automotor, física o digital). Usala SIEMPRE que un archivo adjunto parezca ser uno de estos tipos, en vez de leerlo vos mismo. Si el escribano adjuntó frente y dorso del MISMO documento en 2 fotos, pasá ambos índices juntos en una sola llamada para que se analicen juntos y no se dupliquen como personas distintas. NO la uses para PDFs o fotos que sean claramente otra cosa (boletos, contratos, planos, tickets, recibos) — esos podés leerlos vos directamente.",
+  input_schema: {
+    type: "object",
+    properties: {
+      indices: {
+        type: "array",
+        items: { type: "integer" },
+        description: "Índices (0-based) de los archivos adjuntos a analizar, según el orden [Adjunto N] indicado en el mensaje. Incluí varios índices juntos si son caras del mismo documento.",
+      },
+    },
+    required: ["indices"],
+  },
+}];
+
 const COMPLETAR_EXTRAVARS_TOOL = [{
   name: "completar_extravars",
   description: "Completa campos específicos del template activo que NO son datos de partes ni texto libre del cuerpo — cosas como precio, seña, saldo, plazo de escritura, cláusulas especiales, quién designa al escribano, etc. Usá SOLO los nombres de variable listados en '[CAMPOS DEL TEMPLATE]' del contexto activo — si un campo que el escribano menciona no está en esa lista, no existe para este template, no lo inventes. NUNCA uses modificar_documento para esto.",
@@ -1534,17 +1588,19 @@ const COMPLETAR_EXTRAVARS_TOOL = [{
   },
 }];
 
-const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_EXTRAVARS_TOOL];
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL];
   const ultimoMensaje = documentos_adjuntos.length
     ? {
         role: "user",
         content: [
-          ...documentos_adjuntos.map(d => ({
-            type: "document",
-            source: { type: "base64", media_type: "application/pdf", data: d.data },
-            title: d.nombre || undefined,
-          })),
-          { type: "text", text: mensaje || "Redactá o respondé basándote en los documentos adjuntos." },
+          ...documentos_adjuntos.flatMap((d, i) => {
+            const esPdf = d.mediaType === "application/pdf";
+            const bloque = esPdf
+              ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: d.data }, title: d.nombre || undefined }
+              : { type: "image", source: { type: "base64", media_type: d.mediaType, data: d.data } };
+            return [{ type: "text", text: `[Adjunto ${i}: ${d.nombre || (esPdf ? "documento.pdf" : "imagen")}]` }, bloque];
+          }),
+          { type: "text", text: mensaje || "Mirá los archivos adjuntos y decidí qué hacer con ellos." },
         ],
       }
     : { role: "user", content: mensaje };
@@ -1616,6 +1672,19 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
         .replace(/\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~/g, "$1$2$3");
       return { titulo: data.titulo, tipo_acto: data.tipo_acto, contenido: textoPlano.slice(0, 30000) };
     }
+    if (name === "extraer_documento") {
+      const imagenes = (input.indices || [])
+        .map(i => documentos_adjuntos[i])
+        .filter(Boolean)
+        .filter(d => d.mediaType !== "application/pdf")
+        .map(d => ({ data: d.data, mediaType: d.mediaType }));
+      if (!imagenes.length) return { error: "No encontré esos adjuntos como imágenes para analizar." };
+      try {
+        return await extraerDocumento(imagenes);
+      } catch (e) {
+        return { error: e.message };
+      }
+    }
     return { error: "Herramienta desconocida" };
   }
 
@@ -1673,6 +1742,15 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...INSERTAR_TOOL, ...MODIFICAR
           return res.status(200).json({
             respuesta: msg,
             accion: { tipo: "completar_parte", datos: datosConIdx },
+          });
+        }
+
+        const completarVehiculo = toolUses.find(t => t.name === "completar_vehiculo");
+        if (completarVehiculo && toolUses.length === 1) {
+          const { vehiculo, titular, mensaje: msg } = completarVehiculo.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "completar_vehiculo", vehiculo, titular },
           });
         }
 

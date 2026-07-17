@@ -212,9 +212,9 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | Pre-cargar partes y fecha desde Scriba | ✅ | EditorScreen acepta `params.partes` y `params.fecha` |
 | Completar parte con posición exacta | ✅ | `parte_index` permite a Scriba posicionar partes exactas |
 | Modificar documento completo | ✅ | Tool `modificar_documento` + btn "Aplicar" |
-| Leer DNI/documento con foto | ✅ | Sube imagen → Claude Vision extrae datos → completa partes |
-| **Múltiples DNI/tarjetas verdes en un mensaje** | ✅ | (17/07/26) `ScribaPanel.jsx` — fusiona N resultados de `/api/vision` en un solo `completar_parte` (dedup por DNI) + merge de vehículo primer-no-vacío-gana; progreso "Escaneando i/N" |
-| **PDFs de contexto para redactar** | ✅ | (17/07/26) Botón separado del escaneo de identidad; manda bloques `type:"document"` nativos de Anthropic a `/api/scriba` (no pasa por `/api/vision`); validación de tamaño client-side (~2.4MB, límite de body de Vercel Hobby) |
+| **Adjuntar cualquier archivo — un solo botón, Scriba decide qué es** | ✅ | (17/07/26, rediseñado) `ScribaPanel.jsx` tiene un único botón 📎 (imagen o PDF, múltiples). Todo se manda a `/api/scriba` como bloques `image`/`document` nativos de Anthropic, numerados `[Adjunto N]`. Scriba mira cada uno y decide: identidad/vehículo → tool `extraer_documento` (ver abajo); otra cosa con info útil (boleto, contrato, plano) → lo lee directo como contexto; si no está seguro → pregunta. Ya no hay distinción de botones ni de endpoints del lado del cliente. |
+| **Tool `extraer_documento`** | ✅ | (17/07/26) Reusa el prompt especializado de `api/vision.js` (más preciso que el general) — factorizado como `extraerDocumento(imagenes)`, exportado e importado directo por `api/scriba.js` (sin round-trip HTTP). Soporta N imágenes en una sola llamada: si son frente+dorso del mismo documento, el propio prompt las fusiona en una persona en vez de duplicarlas (bug real encontrado y corregido — antes el merge era un dedup por DNI en JS que fallaba si un lado no traía el número). Con el resultado, Scriba llama `completar_parte` o `completar_vehiculo`. `ModalVehiculos.jsx` sigue usando `/api/vision` (HTTP) sin cambios. |
+| **Tool `completar_vehiculo`** | ✅ | (17/07/26) Nuevo — antes el vehículo se auto-aplicaba sin confirmación (venía de `/api/vision` directo); ahora pasa por tool call + botón "Cargar datos del vehículo" (mismo patrón que el resto), con el titular ofrecido como parte aparte si vino en el dorso. |
 | **Referenciar documentos guardados** | ✅ | (17/07/26) Tool `leer_documento` — reconstruye el texto completo de un acto ya guardado reusando `buildVars`/`sustituirVars` de `templateVars.js`; requiere confirmar el documento con `buscar_documentos` primero. Limitación: no incluye vehículos/extravars del template (solo partes/fecha/protocolo/instrumento) |
 | Consultar personas del registro | ✅ | `buscar_personas` con RLS y JWT del usuario |
 | Consultar documentos del registro | ✅ | `buscar_documentos` (incluye `id` desde 17/07/26, necesario para `leer_documento`) |
@@ -410,9 +410,11 @@ Timeout: 60s (maxDuration en Vercel)
 | `leer_documento` | (17/07/26) Trae el texto completo reconstruido de un documento guardado, dado su `id` — usar tras confirmar con `buscar_documentos` |
 | `insertar_en_documento` | Devuelve texto limpio para insertar en OO abierto |
 | `modificar_documento` | Reemplaza el contenido completo del documento (preserva `{{VARIABLES}}`) |
+| `completar_vehiculo` | (17/07/26) Setea datos de vehículo (+ titular opcional) — se usa con el resultado de `extraer_documento` |
+| `extraer_documento` | (17/07/26) Analiza 1+ adjuntos (por índice) con el prompt especializado de `api/vision.js` (`extraerDocumento()`, importado directo, sin HTTP) — para identidad o vehículo. Si dos índices son frente/dorso del mismo documento, el propio análisis los fusiona en una persona. NO se usa para adjuntos que sean referencia libre (Claude los lee directo) |
 | `completar_extravars` | (17/07/26) Setea campos propios del template (precio, seña, plazo, etc.) — usa los nombres exactos de `templateVarsSchema`, pasados en `contexto.camposExtra` |
 
-**Adjuntos (17/07/26):** `documentos_adjuntos` en el body — array de `{data, mediaType, nombre}` PDFs enviados como bloques `type:"document"` nativos de Anthropic, para contexto de redacción libre (reemplazó el camino viejo de `imagen` que estaba muerto — el frontend nunca llegaba a mandarlo a este endpoint, siempre desviaba a `/api/vision`).
+**Adjuntos (17/07/26, rediseñado):** `documentos_adjuntos` en el body — array de `{data, mediaType, nombre}`, imágenes o PDFs. Se mandan como bloques `image`/`document` nativos de Anthropic (uno por adjunto, con un bloque de texto `[Adjunto N: nombre]` antes de cada uno para que Scriba pueda referenciarlos por índice). Ya no hay distinción de "identidad" vs "referencia" del lado del cliente — todo entra por el mismo campo, Scriba decide con `extraer_documento` o leyendo directo.
 
 **Optimización:** El system prompt usa Prompt Caching de Anthropic (`cache_control: ephemeral`) — la primera llamada tarda ~2s, las siguientes ~200ms para el mismo system prompt.
 
@@ -422,10 +424,12 @@ Endpoint: `POST /api/vision`
 Timeout: 30s  
 Modelo: Claude Sonnet (mejor OCR que Haiku)
 
-Detecta automáticamente si la imagen es DNI (frente/dorso) o tarjeta verde/título automotor. Extrae:
+Detecta automáticamente si la imagen es DNI (cualquier formato: libreta vieja, tarjeta, digital de Mi Argentina) o tarjeta verde/título automotor (física o digital). Extrae:
 - DNI: apellido, nombre, sexo, fecha_nac (desde MRZ), domicilio (separando barrio de localidad), departamento, provincia (por inferencia de código)
 - Tarjeta verde frente: marca, modelo, tipo, dominio, chasis, motor, año
 - Tarjeta verde dorso: titular + autorizado con roles sugeridos
+
+**Refactor 17/07/26:** el prompt y la llamada a Claude se factorizaron en `extraerDocumento(imagenes)` (export nombrado, acepta 1+ imágenes — si son la misma persona/documento, el prompt las fusiona). El handler HTTP (`export default`) sigue existiendo sin cambios de contrato para `ModalVehiculos.jsx`; `api/scriba.js` importa `extraerDocumento` directo (sin round-trip HTTP) para el tool `extraer_documento`.
 
 ---
 
@@ -633,6 +637,11 @@ Deploy automático en Vercel al hacer push a `main`.
 67. RLS — auditoría completa contra la base en vivo: bug de insert en expedientes ya estaba resuelto (doc desactualizada); encontradas 2 generaciones de políticas conviviendo en 5 tablas; dropeada política vieja de `templates` que anulaba el chequeo de `es_admin()` en escritura
 68. Scriba — tool `completar_extravars`: permite completar precio/seña/plazo/cláusulas y demás campos propios del template (antes imposible, `modificar_documento` preserva `{{VARIABLES}}` a propósito); contexto activo incluye `camposExtra` con los nombres exactos de `templateVarsSchema`
 69. Fix 12 tests desactualizados en `templateVars.test.js` — helper `sinTilde()` para no acoplar los tests de contenido al marcador `~~` de resaltado; actualizado también el test de `ESCRIBANO_REGISTRO_LETRAS` al comportamiento correcto post fix #46
+70. Panel de Propiedades del Acto expandible (240→480px, handle flotante centrado) + grilla de 2 columnas para campos cortos al expandir
+71. Scriba y el panel de Propiedades coexisten — Scriba se corre (`right`) según el ancho del panel de Propiedades en vez de taparlo; el overlay oscuro también respeta ese límite
+72. Scriba — adjuntar documentos unificado en un solo botón: se eliminan los botones/estados separados de "escanear identidad" y "PDF de referencia"; ahora Scriba mira cada adjunto y decide con `extraer_documento` (identidad/vehículo, reusa el prompt especializado de `api/vision.js` vía `extraerDocumento()`) o lectura directa (referencia libre) o pregunta si no está seguro — corrige de raíz el bug de frente/dorso tratados como personas distintas
+73. `api/vision.js` refactorizado: lógica de extracción factorizada en `extraerDocumento(imagenes)`, soporta N imágenes en una llamada (fusiona si son el mismo documento); handler HTTP intacto para `ModalVehiculos.jsx`
+74. Nuevo tool `completar_vehiculo` — antes el vehículo se auto-aplicaba sin confirmación; ahora pasa por botón "Cargar datos del vehículo" como el resto de las acciones de Scriba
 
 ---
 
