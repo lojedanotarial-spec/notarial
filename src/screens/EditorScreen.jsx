@@ -599,9 +599,29 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         {/* Panel de propiedades */}
         <div style={{
             width: propiedadesExpandido ? 480 : 240, flexShrink: 0, display: "flex", flexDirection: "column",
-            borderLeft: "1px solid rgba(26,35,50,.1)", background: C.porcelain, overflow: "hidden",
-            transition: "width .2s ease",
+            borderLeft: "1px solid rgba(26,35,50,.1)", background: C.porcelain,
+            transition: "width .2s ease", position: "relative",
           }}>
+            {/* Handle flotante para expandir/contraer — centrado vertical, sobresale del borde */}
+            <button
+              onClick={() => setPropiedadesExpandido(e => !e)}
+              title={propiedadesExpandido ? "Contraer panel" : "Expandir panel"}
+              style={{
+                position: "absolute", left: -11, top: "50%", transform: "translateY(-50%)",
+                width: 16, height: 44, borderRadius: "8px 0 0 8px", zIndex: 5,
+                border: "1px solid rgba(26,35,50,.15)", borderRight: "none",
+                background: C.porcelain, color: "rgba(26,35,50,.45)",
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "-2px 0 6px rgba(26,35,50,.08)",
+              }}>
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                {propiedadesExpandido
+                  ? <path d="M7 2.5L3.5 6 7 9.5"/>
+                  : <path d="M5 2.5L8.5 6 5 9.5"/>
+                }
+              </svg>
+            </button>
+
             <div style={{
               padding: "10px 14px 8px", borderBottom: "1px solid rgba(26,35,50,.08)",
               fontSize: 11, fontWeight: 700, color: "rgba(26,35,50,.5)",
@@ -609,33 +629,15 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
             }}>
               <span>Propiedades del acto</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                {hasOoEdits && !pendingRegen && (
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3,
-                    background: "rgba(58,124,165,.1)", color: "#3a7ca5",
-                    letterSpacing: ".04em", textTransform: "uppercase",
-                  }}>
-                    Editado
-                  </span>
-                )}
-                <button
-                  onClick={() => setPropiedadesExpandido(e => !e)}
-                  title={propiedadesExpandido ? "Contraer panel" : "Expandir panel"}
-                  style={{
-                    width: 20, height: 20, borderRadius: 4, border: "none",
-                    background: "transparent", color: "rgba(26,35,50,.4)",
-                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    {propiedadesExpandido
-                      ? <path d="M7 2.5L3.5 6 7 9.5"/>
-                      : <path d="M5 2.5L8.5 6 5 9.5"/>
-                    }
-                  </svg>
-                </button>
-              </div>
+              {hasOoEdits && !pendingRegen && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3,
+                  background: "rgba(58,124,165,.1)", color: "#3a7ca5",
+                  letterSpacing: ".04em", textTransform: "uppercase",
+                }}>
+                  Editado
+                </span>
+              )}
             </div>
             <div style={{ flex: 1, overflowY: "auto" }}>
 
