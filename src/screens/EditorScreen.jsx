@@ -616,8 +616,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               }}>
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 {propiedadesExpandido
-                  ? <path d="M7 2.5L3.5 6 7 9.5"/>
-                  : <path d="M5 2.5L8.5 6 5 9.5"/>
+                  ? <path d="M5 2.5L8.5 6 5 9.5"/>
+                  : <path d="M7 2.5L3.5 6 7 9.5"/>
                 }
               </svg>
             </button>
@@ -778,8 +778,14 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(26,35,50,.45)", marginBottom: 8 }}>
                     Datos del instrumento
                   </div>
+                  <div style={propiedadesExpandido
+                    ? { display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 12 }
+                    : undefined}>
                   {templateVarsSchema.filter(v => !v.name.startsWith("VEHICULO_")).map(v => (
-                    <div key={v.name} style={{ marginBottom: 10 }}>
+                    <div key={v.name} style={{
+                      marginBottom: 10,
+                      gridColumn: propiedadesExpandido && v.type === "texto_largo" ? "1 / -1" : undefined,
+                    }}>
                       <label style={{ fontSize: 11, fontWeight: 600, color: C.dark, display: "block", marginBottom: 3 }}>
                         {v.label}{v.required && <span style={{ color: "#c0392b" }}> *</span>}
                       </label>
@@ -812,6 +818,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                       )}
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
 
