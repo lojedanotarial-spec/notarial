@@ -113,6 +113,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const generatedOnceRef  = useRef(false);
   const handleGenerarRef  = useRef(null);
   const generateAfterRef  = useRef(false);
+  // Ventana de gracia tras (re)generar: el reload del docx en OnlyOffice dispara
+  // su propio onDocumentStateChange, que si no se ignora marca hasOoEdits=true
+  // por el reload en sí (no por una edición real) y bloquea el próximo cambio
+  // de propiedad detrás del banner de "¿Regenerar?" sin que el usuario edite nada.
+  const ignorarEdicionesHastaRef = useRef(0);
   // Si abrimos un doc existente, saltamos el auto-generate hasta saber si tiene DOCX guardado
   const skipAutoGenerateRef = useRef(!!params?.docId);
 
@@ -242,6 +247,10 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       setHasOoEdits(false);
       setPendingRegen(false);
       setIsDirty(false);
+      // El refreshFile de OnlyOffice (disparado por el cambio de documentUrl) dispara
+      // su propio onDocumentStateChange al recargar — ignorarlo unos segundos para
+      // no confundirlo con una edición manual real del escribano.
+      ignorarEdicionesHastaRef.current = Date.now() + 3000;
       // Si un modal guardó mientras la generación estaba en curso, regenerar con los nuevos datos
       if (generateAfterRef.current) {
         generateAfterRef.current = false;
@@ -615,7 +624,10 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             documentKey={documentKey}
             documentTitle={docTitle}
             serverUrl={ONLYOFFICE_URL}
-            onEdit={() => setHasOoEdits(true)}
+            onEdit={() => {
+              if (Date.now() < ignorarEdicionesHastaRef.current) return;
+              setHasOoEdits(true);
+            }}
           />
         </div>
 
