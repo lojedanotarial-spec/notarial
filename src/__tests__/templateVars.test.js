@@ -118,6 +118,42 @@ describe("PARTE_N_* básicos", () => {
     expect(vars.PARTE_1_ROL).toBe("COMPRADOR");
   });
 
+  it("ROL femenino -OR: COMPRADOR + género F → COMPRADORA", () => {
+    const vars = ctx({ partes: [mkParte({ rol: "COMPRADOR", genero: "F" })] });
+    expect(vars.PARTE_1_ROL).toBe("COMPRADORA");
+  });
+
+  it("ROL femenino -OR: VENDEDOR + género F → VENDEDORA", () => {
+    const vars = ctx({ partes: [mkParte({ rol: "VENDEDOR", genero: "F" })] });
+    expect(vars.PARTE_1_ROL).toBe("VENDEDORA");
+  });
+
+  it("ROL femenino -O: APODERADO + género F → APODERADA", () => {
+    const vars = ctx({ partes: [mkParte({ rol: "APODERADO", genero: "F" })] });
+    expect(vars.PARTE_1_ROL).toBe("APODERADA");
+  });
+
+  it("ROL femenino -O: DONATARIO + género F → DONATARIA", () => {
+    const vars = ctx({ partes: [mkParte({ rol: "DONATARIO", genero: "F" })] });
+    expect(vars.PARTE_1_ROL).toBe("DONATARIA");
+  });
+
+  it("ROL invariante -ANTE/-ENTE no cambia con género F", () => {
+    expect(ctx({ partes: [mkParte({ rol: "AUTORIZANTE", genero: "F" })] }).PARTE_1_ROL).toBe("AUTORIZANTE");
+    expect(ctx({ partes: [mkParte({ rol: "CEDENTE",     genero: "F" })] }).PARTE_1_ROL).toBe("CEDENTE");
+    expect(ctx({ partes: [mkParte({ rol: "COMPARECIENTE", genero: "F" })] }).PARTE_1_ROL).toBe("COMPARECIENTE");
+  });
+
+  it("ROL masculino no se modifica aunque el género sea M", () => {
+    const vars = ctx({ partes: [mkParte({ rol: "COMPRADOR", genero: "M" })] });
+    expect(vars.PARTE_1_ROL).toBe("COMPRADOR");
+  });
+
+  it("ROL con notación 'BASE/A' del dropdown de ROLES_CONTEXTUALES se resuelve por género", () => {
+    expect(ctx({ partes: [mkParte({ rol: "COMPRADOR/A", genero: "F" })] }).PARTE_1_ROL).toBe("COMPRADORA");
+    expect(ctx({ partes: [mkParte({ rol: "COMPRADOR/A", genero: "M" })] }).PARTE_1_ROL).toBe("COMPRADOR");
+  });
+
   it("ESTADO_CIVIL se pasa tal cual", () => {
     const vars = ctx({ partes: [mkParte({ estadoCivil: "casado" })] });
     expect(vars.PARTE_1_ESTADO_CIVIL).toBe("casado");

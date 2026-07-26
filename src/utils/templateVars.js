@@ -44,6 +44,18 @@ const fmtNacionalidad = (nac, genero) => {
   return nac;
 };
 
+// Concordancia de género del rol — soporta la notación "Base/a" de ROLES_CONTEXTUALES
+// (ej. "COMPRADOR/A" según se elige del dropdown) y palabras sueltas (ej. "COMPRADOR").
+const fmtRol = (rol, genero) => {
+  if (!rol) return "";
+  const base = rol.split("/")[0].trim().toUpperCase();
+  if (genero !== "F") return base;
+  if (/ANTE$|ENTE$/.test(base)) return base;               // invariante: DONANTE, CEDENTE, AUTORIZANTE, PODERDANTE, COMPARECIENTE, REQUIRENTE, MUTUANTE
+  if (/OR$/.test(base))         return base + "A";          // VENDEDOR→VENDEDORA, COMPRADOR→COMPRADORA, LOCADOR→LOCADORA
+  if (/O$/.test(base))          return base.slice(0, -1) + "A"; // APODERADO→APODERADA, DONATARIO→DONATARIA, CESIONARIO→CESIONARIA
+  return base;
+};
+
 const fmtCuit = (c) => {
   if (!c) return "";
   const pts = c.split("-");
@@ -178,7 +190,7 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     vars[`PARTE_${n}_ESTADO_CIVIL`]    = p.estadoCivil  || "";
     vars[`PARTE_${n}_NACIONALIDAD`]    = fmtNacionalidad(p.nacionalidad, p.genero);
     vars[`PARTE_${n}_DOMICILIO`]       = domicilio;
-    vars[`PARTE_${n}_ROL`]             = (p.rol || "").toUpperCase();
+    vars[`PARTE_${n}_ROL`]             = fmtRol(p.rol, p.genero);
     vars[`PARTE_${n}_ARTICULO`]        = genArticulo;
     vars[`PARTE_${n}_FECHA_NAC`]       = fmtFechaNac(p.fechaNac || "");
     vars[`PARTE_${n}_ARTICULO_LA_EL`]  = esF ? "La" : "El";

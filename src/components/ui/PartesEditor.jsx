@@ -249,6 +249,41 @@ function ConfirmQuitarParte({ nombre, onConfirm, onCancel }) {
   );
 }
 
+function ConfirmSobrescribirEscaneo({ nombre, onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position:"fixed", inset:0, background:"rgba(26,35,50,.5)",
+      zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center",
+    }}>
+      <div style={{
+        background:C.porcelain, borderRadius:12, padding:"24px 24px 18px",
+        width:340, boxShadow:"0 8px 32px rgba(26,35,50,.18)",
+      }}>
+        <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:8 }}>
+          Sobrescribir datos
+        </div>
+        <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20, lineHeight:1.5 }}>
+          {nombre ? <>Ya cargaste datos para <strong style={{ color:C.dark }}>{nombre}</strong>.</> : "Ya cargaste datos para esta parte."} Escanear este documento va a reemplazar los campos que coincidan con lo que ya escribiste. ¿Continuar?
+        </div>
+        <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+          <button onClick={onCancel}
+                  style={{ padding:"7px 16px", borderRadius:7, border:"1px solid rgba(26,35,50,.14)",
+                           background:"transparent", fontSize:13, fontWeight:600, color:C.dark,
+                           cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>
+            Cancelar
+          </button>
+          <button onClick={onConfirm}
+                  style={{ padding:"7px 16px", borderRadius:7, border:"1px solid #e07070",
+                           background:"#fdf0f0", fontSize:13, fontWeight:700, color:"#c0392b",
+                           cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>
+            Sobrescribir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BuscadorDNI({ registroNumero, onSelect }) {
   const [query, setQuery] = useState("");
   const [resultados, setResultados] = useState([]);
@@ -422,6 +457,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
   const [openId, setOpenId] = useState(partes[0]?.id ?? null);
   const [confirmQuitar, setConfirmQuitar] = useState(null);
   const [hoverQuitar, setHoverQuitar] = useState(null);
+  const [confirmEscaneo, setConfirmEscaneo] = useState(null); // { persona } pendiente de confirmar
 
   const upd = (id, fields) => onChange(partes.map(p => p.id === id ? { ...p, ...fields } : p));
 
@@ -482,6 +518,36 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
       representaciones: persona.representaciones || [],
       _personaId:       persona.id,
     });
+  }
+
+  // El escaneo gana si tiene valor; el formulario es solo fallback
+  function aplicarEscaneo(persona) {
+    const actual = partes.find(x => x.id === openId) || {};
+    const merge = (nuevo, actual) => nuevo || actual;
+    cargarDesdeCRM({
+      apellido:     (merge(persona.apellido,     actual.apellido) || "").toUpperCase(),
+      nombre:       (merge(persona.nombre,       actual.nombre)   || "").toUpperCase(),
+      nro_doc:      merge(persona.nro_doc,      actual.nroDoc),
+      tipo_doc:     merge(persona.tipo_doc,     actual.tipoDoc) || "DNI",
+      genero:       merge(persona.genero,       actual.genero)  || "",
+      fecha_nac:    merge(persona.fecha_nac,    actual.fechaNac),
+      estado_civil: merge(persona.estado_civil, actual.estadoCivil),
+      nacionalidad: merge(persona.nacionalidad, actual.nacionalidad),
+      calle:        titleCaseDomicilio(merge(persona.calle,     actual.calle))     || "",
+      numero:       merge(persona.numero,      actual.numero)                      || "",
+      barrio:       titleCaseDomicilio(merge(persona.barrio,   actual.barrio))     || "",
+      manzana:      merge(persona.manzana,     actual.manzana)                     || "",
+      casa:         merge(persona.casa,        actual.casa)                        || "",
+      localidad:    titleCaseDomicilio(merge(persona.localidad, actual.localidad)) || "",
+      departamento: titleCaseDomicilio(merge(persona.departamento, actual.departamento)) || "",
+      cuit:         actual.cuit || undefined,
+    });
+  }
+
+  // ¿La parte abierta ya tiene datos tipeados a mano que un escaneo podría pisar?
+  function tieneDatosPropios(actual) {
+    const campos = ["apellido","nombre","nroDoc","genero","estadoCivil","nacionalidad","calle","numero","localidad"];
+    return campos.some(c => (actual?.[c] || "").toString().trim() !== "");
   }
 
   const EC_F = ["soltera","casada","divorciada","viuda","separada de hecho"];
@@ -572,28 +638,12 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                 <ScanBtn onDatos={datos => {
                   const persona = datos?.personas?.[0];
                   if (!persona) return alert("No se encontraron datos de persona en el documento.");
-                  // Merge: solo completa campos vacíos, no sobreescribe los que ya tienen datos
                   const actual = partes.find(x => x.id === openId) || {};
-                  // El escaneo gana si tiene valor; el formulario es solo fallback
-                  const merge = (nuevo, actual) => nuevo || actual;
-                  cargarDesdeCRM({
-                    apellido:     (merge(persona.apellido,     actual.apellido) || "").toUpperCase(),
-                    nombre:       (merge(persona.nombre,       actual.nombre)   || "").toUpperCase(),
-                    nro_doc:      merge(persona.nro_doc,      actual.nroDoc),
-                    tipo_doc:     merge(persona.tipo_doc,     actual.tipoDoc) || "DNI",
-                    genero:       merge(persona.genero,       actual.genero)  || "",
-                    fecha_nac:    merge(persona.fecha_nac,    actual.fechaNac),
-                    estado_civil: merge(persona.estado_civil, actual.estadoCivil),
-                    nacionalidad: merge(persona.nacionalidad, actual.nacionalidad),
-                    calle:        titleCaseDomicilio(merge(persona.calle,     actual.calle))     || "",
-                    numero:       merge(persona.numero,      actual.numero)                      || "",
-                    barrio:       titleCaseDomicilio(merge(persona.barrio,   actual.barrio))     || "",
-                    manzana:      merge(persona.manzana,     actual.manzana)                     || "",
-                    casa:         merge(persona.casa,        actual.casa)                        || "",
-                    localidad:    titleCaseDomicilio(merge(persona.localidad, actual.localidad)) || "",
-                    departamento: titleCaseDomicilio(merge(persona.departamento, actual.departamento)) || "",
-                    cuit:         actual.cuit || undefined,
-                  });
+                  if (tieneDatosPropios(actual)) {
+                    setConfirmEscaneo({ persona });
+                  } else {
+                    aplicarEscaneo(persona);
+                  }
                 }} style={{ flexShrink:0, alignSelf:"flex-start" }}/>
               </div>
 
@@ -816,6 +866,14 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
           nombre={confirmQuitar.apellido || confirmQuitar.nombre}
           onConfirm={() => quitar(confirmQuitar.id)}
           onCancel={() => setConfirmQuitar(null)}
+        />
+      )}
+
+      {confirmEscaneo && (
+        <ConfirmSobrescribirEscaneo
+          nombre={p?.apellido || p?.nombre}
+          onConfirm={() => { aplicarEscaneo(confirmEscaneo.persona); setConfirmEscaneo(null); }}
+          onCancel={() => setConfirmEscaneo(null)}
         />
       )}
     </>
