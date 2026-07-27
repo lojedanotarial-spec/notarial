@@ -111,14 +111,29 @@ export function CalculadoraCuit({ onBack }) {
                 <div style={{ fontSize: 30, fontWeight: 700, color: C.dark, fontFamily: "'Montserrat',sans-serif", letterSpacing: ".05em", marginBottom: 16 }}>
                   {cuitFormateado}
                 </div>
-                <button onClick={copiar} style={{
-                  padding: "8px 24px", borderRadius: 8, border: "none",
-                  background: copiado ? "#27ae60" : C.dark,
-                  color: "#FDFCFA", fontFamily: "'Montserrat',sans-serif",
-                  fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "background .2s",
-                }}>
-                  {copiado ? "✓ Copiado" : "Copiar"}
-                </button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <button onClick={copiar} style={{
+                    padding: "8px 24px", borderRadius: 8, border: "none",
+                    background: copiado ? "#27ae60" : C.dark,
+                    color: "#FDFCFA", fontFamily: "'Montserrat',sans-serif",
+                    fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "background .2s",
+                  }}>
+                    {copiado ? "✓ Copiado" : "Copiar"}
+                  </button>
+                  <a
+                    href="https://plataformanotario.cnmza.org.ar/personas-web/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: "8px 16px", borderRadius: 8,
+                      border: `1px solid ${C.dark}`, background: "transparent",
+                      color: C.dark, fontFamily: "'Montserrat',sans-serif",
+                      fontSize: 12, fontWeight: 700, textDecoration: "none",
+                      display: "inline-flex", alignItems: "center",
+                    }}>
+                    Verificar en Plataforma Notario ↗
+                  </a>
+                </div>
               </div>
             ) : (
               <div style={{ background: "rgba(26,35,50,.04)", borderRadius: 10, padding: "20px", textAlign: "center" }}>
@@ -132,7 +147,8 @@ export function CalculadoraCuit({ onBack }) {
           <div style={{ marginTop: 14, padding: "12px 16px", borderRadius: 8, background: "rgba(26,35,50,.04)" }}>
             <div style={{ fontSize: 11, color: C.muted, fontFamily: "'Inter',sans-serif", lineHeight: 1.7 }}>
               • Prefijo 20/23 para masculino · 27/24 para femenino<br />
-              • Para empresas (SA, SRL, etc.) el prefijo es 30 o 33 y no se calcula por DNI
+              • Para empresas (SA, SRL, etc.) el prefijo es 30 o 33 y no se calcula por DNI<br />
+              • "Verificar en Plataforma Notario" abre el sistema del Colegio de Notarios de Mendoza en una pestaña nueva — pide login propio, no hay búsqueda automática desde acá
             </div>
           </div>
         </div>
