@@ -47,6 +47,8 @@ const ROLES_CONTEXTUALES = {
   mutuo_hipotecario:      ["Mutuante",    "Mutuario/a"],
   cesion_herencia:        ["Cedente",     "Cesionario/a"],
   cesion_cuotas:          ["Cedente",     "Cesionario/a"],
+  cesion_credito:         ["Cedente",     "Cesionario/a"],
+  cesion_posicion_contractual: ["Cedente", "Cesionario/a", "Cedido/a"],
   cert_firma:             ["Compareciente", null],
   cert_firma_f08:         ["Vendedor", "Co-vendedor", "Cónyuge del vendedor", "Comprador", "Co-comprador", "Cónyuge del comprador"],
   cert_copia:             ["Requirente",  null],
