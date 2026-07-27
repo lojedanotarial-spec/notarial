@@ -506,7 +506,7 @@ El plugin muestra las propiedades del acto y permite regenerar el documento. Com
 | GitHub | `lojedanotarial-spec` | `notarial` (**público**) | — | Código fuente |
 | Vercel | `lojedanotarial-1974's projects` (comparte cuenta con `jarvis` y `fatima-taha-site`, proyectos no relacionados) | `notarial` | `iad1` (Virginia, EE.UU.) — default de Vercel, nunca elegido explícitamente | Frontend (SPA) + serverless (`api/*.js`) |
 | Supabase | `lojedanotarial-SB` (plan **Free**) | `Notarial` (`eueqluhhgvukovoyorrw`) | `us-west-2` (Oregon, EE.UU.) | Postgres (`personas`, `documentos`, `templates`, etc.) + Storage (DOCX) |
-| GCP | proyecto todavía sin renombrar ("My First Project" al 27/07/26) | VM `instance-20260528-175646`, zona `southamerica-west1-b` | Santiago, Chile | OnlyOffice Docs 9.4.0.129 |
+| GCP | `Notarial-prod` (renombrado 27/07/26, era "My First Project") | VM `instance-20260528-175646`, zona `southamerica-west1-b` | Santiago, Chile | OnlyOffice Docs 9.4.0.129 |
 | Cloudflare | — | zona `notarial.lat` + Worker `oo-proxy` | PoP Buenos Aires (EZE) | DNS, proxy del dominio, reescritura de rutas de assets de OO bajo `notarial.lat/*` |
 
 **Notas honestas, no para ocultar:**
