@@ -195,7 +195,10 @@ Para cada respuesta de Scriba, Fatima responde:
 
 | # | Dónde | Descripción | Severidad | Estado |
 |---|-------|-------------|-----------|--------|
-| | | | | |
+| 1 | Editor — Propiedades del acto | Los campos de extravars/cláusulas regeneran el documento en cada tecla en vez de al salir del campo (onBlur) | Media | Abierto (27/07/26) |
+| 2 | Editor — campo PRECIO | Precio en letras se tipea a mano en vez de derivarse automáticamente del valor en números | Media | Abierto (27/07/26) |
+| 3 | Conversor número→letras | No fuerza la unidad "mil" ni los centavos ("CON 00/100") en montos — ligado al bug #2 | Media | Abierto (27/07/26) |
+| 4 | Documento generado (OO) | Tags HTML literales (`<strong>...</strong>`) aparecen como texto plano en el cuerpo en vez de negrita real — ej. "ante mí, `<strong>`FABIÁN MCLEOD`</strong>`, Notar..." | Alta | Abierto (27/07/26) |
 
 ---
 

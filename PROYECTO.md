@@ -1,6 +1,6 @@
 # Notarial v2 — Documentación de Proyecto
 
-> Última actualización: 17 julio 2026
+> Última actualización: 27 julio 2026
 
 ---
 
@@ -295,9 +295,11 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 | `localHandler.test.js` | Handler local Scriba (estado civil, rol, extendidos) | ✅ |
 | `tildesNombres.test.js` | Lookup tildes en nombres propios | ✅ |
 | `templateVars.test.js` | Variables de plantilla, ROL uppercase, nombres | ✅ |
-| **Total** | **163 tests** | ✅ todos pasan |
+| **Total** | **185 tests** | ✅ todos pasan |
 
 > ✅ (17/07/26) Los 12 tests que fallaban por el marcador `~~texto~~` (sistema de resaltado, desde `2c026f7`) fueron arreglados con un helper `sinTilde()` en el test file — quita solo `~~` antes de comparar contenido, sin tocar `**`/`__` que sí son parte de lo que esos tests verifican. Se aprovechó para también actualizar el test de `ESCRIBANO_REGISTRO_LETRAS` que esperaba el comportamiento viejo (pre fix #46).
+>
+> (27/07/26) +10 tests nuevos para `numeroOrdinal()`, `detectarNumeracion()` y `ensamblarClausulas()` (piloto de bloques Fase 1, ver #81) — la tabla de arriba quedó desactualizada desde los tools #76-80 (163→175 sin reflejarse acá) más este agregado (175→185).
 
 ---
 
@@ -308,6 +310,10 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 ~~- [ ] **RLS expedientes insert**~~ ✅ Resuelto 8/6/26 — política `expedientes_acceso` (FOR ALL) reemplazada por SELECT/UPDATE/DELETE con ownership check + INSERT con `auth.uid() IS NOT NULL`; código usa `session.user.id`. Re-verificado 13/07/26 contra la base en vivo — sigue resuelto.
 ~~- [ ] **Scriba no completa extravars custom del template**~~ ✅ Resuelto 17/07/26 — nuevo tool `completar_extravars` (ver §Scriba (IA) y §API Serverless).
 ~~- [ ] **12 tests desactualizados en `templateVars.test.js`**~~ ✅ Resuelto 17/07/26 — ver §Tests.
+- [ ] **Regeneración on-change en vez de on-blur** — los campos de "Propiedades del acto" (extravars, y ahora cláusulas) regeneran el documento en cada tecla/cambio de estado (via el `useEffect` que watchea `[vehiculos, extravars, clausulasActivas]` en `EditorScreen.jsx`), no al salir del campo. Reportado 27/07/26 durante la revisión del piloto de bloques — la escribana espera que se aplique recién al salir del campo (onBlur), no en cada cambio. Afecta a todos los inputs de texto de esa sección, no solo a los nuevos de cláusulas. Sin diseñar el fix (debounce vs onBlur real).
+- [ ] **Campo PRECIO pide números y letras por separado** — el escribano tiene que tipear el monto en letras a mano en vez de que se derive automáticamente del valor numérico. Reportado 27/07/26. Falta un conversor número→letras para montos (similar a lo que ya existe para fecha) enganchado a `extravars` de precio/seña/saldo.
+- [ ] **Conversor número→letras no fuerza unidades de mil ni centavos** — pedido explícito: los montos en letras siempre deben incluir la unidad "mil" (no omitirla en montos redondos) y siempre deben incluir la fracción de centavos (ej. "...CON 00/100") aunque sea cero. Reportado 27/07/26, ligado al bug anterior — se resuelven juntos cuando se construya el conversor de PRECIO.
+- [ ] **Tags HTML literales (`<strong>`) apareciendo en el cuerpo del documento** — ejemplo real reportado 27/07/26: "...ante mí, `<strong>`FABIÁN MCLEOD`</strong>`, Notar..." se ve tal cual en OnlyOffice en vez de renderizarse en negrita. El sistema de negrita usa marcadores `**`/`__` (nunca HTML, ver §Sistema de marcadores), así que esto es contenido con HTML pegado a mano en algún lugar (template o dato) en vez de los marcadores correctos — no confirmado todavía si es un template puntual, un campo de escribano, o algo nuevo introducido por el piloto de cláusulas. **Prioridad alta** — hace que el documento final salga roto para el escribano final.
 
 ### Features próximas (alta prioridad)
 

@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS clausulas_biblioteca (
   slug        text NOT NULL,
   titulo      text NOT NULL,
   descripcion text,
-  html        text NOT NULL DEFAULT '',
+  contenido   text NOT NULL DEFAULT '',
+  variables_json jsonb DEFAULT '[]',
   opcional    boolean NOT NULL DEFAULT true,
   orden       int NOT NULL DEFAULT 0,
   activo      boolean NOT NULL DEFAULT true,
@@ -47,6 +48,16 @@ CREATE TABLE IF NOT EXISTS clausulas_biblioteca (
 );
 
 CREATE INDEX IF NOT EXISTS idx_clausbib_template ON clausulas_biblioteca(template_id);
+
+-- 27/07/26 — piloto de bloques Fase 1: la tabla se creó con esta forma pero se
+-- usó recién ahora. Se renombró "html" (nunca fue HTML real) a "contenido" y se
+-- agregó "variables_json" para que use el mismo formato {{VAR}}/**/__/~~ que
+-- templates.contenido, en vez de inventar un shape paralelo. Migración aplicada
+-- en vivo vía Supabase MCP (`clausulas_biblioteca_contenido_y_variables`); este
+-- archivo ya refleja el estado final, no hace falta correrlo de nuevo.
+-- Sembradas 10 filas: asentimiento_conyugal + uif_reforzada para los 5 templates
+-- de la familia compraventa (urbana, rural, ph, lote, boleto). Detalle completo
+-- del piloto en PROYECTO.md §81 y en el plan aprobado (pure-hatching-kernighan).
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
