@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildVars, sustituirVars, contarClausulas } from "../utils/templateVars";
+import { buildVars, sustituirVars, contarClausulas, numeroOrdinal, detectarNumeracion, ensamblarClausulas } from "../utils/templateVars";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -985,5 +985,70 @@ describe("contarClausulas", () => {
       "SEGUNDA.- Precio del alquiler.",
     ].join("\n");
     expect(contarClausulas(texto)).toBe(3);
+  });
+});
+
+// ── numeroOrdinal / detectarNumeracion / ensamblarClausulas ────────────────────
+
+describe("numeroOrdinal", () => {
+  it("devuelve masculino por defecto", () => {
+    expect(numeroOrdinal(1)).toBe("PRIMERO");
+    expect(numeroOrdinal(10)).toBe("DÉCIMO");
+  });
+
+  it("devuelve femenino cuando se pide", () => {
+    expect(numeroOrdinal(1, "F")).toBe("PRIMERA");
+    expect(numeroOrdinal(11, "F")).toBe("DÉCIMA PRIMERA");
+  });
+
+  it("fuera de rango no rompe, devuelve un fallback legible", () => {
+    expect(numeroOrdinal(99)).toBe("CLÁUSULA 99");
+  });
+});
+
+describe("detectarNumeracion", () => {
+  it("detecta el último ordinal masculino y su género", () => {
+    const texto = "PRIMERO: Objeto.-\nSEGUNDO: Precio.-\nTERCERO: Posesión.-";
+    expect(detectarNumeracion(texto)).toEqual({ ultimoIndice: 3, genero: "M" });
+  });
+
+  it("detecta el último ordinal femenino y su género", () => {
+    const texto = "PRIMERA: Título del donante.-\nSEGUNDA: Donación.-";
+    expect(detectarNumeracion(texto)).toEqual({ ultimoIndice: 2, genero: "F" });
+  });
+
+  it("texto vacío da índice 0", () => {
+    expect(detectarNumeracion("")).toEqual({ ultimoIndice: 0, genero: "M" });
+  });
+});
+
+describe("ensamblarClausulas", () => {
+  const base = "PRIMERO: Objeto.-\nSEGUNDO: Precio.-\nEN SU TESTIMONIO, previa lectura y ratificación firman los comparecientes.-";
+  const disponibles = [
+    { slug: "asentimiento_conyugal", contenido: "Comparece {{CONYUGE_IDENTIDAD}} a prestar asentimiento." },
+  ];
+
+  it("sin cláusulas activas devuelve el contenido sin tocar", () => {
+    expect(ensamblarClausulas(base, [], disponibles, {})).toBe(base);
+  });
+
+  it("agrega la cláusula activa antes del cierre, continuando la numeración", () => {
+    const activas = [{ slug: "asentimiento_conyugal", valores: { CONYUGE_IDENTIDAD: "Juana Pérez" } }];
+    const resultado = ensamblarClausulas(base, activas, disponibles, {});
+    expect(resultado).toContain("TERCERO: Comparece Juana Pérez a prestar asentimiento.");
+    // el bloque nuevo va ANTES del cierre, no después
+    expect(resultado.indexOf("TERCERO: Comparece")).toBeLessThan(resultado.indexOf("EN SU TESTIMONIO"));
+  });
+
+  it("una cláusula activa sin match en disponibles se ignora sin romper", () => {
+    const activas = [{ slug: "no_existe" }];
+    expect(ensamblarClausulas(base, activas, disponibles, {})).toBe(base);
+  });
+
+  it("sin marca de cierre, agrega al final del texto", () => {
+    const sinCierre = "PRIMERO: Objeto.-";
+    const activas = [{ slug: "asentimiento_conyugal", valores: { CONYUGE_IDENTIDAD: "Juana Pérez" } }];
+    const resultado = ensamblarClausulas(sinCierre, activas, disponibles, {});
+    expect(resultado).toBe("PRIMERO: Objeto.-\nSEGUNDO: Comparece Juana Pérez a prestar asentimiento.");
   });
 });

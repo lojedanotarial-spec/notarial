@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 
 const DEBOUNCE = 2000;
 
-export function useAutoguardado({ titulo, estado, contenido, templateKey, templateId, tipoActo, documentKey, registroNumero, usuarioId, initialDocId }) {
+export function useAutoguardado({ titulo, estado, contenido, templateKey, templateId, tipoActo, clausulas, documentKey, registroNumero, usuarioId, initialDocId }) {
   const [docId,          setDocId]          = useState(initialDocId || null);
   const [guardando,      setGuardando]      = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState(null);
@@ -31,6 +31,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
       ...(templateId    ? { template_id:  templateId  } : {}),
       ...(tipoActo      ? { tipo_acto:    tipoActo    } : {}),
       ...(documentKey   ? { document_key: documentKey } : {}),
+      clausulas:    clausulas || [],
       registro_id:  registroNumero,
       usuario_id:   usuarioId,
       updated_at:   new Date().toISOString(),
@@ -64,12 +65,12 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
     } finally {
       setGuardando(false);
     }
-  }, [docId, titulo, estado, contenido, registroNumero, usuarioId, templateKey, tipoActo, documentKey]);
+  }, [docId, titulo, estado, contenido, registroNumero, usuarioId, templateKey, tipoActo, clausulas, documentKey]);
 
   // Debounce — guarda 2s después del último cambio
   useEffect(() => {
     if (!registroNumero || !usuarioId) return;
-    const serializado = JSON.stringify({ titulo, estado, contenido, documentKey });
+    const serializado = JSON.stringify({ titulo, estado, contenido, clausulas, documentKey });
     if (serializado === prevRef.current) return;
     prevRef.current = serializado;
 
@@ -78,7 +79,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
     timerRef.current = setTimeout(() => guardar(), DEBOUNCE);
 
     return () => clearTimeout(timerRef.current);
-  }, [titulo, estado, contenido, documentKey, guardar, registroNumero, usuarioId]);
+  }, [titulo, estado, contenido, clausulas, documentKey, guardar, registroNumero, usuarioId]);
 
   // Guardar al cerrar la pestaña — listener estable (ref), no se re-registra
   const guardarRef = useRef(guardar);

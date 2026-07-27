@@ -479,3 +479,70 @@ export function contarClausulas(texto) {
   const TITULO = /^[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]{5,}$/;
   return lineas.filter(l => NUMERAL.test(l) || TITULO.test(l)).length;
 }
+
+// Ordinales en español, masculino/femenino, para continuar la numeración de un
+// template al agregarle cláusulas opcionales al final (bloques del "piloto de cláusulas").
+const ORDINALES = [
+  null,
+  { m: "PRIMERO", f: "PRIMERA" }, { m: "SEGUNDO", f: "SEGUNDA" }, { m: "TERCERO", f: "TERCERA" },
+  { m: "CUARTO", f: "CUARTA" }, { m: "QUINTO", f: "QUINTA" }, { m: "SEXTO", f: "SEXTA" },
+  { m: "SÉPTIMO", f: "SÉPTIMA" }, { m: "OCTAVO", f: "OCTAVA" }, { m: "NOVENO", f: "NOVENA" },
+  { m: "DÉCIMO", f: "DÉCIMA" },
+  { m: "DÉCIMO PRIMERO", f: "DÉCIMA PRIMERA" }, { m: "DÉCIMO SEGUNDO", f: "DÉCIMA SEGUNDA" },
+  { m: "DÉCIMO TERCERO", f: "DÉCIMA TERCERA" }, { m: "DÉCIMO CUARTO", f: "DÉCIMA CUARTA" },
+  { m: "DÉCIMO QUINTO", f: "DÉCIMA QUINTA" }, { m: "DÉCIMO SEXTO", f: "DÉCIMA SEXTA" },
+  { m: "DÉCIMO SÉPTIMO", f: "DÉCIMA SÉPTIMA" }, { m: "DÉCIMO OCTAVO", f: "DÉCIMA OCTAVA" },
+  { m: "DÉCIMO NOVENO", f: "DÉCIMA NOVENA" }, { m: "VIGÉSIMO", f: "VIGÉSIMA" },
+];
+
+export function numeroOrdinal(n, genero = "M") {
+  const item = ORDINALES[n];
+  if (!item) return `CLÁUSULA ${n}`;
+  return genero === "F" ? item.f : item.m;
+}
+
+// Detecta hasta qué ordinal ya está numerado un template, y con qué género
+// (compraventa usa "PRIMERO:", donación usa "PRIMERA:") — para poder continuar
+// la secuencia sin chocar con lo que ya está escrito en el cuerpo base.
+export function detectarNumeracion(contenido) {
+  if (!contenido) return { ultimoIndice: 0, genero: "M" };
+  let ultimoIndice = 0;
+  let genero = "M";
+  for (let i = 1; i < ORDINALES.length; i++) {
+    const { m, f } = ORDINALES[i];
+    const re = new RegExp(`(^|\\n)\\s*(${m}|${f})\\s*[:.\\-—]`, "i");
+    const match = re.exec(contenido);
+    if (match) {
+      ultimoIndice = i;
+      genero = match[2].toUpperCase() === f.toUpperCase() ? "F" : "M";
+    }
+  }
+  return { ultimoIndice, genero };
+}
+
+// Suma las cláusulas opcionales activas al final del cuerpo del template, antes
+// del cierre ("EN SU TESTIMONIO..."), continuando la numeración existente.
+// No reordena ni reemplaza nada del cuerpo base — solo agrega al final (ver plan
+// "piloto de bloques Fase 1": no hay motor de renumeración todavía).
+export function ensamblarClausulas(contenidoBase, clausulasActivas, clausulasDisponibles, varsBase) {
+  if (!contenidoBase || !clausulasActivas?.length) return contenidoBase;
+
+  const { ultimoIndice, genero } = detectarNumeracion(contenidoBase);
+  const bloques = clausulasActivas
+    .map((activa, i) => {
+      const disponible = clausulasDisponibles?.find(c => c.slug === activa.slug);
+      if (!disponible?.contenido) return "";
+      const numero = numeroOrdinal(ultimoIndice + i + 1, genero);
+      const vars = { ...varsBase, ...(activa.valores || {}) };
+      return `${numero}: ${sustituirVars(disponible.contenido, vars)}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  if (!bloques) return contenidoBase;
+
+  const marcaCierre = "EN SU TESTIMONIO";
+  const idx = contenidoBase.indexOf(marcaCierre);
+  if (idx === -1) return `${contenidoBase}\n${bloques}`;
+  return contenidoBase.slice(0, idx) + bloques + "\n" + contenidoBase.slice(idx);
+}

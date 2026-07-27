@@ -1383,6 +1383,7 @@ Cuando el usuario pide cambiar el rol, el estado civil u otro dato de una parte 
 - Para cambiar el estado civil: mandá todos los datos de la parte + "estado_civil": "soltero"
 - No uses 'modificar_documento' para cambiar datos de partes — ese tool es solo para cambios de texto en el cuerpo del documento
 - No uses 'modificar_documento' para completar precio, seña, plazo, cláusulas especiales u otros campos propios del template — para eso existe 'completar_extravars' (ver [CAMPOS DEL TEMPLATE] en el contexto activo). 'modificar_documento' preserva TODAS las {{VARIABLES}} intactas, así que nunca les va a poner el valor real aunque el escribano te lo dicte.
+- No uses 'modificar_documento' para sumar o sacar cláusulas opcionales predefinidas (asentimiento conyugal, declaración UIF reforzada, etc.) — para eso existe 'gestionar_clausulas' (ver [CLÁUSULAS DISPONIBLES] en el contexto activo, solo si el template activo tiene alguna). Usá únicamente los slugs listados ahí; si el escribano pide una cláusula que no está en esa lista, avisale que no existe para este template en vez de redactarla vos con 'modificar_documento'.
 
 ## Rol de las partes — REGLA CRÍTICA
 
@@ -1554,8 +1555,12 @@ export default async function handler(req, res) {
     ? `\n\n[CAMPOS DEL TEMPLATE]\nEste template tiene campos propios que NO son variables del sistema ni datos de partes — se completan con la herramienta 'completar_extravars', usando estos nombres EXACTOS:\n${contexto.camposExtra.map(c => `- ${c.name}${c.label ? ` (${c.label})` : ""}${c.required ? " [requerido]" : ""}`).join("\n")}\nCuando el escribano te dicte precio, seña, plazo, cláusulas u otro dato que corresponda a uno de estos campos, usá 'completar_extravars' — NUNCA 'modificar_documento' para esto.`
     : "";
 
+  const clausulasCtx = contexto?.clausulasDisponibles?.length
+    ? `\n\n[CLÁUSULAS DISPONIBLES]\nEste template tiene cláusulas opcionales que se activan o desactivan con la herramienta 'gestionar_clausulas', usando estos slugs EXACTOS:\n${contexto.clausulasDisponibles.map(c => `- ${c.slug} (${c.titulo})${c.descripcion ? ` — ${c.descripcion}` : ""}${c.activa ? " [ACTUALMENTE ACTIVA]" : ""}`).join("\n")}\nCuando el escribano pida sumar o sacar una de estas cláusulas, usá 'gestionar_clausulas' — NUNCA 'modificar_documento' para esto. No inventes slugs que no estén en esta lista.`
+    : "";
+
   const contextoNote = contexto
-    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${rolesCtx}${camposExtraCtx}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables — ESTE ES EL ÚNICO DOCUMENTO QUE PODÉS MODIFICAR):\n${contexto.templateContenido}\n\nATENCIÓN: Si te piden modificar el documento, usá ESTE texto como base. No generes un instrumento diferente. No cambies el tipo de acto.` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
+    ? `\n\n[DOCUMENTO ACTIVO EN EL EDITOR]\nTipo de acto: ${contexto.tipoActo}\nPartes: ${contexto.partes || "no especificadas"}\nFecha del acto: ${contexto.fecha}\nEstado: ${contexto.estado}${rolesCtx}${camposExtraCtx}${clausulasCtx}${contexto.templateContenido ? `\n\nCONTENIDO ACTUAL DEL DOCUMENTO (con variables — ESTE ES EL ÚNICO DOCUMENTO QUE PODÉS MODIFICAR):\n${contexto.templateContenido}\n\nATENCIÓN: Si te piden modificar el documento, usá ESTE texto como base. No generes un instrumento diferente. No cambies el tipo de acto.` : ""}\n\nEl escribano está trabajando en este documento ahora mismo.`
     : "";
 
   const adjuntosNote = documentos_adjuntos.length
@@ -1717,7 +1722,21 @@ const COMPLETAR_EXTRAVARS_TOOL = [{
   },
 }];
 
-const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...VALIDAR_CUIT_TOOL];
+const GESTIONAR_CLAUSULAS_TOOL = [{
+  name: "gestionar_clausulas",
+  description: "Activa o desactiva cláusulas opcionales predefinidas del template activo (ej: asentimiento conyugal, declaración UIF reforzada). Usá SOLO los slugs listados en '[CLÁUSULAS DISPONIBLES]' del contexto activo — si el escribano pide una cláusula que no está en esa lista, no existe para este template, no la inventes ni la redactes vos. Las cláusulas activadas se agregan al final del cuerpo del documento, numeradas a continuación de las existentes.",
+  input_schema: {
+    type: "object",
+    properties: {
+      activar: { type: "array", items: { type: "string" }, description: "Slugs de cláusulas a activar (ej: ['asentimiento_conyugal'])." },
+      desactivar: { type: "array", items: { type: "string" }, description: "Slugs de cláusulas a desactivar." },
+      mensaje: { type: "string", description: "Resumen breve de qué cláusulas activaste/desactivaste" },
+    },
+    required: ["mensaje"],
+  },
+}];
+
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...GESTIONAR_CLAUSULAS_TOOL, ...VALIDAR_CUIT_TOOL];
   async function construirUltimoMensaje() {
     if (!documentos_adjuntos.length) return { role: "user", content: mensaje };
     const bloques = await Promise.all(documentos_adjuntos.map(async (d, i) => {
@@ -1961,6 +1980,15 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL,
           return res.status(200).json({
             respuesta: msg,
             accion: { tipo: "completar_extravars", valores },
+          });
+        }
+
+        const gestionarClausulas = toolUses.find(t => t.name === "gestionar_clausulas");
+        if (gestionarClausulas && toolUses.length === 1) {
+          const { activar, desactivar, mensaje: msg } = gestionarClausulas.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "gestionar_clausulas", activar: activar || [], desactivar: desactivar || [] },
           });
         }
 

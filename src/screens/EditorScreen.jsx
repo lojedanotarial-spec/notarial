@@ -18,6 +18,7 @@ import { ModalAgregarExpediente } from "../components/modals/ModalAgregarExpedie
 import { ModalDescripcionInmueble } from "../components/modals/ModalDescripcionInmueble";
 import { buildDocxBlanco } from "../utils/buildDocx";
 import { buildDocxGenerico } from "../utils/buildDocxGenerico";
+import { buildVars, ensamblarClausulas } from "../utils/templateVars";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -52,6 +53,41 @@ const ROLES_CONTEXTUALES = {
   fe_vida:                ["Compareciente", null],
 };
 
+
+function ConfirmRegenerar({ onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(26,35,50,.5)",
+      zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <div style={{
+        background: C.porcelain, borderRadius: 12, padding: "24px 24px 18px",
+        width: 340, boxShadow: "0 8px 32px rgba(26,35,50,.18)",
+      }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>
+          ¿Regenerar el documento?
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20, lineHeight: 1.5 }}>
+          El documento tiene ediciones de texto manuales. Si regenerás, esas ediciones se van a perder y el texto vuelve al template con las nuevas variables.
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={onCancel}
+                  style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)",
+                           background: "transparent", fontSize: 13, fontWeight: 600, color: C.dark,
+                           cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
+            Cancelar
+          </button>
+          <button onClick={onConfirm}
+                  style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #c9a961",
+                           background: "#c9a961", fontSize: 13, fontWeight: 700, color: "#fff",
+                           cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
+            Sí, regenerar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PanelSection({ label, onClick, children, alerta }) {
   return (
@@ -187,6 +223,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     (params?.variablesLibres || []).forEach(v => { init[v.name] = ""; });
     return init;
   }); // {VARIABLE_NAME: valor}
+  const [clausulasDisponibles, setClausulasDisponibles] = useState([]); // [{slug, titulo, descripcion, contenido, variables_json}] de clausulas_biblioteca para este template
+  const [clausulasActivas,     setClausulasActivas]     = useState([]); // [{slug, valores}]
 
   // Cargar nombre, contenido y variables_json del template desde Supabase
   useEffect(() => {
@@ -205,6 +243,10 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
           setExtravars(init);
         }
       });
+    supabase.from("clausulas_biblioteca")
+      .select("slug, titulo, descripcion, contenido, variables_json")
+      .eq("template_id", templateId).eq("activo", true).order("orden")
+      .then(({ data }) => setClausulasDisponibles(data || []));
   }, [templateId]);
 
   const handleGenerar = useCallback(async () => {
@@ -216,9 +258,15 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         DOMINIO: formulario.dominio || "",
         TIPO_FORMULARIO: formulario.tipo || "",
       };
+      const varsBase = buildVars({
+        partes, escribano, fecha, protocolo, instrumento,
+        extravars: extravarsConFormulario, vehiculos, estilos,
+        rolesContextuales: ROLES_CONTEXTUALES[templateSlug] || null,
+      });
+      const contenidoConClausulas = ensamblarClausulas(templateContenido, clausulasActivas, clausulasDisponibles, varsBase);
       const blob = templateContenido
         ? await buildDocxGenerico({
-            contenido: templateContenido,
+            contenido: contenidoConClausulas,
             partes, escribano, fecha, protocolo, instrumento,
             margenKey, fontSize, fuente, interlineado, estilos,
             extravars: extravarsConFormulario, vehiculos,
@@ -261,7 +309,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     } finally {
       setGenerating(false);
     }
-  }, [partes, vehiculos, extravars, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, templateContenido, templateSlug, estilos]);
+  }, [partes, vehiculos, extravars, clausulasActivas, clausulasDisponibles, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, templateContenido, templateSlug, estilos]);
 
   // Keep ref updated so the mount effect can call the latest version
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);
@@ -298,7 +346,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     }
   }, [partes, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, estilos]);
 
-  // Vehiculos y extravars siempre regeneran — no dependen del flag
+  // Vehiculos, extravars y clausulas siempre regeneran — no dependen del flag
   useEffect(() => {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
@@ -307,7 +355,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     } else {
       handleGenerarRef.current?.();
     }
-  }, [vehiculos, extravars]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [vehiculos, extravars, clausulasActivas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
@@ -322,6 +370,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       if (c.fecha)       setFecha(c.fecha);
       if (c.protocolo)   setProtocolo(c.protocolo);
       if (c.instrumento) setInstrumento(c.instrumento);
+      if (Array.isArray(data.clausulas)) setClausulasActivas(data.clausulas);
       if (data.estado)      setEstado(data.estado);
       if (data.template_key) setTemplateKey(data.template_key);
       if (data.template_id)  setTemplateId(data.template_id);
@@ -409,6 +458,22 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     };
     window.addEventListener("scriba:completar_extravars", handler);
     return () => window.removeEventListener("scriba:completar_extravars", handler);
+  }, []);
+
+  // Activar/desactivar cláusulas opcionales desde Scriba
+  useEffect(() => {
+    const handler = (e) => {
+      const { activar = [], desactivar = [] } = e.detail || {};
+      setClausulasActivas(prev => {
+        let next = prev.filter(c => !desactivar.includes(c.slug));
+        activar.forEach(slug => {
+          if (!next.some(c => c.slug === slug)) next = [...next, { slug, valores: {} }];
+        });
+        return next;
+      });
+    };
+    window.addEventListener("scriba:gestionar_clausulas", handler);
+    return () => window.removeEventListener("scriba:gestionar_clausulas", handler);
   }, []);
 
   useEffect(() => {
@@ -560,9 +625,13 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     const camposExtra = templateVarsSchema
       .filter(v => !v.name.startsWith("VEHICULO_"))
       .map(v => ({ name: v.name, label: v.label, required: v.required }));
-    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido, rolesPartes: ROLES_CONTEXTUALES[templateSlug] || null, camposExtra, panelPropiedadesAncho: propiedadesExpandido ? 480 : 240 });
+    const clausulasDisponiblesCtx = clausulasDisponibles.map(c => ({
+      slug: c.slug, titulo: c.titulo, descripcion: c.descripcion,
+      activa: clausulasActivas.some(a => a.slug === c.slug),
+    }));
+    onScribaContexto({ tipoActo: tipoLabel, partes: partesLabel, fecha: fechaStr, estado, templateContenido, rolesPartes: ROLES_CONTEXTUALES[templateSlug] || null, camposExtra, clausulasDisponibles: clausulasDisponiblesCtx, panelPropiedadesAncho: propiedadesExpandido ? 480 : 240 });
     return () => onScribaContexto(null);
-  }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido, templateVarsSchema, propiedadesExpandido]);
+  }, [tipoLabel, partesLabel, fechaStr, estado, templateContenido, templateVarsSchema, clausulasDisponibles, clausulasActivas, propiedadesExpandido]);
 
   const { docId: autoDocId, indicador, guardarAhora, hayPendiente } = useAutoguardado({
     titulo: docTitle,
@@ -571,6 +640,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     templateKey,
     templateId,
     tipoActo: templateSlug,
+    clausulas: clausulasActivas,
     documentKey,
     registroNumero: miUsuario?.registro || registroActivo,
     usuarioId: usuario?.id,
@@ -675,43 +745,6 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
               )}
             </div>
             <div style={{ flex: 1, overflowY: "auto" }}>
-
-              {/* Banner de confirmación cuando hay ediciones OO y se cambia una variable */}
-              {pendingRegen && (
-                <div style={{
-                  margin: "10px 14px 2px", padding: "10px 12px",
-                  background: "rgba(224,160,50,.1)", border: "1px solid rgba(201,169,97,.4)",
-                  borderRadius: 8,
-                }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#7a5c1e", marginBottom: 4 }}>
-                    ¿Regenerar el documento?
-                  </div>
-                  <div style={{ fontSize: 11, color: "#7a5c1e", lineHeight: 1.5, marginBottom: 10 }}>
-                    El documento tiene ediciones de texto manuales. Si regenerás, esas ediciones se van a perder y el texto vuelve al template con las nuevas variables.
-                  </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button
-                      onClick={() => { setHasOoEdits(false); setPendingRegen(false); handleGenerarRef.current?.(); }}
-                      style={{
-                        flex: 1, fontSize: 11, fontWeight: 700, padding: "6px 0", borderRadius: 5,
-                        background: "#c9a961", color: "#fff", border: "none", cursor: "pointer",
-                      }}
-                    >
-                      Sí, regenerar
-                    </button>
-                    <button
-                      onClick={() => setPendingRegen(false)}
-                      style={{
-                        flex: 1, fontSize: 11, fontWeight: 600, padding: "6px 0", borderRadius: 5,
-                        background: "transparent", color: "#7a5c1e",
-                        border: "1px solid rgba(201,169,97,.5)", cursor: "pointer",
-                      }}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <PanelSection label="Escribano" onClick={() => setModal("escribano")}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>{escribano.nombre || "Sin nombre"}</div>
@@ -878,6 +911,42 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 </div>
               )}
 
+              {/* Cláusulas opcionales — activar/desactivar cláusulas predefinidas para este template */}
+              {clausulasDisponibles.length > 0 && (
+                <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(26,35,50,.45)", marginBottom: 8 }}>
+                    Cláusulas
+                  </div>
+                  {clausulasDisponibles.map(cl => {
+                    const activa = clausulasActivas.some(a => a.slug === cl.slug);
+                    return (
+                      <label key={cl.slug} style={{
+                        display: "flex", alignItems: "flex-start", gap: 8,
+                        marginBottom: 8, cursor: "pointer",
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={activa}
+                          onChange={e => {
+                            setClausulasActivas(prev => e.target.checked
+                              ? [...prev, { slug: cl.slug, valores: {} }]
+                              : prev.filter(a => a.slug !== cl.slug));
+                          }}
+                          style={{ marginTop: 2 }}
+                        />
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>{cl.titulo}</div>
+                          {cl.descripcion && (
+                            <div style={{ fontSize: 11, color: "rgba(26,35,50,.5)", marginTop: 1, lineHeight: 1.4 }}>
+                              {cl.descripcion}
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
 
               <div style={{ padding: "8px 12px", borderTop: "1px solid rgba(26,35,50,.08)", fontSize: 11, color: "rgba(26,35,50,.45)" }}>
                 {fuente.label} {fontSize}pt &middot; {margenKey === "protocolar" ? "Protocolar" : "No protocolar"}
@@ -905,6 +974,12 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       </div>
 
       {/* MODALES */}
+      {pendingRegen && (
+        <ConfirmRegenerar
+          onConfirm={() => { setHasOoEdits(false); setPendingRegen(false); handleGenerarRef.current?.(); }}
+          onCancel={() => setPendingRegen(false)}
+        />
+      )}
       {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
       {modal === "formulario"  && <ModalFormulario formulario={formulario} onApply={v => { setFormulario(v); generateAfterRef.current = true; }} onClose={() => setModal(null)}/>}
       {modal === "expediente"  && <ModalAgregarExpediente docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} userId={usuario?.id} nombreSugerido={nombreExpediente} onClose={() => setModal(null)} onGo={onGo} />}
