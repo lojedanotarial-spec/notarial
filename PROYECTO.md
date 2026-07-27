@@ -17,7 +17,7 @@ Desarrollado para escribanos de Mendoza; orientado inicialmente al Registro 9876
 | Capa | Tecnología | Versión |
 |---|---|---|
 | Frontend | React + Vite | 19.2.4 / 8.x |
-| Editor DOCX | OnlyOffice Docs | 9.4.0.129 (Community) — hosting desconocido, ver §Servidor OnlyOffice |
+| Editor DOCX | OnlyOffice Docs | 9.4.0.129 (Community) — GCP Santiago, ver §Servidor OnlyOffice |
 | Backend | Vercel Serverless (Node.js) | — |
 | Base de datos | Supabase (PostgreSQL) | 2.105.1 |
 | IA | Anthropic Claude API | SDK 0.98.0 |
@@ -497,18 +497,41 @@ El plugin muestra las propiedades del acto y permite regenerar el documento. Com
 
 ---
 
+## Infraestructura y Plataformas
+
+> Agregado 27/07/26 — hasta ahora esta información vivía dispersa (o desactualizada, o directamente perdida — ver el caso de la IdeaPad en §Servidor OnlyOffice) en distintas secciones. Esta tabla es la fuente única de verdad.
+
+| Plataforma | Cuenta/Org | Proyecto/Recurso | Región | Qué vive ahí |
+|---|---|---|---|---|
+| GitHub | `lojedanotarial-spec` | `notarial` (**público**) | — | Código fuente |
+| Vercel | `lojedanotarial-1974's projects` (comparte cuenta con `jarvis` y `fatima-taha-site`, proyectos no relacionados) | `notarial` | `iad1` (Virginia, EE.UU.) — default de Vercel, nunca elegido explícitamente | Frontend (SPA) + serverless (`api/*.js`) |
+| Supabase | `lojedanotarial-SB` (plan **Free**) | `Notarial` (`eueqluhhgvukovoyorrw`) | `us-west-2` (Oregon, EE.UU.) | Postgres (`personas`, `documentos`, `templates`, etc.) + Storage (DOCX) |
+| GCP | proyecto todavía sin renombrar ("My First Project" al 27/07/26) | VM `instance-20260528-175646`, zona `southamerica-west1-b` | Santiago, Chile | OnlyOffice Docs 9.4.0.129 |
+| Cloudflare | — | zona `notarial.lat` + Worker `oo-proxy` | PoP Buenos Aires (EZE) | DNS, proxy del dominio, reescritura de rutas de assets de OO bajo `notarial.lat/*` |
+
+**Notas honestas, no para ocultar:**
+- El repo es público. No hay secretos filtrados (verificado 27/07/26 contra todo el historial de git), pero es una decisión que vale la pena confirmar consciente, no heredada.
+- El dato personal de escribanos y requirentes (`personas`, `documentos`) vive en EE.UU. (Supabase), no en Latam — la VM de OO en Chile es la parte *menos* relevante del análisis de residencia de datos, no la más. Ver `notarial-hardening-concurso.md` §P0-2 para el detalle.
+- `clausulas_registro` (tabla + RLS ya creadas, `scripts/schema_notarial.sql`) tiene **cero referencias en código** — quedó dormida desde el diseño original, hermana de `clausulas_biblioteca` (que sí se activó en el piloto de bloques #81). Su columna `html` todavía tiene el nombre viejo que su hermana ya migró a `contenido` — si se retoma, aplicarle el mismo rename primero.
+
+---
+
 ## Configuración y Variables de Entorno
 
-### Frontend (`notarial/.env.local`)
+Ver `.env.example` en la raíz del repo para la lista completa y actualizada.
+
+### Frontend (`.env.local`, solo dev — Vite)
 ```
 VITE_ONLYOFFICE_URL=https://onlyoffice.notarial.lat
 ```
+Solo usada por el proxy del dev server (`vite.config.js`) — el build de producción tiene la URL hardcodeada en `src/screens/EditorScreen.jsx:26`.
 
-### Backend (`api/scriba.js` — hardcodeado)
-- Supabase URL + Anon Key
-- Anthropic API Key
+### Backend (variables de entorno en Vercel — Project Settings → Environment Variables)
+- `ANTHROPIC_API_KEY` — ya es variable de entorno, no hardcodeada (verificado 27/07/26 contra todo el historial de git: nunca estuvo en el repo). Fail-fast si falta, en `api/scriba.js` y `api/vision.js`.
+- `SUPABASE_SERVICE_KEY` — service role key, usada solo por `api/oo-callback.js` para re-subir el DOCX a Storage tras guardar en OO. Nombrada distinto a la convención propia de Supabase (`SUPABASE_SERVICE_ROLE_KEY`) — inconsistencia conocida, de bajo riesgo, pendiente de un rename coordinado (código + Vercel a la vez) si en algún momento se prioriza.
 
-> ⚠️ Para producción mover keys a variables de entorno de Vercel.
+### Backend (hardcodeado a propósito, `api/_supabaseConfig.js`)
+- Supabase URL + Anon Key — no son secretos (la anon key está diseñada para ser pública, RLS protege los datos), así que quedan como constante compartida en vez de env var. Ver `api/_supabaseConfig.js` — único lugar a editar si cambia el proyecto de Supabase (antes estaba duplicado a mano en 5 archivos).
 
 ---
 
@@ -517,7 +540,7 @@ VITE_ONLYOFFICE_URL=https://onlyoffice.notarial.lat
 ```bash
 npm install
 npm run dev       # Vite dev server en localhost:5173
-npm run test      # Vitest (163 tests, 12 desactualizados — ver §Tests)
+npm run test      # Vitest (185 tests, todos pasan — ver §Tests)
 npm run build     # Build de producción
 ```
 

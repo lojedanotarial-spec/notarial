@@ -7,6 +7,8 @@ export default defineConfig(({ mode }) => {
     environment: 'node',
     include: ['src/__tests__/**/*.test.js'],
   };
+  // VITE_ONLYOFFICE_URL solo se usa acá, para el proxy del dev server — el build de
+  // producción usa la URL hardcodeada en src/screens/EditorScreen.jsx, no esta var.
   const env = loadEnv(mode, process.cwd(), '')
   const ooTarget = env.VITE_ONLYOFFICE_URL || 'http://localhost'
 

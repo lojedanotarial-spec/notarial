@@ -3,11 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import mammoth from "mammoth";
 import { buildVars, sustituirVars, contarClausulas } from "../src/utils/templateVars.js";
 import { extraerDocumento } from "./vision.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./_supabaseConfig.js";
 
 const DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
-const SUPABASE_URL      = "https://eueqluhhgvukovoyorrw.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1ZXFsdWhoZ3Z1a292b3lvcnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjI3NjQsImV4cCI6MjA5MjE5ODc2NH0.RklZOhSt8DqUhRCqlLNQ0OyLNrUGKYXHaogOkRLCz6E";
 
 const TEMPLATES_MAP = {
   acta_asamblea:          { id: "1540ea5b-53f2-4dd0-beab-80a3b1645271", nombre: "Acta de asamblea" },

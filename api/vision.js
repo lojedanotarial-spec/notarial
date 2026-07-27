@@ -95,6 +95,9 @@ Respondé SOLO con el JSON válido del formato que corresponda, sin texto adicio
 
 // imagenes: [{ data, mediaType }, ...] — 1 o más imágenes del mismo o distintos documentos
 export async function extraerDocumento(imagenes) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("API key no configurada");
+  }
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1500,

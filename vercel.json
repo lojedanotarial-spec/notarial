@@ -1,7 +1,9 @@
 {
   "functions": {
     "api/scriba.js": { "maxDuration": 60 },
-    "api/vision.js": { "maxDuration": 30 }
+    "api/vision.js": { "maxDuration": 30 },
+    "api/dnrpa-valuacion.js": { "maxDuration": 10 },
+    "api/oo-callback.js": { "maxDuration": 30 }
   },
   "routes": [
     { "src": "/",            "dest": "/landing.html"   },

@@ -1,8 +1,9 @@
 // Callback de OnlyOffice Document Server.
 // Status 2/6 → OO tiene el DOCX actualizado listo; lo descargamos y re-subimos a Supabase Storage.
 
-const SUPABASE_URL = "https://eueqluhhgvukovoyorrw.supabase.co";
-const BUCKET       = "oo-docs";
+import { SUPABASE_URL } from "./_supabaseConfig.js";
+
+const BUCKET = "oo-docs";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
