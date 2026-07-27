@@ -384,6 +384,7 @@ La plataforma tiene datos que cambian periódicamente (aranceles, sellos, tasas)
 - [ ] **Más modelos de Fátima** — subir plantillas adicionales con el texto real de la escribana
 - [ ] **Plantillas por registro (ModeloScreen)** — edición de plantillas HTML custom por registro
 - [ ] **Panel admin completo** — AdminScreen básico, sin gestión de plantillas ni usuarios
+- [ ] **54 errores de lint preexistentes** — `no-unused-vars` y `react-hooks/*` en varios archivos (`SelectorScreen.jsx`, `EstimadorDNRPA.jsx`, `PresupuestoNotarial.jsx`, `buildDocx.js`, `exportDocx.js`, `vite.config.js`). Por eso el CI (27/07/26) no corre `npm run lint` todavía — arreglarlos es prerrequisito para sumarlo al gate.
 
 ---
 
@@ -573,6 +574,8 @@ npm run build     # Build de producción
 
 Deploy automático en Vercel al hacer push a `main`.
 
+**CI:** `.github/workflows/ci.yml` (agregado 27/07/26) corre `npm ci` + `npm run test` + `npm run build` en cada push/PR a `main`. No incluye `npm run lint` a propósito — hay 54 errores de lint preexistentes (`no-unused-vars`, `react-hooks/*`) que harían fallar el CI desde el día uno; arreglarlos queda como ítem de backlog aparte.
+
 > ⚠️ El remote de GitHub (`lojedanotarial-spec/notarial.git`) requiere la cuenta `gh` **`lojedanotarial-spec`**, no la de trabajo (`lojeda-simpli`) — esa no tiene permiso de push a este repo. Si `git push` da 403, correr `gh auth switch --hostname github.com --user lojedanotarial-spec`.
 
 ---
@@ -711,6 +714,7 @@ Deploy automático en Vercel al hacer push a `main`.
 81. Piloto de bloques Fase 1 — cláusulas opcionales (asentimiento conyugal, declaración UIF reforzada) sobre la familia compraventa: revive `clausulas_biblioteca`/`documentos.clausulas` (dormidos desde el schema original); tool `gestionar_clausulas` en Scriba; sección "Cláusulas" en Propiedades del acto; `numeroOrdinal()`/`detectarNumeracion()`/`ensamblarClausulas()` en `templateVars.js` agregan las cláusulas activas al final del cuerpo con numeración de continuación. De paso, el banner de "¿Regenerar documento?" pasa de texto chico en el panel a un modal bloqueante real (`ConfirmRegenerar`, mismo patrón que `ConfirmQuitarParte`). Fase 2 (descomposición completa del cuerpo base + edición quirúrgica vía bookmarks en OnlyOffice) queda explícitamente fuera de este piloto — ver `scripts/schema_notarial.sql` para el detalle de por qué. **Sin probar end-to-end en la app** (no hay entorno de staging; el rollback point es el tag `pre-bloques-2026-07-26`).
 82. Expansión del piloto de bloques — 27 cláusulas nuevas (compraventa 16, locación 5, cesión de posición contractual 3, donación 2, superficie 1) adaptadas de `scripts/compilado_modelos.json` (fichas ya tituladas "CLÁUSULA DE...", no addenda inventados) y 2 templates nuevos (`cesion_credito`, `cesion_posicion_contractual` — esta última de 3 partes, con conformidad obligatoria del cedido por art. 1636 CCyC). Sin cambios de código para la carga de cláusulas — el mecanismo de #81 ya era genérico por `template_id`. Scriba suma una sección de reconocimiento proactivo (~10 ejemplos frase → cláusula) para ofrecer la cláusula correcta aunque el escribano no diga el slug técnico, y un 7mo ítem al checklist de auditoría. Ver §Cobertura de templates para el detalle de qué quedó fuera a propósito (variantes que son documentos alternativos completos, no addenda — `cesion_herencia` entre ellas, con una decisión de diseño pendiente de confirmación explícita antes de tocar su cuerpo base).
 83. Precio en letras automático — `buildVars()` deriva cualquier extravar `X_LETRAS` desde su par `X_NUMEROS` con `numeroALetras()` (ya existente, usado antes solo para `ESCRIBANO_REGISTRO_LETRAS`), forzando siempre la unidad "MIL" y la fracción "CON XX/100" — el escribano ya no tipea las dos versiones a mano. El campo `_LETRAS` se oculta del panel de Propiedades cuando hay un `_NUMEROS` hermano (`camposInstrumentoVisibles`, `EditorScreen.jsx`). De paso se estandarizó la convención `_NUMEROS`/`_LETRAS` en `cesion_cuotas`/`mutuo_simple`/`prenda_con_registro` (la tenían invertida) y en los 2 templates nuevos de cesión — 0 documentos afectados en los 5 casos. 7 tests nuevos (suite: 185→192).
+84. Cierre de bugs del 27/07/26 — reemplazado el `<strong>` literal por `**` en los 4 templates de compraventa que lo tenían (barrido completo confirma 0 tags HTML en toda la base); `ModalFormato.jsx` reorganizado (todos los toggles de negrita/subrayado agrupados en "Énfasis automático", sin cambios de comportamiento); CI mínimo agregado (`.github/workflows/ci.yml`, `npm run test` + `npm run build` en cada push/PR a `main`) — lint queda afuera del gate a propósito por 54 errores preexistentes, anotados como ítem de backlog aparte. `docs/smoke-tests.md` nuevo con el checklist manual para todo lo cargado esta sesión (sin entorno de staging).
 
 ---
 
