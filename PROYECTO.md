@@ -303,6 +303,27 @@ Sistema de gestión de expedientes notariales con integración a Google Drive.
 
 ---
 
+## Cobertura de templates vs. fuente original
+
+> Agregado 27/07/26, a raíz de una pregunta directa sobre si el sistema de cláusulas del piloto de bloques (#81) permite llegar a cualquiera de las variantes del documento fuente original.
+
+El origen de los 51 templates actuales es `scripts/fichas_modelos_notariales.docx`, curado en dos fases (`curar_modelos_fase1.py`/`fase2.py`) hacia `scripts/compilado_modelos.json`. Ese compilado tiene **563 fichas** (modelos/variantes), agrupadas en 8 áreas del derecho y ~63 subcategorías. Comparando esas 563 fichas contra los 51 templates que hoy están cargados en `templates` (por categoría, no ficha a ficha):
+
+- **271 fichas (≈48%)** están en categorías del derecho notarial que **hoy no tienen ningún template** — no hay forma de llegar a ellas con el sistema actual, ni con variables ni con cláusulas. La categoría más grande de todas es **Propiedad Horizontal Especial, con 64 fichas** — más grande que toda la familia compraventa junta. Le siguen Fideicomiso (21), Contratos de Comercialización (20), Comodato (10), Permuta (9), y ~30 categorías más chicas.
+- **292 fichas (≈52%)** están en categorías donde sí existe al menos un template — pero esto es cobertura de familia, no de variante puntual. Ej.: Poderes tiene 18 fichas y 5 templates genéricos; Sociedad Anónima tiene 47 fichas y solo `estatuto_sa`/`estatuto_sas`.
+- El mecanismo para llegar a una **variante puntual dentro de un template existente** (no solo "un poder", sino "el poder con esta cláusula específica") es el sistema de cláusulas opcionales del piloto de bloques (#81) — hoy solo implementado para **2 cláusulas, sobre los 5 templates de compraventa**. Para todo lo demás, la única forma de reproducir una variante específica es edición manual del texto en OnlyOffice.
+
+**Metodología y su límite:** la comparación es por categoría del derecho (ej. "esta ficha es de Fideicomiso, ¿existe algún template de Fideicomiso?"), no por contenido exacto de cada ficha — así que el número de "cobertura parcial" (292) es optimista: dentro de esas categorías, muchas variantes puntuales tampoco son alcanzables hoy sin editar a mano.
+
+**Importante — el conteo de fichas del documento fuente NO es una medida de frecuencia de uso real.** Es un formulario/tratado que cubre el universo posible del derecho notarial, no un ranking de qué hace Fátima en el día a día. Antes de construir cualquier template nuevo de los 271 sin cobertura, hace falta que ella priorice — ver `docs/curacion-fatima-templates.md`, la lista en lenguaje llano preparada para esa curación.
+
+**Recomendación de secuencia (no ejecutar sin curación previa):**
+1. Curar con Fátima cuáles de las categorías sin cobertura son reales necesidades frecuentes vs. casos raros/académicos.
+2. Recién con esa lista, construir templates nuevos de a poco — no en bloque, no antes de una demo o deadline.
+3. Si alguna familia con template existente (probable candidata: Poderes) resulta tener variantes puntuales de uso frecuente, evaluar un piloto de cláusulas opcionales específico para esa familia — mismo patrón que compraventa (#81), no reabrir la Fase 2 completa (descomposición total + edición quirúrgica en OO, que sigue fuera de alcance).
+
+---
+
 ## Funcionalidades Pendientes / Backlog
 
 ### ⚠️ Bugs activos
