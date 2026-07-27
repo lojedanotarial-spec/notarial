@@ -348,8 +348,10 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     }
   }, [partes, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, estilos]);
 
-  // Vehiculos, extravars y clausulas siempre regeneran — no dependen del flag
-  useEffect(() => {
+  // Regenera (o pide confirmación si hay ediciones de OO) — mismo criterio que
+  // ya usaba el efecto de abajo, factorizado para poder llamarlo también al
+  // salir de un campo de texto (onBlur), no solo desde efectos automáticos.
+  const regenerarPorCambio = useCallback(() => {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
     if (hasOoEditsRef.current) {
@@ -357,7 +359,15 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     } else {
       handleGenerarRef.current?.();
     }
-  }, [vehiculos, extravars, clausulasActivas]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Vehiculos y clausulas siempre regeneran de inmediato — son cambios discretos
+  // (un modal que se aplica, un checkbox), no tecleo continuo. Los campos de
+  // texto libre (extravars) NO están acá — regeneran recién al salir del campo
+  // (onBlur, ver camposInstrumentoVisibles más abajo), no en cada tecla.
+  useEffect(() => {
+    regenerarPorCambio();
+  }, [vehiculos, clausulasActivas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
@@ -453,14 +463,17 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     return () => window.removeEventListener("scriba:completar_vehiculo", handler);
   }, []);
 
-  // Completar campos propios del template (extravars) desde Scriba — ej. precio, seña, plazo
+  // Completar campos propios del template (extravars) desde Scriba — ej. precio, seña, plazo.
+  // A diferencia de tipear en el panel (que espera al onBlur), esto es una acción
+  // discreta ("Aplicar al documento" en el chat) — regenera de inmediato.
   useEffect(() => {
     const handler = (e) => {
       setExtravars(prev => ({ ...prev, ...e.detail }));
+      setTimeout(regenerarPorCambio, 0);
     };
     window.addEventListener("scriba:completar_extravars", handler);
     return () => window.removeEventListener("scriba:completar_extravars", handler);
-  }, []);
+  }, [regenerarPorCambio]);
 
   // Activar/desactivar cláusulas opcionales desde Scriba
   useEffect(() => {
@@ -895,6 +908,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                           placeholder={v.placeholder || ""}
                           rows={5}
                           onChange={e => setExtravars(prev => ({ ...prev, [v.name]: e.target.value }))}
+                          onBlur={regenerarPorCambio}
                           style={{
                             width: "100%", padding: "6px 8px", borderRadius: 6, fontSize: 12,
                             border: "1px solid rgba(26,35,50,.18)", background: "C.porcelain",
@@ -908,6 +922,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                           value={extravars[v.name] || ""}
                           placeholder={v.placeholder || ""}
                           onChange={e => setExtravars(prev => ({ ...prev, [v.name]: e.target.value }))}
+                          onBlur={regenerarPorCambio}
                           style={{
                             width: "100%", padding: "6px 8px", borderRadius: 6, fontSize: 12,
                             border: "1px solid rgba(26,35,50,.18)", background: "C.porcelain",
