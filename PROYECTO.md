@@ -17,7 +17,7 @@ Desarrollado para escribanos de Mendoza; orientado inicialmente al Registro 9876
 | Capa | Tecnología | Versión |
 |---|---|---|
 | Frontend | React + Vite | 19.2.4 / 8.x |
-| Editor DOCX | OnlyOffice Docs | 9.3.1 (Community) |
+| Editor DOCX | OnlyOffice Docs | 9.4.0.129 (Community) — hosting desconocido, ver §Servidor OnlyOffice |
 | Backend | Vercel Serverless (Node.js) | — |
 | Base de datos | Supabase (PostgreSQL) | 2.105.1 |
 | IA | Anthropic Claude API | SDK 0.98.0 |
@@ -487,15 +487,12 @@ El plugin muestra las propiedades del acto y permite regenerar el documento. Com
 
 ## Servidor OnlyOffice
 
-> ⚠️ El servidor tiene inestabilidad frecuente — es el problema bloqueante principal.
+> ⚠️ Hardware/hosting actual **desconocido, pendiente confirmar** (27/07/26). Este documento decía "Lenovo IdeaPad S145" pero esa máquina fue dada de baja hace tiempo — nadie tenía registrado a dónde se migró, y no queda rastro en el repo porque la URL pública no cambió (sigue atrás del mismo Cloudflare Tunnel). Para confirmar la máquina real: Cloudflare dashboard → Zero Trust → Networks → Tunnels → conector activo de `onlyoffice.notarial.lat`.
 
-**URL:** `https://onlyoffice.notarial.lat`  
-**Versión:** OnlyOffice Docs **9.3.1** (build 10, mayo 2026)  
-**Hardware:** Lenovo IdeaPad S145 — Ubuntu, 4 GB RAM soldada  
-**Deployment:** Docker con `restart: always`
-
-**Causa de inestabilidad:** Ubuntu consume ~1.5 GB, OO ~2.5 GB → OOM kill.  
-**Fix definitivo:** módulo SO-DIMM 8 GB DDR4 (~$25 USD) → 12 GB total.
+**URL:** `https://onlyoffice.notarial.lat` (Cloudflare Tunnel, PoP Buenos Aires/EZE)  
+**Versión:** OnlyOffice Docs **9.4.0.129** (confirmado en vivo 27/07/26 vía `CommandService.ashx` — subió desde la 9.3.1 documentada antes, otra señal de que el servidor cambió)  
+**Hardware:** desconocido — ver nota de arriba  
+**Estado:** healthcheck responde 200 OK (27/07/26); la inestabilidad histórica por OOM en la IdeaPad puede ya no aplicar si el server cambió, sin confirmar todavía.
 
 ---
 
