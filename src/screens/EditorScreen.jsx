@@ -669,6 +669,14 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     onGo(screen, p);
   }
 
+  // Campos de "Datos del instrumento" a mostrar: sin los de vehículo (ya
+  // gestionados por su modal) y sin los _LETRAS que tengan un par _NUMEROS en
+  // el mismo template — esos se derivan solos (ver buildVars en templateVars.js).
+  const camposInstrumentoVisibles = templateVarsSchema.filter(v =>
+    !v.name.startsWith("VEHICULO_") &&
+    !(v.name.endsWith("_LETRAS") && templateVarsSchema.some(x => x.name === v.name.slice(0, -"_LETRAS".length) + "_NUMEROS"))
+  );
+
   return (
     <div style={{
       height: "100vh", display: "flex", flexDirection: "column",
@@ -842,8 +850,9 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 </PanelSection>
               )}
 
-              {/* Variables extra del template (excluir las de vehículo ya gestionadas por el modal) */}
-              {!["cert_firma_f08","certFirmaF08"].includes(templateSlug) && templateVarsSchema.filter(v => !v.name.startsWith("VEHICULO_")).length > 0 && (
+              {/* Variables extra del template (excluye vehículo, gestionado por su modal, y los
+                  campos _LETRAS que se derivan solos de su par _NUMEROS — ver buildVars) */}
+              {!["cert_firma_f08","certFirmaF08"].includes(templateSlug) && camposInstrumentoVisibles.length > 0 && (
                 <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "rgba(26,35,50,.45)", marginBottom: 8 }}>
                     Datos del instrumento
@@ -851,7 +860,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                   <div style={propiedadesExpandido
                     ? { display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 12 }
                     : undefined}>
-                  {templateVarsSchema.filter(v => !v.name.startsWith("VEHICULO_")).map(v => (
+                  {camposInstrumentoVisibles.map(v => (
                     <div key={v.name} style={{
                       marginBottom: 10,
                       gridColumn: propiedadesExpandido && (v.type === "texto_largo" || v.name === "DESCRIPCION_INMUEBLE") ? "1 / -1" : undefined,

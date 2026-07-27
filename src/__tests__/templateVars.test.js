@@ -1052,3 +1052,46 @@ describe("ensamblarClausulas", () => {
     expect(resultado).toBe("PRIMERO: Objeto.-\nSEGUNDO: Comparece Juana Pérez a prestar asentimiento.");
   });
 });
+
+// ── 8. Derivación automática de montos en letras (PRECIO_LETRAS ← PRECIO_NUMEROS) ──
+
+describe("buildVars — derivación de _LETRAS desde _NUMEROS", () => {
+  it("deriva PRECIO_LETRAS a partir de PRECIO_NUMEROS", () => {
+    const vars = ctx({ extravars: { PRECIO_NUMEROS: "5000000", PRECIO_LETRAS: "" } });
+    expect(vars.PRECIO_LETRAS).toBe("PESOS CINCO MILLONES CON 00/100");
+  });
+
+  it("fuerza la unidad MIL en montos redondos de miles", () => {
+    const vars = ctx({ extravars: { PRECIO_NUMEROS: "8000", PRECIO_LETRAS: "" } });
+    expect(vars.PRECIO_LETRAS).toBe("PESOS OCHO MIL CON 00/100");
+  });
+
+  it("fuerza CON 00/100 aunque el monto sea entero", () => {
+    const vars = ctx({ extravars: { PRECIO_NUMEROS: "1500", PRECIO_LETRAS: "" } });
+    expect(vars.PRECIO_LETRAS).toMatch(/CON 00\/100$/);
+  });
+
+  it("respeta los centavos reales cuando los hay (formato argentino: coma decimal)", () => {
+    const vars = ctx({ extravars: { PRECIO_NUMEROS: "1500,50", PRECIO_LETRAS: "" } });
+    expect(vars.PRECIO_LETRAS).toMatch(/CON 50\/100$/);
+  });
+
+  it("no toca un campo _LETRAS si no existe su par _NUMEROS", () => {
+    const vars = ctx({ extravars: { OTRO_CAMPO_LETRAS: "texto manual sin par" } });
+    expect(vars.OTRO_CAMPO_LETRAS).toBe("texto manual sin par");
+  });
+
+  it("no rompe si el campo _NUMEROS está vacío", () => {
+    const vars = ctx({ extravars: { PRECIO_NUMEROS: "", PRECIO_LETRAS: "" } });
+    expect(vars.PRECIO_LETRAS).toBe("");
+  });
+
+  it("deriva independientemente múltiples pares en el mismo documento", () => {
+    const vars = ctx({ extravars: {
+      PRECIO_NUMEROS: "100000", PRECIO_LETRAS: "",
+      SALDO_NUMEROS: "25000", SALDO_LETRAS: "",
+    }});
+    expect(vars.PRECIO_LETRAS).toBe("PESOS CIEN MIL CON 00/100");
+    expect(vars.SALDO_LETRAS).toBe("PESOS VEINTICINCO MIL CON 00/100");
+  });
+});

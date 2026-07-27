@@ -457,6 +457,19 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
   // Variables extra del template (inyectadas desde el editor)
   Object.assign(vars, extravars);
 
+  // Derivar automáticamente los montos en letras: cualquier extravar que
+  // termine en _LETRAS se calcula desde su par _NUMEROS (misma raíz), en vez
+  // de exigir que el escribano tipee las dos versiones a mano. numeroALetras
+  // ya fuerza "MIL" y "CON XX/100" siempre, incluso en montos redondos.
+  Object.keys(extravars).forEach(key => {
+    if (!key.endsWith("_LETRAS")) return;
+    const root = key.slice(0, -"_LETRAS".length);
+    const numerico = extravars[`${root}_NUMEROS`];
+    if (numerico !== undefined && numerico !== null && numerico !== "") {
+      vars[key] = "PESOS " + numeroALetras(numerico);
+    }
+  });
+
   return vars;
 }
 
