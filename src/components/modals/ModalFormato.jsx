@@ -94,7 +94,7 @@ export function ModalFormato({ estilos: inicial, onApply, onClose }) {
           </Fg>
         </div>
 
-        <SecTitle>Nombres de partes</SecTitle>
+        <SecTitle>Formato de nombres</SecTitle>
         <div style={{ display:"flex", gap:6, marginBottom:4 }}>
           {[
             ["titlecase_both",  "Nombre Apellido"],
@@ -111,12 +111,9 @@ export function ModalFormato({ estilos: inicial, onApply, onClose }) {
               }}>{l}</button>
           ))}
         </div>
-        <Toggle label="Nombres en negrita" checked={e.nombresNegrita} onChange={v => upd("nombresNegrita", v)}/>
-        <Toggle label="Nombres subrayados" checked={e.nombresSubrayado} onChange={v => upd("nombresSubrayado", v)}/>
 
         <SecTitle>Escribano</SecTitle>
         <Toggle label="Nombre en mayúsculas" checked={e.escribanoUppercase} onChange={v => upd("escribanoUppercase", v)}/>
-        <Toggle label="Nombre en negrita" checked={e.escribanoNegrita} onChange={v => upd("escribanoNegrita", v)}/>
         <div style={{ marginTop:10 }}>
           <Fg label="Número de registro">
             <div style={{ display:"flex", gap:8 }}>
@@ -134,11 +131,14 @@ export function ModalFormato({ estilos: inicial, onApply, onClose }) {
           </Fg>
         </div>
 
-        <SecTitle>Énfasis automático</SecTitle>
+        <SecTitle>Énfasis automático — qué va en negrita/subrayado</SecTitle>
+        <Toggle label="Nombres de las partes en negrita" checked={e.nombresNegrita} onChange={v => upd("nombresNegrita", v)}/>
+        <Toggle label="Nombres de las partes subrayados" checked={e.nombresSubrayado} onChange={v => upd("nombresSubrayado", v)}/>
+        <Toggle label="Nombre del escribano en negrita" checked={e.escribanoNegrita} onChange={v => upd("escribanoNegrita", v)}/>
         <Toggle label="Fecha en negrita (TRES días de JUNIO...)" checked={e.fechaNegrita} onChange={v => upd("fechaNegrita", v)}/>
         <Toggle label="Datos del vehículo en negrita" checked={e.vehiculoNegrita} onChange={v => upd("vehiculoNegrita", v)}/>
 
-        <SecTitle>Visualización</SecTitle>
+        <SecTitle>Visualización en pantalla</SecTitle>
         <Toggle label="Marcar variables faltantes en rojo" checked={e.showVarHighlight} onChange={v => upd("showVarHighlight", v)}/>
 
       </div>
