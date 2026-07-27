@@ -1,6 +1,6 @@
 # Plan de Tests — Notarial v2
 
-> Estado: Mayo 2026 (última revisión de este plan) | Servidor OO: hosting desconocido desde 27/07/26, ver PROYECTO.md §Servidor OnlyOffice | OO: 9.4.0.129
+> Estado: Mayo 2026 (última revisión de este plan) | Servidor OO: Google Compute Engine, Santiago (confirmado 27/07/26, ver PROYECTO.md §Servidor OnlyOffice) | OO: 9.4.0.129
 
 ---
 

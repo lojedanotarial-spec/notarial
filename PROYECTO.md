@@ -487,12 +487,15 @@ El plugin muestra las propiedades del acto y permite regenerar el documento. Com
 
 ## Servidor OnlyOffice
 
-> ⚠️ Hardware/hosting actual **desconocido, pendiente confirmar** (27/07/26). Este documento decía "Lenovo IdeaPad S145" pero esa máquina fue dada de baja hace tiempo — nadie tenía registrado a dónde se migró, y no queda rastro en el repo porque la URL pública no cambió (sigue atrás del mismo Cloudflare Tunnel). Para confirmar la máquina real: Cloudflare dashboard → Zero Trust → Networks → Tunnels → conector activo de `onlyoffice.notarial.lat`.
+> ✅ Corregido 27/07/26 — este documento decía "Lenovo IdeaPad S145", pero esa máquina fue dada de baja hace tiempo y nadie tenía registrado a dónde se había migrado. Confirmado mirando el registro DNS real en Cloudflare (no quedaba rastro en el repo porque la URL pública no cambió).
 
-**URL:** `https://onlyoffice.notarial.lat` (Cloudflare Tunnel, PoP Buenos Aires/EZE)  
-**Versión:** OnlyOffice Docs **9.4.0.129** (confirmado en vivo 27/07/26 vía `CommandService.ashx` — subió desde la 9.3.1 documentada antes, otra señal de que el servidor cambió)  
-**Hardware:** desconocido — ver nota de arriba  
-**Estado:** healthcheck responde 200 OK (27/07/26); la inestabilidad histórica por OOM en la IdeaPad puede ya no aplicar si el server cambió, sin confirmar todavía.
+**URL pública:** `https://onlyoffice.notarial.lat`, proxied por Cloudflare (naranja/orange-cloud)  
+**Origen real:** VM de **Google Compute Engine**, región Santiago (Chile) — IP `34.176.120.209` (`209.120.176.34.bc.googleusercontent.com`, AS396982 Google LLC). Confirmado 27/07/26 vía el registro A de la zona DNS de `notarial.lat`.
+**Cloudflare Worker `oo-proxy`:** reescribe rutas de assets de OO servidas bajo el dominio principal (`notarial.lat/documenteditor/*`, `/sdkjs/*`, `/coauthoring/*`, `/fonts/*`, `/dictionaries/*`, etc.) hacia `onlyoffice.notarial.lat`, para que el frontend las cargue same-origin sin problemas de CORS. WebSocket (`Upgrade: websocket`) se reenvía directo, sin pasar por el CORS wrapper.  
+**Versión:** OnlyOffice Docs **9.4.0.129** (confirmado en vivo 27/07/26 vía `CommandService.ashx`; subió desde la 9.3.1 documentada antes)  
+**Estado:** healthcheck responde 200 OK (27/07/26). La inestabilidad histórica por OOM (4 GB RAM) era específica de la IdeaPad — no asumir que sigue aplicando en la VM de GCP sin confirmar recursos/RAM asignada ahí.
+
+> ⚠️ Pendiente confirmar: si la IP `34.176.120.209` es estática/reservada en GCP o puede cambiar en un reinicio de la VM — si es efímera, un reinicio rompe el registro A hasta actualizarlo a mano.
 
 ---
 
