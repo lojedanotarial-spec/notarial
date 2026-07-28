@@ -64,6 +64,8 @@ Estas tres tienen que estar cerradas antes de redactar el formulario, porque det
 
 **Criterio de aceptación:** `grep -rn "sk-ant" .` no devuelve nada en el working tree. La app funciona en producción con las env vars. La key vieja está revocada. Se puede afirmar por escrito: "credenciales gestionadas por variables de entorno del proveedor, sin secretos en el repositorio".
 
+**✅ Resuelto 27/07/26 — la premisa estaba mal, en buen sentido.** Diagnóstico contra `git log --all -p` completo: la API key de Anthropic **nunca estuvo hardcodeada**, en ningún commit — siempre se leyó vía `process.env.ANTHROPIC_API_KEY`, con fail-fast ya en `api/scriba.js` (se agregó el mismo fail-fast a `api/vision.js`, que no lo tenía). No hizo falta rotar nada porque nunca hubo exposición real. Lo único hardcodeado era Supabase URL + Anon Key, que — como dice arriba — no son secretos; se consolidaron en `api/_supabaseConfig.js` (antes duplicadas a mano en 5 archivos) por prolijidad, no por seguridad. Se creó `.env.example`. Hallazgo aparte (no en el alcance original): se encontró y borró `api/test-personas.js`, un endpoint de debug sin auth propio deployado en producción (dependía 100% de RLS; verificado en vivo que no filtraba nada, pero era superficie pública innecesaria).
+
 ---
 
 ### P0-2 · Determinar y documentar residencia de datos
@@ -84,6 +86,11 @@ Estas tres tienen que estar cerradas antes de redactar el formulario, porque det
 
 **Si del mapa surge que conviene mover la VM:** evaluar `southamerica-east1` (São Paulo) como alternativa. No ejecutar la migración sin decisión explícita — es un cambio de infra, no una tarea de este brief.
 
+**🔶 Parcialmente resuelto 27/07/26 — el mapa técnico de las 2 primeras preguntas ya está, en `PROYECTO.md` §Infraestructura y Plataformas (no en una sección aparte "Residencia y protección de datos", pero cubre lo mismo):**
+- Supabase (`personas`, `documentos`, Storage): confirmado **`us-west-2` (Oregon, EE.UU.)** — no Latam. Este es el hallazgo más importante del análisis: el dato personal real vive en EE.UU., la VM de Chile es la parte *menos* relevante.
+- Vercel (serverless): confirmado **`iad1` (Virginia, EE.UU.)** — default nunca elegido explícitamente.
+- La pregunta 3 (si OO persiste algo en disco local más allá del tránsito) **sigue sin responder** — requiere acceso a la VM, no se investigó. El análisis jurídico de adecuación tampoco se hizo (fuera de alcance de código, como ya decía este brief).
+
 ---
 
 ### P0-3 · Bug de tags HTML literales en el cuerpo del documento
@@ -101,6 +108,8 @@ Estas tres tienen que estar cerradas antes de redactar el formulario, porque det
 **Fix estructural, además del puntual:** una vez identificado el origen, agregar un sanitizador en el pipeline de generación que detecte tags HTML en el contenido y los convierta al marcador equivalente (`<strong>`/`<b>` → `**`, `<u>` → `__`) o los strippee. Esto evita que el mismo bug vuelva por otra puerta cuando se carguen templates nuevos.
 
 **Criterio de aceptación:** test unitario que verifique que contenido con `<strong>` no produce tags literales en el DOCX. El caso real reproducido y corregido.
+
+**✅ Resuelto 27/07/26 — hipótesis 1 confirmada.** `<strong>{{ESCRIBANO_NOMBRE}}</strong>` pegado a mano (una vez cada uno) en 4 templates de compraventa (`urbana`/`rural`/`ph`/`lote`, no en `boleto_compraventa`) — reemplazado por `**{{ESCRIBANO_NOMBRE}}**`. Barrido completo sobre toda la base (`templates` + `clausulas_biblioteca`) confirma 0 tags HTML restantes. **No se implementó** el sanitizador estructural sugerido (detectar/convertir HTML automáticamente en el pipeline) — se dejó como fix puntual; si se cargan templates nuevos a mano en el futuro, el riesgo puede volver. Sin test unitario dedicado (el caso ya no es reproducible porque no hay HTML para sanitizar hoy).
 
 ---
 
@@ -122,11 +131,15 @@ Hay cuatro cosas construidas y no verificadas en uso real. Están en la doc como
 
 **Regla:** cada ítem que se verifica se marca en la doc del proyecto quitando el "(sin probar en la app)". Cada ítem que falla se convierte en bug con su entrada en el backlog. No se marca nada como verificado sin haberlo corrido.
 
+**🔶 Parcialmente resuelto 27/07/26 — el entregable existe, la verificación real todavía no se hizo.** `docs/smoke-tests.md` tiene el checklist manual (20 pasos, ampliado además con todo lo cargado en la expansión del piloto de bloques del mismo día). Pero **nadie lo corrió todavía en el navegador** — sigue pendiente que la escribana (o quien sea) lo ejecute paso a paso y marque qué falla. Los 4 ítems originales de esta tarea (`leer_template_base`, `crear_documento_libre`, adjuntos `.docx`, "insertar en documento") siguen sin confirmarse en uso real.
+
 ### P1-5 · Regeneración on-change → on-blur
 
 Los campos de "Propiedades del acto" regeneran el documento en cada tecla, vía el `useEffect` que observa `[vehiculos, extravars, clausulasActivas]` en `EditorScreen.jsx`. La escribana espera que se aplique al salir del campo.
 
 Evaluar las dos opciones y elegir con criterio explícito: `onBlur` real en los inputs de texto, o debounce en el efecto. El `onBlur` es más predecible para el usuario; el debounce es menos invasivo en el código. Afecta a todos los inputs de texto de esa sección, no solo a los nuevos de cláusulas.
+
+**✅ Resuelto 27/07/26 — se eligió `onBlur` real** (más predecible, como sugería este mismo brief). `extravars` salió del `useEffect` de auto-regeneración (que ahora solo watchea `[vehiculos, clausulasActivas]` — cambios discretos que sí regeneran de inmediato); los inputs/textarea de "Datos del instrumento" regeneran recién en `onBlur`, vía `regenerarPorCambio()` factorizado del efecto anterior. El evento `scriba:completar_extravars` (Scriba completando un campo desde el chat) sigue regenerando de inmediato — es una acción discreta, no tecleo.
 
 ### P1-6 · Conversor número → letras para montos
 
@@ -137,6 +150,8 @@ Requisitos explícitos de la escribana, ambos obligatorios:
 - Siempre incluir la fracción de centavos, incluso en cero (ej. `... CON 00/100`).
 
 Ya existe lógica de número a letras para fechas — revisar si es reutilizable o si conviene un módulo aparte para montos. Tests unitarios obligatorios, con casos borde: montos redondos, montos con centavos, millones, y el cero.
+
+**✅ Resuelto 27/07/26 — reutilizada, no reescrita.** Ya existía `numeroALetras()` en `src/utils.js` (se usaba solo para `ESCRIBANO_REGISTRO_LETRAS`) y **ya forzaba correctamente** "MIL" y "CON XX/100" — el bug real no era el conversor, era que nadie lo invocaba para precio/seña/saldo. `buildVars()` ahora deriva automáticamente cualquier extravar `X_LETRAS` desde su par `X_NUMEROS`; el campo `_LETRAS` se oculta del panel cuando existe su par (`camposInstrumentoVisibles`, `EditorScreen.jsx`). De paso se estandarizó la convención `_NUMEROS`/`_LETRAS` en 3 templates que la tenían invertida (`cesion_cuotas`, `mutuo_simple`, `prenda_con_registro`) y en los 2 templates nuevos de cesión — 0 documentos afectados. 7 tests nuevos con los casos borde pedidos (montos redondos de miles, centavos reales, cero).
 
 ---
 
@@ -150,9 +165,13 @@ Estas no son urgentes para el formulario pero son exactamente lo que diferencia 
 - Sección Desarrollo Local: dice `# Vitest (163 tests, 12 desactualizados)`. Son 185 y pasan todos. Actualizar.
 - Verificar que el conteo de tests en la sección Tests coincida con la salida real de `npm run test`.
 
+**✅ Resuelto 27/07/26** (y superado varias veces desde entonces por el propio ritmo de la sesión). OnlyOffice: hosting confirmado (GCP `southamerica-west1-b`, IP estática, ver §Servidor OnlyOffice de `PROYECTO.md`) — ya no dice "desconocido". Tests: la suite creció durante el mismo día (163→175→185→192, cada salto documentado en su changelog correspondiente); el número en `PROYECTO.md` está sincronizado con `npm run test` a la fecha de este documento.
+
 ### P2-8 · CI mínimo
 
 GitHub Action que en cada push y PR a `main` corra `npm run test` y `npm run build`. Es media hora de trabajo y cambia cualitativamente cómo se lee el proyecto: hoy no hay nada que impida romper producción con un push.
+
+**✅ Resuelto 27/07/26** — `.github/workflows/ci.yml`, confirmado corriendo en verde en GitHub Actions. No incluye `npm run lint` a propósito: hay 54 errores preexistentes que harían fallar el CI desde el día uno; arreglarlos queda anotado como ítem de backlog aparte antes de sumarlo al gate.
 
 ### P2-9 · Limpiar políticas RLS duplicadas
 
