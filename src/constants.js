@@ -106,6 +106,10 @@ export const PARTE_VACIA = () => ({
   barrio:      "", manzana:      "", casa:         "",
   localidad:   "", departamento: "", provincia:   "", pais:     "",
   rol:         "",
+  // Vínculo con otra parte del mismo acto (p.ej. cónyuge/conviviente de otra
+  // parte) — relacionadoConId apunta al id de esa otra parte, tipoRelacion
+  // dice qué tipo de vínculo es. Vacío si no está relacionada con nadie.
+  relacionadoConId: "", tipoRelacion: "",
 });
 
 export const ESCRIBANO_INI = {

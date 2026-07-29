@@ -509,7 +509,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       const d = e.detail;
       const dniNuevo = (d.nro_doc || "").replace(/\D/g, "");
       const nuevaParte = {
-        id:           Date.now() + Math.random(),
+        ...PARTE_VACIA(),
         apellido:     d.apellido     || "",
         nombre:       d.nombre       || "",
         genero:       d.genero       || "",
@@ -536,7 +536,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
           // Si ya estaba en otra posición, la sacamos de ahí
           const sinEste = dniNuevo ? prev.filter(p => p.nroDoc !== dniNuevo) : [...prev];
           // Asegurar que haya suficientes posiciones
-          const vacia = () => ({ id: Date.now() + Math.random(), apellido:"", nombre:"", genero:"", nacionalidad:"", tipoDoc:"DNI", nroDoc:"", cuit:"", fechaNac:"", estadoCivil:"", calle:"", numero:"", piso:"", dpto:"", localidad:"", departamento:"Ciudad", rol:"", representaciones:[] });
+          const vacia = () => ({ ...PARTE_VACIA(), departamento: "Ciudad", representaciones: [] });
           while (sinEste.length < parteIdx) sinEste.push(vacia());
           sinEste.splice(parteIdx, sinEste.length > parteIdx ? 1 : 0, nuevaParte);
           return sinEste;

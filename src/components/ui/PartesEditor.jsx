@@ -468,9 +468,11 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
   };
 
   const quitar = (id) => {
-    const next = partes.filter(p => p.id !== id);
-    onChange(next.length > 0 ? next : [PARTE_VACIA()]);
-    setOpenId(next[0]?.id ?? null);
+    const sinVinculosRotos = partes
+      .filter(p => p.id !== id)
+      .map(p => p.relacionadoConId === id ? { ...p, relacionadoConId: "", tipoRelacion: "" } : p);
+    onChange(sinVinculosRotos.length > 0 ? sinVinculosRotos : [PARTE_VACIA()]);
+    setOpenId(sinVinculosRotos[0]?.id ?? null);
     setConfirmQuitar(null);
   };
 
@@ -683,6 +685,31 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     {(p.genero === "F" ? EC_F : EC_M).map(ec => <option key={ec}>{ec}</option>)}
                   </select>
                 </Fg>
+                {partes.length > 1 && (
+                  <>
+                    <Fg label="Vínculo con otra parte">
+                      <select style={inp} value={p.tipoRelacion || ""}
+                        onChange={e => upd(p.id, { tipoRelacion: e.target.value, ...(e.target.value ? {} : { relacionadoConId: "" }) })}>
+                        <option value="">Ninguno</option>
+                        <option value="conyuge">Cónyuge de...</option>
+                        <option value="conviviente">Conviviente de...</option>
+                      </select>
+                    </Fg>
+                    {p.tipoRelacion && (
+                      <Fg label="Es cónyuge/conviviente de">
+                        <select style={inp} value={p.relacionadoConId || ""}
+                          onChange={e => upd(p.id, { relacionadoConId: e.target.value })}>
+                          <option value="">Seleccionar parte...</option>
+                          {partes.filter(x => x.id !== p.id).map(x => (
+                            <option key={x.id} value={x.id}>
+                              {`${x.nombre || ""} ${x.apellido || ""}`.trim() || "(sin nombre)"}
+                            </option>
+                          ))}
+                        </select>
+                      </Fg>
+                    )}
+                  </>
+                )}
                 <Fg label="Nacionalidad">
                   <input style={inp} value={p.nacionalidad}
                     onChange={e => upd(p.id, { nacionalidad: e.target.value })}

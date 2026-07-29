@@ -181,6 +181,38 @@ describe("PARTE_N_* básicos", () => {
   });
 });
 
+describe("PARTE_N_CONYUGE_* (vínculo entre partes)", () => {
+  it("la parte que declara el vínculo (relacionadoConId) ve a la otra como cónyuge", () => {
+    const principal = mkParte({ id: 1, apellido: "GARCIA", genero: "M" });
+    const conyuge    = mkParte({ id: 2, apellido: "LOPEZ", nombre: "ANA", genero: "F", nroDoc: "30111222", relacionadoConId: 1, tipoRelacion: "conyuge" });
+    const vars = ctx({ partes: [principal, conyuge] });
+    expect(vars.PARTE_2_TIPO_RELACION).toBe("conyuge");
+    expect(vars.PARTE_2_CONYUGE_NOMBRE).toBe("Carlos GARCIA");
+  });
+
+  it("la parte del otro lado del vínculo también ve a su cónyuge, aunque no haya sido ella la que lo declaró", () => {
+    const principal = mkParte({ id: 1, apellido: "GARCIA", genero: "M" });
+    const conyuge    = mkParte({ id: 2, apellido: "LOPEZ", nombre: "ANA", genero: "F", nroDoc: "30111222", relacionadoConId: 1, tipoRelacion: "conyuge" });
+    const vars = ctx({ partes: [principal, conyuge] });
+    expect(vars.PARTE_1_TIPO_RELACION).toBe("conyuge");
+    expect(vars.PARTE_1_CONYUGE_NOMBRE).toBe("Ana LOPEZ");
+    expect(vars.PARTE_1_CONYUGE_DNI).toBe("30.111.222");
+  });
+
+  it("conviviente funciona igual que cónyuge, sólo cambia el tipo de vínculo", () => {
+    const principal   = mkParte({ id: 1, apellido: "GARCIA" });
+    const conviviente = mkParte({ id: 2, apellido: "PEREZ", relacionadoConId: 1, tipoRelacion: "conviviente" });
+    const vars = ctx({ partes: [principal, conviviente] });
+    expect(vars.PARTE_1_TIPO_RELACION).toBe("conviviente");
+  });
+
+  it("sin vínculo, las variables de cónyuge quedan vacías", () => {
+    const vars = ctx({ partes: [mkParte({ id: 1 })] });
+    expect(vars.PARTE_1_TIPO_RELACION).toBe("");
+    expect(vars.PARTE_1_CONYUGE_NOMBRE).toBe("");
+  });
+});
+
 // ── 3. Formato de nombres (estilos) ───────────────────────────────────────────
 
 describe("nombresFormato", () => {

@@ -220,6 +220,29 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
       domicilio ? `con domicilio en ~~${domicilio}~~` : null,
     ].filter(Boolean).join(", ");
     vars[`PARTE_${n}_IDENTIDAD_ACTA`] = identidadActa;
+
+    // Vínculo con otra parte (cónyuge/conviviente) — el vínculo puede estar
+    // declarado en cualquiera de las dos partes relacionadas, así que se
+    // busca en ambos sentidos para que las variables queden disponibles
+    // sin importar en cuál de las dos se cargó relacionadoConId.
+    const relacionadaComoDueña = p.relacionadoConId
+      ? partes.find(x => x && x.id === p.relacionadoConId) : null;
+    const relacionadaComoDestino = partes.find(x => x && x.relacionadoConId === p.id);
+    const relacionada = relacionadaComoDueña || relacionadaComoDestino;
+    const tipoRel = relacionadaComoDueña ? p.tipoRelacion : (relacionadaComoDestino ? relacionadaComoDestino.tipoRelacion : "");
+
+    vars[`PARTE_${n}_TIPO_RELACION`] = tipoRel || "";
+    if (relacionada) {
+      const relNombreFmt   = nombresFormato === "uppercase" ? (relacionada.nombre||"").toUpperCase() : toTitleCase(relacionada.nombre);
+      const relApellidoFmt = nombresFormato === "titlecase_both" ? toTitleCase(relacionada.apellido) : (relacionada.apellido||"").toUpperCase();
+      vars[`PARTE_${n}_CONYUGE_NOMBRE`]     = [relNombreFmt, relApellidoFmt].filter(Boolean).join(" ");
+      vars[`PARTE_${n}_CONYUGE_DNI`]        = fmtDni(relacionada.nroDoc);
+      vars[`PARTE_${n}_CONYUGE_DOMICILIO`]  = fmtDomicilio(relacionada);
+    } else {
+      vars[`PARTE_${n}_CONYUGE_NOMBRE`]     = "";
+      vars[`PARTE_${n}_CONYUGE_DNI`]        = "";
+      vars[`PARTE_${n}_CONYUGE_DOMICILIO`]  = "";
+    }
   });
 
   // Variables pre-formateadas para autorizaciones (soporta múltiples autorizantes y autorizados)
