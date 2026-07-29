@@ -211,6 +211,19 @@ describe("PARTE_N_CONYUGE_* (vínculo entre partes)", () => {
     expect(vars.PARTE_1_TIPO_RELACION).toBe("");
     expect(vars.PARTE_1_CONYUGE_NOMBRE).toBe("");
   });
+
+  it("CONYUGE_IDENTIDAD (variable global, para clausulas como asentimiento_conyugal) toma a quien declaró el vínculo", () => {
+    const vendedor = mkParte({ id: 1, apellido: "GARCIA", rol: "VENDEDOR" });
+    const conyuge  = mkParte({ id: 2, apellido: "LOPEZ", nombre: "ANA", genero: "F", nroDoc: "30111222", nacionalidad: "argentina", estadoCivil: "casada", relacionadoConId: 1, tipoRelacion: "conyuge" });
+    const vars = ctx({ partes: [vendedor, conyuge] });
+    expect(vars.CONYUGE_IDENTIDAD).toContain("Ana LOPEZ");
+    expect(vars.CONYUGE_IDENTIDAD).toContain("30.111.222");
+  });
+
+  it("CONYUGE_IDENTIDAD queda vacía si ninguna parte declaró un vínculo", () => {
+    const vars = ctx({ partes: [mkParte({ id: 1 })] });
+    expect(vars.CONYUGE_IDENTIDAD).toBe("");
+  });
 });
 
 // ── 3. Formato de nombres (estilos) ───────────────────────────────────────────

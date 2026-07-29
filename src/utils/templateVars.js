@@ -245,6 +245,32 @@ export function buildVars({ partes = [], escribano = {}, fecha = {}, protocolo =
     }
   });
 
+  // Identidad del cónyuge/conviviente vinculado, para cláusulas como
+  // "asentimiento_conyugal" que no saben de antemano a qué PARTE_N
+  // corresponde — toma la primera parte que declaró un vínculo
+  // (relacionadoConId) y arma la misma fórmula de identidad notarial que
+  // PARTE_N_IDENTIDAD.
+  const conyugeQueAsiente = partes.find(p => p && p.relacionadoConId);
+  if (conyugeQueAsiente) {
+    const cq = conyugeQueAsiente;
+    const cqNombreFmt     = nombresFormato === "uppercase" ? (cq.nombre||"").toUpperCase() : toTitleCase(cq.nombre);
+    const cqApellidoFmt   = nombresFormato === "titlecase_both" ? toTitleCase(cq.apellido) : (cq.apellido||"").toUpperCase();
+    const cqApellidoNombre = [cqNombreFmt, cqApellidoFmt].filter(Boolean).join(" ");
+    const cqDni       = fmtDni(cq.nroDoc);
+    const cqDomicilio = fmtDomicilio(cq);
+    const cqGenArticulo = cq.genero === "M" ? "el señor" : "la señora";
+    vars.CONYUGE_IDENTIDAD = [
+      `${cqGenArticulo} ~~${cqApellidoNombre}~~`,
+      cq.nacionalidad ? `de nacionalidad ~~${cq.nacionalidad}~~` : null,
+      cq.estadoCivil  ? `estado civil ~~${cq.estadoCivil}~~` : null,
+      cqDomicilio     ? `con domicilio en ~~${cqDomicilio}~~` : null,
+      cqDni           ? `DNI Nro. ~~${cqDni}~~` : null,
+      cq.cuit         ? `CUIL/CUIT ~~${cq.cuit}~~` : null,
+    ].filter(Boolean).join(", ");
+  } else {
+    vars.CONYUGE_IDENTIDAD = "";
+  }
+
   // Variables pre-formateadas para autorizaciones (soporta múltiples autorizantes y autorizados)
   const fmtPersonaAut = (p) => {
     const art = p.genero === "M" ? "el señor" : "la señora";
