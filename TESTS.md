@@ -1,6 +1,6 @@
 # Plan de Tests — Notarial v2
 
-> Estado: Mayo 2026 (última revisión de este plan) | Servidor OO: Google Compute Engine, Santiago (confirmado 27/07/26, ver PROYECTO.md §Servidor OnlyOffice) | OO: 9.4.0.129
+> Estado: Mayo 2026, ampliado 29/07/26 (secciones K-T) | Servidor OO: Google Compute Engine, Santiago (confirmado 27/07/26, ver PROYECTO.md §Servidor OnlyOffice) | OO: 9.4.0.129
 
 ---
 
@@ -116,6 +116,140 @@
 
 ---
 
+## Ampliación exhaustiva (agregado 29/07/26)
+
+Todo lo que sigue (K en adelante) es la ronda "extensa y quisquillosa" pedida explícitamente: cubrir todas las funciones posibles, con foco especial en los casos donde el estado de OnlyOffice y el estado de React pueden desincronizarse en silencio — la familia de bugs más peligrosa de esta app (ya pasó una vez con el cambio de escribano, ver Historial de Features #46 de `PROYECTO.md`). No asumir que "no rompió nada visible" significa que no rompió nada — releer el documento generado, no solo mirar que la app no tire un error.
+
+### K. Editor — Modal de Partes (exhaustivo)
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| K1 | Agregar 1 parte completa a mano (sin escaneo) | Aparece en el panel y en el documento con el rol correcto | |
+| K2 | Agregar 2ª parte con el mismo DNI que la 1ª | El sistema debería avisar/no duplicar silenciosamente | |
+| K3 | Cambiar el DNI de una parte ya cargada | Se actualiza esa parte puntual, no crea una nueva | |
+| K4 | Cambiar el rol de una parte (ej. de Vendedor a Comprador) en un template con roles fijos (`ROLES_CONTEXTUALES`) | El documento refleja el nuevo rol en el lugar correcto (concordancia de género incluida) | |
+| K5 | Escanear DNI de una persona ya cargada con datos manuales distintos | Aparece el modal de confirmación antes de sobrescribir (`ConfirmSobrescribirEscaneo`) — no pisa en silencio | |
+| K6 | Escanear DNI en un campo vacío (sin datos previos) | Aplica directo, sin modal de confirmación (no hay nada que perder) | |
+| K7 | Quitar una parte ya cargada | Aparece `ConfirmQuitarParte`, no se borra con un solo click | |
+| K8 | Buscar por DNI en el buscador de personas y NO encontrar resultados | Mensaje claro de "sin resultados", no un error genérico | |
+| K9 | Cargar una parte con estado civil "casado/a" en un template de compraventa | El documento pide/menciona asentimiento conyugal según corresponda | |
+| K10 | Cargar 3+ partes en un template que solo espera 2 (ej. compraventa con varios condóminos) | El documento arma la lista completa, concordancia plural correcta | |
+| K11 | Domicilio con barrio + manzana + casa (barrio privado/de emergencia) | Se arma correctamente en el texto, sin campos "undefined" | |
+| K12 | Nombre con tilde reconocida (ej. "RAUL" → "RAÚL") | Se aplica la tilde automáticamente | |
+| K13 | Cerrar el modal de Partes sin guardar (cancelar) | No se pierde lo que ya estaba cargado antes de abrir el modal | |
+
+### L. Editor — Modal de Vehículos
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| L1 | Cargar un vehículo a mano | Aparece en el panel y en `VEHICULOS_LISTA` del documento | |
+| L2 | Escanear tarjeta verde (frente) | Completa marca/modelo/dominio/chasis/motor | |
+| L3 | Escanear tarjeta verde (dorso) después del frente | Fusiona en el mismo vehículo, no crea uno nuevo | |
+| L4 | Escanear frente y dorso de dos vehículos distintos en la misma sesión | Quedan como 2 vehículos separados, no se mezclan datos | |
+| L5 | Cargar 2° vehículo con mismo dominio que el 1° | Actualiza el existente, no duplica | |
+| L6 | Motovehículo (no auto) | `TIPO_VEHICULO_MIN` dice "moto vehículo", no "vehículo" | |
+
+### M. Editor — Cláusulas opcionales (piloto de bloques)
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| M1 | Abrir `compraventa_urbana` → sección Cláusulas | Aparece la lista completa (18 cláusulas) | |
+| M2 | Activar una cláusula sin variables (ej. "Venta ad corpus") | Se agrega al final, antes de "EN SU TESTIMONIO", con numeración correcta | |
+| M3 | Activar una cláusula CON variables (ej. "Pacto de mejor comprador") | Aparecen los campos para completar; el texto final las sustituye sin dejar `{{VAR}}` sueltas | |
+| M4 | Activar 3 cláusulas a la vez | Se agregan las 3, en el orden de activación, numeradas consecutivamente | |
+| M5 | Desactivar una cláusula ya activa | Desaparece del documento, las demás mantienen su numeración | |
+| M6 | Activar una cláusula, guardar el documento, cerrarlo y volver a abrirlo | La cláusula sigue activa y con sus valores (persistencia en `documentos.clausulas`) | |
+| M7 | Pedirle a Scriba (por descripción, no por nombre técnico) que active una cláusula — ej. "el vendedor se puede quedar con el derecho de recomprarlo" | Reconoce y ofrece `mejor_comprador` con el botón "Aplicar al documento" | |
+| M8 | Pedirle a Scriba una cláusula que no existe para ese template | Avisa que no existe, no la inventa ni la redacta como texto libre sin avisar | |
+| M9 | Activar una cláusula en `cesion_posicion_contractual` (fianza) | El campo de texto libre del fiador (no es una parte del sistema) se completa y aparece bien en el texto | |
+
+### N. Casos adversariales de sincronización OO ↔ React (crítico)
+
+Esta es la familia de bugs que ya rompió una vez en producción (fix #46/#58 en `PROYECTO.md`). Repetir cada secuencia EXACTA, no solo el resultado final — el orden de los pasos es lo que importa acá.
+
+| # | Secuencia exacta | Qué mirar | ✓/✗ |
+|---|-------------------|-----------|-----|
+| N1 | Abrir documento → cambiar el **escribano** en el modal → cambiar el escribano OTRA VEZ a uno distinto | El documento debe reflejar el 2° cambio, no quedarse pegado en el 1° (bug histórico exacto) | |
+| N2 | Abrir documento → agregar una parte por el modal → **escribir texto a mano en OO** (cualquier párrafo) → cambiar esa misma parte en el modal (ej. cambiarle el DNI) | Debe aparecer el modal/banner de "¿Regenerar documento?" — si regenera en silencio, se pierde lo escrito a mano sin avisar | |
+| N3 | Mismo caso que N2, pero eligiendo **"Cancelar"** en el modal de regenerar | El texto escrito a mano en OO debe seguir intacto, y el cambio del modal de Partes NO debe haberse aplicado al documento visible | |
+| N4 | Mismo caso, eligiendo **"Sí, regenerar"** | El documento vuelve al texto de plantilla con el dato nuevo — la escribana debe saber que perdió lo escrito a mano (eso es lo esperado, no un bug) | |
+| N5 | Escribir texto a mano en OO → sin tocar ningún modal, esperar ~5 segundos → cambiar un campo de "Datos del instrumento" y salir del campo (onBlur) | No debería aparecer el banner de regenerar por error si en realidad no había ediciones reales (falso positivo del bug ya arreglado — confirmar que sigue arreglado) | |
+| N6 | Activar una cláusula (checkbox) MIENTRAS hay ediciones manuales pendientes en OO sin guardar | Debe pasar por el mismo modal de confirmación que cualquier otro cambio — las cláusulas no deberían ser una puerta trasera que regenera sin avisar | |
+| N7 | Cambiar la fecha del acto → sin salir del modal, cambiar también el protocolo → cerrar el modal una sola vez | Ambos cambios (fecha y protocolo) deben aplicarse juntos, ninguno se pierde | |
+| N8 | Con el documento recién generado (dentro de los primeros 3 segundos), tipear rápido en un campo de texto | La ventana de gracia (`ignorarEdicionesHastaRef`) no debe bloquear ni demorar el guardado del campo | |
+| N9 | Dos cambios seguidos y rápidos en Partes (agregar parte A, sin esperar, agregar parte B) | Las 2 partes quedan cargadas, ninguna pisa a la otra por una condición de carrera | |
+| N10 | Cerrar el editor con cambios sin guardar (botón atrás/volver a Home) | Debe avisar antes de salir ("hay cambios sin guardar") | |
+
+### O. Precio en letras automático
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| O1 | Template con campo de precio (ej. `compraventa_urbana`) → "Datos del instrumento" | Aparece UN SOLO campo numérico, no dos campos (número y letras por separado) | |
+| O2 | Escribir `1500000` en el campo de precio | El documento muestra "PESOS UN MILLÓN QUINIENTOS MIL CON 00/100 ($ 1500000)" | |
+| O3 | Escribir un monto redondo de miles (ej. `8000`) | Incluye la palabra "MIL" (no "OCHO CON 00/100" a secas) | |
+| O4 | Escribir un monto con centavos en formato argentino (ej. `1500,50`) | Dice "...CON 50/100", no "CON 00/100" | |
+| O5 | Dejar el campo de precio vacío | El documento no muestra "PESOS CON 00/100" huérfano ni rompe el párrafo | |
+| O6 | Mismo test en `mutuo_simple`, `hipoteca_constitucion`, `prenda_con_registro`, `cesion_credito` | Cada uno deriva su propio monto en letras correctamente (son campos independientes por template) | |
+
+### P. Templates de 3 partes (cesión de posición contractual)
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| P1 | Abrir "Cesión de la posición contractual" | El modal de Partes pide 3 roles: Cedente, Cesionario/a, Cedido/a | |
+| P2 | Cargar solo 2 de las 3 partes y generar | El documento debe mostrar claramente que falta el Cedido (no debería verse "undefined" ni un hueco silencioso) | |
+| P3 | Cargar las 3 partes completas | Las 3 identidades aparecen correctas en el encabezado y en la cláusula de conformidad del cedido | |
+| P4 | Cambiar el Cedido por otra persona después de generado | Se actualiza esa parte puntual (mismo comportamiento que K3) | |
+| P5 | Activar la cláusula de fianza | El fiador (texto libre) se agrega bien, sin pisar los datos de las 3 partes del sistema | |
+
+### Q. Scriba — tools no cubiertas en F-I
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| Q1 | "Cambiale el rol a Vendedor a [nombre ya cargado]" | Usa `completar_parte` con `parte_index`, actualiza esa parte sin crear una nueva | |
+| Q2 | Adjuntar tarjeta verde y pedir "cargá este vehículo" | `extraer_documento` + `completar_vehiculo`, aparece botón de confirmación antes de aplicar | |
+| Q3 | "El precio es 5 millones, seña 500 mil" en un template con esos extravars | `completar_extravars` completa ambos campos, no toca el resto del documento | |
+| Q4 | Pedir Scriba que redacte texto y usar `modificar_documento` | Preserva las `{{VARIABLES}}` intactas, no las reemplaza por texto fijo | |
+| Q5 | "Buscá a Pérez" con varios Pérez en la base | `buscar_personas` devuelve la lista, no asume cuál sin confirmar | |
+| Q6 | "Traeme el boleto que hice el mes pasado de [nombre]" | `buscar_documentos` primero, confirma cuál, recién después `leer_documento` | |
+| Q7 | Pedir a Scriba que compare contra un template antes de redactar libre | Usa `leer_template_base`, cita similitudes/diferencias reales | |
+| Q8 | Pedir algo que ningún template cubre | Cae a `crear_documento_libre` con `campos_libres` propios, no fuerza un template que no aplica | |
+| Q9 | Adjuntar un PDF de referencia (no identidad) | Lo lee directo como contexto, no intenta `extraer_documento` sobre él | |
+| Q10 | Adjuntar un .docx real desde el navegador | Se extrae el texto server-side (mammoth) y Scriba puede usarlo — **nunca confirmado en uso real, chequear ahora** | |
+| Q11 | Preguntar sobre un CUIT con dígito verificador límite (colisión, ver G4) | `validar_cuit` corre el algoritmo real, no lo calcula "de memoria" | |
+| Q12 | Hacer que Scriba falle (ej. cortar la conexión a mitad) | Aparece botón "Reintentar" que reenvía el mismo pedido sin reescribir | |
+
+### R. Expedientes
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| R1 | Crear expediente nuevo desde ExpedientesScreen | Aparece en la lista con estado "abierto" | |
+| R2 | Vincular un documento existente a un expediente | Aparece en la pestaña Documentos del expediente | |
+| R3 | Vincular el mismo documento a un 2° expediente | Ambos vínculos coexisten, no se pisa el primero | |
+| R4 | Subir un archivo a la carpeta de Drive del expediente | Aparece en la pestaña Archivos Drive | |
+| R5 | Cambiar el estado del expediente (abierto → en trámite → completado) | Se refleja en la lista y en el filtro del sidebar | |
+| R6 | Buscar documentos para vincular por apellido de una parte | `ModalVincularDoc` los encuentra por full-text, no solo por título | |
+
+### S. Herramientas
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| S1 | Calculadora CUIT: DNI + género → resultado | CUIT correcto, botón Copiar funciona | |
+| S2 | Calculadora CUIT: botón "Verificar en Plataforma Notario" | Abre `plataformanotario.cnmza.org.ar` en pestaña nueva (pide login propio, no autocompleta nada) | |
+| S3 | Presupuesto Notarial: elegir un acto y completar montos | Calcula honorarios/sellos/tasas coherentes con la Ley 5053-8100 vigente | |
+| S4 | Presupuesto Notarial: sobreescribir un valor a mano | Permite override y "Restaurar" al valor original | |
+| S5 | Herramientas → tarjetas "Próximamente" (Informe de Dominio) | No son clickeables o avisan que no está disponible, no rompen | |
+
+### T. Persistencia, autoguardado y recarga
+
+| # | Test | Resultado esperado | ✓/✗ |
+|---|------|--------------------|-----|
+| T1 | Cargar datos, esperar el autoguardado (indicador "Guardado hace un momento") | Se guarda solo, sin acción manual | |
+| T2 | Recargar la página (F5) con un documento abierto | Vuelve a abrir el mismo documento con todos los datos (partes, cláusulas, extravars) | |
+| T3 | Cerrar la pestaña sin guardar manualmente y volver a entrar desde Home | El autoguardado ya lo había persistido — no se perdió nada | |
+| T4 | Abrir el mismo documento en dos pestañas y editar en ambas | Documentar qué pasa (caso conocido no resuelto — ver si pisa datos) | |
+
+---
+
 ## FASE 2 — Fatima (escribana, usuario real)
 
 > Objetivo: validar que el flujo principal funciona sin explicaciones técnicas.
@@ -195,10 +329,11 @@ Para cada respuesta de Scriba, Fatima responde:
 
 | # | Dónde | Descripción | Severidad | Estado |
 |---|-------|-------------|-----------|--------|
-| 1 | Editor — Propiedades del acto | Los campos de extravars/cláusulas regeneran el documento en cada tecla en vez de al salir del campo (onBlur) | Media | Abierto (27/07/26) |
-| 2 | Editor — campo PRECIO | Precio en letras se tipea a mano en vez de derivarse automáticamente del valor en números | Media | Abierto (27/07/26) |
-| 3 | Conversor número→letras | No fuerza la unidad "mil" ni los centavos ("CON 00/100") en montos — ligado al bug #2 | Media | Abierto (27/07/26) |
-| 4 | Documento generado (OO) | Tags HTML literales (`<strong>...</strong>`) aparecen como texto plano en el cuerpo en vez de negrita real — ej. "ante mí, `<strong>`FABIÁN MCLEOD`</strong>`, Notar..." | Alta | Abierto (27/07/26) |
+| 1 | Editor — Propiedades del acto | Los campos de extravars/cláusulas regeneran el documento en cada tecla en vez de al salir del campo (onBlur) | Media | ✅ Resuelto 27/07/26 |
+| 2 | Editor — campo PRECIO | Precio en letras se tipea a mano en vez de derivarse automáticamente del valor en números | Media | ✅ Resuelto 27/07/26 |
+| 3 | Conversor número→letras | No fuerza la unidad "mil" ni los centavos ("CON 00/100") en montos — ligado al bug #2 | Media | ✅ Resuelto 27/07/26 |
+| 4 | Documento generado (OO) | Tags HTML literales (`<strong>...</strong>`) aparecen como texto plano en el cuerpo en vez de negrita real — ej. "ante mí, `<strong>`FABIÁN MCLEOD`</strong>`, Notar..." | Alta | ✅ Resuelto 27/07/26 |
+| 5 | | (agregar acá lo que se encuentre en la ronda K-T del 29/07/26) | | |
 
 ---
 
@@ -210,3 +345,4 @@ Para cada respuesta de Scriba, Fatima responde:
 - [ ] Fatima completa F01-F11 sin ayuda técnica
 - [ ] Scriba pasa el 80% de los casos C01-C08 según criterio de Fatima
 - [ ] Inserción de texto en OO funciona (I2)
+- [ ] **Sección N completa (N1-N10) sin ningún ✗** — es el gate más importante de todos: si algo de la sincronización OO↔React falla en silencio, no importa cuán bien funcione el resto
