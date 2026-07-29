@@ -127,7 +127,7 @@ function PanelSection({ label, onClick, children, alerta }) {
 
 
 export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
-  const { miUsuario, miembros, registroActivo } = useAuth();
+  const { miUsuario, miembros, miembrosCargados, registroActivo } = useAuth();
   const [modal,        setModal]        = useState(null);
   const [propiedadesExpandido, setPropiedadesExpandido] = useState(true);
   const [inmuebleEstructurado, setInmuebleEstructurado] = useState(null); // {ubicacion, superficie, medidas, ochavas} — datos crudos para reabrir el modal a editar
@@ -335,7 +335,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     if (skipAutoGenerateRef.current) return;
     if (generatedOnceRef.current) return;
     if (templateId && !templateContenido) return; // esperar que el template llegue de Supabase
-    if (miUsuario?.is_admin && registroActivo && miembros.length === 0) return; // admin: esperar miembros
+    // Distinto de miembros.length===0: eso no distingue "todavía no llegó la
+    // respuesta" de "el registro no tiene miembros cargados" — con length
+    // quedaba colgado para siempre en el segundo caso. miembrosCargados sólo
+    // bloquea mientras el fetch está genuinamente en curso.
+    if (miUsuario?.is_admin && registroActivo && !miembrosCargados) return; // admin: esperar miembros
 
     const t = setTimeout(() => {
       if (!generatedOnceRef.current && !skipAutoGenerateRef.current) {
@@ -343,7 +347,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       }
     }, 50);
     return () => clearTimeout(t);
-  }, [templateContenido, templateId, miUsuario?.is_admin, registroActivo, miembros, escribano]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [templateContenido, templateId, miUsuario?.is_admin, registroActivo, miembros, miembrosCargados, escribano]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mark dirty + auto-generate si viene de un modal (flag generateAfterRef)
   // Si el doc fue editado en OO, mostrar confirmación en lugar de regenerar automático
@@ -787,7 +791,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             </div>
             <div style={{ flex: 1, overflowY: "auto" }}>
 
-              <PanelSection label="Escribano" onClick={() => setModal("escribano")}>
+              <PanelSection label="Escribano" onClick={() => setModal("escribano")} alerta={!escribano.registro}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>{escribano.nombre || "Sin nombre"}</div>
                 <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginTop: 2 }}>
                   {escribano.caracter || ""} &middot; Reg. {escribano.registro || ""}

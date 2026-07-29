@@ -17,6 +17,12 @@ export function AuthProvider({ children }) {
   const [usuario,       setUsuario]       = useState(null);
   const [miUsuario,     setMiUsuario]     = useState(null);
   const [miembros,      setMiembros]      = useState([]);
+  // Distinto de miembros.length===0: eso no distingue "todavía no llegó la
+  // respuesta" de "llegó y el registro no tiene miembros". Sin esta bandera,
+  // un admin en un registro sin miembros cargados quedaba con el editor
+  // colgado en "Preparando documento..." para siempre (ver bug reportado
+  // 29/07/26 — certificación de firma nueva, escribano nunca se completaba).
+  const [miembrosCargados, setMiembrosCargados] = useState(false);
   const [registroActivo, setRegistroActivo] = useState(null);
   const [perfilCargado, setPerfilCargado] = useState(false);
 
@@ -60,6 +66,7 @@ export function AuthProvider({ children }) {
       .select("*")
       .eq("registro", yo?.registro || u.registro_numero);
     setMiembros(ordenarMiembros(m));
+    setMiembrosCargados(true);
     setPerfilCargado(true);
   }
 
@@ -119,11 +126,16 @@ export function AuthProvider({ children }) {
   // Admin: cargar todos los miembros de un registro cuando cambia el registro activo
   useEffect(() => {
     if (!miUsuario?.is_admin || !registroActivo) return;
+    setMiembrosCargados(false);
     supabase
       .from("registros")
       .select("*")
       .eq("registro", registroActivo)
-      .then(({ data }) => setMiembros(ordenarMiembros(data)));
+      .then(({ data, error }) => {
+        if (error) console.error("[AuthContext] Error cargando miembros del registro", registroActivo, error);
+        setMiembros(ordenarMiembros(data));
+        setMiembrosCargados(true);
+      });
   }, [miUsuario?.is_admin, registroActivo]);
 
   async function actualizarMiembro(id, campos) {
@@ -145,7 +157,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-    session, usuario, miUsuario, miembros, iniciales,
+    session, usuario, miUsuario, miembros, miembrosCargados, iniciales,
     registroActivo, setRegistroActivo,
     login, loginWithGoogle, logout, actualizarMiembro,
     cargando: session === undefined,
