@@ -386,6 +386,10 @@ La plataforma tiene datos que cambian periódicamente (aranceles, sellos, tasas)
 - [ ] **Panel admin completo** — AdminScreen básico, sin gestión de plantillas ni usuarios
 - [ ] **54 errores de lint preexistentes** — `no-unused-vars` y `react-hooks/*` en varios archivos (`SelectorScreen.jsx`, `EstimadorDNRPA.jsx`, `PresupuestoNotarial.jsx`, `buildDocx.js`, `exportDocx.js`, `vite.config.js`). Por eso el CI (27/07/26) no corre `npm run lint` todavía — arreglarlos es prerrequisito para sumarlo al gate.
 
+### Legal / compliance
+
+- [ ] **Firmar el DPA (Data Processing Agreement) con Supabase** — pedido 29/07/26. Organización `lojedanotarial-SB` (id `xiymxyonycuvuyehlhmf`), plan **Free**. Relevante porque `personas`/`documentos` guardan PII real de requirentes (DNI, nombre, domicilio). No es algo que se resuelva por código/MCP — es una acción de cuenta que solo puede hacer el titular de la organización, típicamente desde el dashboard de Supabase (Organization Settings → Legal Documents, o vía soporte si hace falta una copia contrafirmada). Nota: el BAA de HIPAA (para datos de salud, no aplica acá) sí requiere plan Team como mínimo — no confirmado si eso también aplica al DPA general.
+
 ---
 
 ## Base de Datos (Supabase)
