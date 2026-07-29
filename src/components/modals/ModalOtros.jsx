@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { C, DEPARTAMENTOS, MESES_LABEL, inp } from "../../constants";
 import { diaLetras, anioLetras } from "../../utils";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, ordenarMiembros } from "../../context/AuthContext";
 import { supabase } from "../../supabase";
 import { Modal } from "../Modal";
 import { Btn }   from "../ui/Btn";
@@ -24,11 +24,11 @@ export function ModalEscribano({ escribano, onApply, onClose }) {
       .from("registros")
       .select("*")
       .eq("registro", registroActivo)
-      .order("rol")
       .then(({ data }) => {
         if (data?.length) {
-          setMiembros(data);
-          const idx = data.findIndex(e => e.nombre === escribano.nombre);
+          const ordenados = ordenarMiembros(data);
+          setMiembros(ordenados);
+          const idx = ordenados.findIndex(e => e.nombre === escribano.nombre);
           setSel(idx >= 0 ? idx : 0);
         }
       });

@@ -3,6 +3,15 @@ import { supabase } from "../supabase";
 
 const AuthContext = createContext(null);
 
+// Orden fijo para listas de miembros del registro: titular primero, después
+// adscriptos, cualquier otro rol (usuarios sin notario) al final.
+const RANGO_ROL = { titular: 0, adscripta: 1, adscripto: 1 };
+export function ordenarMiembros(miembros) {
+  return (miembros || [])
+    .slice()
+    .sort((a, b) => (RANGO_ROL[a.rol] ?? 2) - (RANGO_ROL[b.rol] ?? 2));
+}
+
 export function AuthProvider({ children }) {
   const [session,       setSession]       = useState(undefined);
   const [usuario,       setUsuario]       = useState(null);
@@ -49,9 +58,8 @@ export function AuthProvider({ children }) {
     const { data: m } = await supabase
       .from("registros")
       .select("*")
-      .eq("registro", yo?.registro || u.registro_numero)
-      .order("rol");
-    setMiembros(m || []);
+      .eq("registro", yo?.registro || u.registro_numero);
+    setMiembros(ordenarMiembros(m));
     setPerfilCargado(true);
   }
 
@@ -115,8 +123,7 @@ export function AuthProvider({ children }) {
       .from("registros")
       .select("*")
       .eq("registro", registroActivo)
-      .order("rol")
-      .then(({ data }) => setMiembros(data || []));
+      .then(({ data }) => setMiembros(ordenarMiembros(data)));
   }, [miUsuario?.is_admin, registroActivo]);
 
   async function actualizarMiembro(id, campos) {
