@@ -89,7 +89,11 @@ Estas tres tienen que estar cerradas antes de redactar el formulario, porque det
 **🔶 Parcialmente resuelto 27/07/26 — el mapa técnico de las 2 primeras preguntas ya está, en `PROYECTO.md` §Infraestructura y Plataformas (no en una sección aparte "Residencia y protección de datos", pero cubre lo mismo):**
 - Supabase (`personas`, `documentos`, Storage): confirmado **`us-west-2` (Oregon, EE.UU.)** — no Latam. Este es el hallazgo más importante del análisis: el dato personal real vive en EE.UU., la VM de Chile es la parte *menos* relevante.
 - Vercel (serverless): confirmado **`iad1` (Virginia, EE.UU.)** — default nunca elegido explícitamente.
-- La pregunta 3 (si OO persiste algo en disco local más allá del tránsito) **sigue sin responder** — requiere acceso a la VM, no se investigó. El análisis jurídico de adecuación tampoco se hizo (fuera de alcance de código, como ya decía este brief).
+- La pregunta 3 (si OO persiste algo en disco local más allá del tránsito) **sigue sin responder** — requiere acceso a la VM, no se investigó.
+
+**🔶 Actualización 29/07/26 — DPA firmado con Supabase, cubre parte de la adecuación para el leg de EE.UU.:** se firmó (PandaDoc, ref. `VO3BF-XMRU7-F28RK-JGFLX`, completado 29/07/26 19:52:48 UTC) el Data Processing Addendum estándar de Supabase, que incorpora las Standard Contractual Clauses (Módulo Two, controlador→procesador) para la transferencia de datos a Supabase Pte. Ltd y sus subprocesadores autorizados (AWS, Google, Cloudflare, Vercel, OpenAI, entre otros — lista completa en el Schedule 3 del DPA). Esto le da un instrumento contractual formal a la transferencia hacia EE.UU. identificada arriba como el hallazgo más relevante.
+No resuelto todavía: (a) el análisis jurídico de si esto es *suficiente* para la adecuación bajo Ley 25.326 sigue sin hacerse — es una conclusión legal, no técnica, y no la asumimos acá; (b) la pregunta 3 de arriba (persistencia local en la VM de OO); (c) el DPA de Supabase no cubre la transferencia hacia el proveedor de Anthropic (Claude API, usado en `api/scriba.js`) ni hacia OnlyOffice self-hosted (VM propia en Chile) — si esos también necesitan su propio instrumento es parte del mismo análisis pendiente en (a).
+Guardar el PDF firmado en un lugar permanente (Drive o `docs/legal/` en el repo) — no se subió en esta sesión porque solo se compartió el texto extraído, no el archivo.
 
 ---
 
