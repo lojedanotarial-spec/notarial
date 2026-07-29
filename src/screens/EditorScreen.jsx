@@ -148,6 +148,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const [hasOoEdits,       setHasOoEdits]       = useState(false);
   const [pendingRegen,     setPendingRegen]      = useState(false);
   const hasOoEditsRef     = useRef(false);
+  // Distinto de hasOoEdits: hasOoEdits queda en true de forma "pegajosa" para
+  // cualquier documento reabierto (protege contra clobbear ediciones viejas al
+  // regenerar). Este ref, en cambio, es sólo "hay una edición de ESTA sesión
+  // sin persistir" — lo que necesita handleGo para avisar antes de salir.
+  const hasUnsavedOoEditRef = useRef(false);
   const generatedOnceRef  = useRef(false);
   const handleGenerarRef  = useRef(null);
   const generateAfterRef  = useRef(false);
@@ -232,7 +237,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   useEffect(() => {
     if (!templateId) return;
     supabase.from("templates").select("nombre, slug, contenido, variables_json").eq("id", templateId).single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data) {
           setTemplateNombre(data.nombre);
           setTemplateSlug(data.slug || "");
@@ -243,6 +248,12 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
           const init = {};
           schema.forEach(v => { init[v.name] = ""; });
           setExtravars(init);
+        } else {
+          // Sin esto, templateContenido queda vacío para siempre y el
+          // auto-generate lo bloquea en silencio: "Preparando documento..."
+          // infinito sin ningún error visible para la escribana.
+          console.error("[EditorScreen] No se pudo cargar el template", templateId, error);
+          alert("No se pudo cargar la plantilla del documento. Probá volver e intentar de nuevo, o avisá si el problema persiste.");
         }
       });
     supabase.from("clausulas_biblioteca")
@@ -295,6 +306,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       setDocumentKey(key);
       generatedOnceRef.current = true;
       setHasOoEdits(false);
+      hasUnsavedOoEditRef.current = false;
       setPendingRegen(false);
       setIsDirty(false);
       // El refreshFile de OnlyOffice (disparado por el cambio de documentUrl) dispara
@@ -382,6 +394,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       if (c.fecha)       setFecha(c.fecha);
       if (c.protocolo)   setProtocolo(c.protocolo);
       if (c.instrumento) setInstrumento(c.instrumento);
+      if (c.estilos)     setEstilos(prev => ({ ...prev, ...c.estilos }));
       if (Array.isArray(data.clausulas)) setClausulasActivas(data.clausulas);
       if (data.estado)      setEstado(data.estado);
       if (data.template_key) setTemplateKey(data.template_key);
@@ -414,14 +427,14 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   const contenidoParaGuardar = useMemo(
     () => ({
-      partes, escribano, fecha, protocolo, instrumento,
+      partes, escribano, fecha, protocolo, instrumento, estilos,
       ...(templateId ? {} : {
         templateContenidoLibre: templateContenido,
         variablesLibres: templateVarsSchema,
         extravarsLibres: extravars,
       }),
     }),
-    [partes, escribano, fecha, protocolo, instrumento, templateId, templateContenido, templateVarsSchema, extravars]
+    [partes, escribano, fecha, protocolo, instrumento, estilos, templateId, templateContenido, templateVarsSchema, extravars]
   );
 
   useEffect(() => {
@@ -676,7 +689,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const applyAndGen = (setter) => (val) => { generateAfterRef.current = true; setter(val); };
 
   function handleGo(screen, p) {
-    if (hayPendiente) {
+    // hayPendiente sólo cubre partes/escribano/fecha/protocolo/instrumento/
+    // estilos (lo que autoguarda useAutoguardado) — un fragmento de texto
+    // tecleado directo en OO no lo toca, así que sin este chequeo aparte
+    // "volver" salía sin avisar y esa edición se perdía en silencio.
+    if (hayPendiente || hasUnsavedOoEditRef.current) {
       if (!window.confirm("Hay cambios sin guardar. ¿Querés salir igual?")) return;
     }
     onGo(screen, p);
@@ -720,6 +737,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             onEdit={() => {
               if (Date.now() < ignorarEdicionesHastaRef.current) return;
               setHasOoEdits(true);
+              hasUnsavedOoEditRef.current = true;
             }}
           />
         </div>

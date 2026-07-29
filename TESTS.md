@@ -333,7 +333,14 @@ Para cada respuesta de Scriba, Fatima responde:
 | 2 | Editor — campo PRECIO | Precio en letras se tipea a mano en vez de derivarse automáticamente del valor en números | Media | ✅ Resuelto 27/07/26 |
 | 3 | Conversor número→letras | No fuerza la unidad "mil" ni los centavos ("CON 00/100") en montos — ligado al bug #2 | Media | ✅ Resuelto 27/07/26 |
 | 4 | Documento generado (OO) | Tags HTML literales (`<strong>...</strong>`) aparecen como texto plano en el cuerpo en vez de negrita real — ej. "ante mí, `<strong>`FABIÁN MCLEOD`</strong>`, Notar..." | Alta | ✅ Resuelto 27/07/26 |
-| 5 | | (agregar acá lo que se encuentre en la ronda K-T del 29/07/26) | | |
+| 5 | Editor — navegación | Abrir "otro documento" desde Scriba mientras ya se estaba dentro del editor dejaba el editor colgado en "Preparando documento..." infinito (y rompía el modal de Formato de rebote): `<EditorScreen>` no tenía `key` en App.jsx, así que React reusaba la instancia vieja con estado stale (templateId, partes, refs de auto-generate) en vez de remontar | Alta | ✅ Resuelto 29/07/26 |
+| 6 | Editor — ModalFormato | Al reabrir un documento existente, los ajustes de formato (fuente, márgenes, interlineado, etc.) nunca se habían guardado en el documento — volvían siempre a los valores por defecto en silencio | Alta | ✅ Resuelto 29/07/26 |
+| 7 | Editor — carga de template | Si el template fallaba al cargar desde Supabase (fila faltante/duplicada, error de RLS), el editor quedaba en "Preparando documento..." para siempre sin ningún error visible | Alta | ✅ Resuelto 29/07/26 — ahora muestra una alerta si falla |
+| 8 | Editor — salir sin guardar | Agregar un fragmento de texto directo en OO y presionar "volver" salía sin avisar y esa edición se perdía, porque el chequeo de "cambios sin guardar" no contemplaba ediciones hechas solo en OO (sólo partes/escribano/fecha/etc.) | Alta | 🔶 Parcialmente resuelto 29/07/26 — ahora avisa antes de salir; falta forzar el guardado real del cuerpo OO (requiere trabajo de backend, ver nota abajo) |
+| 9 | Editor — texto de adscriptos | "Notaria/o Adscripta/o **del** Registro Notarial número..." debería decir "**al** Registro Notarial" para adscriptos (titulares sí llevan "del") | Media | Pendiente |
+| 10 | Modal de escribanos | El orden debería ser Titular → Adscriptos → otros usuarios | Baja | Pendiente |
+| 11 | Redacción — CCyC art. 306 | El sistema siempre asume identificación por inciso a) (documento exhibido); no ofrece el inciso b) (conocimiento personal del escribano) como alternativa | Media | Pendiente — a discutir diseño |
+| 12 | Partes — cónyuge | No hay forma de vincular el/la cónyuge a una parte casada (ni campo de nombre, ni relación entre partes) | Media | Pendiente — a discutir diseño (dos partes relacionadas vs. cónyuge anidado) |
 
 ---
 

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { LoginScreen }   from "./screens/LoginScreen.jsx";
 import { HomeScreen }    from "./screens/HomeScreen";
@@ -55,10 +55,17 @@ function AppRouter() {
   const [params, setParams] = useState({});
   const [scribaOpen, setScribaOpen] = useState(false);
   const [scribaContexto, setScribaContexto] = useState(null);
+  const editorNonceRef = useRef(0);
 
   const handleGo = (targetScreen, targetParams = {}) => {
     if (targetParams.registroActivo) setRegistroActivo(targetParams.registroActivo);
     if (targetScreen !== "editor") setScribaContexto(null);
+    // Forzar remount del editor en cada navegación (p.ej. Scriba abre otro
+    // documento con el panel ya abierto DENTRO del editor: "screen" no cambia,
+    // así que sin esta key React reusa la instancia vieja con estado stale
+    // de useState inicializados desde params — templateId, partes, refs de
+    // auto-generate, etc. nunca se actualizan y el editor queda colgado.
+    if (targetScreen === "editor") editorNonceRef.current += 1;
     setParams(targetParams);
     setScreen(targetScreen);
   };
@@ -115,7 +122,7 @@ function AppRouter() {
     <>
       {screen === "home"     && <HomeScreen     onGo={handleGo} />}
       {screen === "selector" && <SelectorScreen onGo={handleGo} />}
-      {screen === "editor"   && <EditorScreen   onGo={handleGo} params={params} onScribaContexto={setScribaContexto} />}
+      {screen === "editor"   && <EditorScreen   key={editorNonceRef.current} onGo={handleGo} params={params} onScribaContexto={setScribaContexto} />}
       {screen === "bulk"         && <BulkScreen        onGo={handleGo} />}
       {screen === "admin"        && <AdminScreen       onGo={handleGo} />}
       {screen === "expedientes"  && <ExpedientesScreen     onGo={handleGo} registroActivo={registroActivo} miUsuario={miUsuario} />}
