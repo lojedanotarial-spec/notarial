@@ -129,7 +129,7 @@ function PanelSection({ label, onClick, children, alerta }) {
 export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const { miUsuario, miembros, registroActivo } = useAuth();
   const [modal,        setModal]        = useState(null);
-  const [propiedadesExpandido, setPropiedadesExpandido] = useState(false);
+  const [propiedadesExpandido, setPropiedadesExpandido] = useState(true);
   const [inmuebleEstructurado, setInmuebleEstructurado] = useState(null); // {ubicacion, superficie, medidas, ochavas} — datos crudos para reabrir el modal a editar
   const [estado,       setEstado]       = useState("borrador");
   const [estilos,      setEstilos]      = useState(ESTILOS_DEFAULT);
