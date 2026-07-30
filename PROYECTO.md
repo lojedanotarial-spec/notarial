@@ -379,6 +379,7 @@ La plataforma tiene datos que cambian periódicamente (aranceles, sellos, tasas)
 
 ### Features largo plazo / baja prioridad
 
+- [🔶] **Rogatoria de Escrituras Públicas** — template nuevo (formulario oficial de la Dirección de Registros Públicos y Archivo Judicial de Mendoza), reproducido a mano con tablas dentro del sistema existente, no un sistema paralelo. **Pausado 30/07/26 tras completar el diagnóstico** — requiere extender `buildDocxGenerico.js` para soportar bloques de tabla (hoy solo genera párrafos), algo que ningún template usa todavía. Detalle completo, decisiones ya tomadas y qué falta para retomar en `docs/rogatoria-diagnostico.md`. Bloqueante para arrancar Fase 1: no hay forma de renderizar a PDF/verificar visualmente en esta máquina (sin LibreOffice/Word) — quedó sin resolver cómo validar cada fase antes de avanzar.
 - [ ] **Estimador DNRPA** — cálculo de costos transferencia automotor; pausado
 - [ ] **Tutorial/onboarding liviano** — primer flujo guiado para nuevos usuarios
 - [ ] **Más modelos de Fátima** — subir plantillas adicionales con el texto real de la escribana
