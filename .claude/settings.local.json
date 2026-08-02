@@ -27,7 +27,18 @@
       "Bash(npm run *)",
       "Bash(git commit *)",
       "Bash(python -c ' *)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(node -e ' *)",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(node test_leer_documento.mjs)",
+      "Bash(node _tmp_test_leer_documento.mjs)",
+      "Bash(rm \"c:/Users/Florencia Martinez/notarial/_tmp_test_leer_documento.mjs\")",
+      "Bash(gh auth *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\Florencia Martinez\\\\.claude\\\\plans\" 2>/dev/null; echo ok)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Florencia Martinez\\.claude\\plans"
     ]
   }
 }
