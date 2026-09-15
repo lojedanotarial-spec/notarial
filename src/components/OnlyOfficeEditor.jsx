@@ -1,11 +1,22 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
+const MAX_RECONNECT_ATTEMPTS = 5; // ~25s de reintentos antes de mostrar mantenimiento
+
 export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serverUrl, onEdit }) {
   const editorRef        = useRef(null);
   const reconnectTimer   = useRef(null);
+  const reconnectCount   = useRef(0);
   const documentTitleRef = useRef(documentTitle);
   const [ready, setReady]               = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
+  const [maintenance, setMaintenance]   = useState(false);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  const retryFromMaintenance = useCallback(() => {
+    reconnectCount.current = 0;
+    setMaintenance(false);
+    setReloadTrigger(t => t + 1);
+  }, []);
 
   documentTitleRef.current = documentTitle;
 
@@ -123,12 +134,19 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       script.id  = "oo-api-script";
       script.src = `${serverUrl}/web-apps/apps/api/documents/api.js`;
       script.onerror = () => {
-        console.warn("[OO] api.js no disponible, reintentando en 5s...");
+        reconnectCount.current += 1;
+        if (reconnectCount.current >= MAX_RECONNECT_ATTEMPTS) {
+          console.error("[OO] api.js no disponible tras varios intentos, mostrando mantenimiento");
+          setReconnecting(false);
+          setMaintenance(true);
+          return;
+        }
+        console.warn(`[OO] api.js no disponible, reintentando en 5s... (${reconnectCount.current}/${MAX_RECONNECT_ATTEMPTS})`);
         setReconnecting(true);
         if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
         reconnectTimer.current = setTimeout(loadScript, 5000);
       };
-      script.onload = () => { setReconnecting(false); createEditor(); };
+      script.onload = () => { reconnectCount.current = 0; setReconnecting(false); setMaintenance(false); createEditor(); };
       document.head.appendChild(script);
     };
     loadScript();
@@ -143,7 +161,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       const s = document.getElementById("oo-api-script");
       if (s) s.remove();
     };
-  }, [documentUrl, documentKey, serverUrl, createEditor]);
+  }, [documentUrl, documentKey, serverUrl, createEditor, reloadTrigger]);
 
   if (!documentUrl) {
     return (
@@ -170,23 +188,51 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
     <div style={{ flex: 1, position: "relative", display: "flex" }}>
       <div style={{
         position: "absolute", inset: 0, zIndex: 10,
-        display: (!ready || reconnecting) ? "flex" : "none",
+        display: (maintenance || !ready || reconnecting) ? "flex" : "none",
         alignItems: "center", justifyContent: "center",
         background: "#f0ece3", fontFamily: "'Montserrat',sans-serif",
         fontSize: 14, color: "#1a2332", flexDirection: "column", gap: 10,
+        padding: 24, textAlign: "center",
       }}>
-        <div>{reconnecting ? "Reconectando editor..." : "Cargando editor..."}</div>
-        {reconnecting && (
-          <button
-            onClick={() => { setReconnecting(false); createEditor(); }}
-            style={{
-              marginTop: 8, padding: "6px 18px", borderRadius: 7, border: "none",
-              background: "#3a7ca5", color: "#FDFCFA", cursor: "pointer",
-              fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 13,
-            }}
-          >
-            Reconectar ahora
-          </button>
+        {maintenance ? (
+          <>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+                 stroke="#c9a961" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Editor de documentos en mantenimiento</div>
+            <div style={{ maxWidth: 360, color: "rgba(26,35,50,.65)", fontSize: 13, lineHeight: 1.5 }}>
+              Estamos migrando el servidor del editor. El resto de la app funciona con normalidad — probá de nuevo en unos minutos.
+            </div>
+            <button
+              onClick={retryFromMaintenance}
+              style={{
+                marginTop: 8, padding: "6px 18px", borderRadius: 7, border: "none",
+                background: "#3a7ca5", color: "#FDFCFA", cursor: "pointer",
+                fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 13,
+              }}
+            >
+              Reintentar
+            </button>
+          </>
+        ) : (
+          <>
+            <div>{reconnecting ? "Reconectando editor..." : "Cargando editor..."}</div>
+            {reconnecting && (
+              <button
+                onClick={() => { setReconnecting(false); createEditor(); }}
+                style={{
+                  marginTop: 8, padding: "6px 18px", borderRadius: 7, border: "none",
+                  background: "#3a7ca5", color: "#FDFCFA", cursor: "pointer",
+                  fontFamily: "'Montserrat',sans-serif", fontWeight: 600, fontSize: 13,
+                }}
+              >
+                Reconectar ahora
+              </button>
+            )}
+          </>
         )}
       </div>
       <div id="oo-container" style={{ flex: 1 }} />
