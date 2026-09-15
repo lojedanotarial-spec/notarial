@@ -91,9 +91,11 @@ export default async function handler(req, res) {
   if (!autorizado(req)) return res.status(401).json({ error: "No autorizado" });
 
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY no configurada" });
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return res.status(500).json({ error: "SUPABASE_SERVICE_ROLE_KEY no configurada" });
+  if (!process.env.SUPABASE_SERVICE_KEY) return res.status(500).json({ error: "SUPABASE_SERVICE_KEY no configurada" });
 
-  const sb = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  // Reutiliza la misma service role key que api/oo-callback.js (nombrada SUPABASE_SERVICE_KEY,
+  // no SUPABASE_SERVICE_ROLE_KEY — inconsistencia ya conocida, ver PROYECTO.md).
+  const sb = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const { fecha, desde, hasta } = ventanaDeAyerArt();
 
