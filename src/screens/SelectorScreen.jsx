@@ -66,6 +66,7 @@ export function SelectorScreen({ onGo }) {
   const [selected,   setSelected]   = useState(null);       // template row completo
   const [familia,    setFamilia]    = useState("");
   const [query,      setQuery]      = useState("");
+  const [tplQuery,   setTplQuery]   = useState("");
   const [abierto,    setAbierto]    = useState(false);
   const [docs,       setDocs]       = useState([]);
   const [templates,  setTemplates]  = useState([]);
@@ -112,6 +113,9 @@ export function SelectorScreen({ onGo }) {
   const frecuentes = templates.filter(t => t.frecuencia != null && t.frecuencia <= 5);
   const top5       = frecuentes.length ? frecuentes : templates.slice(0, 5);
   const porFamilia = familia ? templates.filter(t => t.familia === familia) : [];
+  const tplFiltrados = tplQuery.trim() === ""
+    ? []
+    : templates.filter(t => t.nombre.toLowerCase().includes(tplQuery.trim().toLowerCase()));
   const filtrados  = query.trim() === ""
     ? docs.slice(0, 5)
     : docs.filter(d => d.titulo?.toLowerCase().includes(query.toLowerCase()));
@@ -154,6 +158,54 @@ export function SelectorScreen({ onGo }) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Buscar template por nombre */}
+          <div style={{ background:C.porcelain, borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
+            <div style={{ fontSize:11, fontWeight:600, letterSpacing:".07em", textTransform:"uppercase",
+                          color:"rgba(26,35,50,1)", marginBottom:12 }}>
+              Buscar instrumento por nombre
+            </div>
+            <div style={{ position:"relative" }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+                   stroke="rgba(26,35,50,.35)" strokeWidth="1.5"
+                   style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}>
+                <circle cx="7" cy="7" r="4.5"/>
+                <path d="M10.5 10.5l3 3" strokeLinecap="round"/>
+              </svg>
+              <input type="text" value={tplQuery} onChange={e => setTplQuery(e.target.value)}
+                placeholder="Ej: poder, cesión, hipoteca..."
+                style={{ width:"100%", padding:"8px 12px 8px 30px", borderRadius:8,
+                         border:"1px solid rgba(26,35,50,.14)", background:"#FDFCFA",
+                         fontSize:13, color:"#1a2332", fontFamily:"'Inter', sans-serif",
+                         boxSizing:"border-box", outline:"none" }}/>
+              {tplQuery && (
+                <button onClick={() => setTplQuery("")}
+                        style={{ position:"absolute", right:9, top:"50%", transform:"translateY(-50%)",
+                                 background:"none", border:"none", cursor:"pointer",
+                                 color:"rgba(26,35,50,1)", fontSize:16, lineHeight:1, padding:0 }}>×</button>
+              )}
+            </div>
+            {tplQuery.trim() !== "" && (
+              <div style={{ marginTop:10, borderRadius:8, border:"1px solid rgba(26,35,50,.08)", overflow:"hidden", maxHeight:220, overflowY:"auto" }}>
+                {tplFiltrados.length > 0 ? tplFiltrados.map((t, idx) => (
+                  <div key={t.id} onClick={() => setSelected(t)}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(26,35,50,.025)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                    style={{ padding:"9px 14px", cursor:"pointer",
+                             borderBottom: idx === tplFiltrados.length - 1 ? "none" : "1px solid rgba(26,35,50,.06)",
+                             background: selected?.id === t.id ? "rgba(58,124,165,.08)" : "transparent",
+                             fontSize:13, color: selected?.id === t.id ? C.cerulean : "#1a2332",
+                             fontWeight: selected?.id === t.id ? 600 : 400 }}>
+                    {t.nombre}
+                  </div>
+                )) : (
+                  <div style={{ padding:"16px", textAlign:"center", color:"rgba(26,35,50,.5)", fontSize:13 }}>
+                    No se encontraron instrumentos para "{tplQuery}"
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Buscar por familia */}
