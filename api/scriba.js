@@ -239,6 +239,12 @@ Sos el asistente notarial más completo que existe. Conocés de memoria toda la 
 
 Tu interlocutor es siempre el escribano o la escribana — nunca el requirente. No ejercés la abogacía. Informás, no decidís. El criterio profesional final siempre es del notario.
 
+## Alcance — de qué hablás
+
+Sos un asistente de uso profesional de un estudio notarial. Respondé con naturalidad cualquier consulta de derecho (notarial o no), situaciones de la vida real que puedan derivar en un acto o consulta legal (ej: un problema de alquileres, un conflicto entre socios, una situación familiar que podría necesitar un poder o una sucesión), y cualquier tema colateral genuinamente relacionado con la práctica del escribano.
+
+Si te preguntan algo sin ninguna relación posible con eso — una receta de cocina, un resultado deportivo, trivia general, y similares — no lo respondas. Decí amablemente que sos el asistente del estudio para consultas notariales/legales y situaciones que puedan derivar en un documento, y ofrecé ayudar con eso en su lugar. Ante la duda de si algo entra o no, priorizá responder — el criterio es filtrar lo groseramente ajeno, no lo que esté en el borde.
+
 ## Regla fundamental — cómo respondés
 
 **Identificá siempre la pregunta explícita dentro del mensaje.** Los mensajes suelen tener contexto de la operación + una pregunta concreta al final. Respondé esa pregunta primero y completamente. Los temas colaterales que encuentres en el contexto los mencionás brevemente al final, solo si son realmente relevantes para el acto — nunca como respuesta principal.
@@ -1535,6 +1541,8 @@ Cuando el escribano te pida analizar, revisar o auditar un documento adjunto (no
 5. **Plazos en blanco con efecto legal**: si hay fechas o plazos sin completar, evaluá si alguna cláusula depende de ese plazo para funcionar (ej: mora automática, cláusula penal) — señalalo como algo más que un detalle estético.
 6. **Garantías de saldos diferidos**: si queda un saldo de precio pendiente de pago DESPUÉS de la transferencia de dominio o entrega de posesión, señalá si el documento prevé alguna garantía real (hipoteca u otra) para asegurarlo.
 7. **Cláusulas informales que ya existen formalmente**: si el texto libre describe una condición o pacto (pacto de retroventa, cláusula resolutoria, exclusión de responsabilidad por saneamiento, etc.) que ya existe como cláusula formal disponible para ese template, señalalo — es mejor activarla como cláusula reutilizable que dejarla como texto suelto redactado a mano, que puede quedar inconsistente con el resto del documento.
+8. **Menores de edad**: si alguna parte tiene fecha de nacimiento visible y su minoridad podría ser relevante para el acto, verificá la edad exacta con 'calcular_edad' contra la fecha del acto — no la estimes de memoria.
+9. **Límites y medidas con rumbos cardinales** (Norte/Sur/Este/Oeste/NE/NO/SE/SO — no puntos de mensura): si el documento describe el perímetro de un inmueble así, verificá completitud con 'validar_limites_inmueble'. Esto NO reemplaza al punto 2 (cierre por puntos de mensura) — son dos formatos distintos, usá la herramienta que corresponda al formato real del documento.
 
 Ordená los hallazgos por relevancia (contradicciones y errores numéricos primero, erratas de redacción al final) y sé preciso con los números — mostrá el cálculo, no solo la conclusión.`;
 
@@ -1723,6 +1731,43 @@ const VALIDAR_CUIT_TOOL = [{
   },
 }];
 
+const VALIDAR_LIMITES_INMUEBLE_TOOL = [{
+  name: "validar_limites_inmueble",
+  description: "Verifica que la descripción de límites y medidas perimetrales de un inmueble esté completa y sea internamente coherente (mínimo 3 lados, todos los campos completos, distancias numéricas válidas). NO valida cierre geométrico/trigonométrico exacto — esta descripción es de referencia legible con rumbos cardinales, la precisión de mensura real la da el plano del agrimensor citado aparte. Usala antes de confirmar la descripción de límites de un inmueble con varios lados.",
+  input_schema: {
+    type: "object",
+    properties: {
+      lados: {
+        type: "array",
+        description: "Cada lado del perímetro (medidas + ochavas), en el orden en que fueron descriptos.",
+        items: {
+          type: "object",
+          properties: {
+            rumbo:   { type: "string", description: "Orientación o descripción del lado (ej: Norte, Sur, ochava)." },
+            metros:  { type: "number", description: "Longitud del lado en metros." },
+            lindero: { type: "string", description: "Con quién/qué linda ese lado." },
+          },
+          required: ["metros"],
+        },
+      },
+    },
+    required: ["lados"],
+  },
+}];
+
+const CALCULAR_EDAD_TOOL = [{
+  name: "calcular_edad",
+  description: "Calcula la edad exacta de una persona a una fecha de referencia (por defecto, hoy), y valida que las fechas dadas sean fechas de calendario reales (ej: rechaza 31/02). Usala siempre que la edad o minoridad de una parte sea relevante para el acto — nunca calcules edad a mano ni asumas mayoría de edad sin verificar.",
+  input_schema: {
+    type: "object",
+    properties: {
+      fecha_nacimiento: { type: "string", description: "Fecha de nacimiento, formato dd/mm/aaaa." },
+      fecha_referencia: { type: "string", description: "Fecha contra la que calcular la edad, formato dd/mm/aaaa. Si se omite, se usa la fecha actual del sistema." },
+    },
+    required: ["fecha_nacimiento"],
+  },
+}];
+
 const COMPLETAR_EXTRAVARS_TOOL = [{
   name: "completar_extravars",
   description: "Completa campos específicos del template activo que NO son datos de partes ni texto libre del cuerpo — cosas como precio, seña, saldo, plazo de escritura, cláusulas especiales, quién designa al escribano, etc. Usá SOLO los nombres de variable listados en '[CAMPOS DEL TEMPLATE]' del contexto activo — si un campo que el escribano menciona no está en esa lista, no existe para este template, no lo inventes. NUNCA uses modificar_documento para esto.",
@@ -1753,7 +1798,7 @@ const GESTIONAR_CLAUSULAS_TOOL = [{
   },
 }];
 
-const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...GESTIONAR_CLAUSULAS_TOOL, ...VALIDAR_CUIT_TOOL];
+const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...GESTIONAR_CLAUSULAS_TOOL, ...VALIDAR_CUIT_TOOL, ...VALIDAR_LIMITES_INMUEBLE_TOOL, ...CALCULAR_EDAD_TOOL];
   async function construirUltimoMensaje() {
     if (!documentos_adjuntos.length) return { role: "user", content: mensaje };
     const bloques = await Promise.all(documentos_adjuntos.map(async (d, i) => {
@@ -1919,6 +1964,82 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL,
         digito_calculado: calculado,
         digito_declarado: nums[10],
         cuit_normalizado: cuitNormalizado,
+      };
+    }
+    if (name === "validar_limites_inmueble") {
+      const lados = Array.isArray(input.lados) ? input.lados : [];
+      const problemas = [];
+
+      if (lados.length < 3) {
+        problemas.push(`Solo hay ${lados.length} lado(s) descripto(s) — un perímetro cerrado necesita al menos 3.`);
+      }
+
+      lados.forEach((l, i) => {
+        const n = i + 1;
+        if (!l.rumbo || !String(l.rumbo).trim()) problemas.push(`Lado ${n}: falta el rumbo/orientación.`);
+        const metros = Number(l.metros);
+        if (l.metros == null || isNaN(metros) || metros <= 0) {
+          problemas.push(`Lado ${n}: la distancia "${l.metros}" no es un número válido mayor a cero.`);
+        }
+        if (!l.lindero || !String(l.lindero).trim()) problemas.push(`Lado ${n}: falta con quién/qué linda.`);
+      });
+
+      const conteoRumbos = {};
+      lados.forEach(l => {
+        const r = String(l.rumbo || "").trim().toLowerCase();
+        if (r) conteoRumbos[r] = (conteoRumbos[r] || 0) + 1;
+      });
+      const repetidos = Object.entries(conteoRumbos).filter(([, c]) => c > 1).map(([r]) => r);
+
+      const perimetroTotal = lados.reduce((acc, l) => acc + (Number(l.metros) || 0), 0);
+
+      return {
+        completo: problemas.length === 0,
+        problemas,
+        observacion_rumbos_repetidos: repetidos.length
+          ? `Rumbos que aparecen más de una vez: ${repetidos.join(", ")} — puede ser normal en un lote irregular, pero conviene confirmarlo con la escribana.`
+          : null,
+        cantidad_lados: lados.length,
+        perimetro_total_metros: Math.round(perimetroTotal * 100) / 100,
+        nota: "Este chequeo verifica completitud y coherencia estructural, NO cierre geométrico exacto — eso lo garantiza el plano de mensura del agrimensor.",
+      };
+    }
+    if (name === "calcular_edad") {
+      const parsearFecha = (str) => {
+        const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(str || "").trim());
+        if (!m) return null;
+        const dia = Number(m[1]), mes = Number(m[2]), anio = Number(m[3]);
+        const d = new Date(anio, mes - 1, dia);
+        if (d.getFullYear() !== anio || d.getMonth() !== mes - 1 || d.getDate() !== dia) return null;
+        return d;
+      };
+      const fmt = (d) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+
+      const nacDate = parsearFecha(input.fecha_nacimiento);
+      if (!nacDate) {
+        return { error: `"${input.fecha_nacimiento}" no es una fecha de calendario válida (formato esperado dd/mm/aaaa).` };
+      }
+      let refDate;
+      if (input.fecha_referencia) {
+        refDate = parsearFecha(input.fecha_referencia);
+        if (!refDate) return { error: `"${input.fecha_referencia}" no es una fecha de calendario válida (formato esperado dd/mm/aaaa).` };
+      } else {
+        refDate = new Date();
+      }
+      if (nacDate > refDate) {
+        return { error: "La fecha de nacimiento es posterior a la fecha de referencia — revisar los datos, algo está mal cargado." };
+      }
+      let edad = refDate.getFullYear() - nacDate.getFullYear();
+      const huboCumple = (refDate.getMonth() > nacDate.getMonth()) ||
+        (refDate.getMonth() === nacDate.getMonth() && refDate.getDate() >= nacDate.getDate());
+      if (!huboCumple) edad -= 1;
+
+      return {
+        edad_anios: edad,
+        es_menor_de_edad: edad < 18,
+        fecha_nacimiento_normalizada: fmt(nacDate),
+        fecha_referencia_usada: fmt(refDate),
+        nota: edad < 18 ? "Persona menor de edad a la fecha de referencia — verificar representación legal según corresponda al tipo de acto." : null,
       };
     }
     return { error: "Herramienta desconocida" };
