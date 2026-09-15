@@ -3,8 +3,12 @@
     "api/scriba.js": { "maxDuration": 60 },
     "api/vision.js": { "maxDuration": 30 },
     "api/dnrpa-valuacion.js": { "maxDuration": 10 },
-    "api/oo-callback.js": { "maxDuration": 30 }
+    "api/oo-callback.js": { "maxDuration": 30 },
+    "api/cron/scriba-learning.js": { "maxDuration": 60 }
   },
+  "crons": [
+    { "path": "/api/cron/scriba-learning", "schedule": "0 6 * * *" }
+  ],
   "routes": [
     { "src": "/",            "dest": "/landing.html"   },
     { "src": "/privacidad", "dest": "/privacidad.html" },

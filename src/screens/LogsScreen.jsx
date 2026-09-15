@@ -4,9 +4,10 @@ import { C } from "../constants";
 import { NavBar } from "../components/NavBar";
 
 const TABS = [
-  { id: "errores",   label: "Errores JS"  },
-  { id: "scriba",    label: "Scriba"       },
-  { id: "feedback",  label: "Feedback"     },
+  { id: "errores",     label: "Errores JS"  },
+  { id: "scriba",      label: "Scriba"       },
+  { id: "feedback",    label: "Feedback"     },
+  { id: "aprendizaje", label: "Aprendizaje"  },
 ];
 
 const TAG_COLORS = {
@@ -195,6 +196,75 @@ function TabFeedback() {
   );
 }
 
+const CATEGORIA_LABEL = {
+  alucinacion_dato:       "Dato inventado",
+  instruccion_ambigua:    "Instrucción ambigua",
+  herramienta_no_usada:   "Validación no usada",
+  alcance_mal_aplicado:   "Alcance mal aplicado",
+  tono_o_claridad:        "Tono / claridad",
+  formato_o_dato_tecnico: "Formato / dato técnico",
+  otro:                   "Otro",
+};
+
+function TabAprendizaje() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [abierto, setAbierto] = useState(null);
+
+  useEffect(() => {
+    supabase
+      .from("scriba_reportes_aprendizaje")
+      .select("*")
+      .order("fecha", { ascending: false })
+      .limit(60)
+      .then(({ data }) => { setRows(data || []); setLoading(false); });
+  }, []);
+
+  if (loading) return <div style={{ padding: 24, color: "rgba(26,35,50,.4)", fontSize: 13 }}>Cargando...</div>;
+  if (!rows.length) return <div style={{ padding: 24, color: "rgba(26,35,50,.4)", fontSize: 13 }}>Todavía no corrió el módulo de aprendizaje.</div>;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {rows.map(r => {
+        const expandido = abierto === r.id;
+        return (
+          <RowCard key={r.id}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", cursor: "pointer" }}
+                 onClick={() => setAbierto(expandido ? null : r.id)}>
+              <span style={{ fontWeight: 700 }}>{new Date(r.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}</span>
+              <span style={{ fontSize: 11, color: "rgba(26,35,50,.5)" }}>{r.conversaciones_analizadas} conversaciones</span>
+              {r.feedback_positivo > 0 && <span style={{ fontSize: 11, color: "#2e7d32" }}>👍 {r.feedback_positivo}</span>}
+              {r.feedback_negativo > 0 && <span style={{ fontSize: 11, color: "#c0392b" }}>👎 {r.feedback_negativo}</span>}
+              <div style={{ marginLeft: "auto", fontSize: 11, color: "rgba(26,35,50,.4)" }}>{expandido ? "▲" : "▼"}</div>
+            </div>
+            <div style={{ lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{r.resumen_md}</div>
+            {expandido && r.patrones?.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6, borderTop: "1px solid rgba(26,35,50,.08)", paddingTop: 10 }}>
+                {r.patrones.map((p, i) => (
+                  <div key={i} style={{ background: "rgba(26,35,50,.03)", borderRadius: 8, padding: "8px 10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Tag text={CATEGORIA_LABEL[p.categoria] || p.categoria} />
+                      {p.frecuencia > 0 && <span style={{ fontSize: 11, color: "rgba(26,35,50,.5)" }}>×{p.frecuencia}</span>}
+                    </div>
+                    {p.ejemplos?.length > 0 && (
+                      <ul style={{ margin: "0 0 6px", paddingLeft: 18, fontSize: 12, color: "rgba(26,35,50,.65)" }}>
+                        {p.ejemplos.map((ej, j) => <li key={j}>{ej}</li>)}
+                      </ul>
+                    )}
+                    {p.sugerencia && (
+                      <div style={{ fontSize: 12, color: C.cerulean }}><strong>Sugerencia:</strong> {p.sugerencia}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </RowCard>
+        );
+      })}
+    </div>
+  );
+}
+
 export function LogsScreen({ onBack }) {
   const [tab, setTab] = useState("errores");
 
@@ -237,9 +307,10 @@ export function LogsScreen({ onBack }) {
 
       <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
-          {tab === "errores"  && <TabErrores />}
-          {tab === "scriba"   && <TabScriba />}
-          {tab === "feedback" && <TabFeedback />}
+          {tab === "errores"     && <TabErrores />}
+          {tab === "scriba"      && <TabScriba />}
+          {tab === "feedback"    && <TabFeedback />}
+          {tab === "aprendizaje" && <TabAprendizaje />}
         </div>
       </div>
     </div>
