@@ -359,6 +359,10 @@ El origen de los 51 templates actuales es `scripts/fichas_modelos_notariales.doc
 - [ ] **Sync requirentes CRM** — botón "Sincronizar" en ModalPartes (placeholder visible, sin backend)
 - [ ] **F04 model** — plantilla F-04 (diferente a F-08; `ModalFormulario` ya tiene el selector)
 - [ ] **Informe de Dominio** — nueva card en `HerramientasScreen` (familia Automotor), estado "próximo", sin implementar
+- [ ] **Servidores MCP argentinos — evaluar, no implementado** (investigado 24/08/26). Candidatos encontrados, todos proyectos de comunidad no oficiales (sin garantía de mantenimiento, evaluar antes de depender de alguno en producción):
+  - [`mcp-legal-ar`](https://github.com/Probanza-ar/mcp-legal-ar) — hub de 14 conectores/203 tools para abogados argentinos; incluye **Portal PJN** (Poder Judicial de la Nación, feed de actualizaciones) y **JusCABA** (expediente judicial electrónico CABA, público sin login). El más relevante: permitiría chequear embargos/litigios de una persona o inmueble antes de una compraventa/poder, algo que hoy no se hace desde la app.
+  - [`mcp-arca-afip`](https://github.com/faeralan/mcp-arca-afip) — búsqueda semántica sobre la documentación de los 49 web services oficiales de AFIP/ARCA. No es consulta en vivo (no da estado de un CUIT), solo ayuda a leer la documentación si se quisiera integrar validación de CUIT/CUIL más adelante.
+  - [`pyrenaper`](https://github.com/damiansastre/pyrenaper) — no es MCP, es un wrapper Python de la API de RENAPER. No existe MCP de RENAPER todavía; esto podría ser la base para armar uno propio si se quisiera validar DNI contra el registro real en vez de solo OCR de la foto (que es lo que hace `api/vision.js` hoy).
 
 ### Sistema de recordatorios para datos sensibles
 
@@ -476,6 +480,13 @@ Detecta automáticamente si la imagen es DNI (cualquier formato: libreta vieja, 
 
 **Refactor 17/07/26:** el prompt y la llamada a Claude se factorizaron en `extraerDocumento(imagenes)` (export nombrado, acepta 1+ imágenes — si son la misma persona/documento, el prompt las fusiona). El handler HTTP (`export default`) sigue existiendo sin cambios de contrato para `ModalVehiculos.jsx`; `api/scriba.js` importa `extraerDocumento` directo (sin round-trip HTTP) para el tool `extraer_documento`.
 
+**Botón "Escanear documento" (`ScanBtn`, `src/components/ui/PartesEditor.jsx:120-166`) — verificado 22/08/26, no asumir otra cosa:**
+- **No es una cámara en vivo.** Es un `<input type="file" accept="image/*,application/pdf" multiple>` oculto, sin atributo `capture`. En desktop abre el explorador de archivos del SO; en mobile, lo que el propio SO ofrezca (puede incluir cámara, pero eso lo decide el navegador/OS, no la app).
+- Flujo (`PartesEditor.jsx:65-90`): por cada archivo elegido, se redimensiona en un `<canvas>` (máx 1200px) en el browser, se convierte a base64 JPEG, y se hace `POST /api/vision` **directo desde el cliente** (no pasa por `extraerDocumento()` server-side en este camino — eso es solo para Scriba/`ModalVehiculos.jsx`).
+- Si son varios archivos, los resultados se combinan con `mergePersonas()` (`PartesEditor.jsx:93-118`) — primer-valor-no-vacío-gana, campo por campo.
+- **La foto en sí no se persiste en ningún lado.** Se usa en memoria para la llamada a `/api/vision` y se descarta — solo sobrevive el JSON de datos extraídos, que llena el formulario vía `onDatos(acumulado)`.
+- Mismo componente `ScanBtn` se reusa en `ModalPartes` (prop `tipo="documento"`) y `ModalVehiculos` (`tipo="vehículo"` u similar) — label dice "Escanear {tipo}".
+
 ---
 
 ## Google Drive Integration
@@ -526,7 +537,67 @@ El plugin muestra las propiedades del acto y permite regenerar el documento. Com
 **Origen real:** VM de **Google Compute Engine** — instancia `instance-20260528-175646`, zona `southamerica-west1-b` (Santiago, Chile). IP externa `34.176.120.209`, reservada como **estática** el 27/07/26 (nombre `onlyoffice-prod`) — antes era efímera, riesgo real de que un reinicio de la VM la cambiara y rompiera el DNS sin que nadie lo notara.
 **Cloudflare Worker `oo-proxy`:** reescribe rutas de assets de OO servidas bajo el dominio principal (`notarial.lat/documenteditor/*`, `/sdkjs/*`, `/coauthoring/*`, `/fonts/*`, `/dictionaries/*`, etc.) hacia `onlyoffice.notarial.lat`, para que el frontend las cargue same-origin sin problemas de CORS. WebSocket (`Upgrade: websocket`) se reenvía directo, sin pasar por el CORS wrapper.  
 **Versión:** OnlyOffice Docs **9.4.0.129** (confirmado en vivo 27/07/26 vía `CommandService.ashx`; subió desde la 9.3.1 documentada antes)  
-**Estado:** healthcheck responde 200 OK (27/07/26). La inestabilidad histórica por OOM (4 GB RAM) era específica de la IdeaPad — no asumir que sigue aplicando en la VM de GCP sin confirmar recursos/RAM asignada ahí.
+**Estado (⚠️ crítico, actualizado 27/08/26):** el trial de GCP venció el 26/08/26 y **la cuenta de facturación quedó cerrada** (confirmado en `console.cloud.google.com/billing` — proyecto `Notarial-prod` listado como afectado). El healthcheck seguía respondiendo 200 OK al mediodía del 27/08 (Google da un período de gracia antes de suspender recursos de una cuenta cerrada, de duración desconocida), pero **puede cortarse en cualquier momento sin más aviso**. No se va a reactivar la facturación (sin fondos disponibles) — la salida es migrar a Oracle Cloud antes de que se corte de verdad. Ver §Migración OnlyOffice a Oracle Cloud.
+
+---
+
+## Migración OnlyOffice: GCP → Oracle Cloud (en curso, 27/08/26)
+
+**Por qué:** GCP se quedó sin trial y sin plata para pagar (ver estado crítico arriba). Se descartó abrir otra cuenta de Google (viola ToS, riesgo de suspensión). Se eligió **Oracle Cloud Always Free** (permanente, no un trial) como reemplazo gratuito.
+
+**Cuenta Oracle:** tenancy `lojedanotarial`, home region **Brazil East (São Paulo)** — elegida por ser la más cercana con capacidad Always Free confirmada; el home region no se puede cambiar sin borrar la tenancy entera. El signup fue un parto propio: Oracle rechazaba la verificación de tarjeta (Banco Nación) por mismatch de dirección — se resolvió usando el domicilio del DNI y confirmando que "compras internacionales" estaba habilitado en el banco.
+
+**Recursos ya creados en Oracle (reusables, no hace falta recrearlos):**
+- VCN `vcn-20260822-1214` + subnet pública `subnet-20260822-1209` (OCID: `ocid1.subnet.oc1.sa-saopaulo-1.aaaaaaaaxhwjrfpqmlhytnegi4opaobuqazuduehaax4t7snl5yabbnsm2oq`)
+- Imagen: Canonical Ubuntu 24.04 aarch64, build 2026.07.17-0 (OCID: `ocid1.image.oc1.sa-saopaulo-1.aaaaaaaav4hskmch2ikmva5wxqilujiwjsug7htb6k2silemwuzxcbwwxklq`)
+- Availability domain: `pCON:SA-SAOPAULO-1-AD-1` (única AD en esta región)
+
+**El obstáculo real — capacidad, no la cuenta:** `VM.Standard.A1.Flex` (shape Ampere/ARM, Always Free) tiene demanda altísima en São Paulo — "Out of host capacity" en casi todos los intentos manuales por consola. No es un problema de configuración ni de la cuenta (la cuenta ya está aprobada); es hardware físico escaso, mismo patrón que lleva a que exista todo un ecosistema open source de scripts de reintento automático para esto.
+
+**Solución — script de reintento automático:**
+- `scripts/oci_launch_retry.py` — pide `VM.Standard.A1.Flex` con **1 OCPU / 6GB** (deliberadamente chico: pedidos más chicos tienen más chances de encontrar hueco que uno grande; plan es resizear a 2 OCPU/12GB *después* de conseguir la instancia, sin apuro). Reintenta indefinidamente contra `LaunchInstance`, distingue error de capacidad (reintentar) de error real (frenar y avisar) y de corte de red (reintentar también, agregado tras un crash real).
+- **Intervalo: 75s.** Se probó subir a 30s el 27/08 por la urgencia (GCP con facturación cerrada), pero **sí hay rate-limit real** — Oracle devolvió `429 Too many requests` a los ~18 intentos (~9 min). Se revirtió a 75s (probado seguro por días, miles de intentos sin 429) y se agregó manejo explícito de 429 (pausa de 300s y continúa, no se muere más).
+- Corre como **proceso desacoplado de Windows** (`Start-Process` con `-WindowStyle Hidden`, no un job de esta sesión) para sobrevivir a que se cierre Claude Code. **Sigue muriendo igual cada tanto** (causa probable: suspensión/reinicio de la compu de noche) — requiere chequeo manual periódico y reinicio; no es 100% autónomo todavía. Log en `scripts/oci_retry_detached.log`, marcador de éxito en `scripts/oci_instance_success.txt` (no existe = todavía no hay instancia).
+- Credenciales de la API (separadas del login web, no requieren el navegador ni 2FA): par de claves en `~/.oci/oci_api_key.pem` + `~/.oci/config` (fingerprint, tenancy OCID, user OCID, region).
+- Clave SSH para entrar a la VM una vez creada (distinta de la de API): `~/.ssh/oracle_onlyoffice` (privada) / `.pub` (pública), ya cargada como authorized key en el `LaunchInstanceDetails`.
+
+**Runbook post-creación (listo, sin ejecutar todavía):** `scripts/setup_onlyoffice_oracle.sh` — instala Docker, levanta `onlyoffice/documentserver` (imagen arm64 oficial), y deja anotados los pasos manuales pendientes: reglas de ingress 80/443 en la Security List de la VCN, reservar la IP pública como estática, y cambiar el DNS de `onlyoffice.notarial.lat` en Cloudflare a la nueva IP (no hace falta tocar `VITE_ONLYOFFICE_URL`, sigue apuntando al mismo hostname).
+
+**Quirks de Oracle documentados en el camino** (para no perder tiempo redescubriéndolos):
+- El toggle "Automatically assign public IPv4 address" en la consola web se traba (queda sin efecto) cuando la VCN/subnet se crean en el mismo flujo que la instancia — se resuelve pidiendo la IP pública vía API directo (como hace el script) o agregándola después de creada la instancia.
+- El estimador de costo de la consola muestra "$2.00/month" para el boot volume incluso en recursos Always Free-eligible — es un bug de UI conocido y reportado en el foro oficial de Oracle, no un cargo real (Always Free cubre 200GB de block storage).
+
+---
+
+## Bot de WhatsApp — carga de fotos de documentos (en diseño, pausado 27/08/26)
+
+**Objetivo:** mandarle una foto (DNI, tarjeta verde/azul) al WhatsApp del escribano y que quede pre-cargada para armar un documento en la app, sin pasar por escanear en la compu.
+
+**Decisiones de diseño ya cerradas:**
+- **No pasa por Scriba** — reusa `extraerDocumento()` server-side directo (mismo camino que ya usa `ModalVehiculos.jsx`/Scriba), no el `ScanBtn` de browser (ver §`api/vision.js`).
+- **Aislamiento por registro**, no solo por usuario — mismo patrón RLS que `documentos`/`expedientes` (`usuario_id = auth.uid() OR registro_id = mi_registro()`), para que el escribano del registro 456 no vea fotos del 786.
+- **Whitelist por teléfono** (`usuarios.telefono`, formato `+549XXXXXXXXXX` obligatorio) — remitente no whitelisteado se ignora en silencio (sin reacción, sin guardar nada, solo log de auditoría con número+timestamp).
+- **La foto no crea nada solo.** Queda en una bandeja efímera; recién se crea un documento/expediente real cuando el usuario elige "Armar documento" desde la UI.
+- **Retención: 72hs**, después se borra sola (fila + archivo de Storage) — pendiente de implementar el cron real (ver abajo).
+- **UI:** el botón "Escanear documento" existente (`ScanBtn` en `PartesEditor.jsx`) gana una flechita (▾) al lado; click normal = comportamiento actual sin cambios, flechita = menú con "Elegir de WhatsApp" (miniaturas de pendientes propias).
+- **v1 cubre DNI y vehículos** (lo que ya sabe extraer `extraerDocumento()`). Partidas de nacimiento, F-08, F-04 quedan para después — decisión tomada (27/08/26): van a necesitar prompts/schemas de extracción nuevos, no existe hoy ni en el flujo de escritorio.
+- **100% desktop** — sin trabajo de responsive, decisión explícita.
+
+**Lo que YA está construido y aplicado en Supabase** (`scripts/whatsapp_pendientes.sql`, corrido y verificado el 24/08/26):
+- Columna `usuarios.telefono` con constraint de formato + índice único
+- Tabla `whatsapp_pendientes` (`usuario_id`, `registro_id`, `imagen_path`, `tipo_detectado`, `datos_extraidos` jsonb, `estado`, `created_at`) con RLS
+- Bucket privado de Storage `whatsapp-pendientes`, RLS por carpeta `{usuario_id}/...`
+
+**Lo que falta construir:**
+- `api/whatsapp-webhook.js` (recibe el mensaje de Meta, resuelve teléfono→usuario, sube a Storage, llama a `extraerDocumento()`, inserta en `whatsapp_pendientes`)
+- `api/whatsapp-cleanup.js` + Vercel Cron para el borrado de 72hs (no puede ser `pg_cron` puro porque no puede tocar el Storage API)
+- El dropdown/flechita en `PartesEditor.jsx` y el selector de miniaturas
+
+**Bloqueado en el lado de Meta (sin resolver al 27/08/26):** app creada en Meta for Developers (`Notarial WA Bot`, app ID `1382023737459861`, Business Portfolio "Notarial Portfolio"), caso de uso WhatsApp agregado. Dos fallas silenciosas/genéricas encontradas:
+1. Provisioning de número de prueba ("Solicitar número de prueba") no asigna nada, sin error visible.
+2. Registro del número real (chip `+54 261 15-769-4499`) falla con error de servidor enmascarado (`code: 1675030`, `field_exception`) en cada intento, con distintos PINs 2FA probados — descartado que sea error de usuario.
+
+Diagnóstico más probable: la cuenta/WABA es muy nueva (creada 22-23/08/26) y Meta aplica un filtro anti-fraude invisible en cuentas nuevas antes de habilitar estas acciones — mismo tipo de gating que exige 30+ días de antigüedad de WABA para otras funciones. **Plan:** reintentar en unos días; si sigue igual, abrir ticket a Meta Support con `fbtrace_id: Av9Bt5UvZaU` / `www_request_id: AMJQ0wzstLZGBCGP50IR2T3` (capturados de un intento reproducido). Pausado por prioridad — la migración de OnlyOffice a Oracle es más urgente.
 
 ---
 
@@ -538,8 +609,9 @@ El plugin muestra las propiedades del acto y permite regenerar el documento. Com
 |---|---|---|---|---|
 | GitHub | `lojedanotarial-spec` | `notarial` (**público**) | — | Código fuente |
 | Vercel | `lojedanotarial-1974's projects` (comparte cuenta con `jarvis` y `fatima-taha-site`, proyectos no relacionados) | `notarial` | `iad1` (Virginia, EE.UU.) — default de Vercel, nunca elegido explícitamente | Frontend (SPA) + serverless (`api/*.js`) |
-| Supabase | `lojedanotarial-SB` (plan **Free**) | `Notarial` (`eueqluhhgvukovoyorrw`) | `us-west-2` (Oregon, EE.UU.) | Postgres (`personas`, `documentos`, `templates`, etc.) + Storage (DOCX) |
-| GCP | `Notarial-prod` (renombrado 27/07/26, era "My First Project") | VM `instance-20260528-175646`, zona `southamerica-west1-b` | Santiago, Chile | OnlyOffice Docs 9.4.0.129 |
+| Supabase | `lojedanotarial-SB` (plan **Free**) | `Notarial` (`eueqluhhgvukovoyorrw`) | `us-west-2` (Oregon, EE.UU.) | Postgres (`personas`, `documentos`, `templates`, etc.) + Storage (DOCX). **Keepalive:** tarea programada de Windows `Notarial_Supabase_Keepalive` (`scripts/keepalive_supabase.py`), pinguea la REST API para que el proyecto Free no se pause. Log en `scripts/keepalive_supabase.log`. ⚠️ **Incidente 14/09/26:** con el intervalo original (cada 2 días) el proyecto **se pausó igual** — la doc oficial de Supabase dice *"a few user requests each day"*, no "una cada 7 días" como se asumió al armarlo el 27/08. El log muestra pings exitosos puntuales hasta el 8/09 y falla de DNS (`getaddrinfo failed`, el dominio del proyecto deja de resolver cuando está pausado) desde el 10/09 — se reactivó a mano. **Corregido:** intervalo bajado a cada 6 horas (4x/día) para calzar con la guía oficial. |
+| GCP | `Notarial-prod` (renombrado 27/07/26, era "My First Project") | VM `instance-20260528-175646`, zona `southamerica-west1-b` | Santiago, Chile | OnlyOffice Docs 9.4.0.129 — **⚠️ facturación cerrada desde 26/08/26, migrando a Oracle** |
+| Oracle Cloud | `lojedanotarial` (Always Free) | VCN `vcn-20260822-1214` creada; instancia de cómputo **todavía no creada** (esperando capacidad, ver §Migración) | Brazil East (São Paulo) | Reemplazo de OnlyOffice en curso |
 | Cloudflare | — | zona `notarial.lat` + Worker `oo-proxy` | PoP Buenos Aires (EZE) | DNS, proxy del dominio, reescritura de rutas de assets de OO bajo `notarial.lat/*` |
 
 **Notas honestas, no para ocultar:**
@@ -635,6 +707,8 @@ Deploy automático en Vercel al hacer push a `main`.
 ---
 
 ## Historial de Features (cronológico)
+
+> Para el recorrido narrativo del proyecto — fases, tecnologías probadas y descartadas, y el capítulo de la crisis de infraestructura de agosto — ver [`HISTORIA.md`](HISTORIA.md). Esta sección es el detalle línea por línea; ese documento es el "por qué" de alto nivel.
 
 1. UI base de Scriba (botón flotante, avatar)
 2. Scriba genera instrumentos completos (system prompt + max_tokens)

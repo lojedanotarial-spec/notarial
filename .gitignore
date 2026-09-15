@@ -30,3 +30,7 @@ scripts/~$*
 scripts/raw_response.txt
 
 .vercel
+
+# Claves privadas sueltas (ej. descargadas del navegador al crear VMs) -- nunca al repo
+*.key
+*.pem
