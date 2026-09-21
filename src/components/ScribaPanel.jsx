@@ -711,6 +711,13 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
     confirmarAccion, cargarConversacion, eliminarConversacion,
   } = sesion;
   const [expandido, setExpandido] = useState(false);
+  // Vista de "ver historial" — SOLO cambia qué se muestra, nunca toca la
+  // conversación activa (mensajes/conversacionId). Antes, "Volver" estaba
+  // conectado a handleNueva() igual que "+ Nueva": salir a mirar el
+  // historial reseteaba la conversación por completo, y al volver a
+  // escribir se creaba una fila nueva en vez de continuar la existente
+  // (esto es lo que se veía como conversaciones duplicadas/triplicadas).
+  const [verHistorial, setVerHistorial] = useState(false);
   const bottomRef  = useRef(null);
   const ultimoMensajeRef = useRef(null);
   const inputRef   = useRef(null);
@@ -749,14 +756,25 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
   }, []);
 
   async function handleNuevaClick() {
+    setVerHistorial(false);
     await handleNueva();
     inputRef.current?.focus();
+  }
+
+  function handleEnviar(texto) {
+    setVerHistorial(false);
+    enviar(texto);
+  }
+
+  function handleCargarConversacion(c) {
+    setVerHistorial(false);
+    cargarConversacion(c);
   }
 
   function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      enviar();
+      handleEnviar();
     }
   }
 
@@ -820,7 +838,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
           {/* Botonera — siempre en un contenedor de ancho fijo, sin layout shifts */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
             {mensajes.length > 0 && (
-              <button onClick={handleNuevaClick} title="Volver"
+              <button onClick={() => setVerHistorial(true)} title="Ver historial"
                 style={{ background: "rgba(255,255,255,.1)", border: "1px solid rgba(255,255,255,.2)", borderRadius: 6, width: 28, height: 28, color: "rgba(255,255,255,.85)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 3L5 8l5 5"/></svg>
               </button>
@@ -850,14 +868,26 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
           flex: 1, overflowY: "auto",
           padding: "16px 16px 8px",
         }}>
-          {mensajes.length === 0 && (
+          {verHistorial && mensajes.length > 0 && (
+            <button onClick={() => setVerHistorial(false)} style={{
+              marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
+              background: "rgba(58,124,165,.08)", border: "1px solid rgba(58,124,165,.25)",
+              borderRadius: 8, padding: "8px 12px", width: "100%",
+              fontSize: 12, fontWeight: 600, color: C.cerulean,
+              fontFamily: "'Inter', sans-serif", cursor: "pointer",
+            }}>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 3l-5 5 5 5M1 8h14"/></svg>
+              Volver a la consulta en curso
+            </button>
+          )}
+          {(mensajes.length === 0 || verHistorial) && (
             <div style={{ paddingBottom: 12 }}>
               <div style={{ fontSize: 13, color: "rgba(26,35,50,.65)", marginBottom: 16, lineHeight: 1.6 }}>
                 Consultame normativa, pedime un borrador o adjuntá un documento para leerlo.
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                 {SUGERENCIAS.map((s, i) => (
-                  <button key={i} onClick={() => enviar(s)} style={{
+                  <button key={i} onClick={() => handleEnviar(s)} style={{
                     background: "#f0ece3", border: "1px solid rgba(26,35,50,.1)",
                     borderRadius: 20, padding: "6px 12px",
                     fontSize: 12, color: "rgba(26,35,50,.7)",
@@ -880,7 +910,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {historial.slice(0, 5).map(c => (
                       <div key={c.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        <button onClick={() => cargarConversacion(c)} style={{
+                        <button onClick={() => handleCargarConversacion(c)} style={{
                           flex: 1, background: "transparent", border: "1px solid rgba(26,35,50,.1)",
                           borderRadius: 8, padding: "8px 12px",
                           textAlign: "left", cursor: "pointer",
@@ -916,7 +946,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
             </div>
           )}
 
-          {mensajes.map((m, i) => {
+          {!verHistorial && mensajes.map((m, i) => {
             const yaEsParte = m.accion?.tipo === "completar_parte" &&
               mensajes.slice(0, i).some(prev =>
                 prev.accion?.tipo === "completar_parte" &&
@@ -933,7 +963,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
             </div>
             );
           })}
-          {cargando && <LoadingDots />}
+          {!verHistorial && cargando && <LoadingDots />}
 
           <div ref={bottomRef} />
         </div>
@@ -1002,7 +1032,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
               onInput={e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
             />
             <button
-              onClick={() => enviar()}
+              onClick={() => handleEnviar()}
               disabled={(!input.trim() && !archivos.length) || cargando}
               style={{
                 width: 32, height: 32, borderRadius: 8, border: "none",
