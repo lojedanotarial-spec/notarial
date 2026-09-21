@@ -1,6 +1,6 @@
 # Spec: Persistencia del chat de Scriba + aviso de respuesta pendiente
 
-**Estado:** en revisión (fase 1 de 3 — ver `specs/README.md`)
+**Estado:** ✅ aprobado (fase 1 de 3 cerrada — sin preguntas abiertas) — listo para `plan.md`
 **Feature:** [`features/persistencia-chat-scriba.md`](../../features/persistencia-chat-scriba.md)
 **Epic:** [`epics/scriba-continuidad-chat.md`](../../epics/scriba-continuidad-chat.md)
 **Casos de uso:** [UC-1](../../usecases/cierre-panel-respuesta-exitosa.md) · [UC-2](../../usecases/cierre-panel-respuesta-fallida.md) · [UC-3](../../usecases/reapertura-panel-aviso-pendiente.md) · [UC-4](../../usecases/borrador-no-enviado.md)
@@ -77,6 +77,14 @@ espera:
 - Cualquier cambio al comportamiento de Scriba mientras el panel está
   *abierto* — este spec es puntualmente sobre qué pasa al cerrarlo y
   reabrirlo.
+- Recargar la página completa (F5/cerrar pestaña) mientras hay un pedido
+  en curso. Es un problema distinto de fondo, no solo más grande: cerrar
+  el panel deja el JS de la pestaña vivo (el pedido sigue corriendo en
+  segundo plano); recargar destruye ese contexto por completo y el pedido
+  se corta sin nada que "esperar". Cubrirlo de verdad requeriría que la
+  respuesta se genere del lado del servidor de forma desacoplada del
+  cliente (un job en background que se consulta después) — una
+  arquitectura distinta, no un criterio más de esta feature.
 
 ## Preguntas abiertas (a resolver antes de pasar a `plan.md`)
 
@@ -86,7 +94,6 @@ espera:
 2. ~~La señal de "respuesta nueva" — ¿binaria o contador?~~ **Resuelto:**
    binaria y genérica (no distingue éxito de falla, no cuenta cuántas).
    Ver criterios de aceptación arriba.
-3. Si el usuario recarga la página completa (no solo cierra el panel)
-   mientras hay un pedido en curso, ¿ese caso entra en este spec o se
-   considera un escenario distinto (se pierde la pestaña entera, no solo
-   el panel)?
+3. ~~Recarga de página completa durante un pedido en curso — ¿entra en
+   este spec?~~ **Resuelto:** no, queda fuera de alcance a propósito —
+   ver la sección de arriba.
