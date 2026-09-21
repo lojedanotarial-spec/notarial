@@ -21,10 +21,20 @@ pena de Scrum:
 Cada ítem que entra en curso se formaliza en el embudo **Epic → Feature →
 Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
-## 🔵 En curso
+## 🔴 Urgente — interrumpe el orden normal
 
-- **Persistencia del chat de Scriba + aviso de respuesta pendiente**
-  — [epic](epics/scriba-continuidad-chat.md) · [feature](features/persistencia-chat-scriba.md) · [spec](specs/persistencia-chat-scriba/)
+- **Reconstrucción de Carga Masiva** — ventana de ~2 semanas, escrituras de
+  barrios próximas. Interrumpe el límite de WIP=1 normal por razón de
+  negocio real, no por desorden.
+  — [epic](epics/carga-masiva-rebuild.md)
+  — fix urgente ya en PR: [`fix/bulk-nuevo-barrio-crash`](https://github.com/lojedanotarial-spec/notarial/pull/new/fix/bulk-nuevo-barrio-crash) (crash al crear barrio + dependencia `jszip` faltante)
+
+## 🔵 En curso (pausado por la urgencia de arriba)
+
+- **Persistencia del chat de Scriba + aviso de respuesta pendiente** —
+  implementación completa, PR abierta, pendiente de smoke test manual y
+  merge. No perdido, solo esperando.
+  — [epic](epics/scriba-continuidad-chat.md) · [feature](features/persistencia-chat-scriba.md) · [spec](specs/persistencia-chat-scriba/) · [PR](https://github.com/lojedanotarial-spec/notarial/pull/new/feat/scriba-persistencia-chat)
 
 ## 🟢 Próximo
 
