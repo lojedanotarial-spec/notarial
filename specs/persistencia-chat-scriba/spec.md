@@ -3,7 +3,7 @@
 **Estado:** en revisión (fase 1 de 3 — ver `specs/README.md`)
 **Feature:** [`features/persistencia-chat-scriba.md`](../../features/persistencia-chat-scriba.md)
 **Epic:** [`epics/scriba-continuidad-chat.md`](../../epics/scriba-continuidad-chat.md)
-**Casos de uso:** [UC-1](../../usecases/cierre-panel-respuesta-exitosa.md) · [UC-2](../../usecases/cierre-panel-respuesta-fallida.md) · [UC-3](../../usecases/reapertura-panel-aviso-pendiente.md) · [UC-4](../../usecases/borrador-no-enviado.md) (alcance sin confirmar)
+**Casos de uso:** [UC-1](../../usecases/cierre-panel-respuesta-exitosa.md) · [UC-2](../../usecases/cierre-panel-respuesta-fallida.md) · [UC-3](../../usecases/reapertura-panel-aviso-pendiente.md) · [UC-4](../../usecases/borrador-no-enviado.md)
 **Origen:** pedido 13/07/26, backlog `PROYECTO.md` → migrado a `BACKLOG.md`
 
 ## Problema
@@ -64,6 +64,9 @@ espera:
       *(UC-1, UC-2, UC-3)*
 - [ ] Esa señal desaparece cuando el usuario abre el panel y ve la
       respuesta. *(UC-3)*
+- [ ] Texto escrito sin enviar y archivos adjuntados sin enviar sobreviven
+      a cerrar y reabrir el panel — no solo los intercambios ya enviados.
+      *(UC-4)*
 
 ## Fuera de alcance (a propósito)
 
@@ -77,9 +80,9 @@ espera:
 
 ## Preguntas abiertas (a resolver antes de pasar a `plan.md`)
 
-1. El texto/archivos sin enviar al cerrar el panel — ¿deben preservarse
-   también, o el alcance de este spec se limita a intercambios que ya se
-   enviaron (el punto 3 del problema queda para otro ítem)?
+1. ~~El texto/archivos sin enviar al cerrar el panel — ¿deben
+   preservarse?~~ **Resuelto (21/09/26):** sí, entran en el alcance —
+   ver UC-4 y el criterio de aceptación arriba.
 2. ~~La señal de "respuesta nueva" — ¿binaria o contador?~~ **Resuelto:**
    binaria y genérica (no distingue éxito de falla, no cuenta cuántas).
    Ver criterios de aceptación arriba.

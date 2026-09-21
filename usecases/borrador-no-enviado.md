@@ -1,7 +1,7 @@
 # UC-4: Cierre del panel con un mensaje escrito (o adjunto cargado) pero sin enviar
 
 **Feature:** [Persistencia del chat al cerrar/reabrir el panel](../features/persistencia-chat-scriba.md)
-**Estado:** ⚠️ alcance sin confirmar — no incluir en `plan.md` hasta resolver
+**Estado:** en alcance — confirmado 21/09/26
 
 ## Actor
 
@@ -13,7 +13,7 @@ panel de Scriba.
 El usuario tiene texto tipeado (o un archivo ya adjuntado) que todavía no
 envió, y cierra el panel — a propósito o sin querer.
 
-## Flujo esperado (propuesto, sujeto a confirmación)
+## Flujo esperado
 
 1. Usuario escribe un mensaje o adjunta un archivo, sin enviarlo.
 2. Usuario cierra el panel.
@@ -22,9 +22,9 @@ envió, y cierra el panel — a propósito o sin querer.
 
 ## Resultado esperado
 
-A confirmar si este comportamiento es parte de esta feature o si el
-alcance se achica a "intercambios ya enviados" (ver pregunta abierta 1 en
-`specs/persistencia-chat-scriba/spec.md`).
+Tanto el texto sin enviar como los archivos adjuntados sin enviar
+sobreviven a cerrar y reabrir el panel. El "cómo" (dónde vive ese borrador
+mientras el panel está desmontado) se decide en `plan.md`, no acá.
 
 ## Estado actual
 
