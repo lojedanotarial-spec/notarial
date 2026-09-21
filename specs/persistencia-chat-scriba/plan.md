@@ -1,7 +1,7 @@
 # Plan: Persistencia del chat de Scriba + aviso de respuesta pendiente
 
 **Spec:** [`spec.md`](spec.md) (aprobado, sin preguntas abiertas)
-**Estado:** en revisión (fase 2 de 3 — ver `specs/README.md`)
+**Estado:** ✅ aprobado (fase 2 de 3 cerrada, 21/09/26) — listo para `tasks.md`
 
 ## Causa raíz (por qué un solo cambio arquitectónico resuelve los 4 UC)
 
