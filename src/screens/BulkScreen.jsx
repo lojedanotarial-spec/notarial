@@ -653,7 +653,10 @@ export function BulkScreen({ onGo }) {
     const { data } = await supabase.from("barrios")
       .insert({ nombre: nombreNuevo.trim(), registro_id: registroNumero, created_at: new Date().toISOString() })
       .select().single();
-    if (data) { setBarrios(prev => [{ ...data, lotes: [] }, ...prev]); setBarrioActualId(data.id); }
+    if (data) {
+      setBarrios(prev => [{ ...data, lotes: [] }, ...prev]);
+      setVista({ tipo: "detalle", barrioId: data.id });
+    }
     setModalNombre(false); setNombreNuevo("");
   };
 
