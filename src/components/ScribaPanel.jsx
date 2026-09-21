@@ -712,6 +712,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
   } = sesion;
   const [expandido, setExpandido] = useState(false);
   const bottomRef  = useRef(null);
+  const ultimoMensajeRef = useRef(null);
   const inputRef   = useRef(null);
   const fileRef    = useRef(null);
 
@@ -721,9 +722,20 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
     handleFiles(files);
   }
 
+  // Al llegar un mensaje nuevo (o al reabrir el panel con uno pendiente de
+  // ver), scrollear al PRINCIPIO de ese mensaje, no al final del hilo — en
+  // una respuesta larga, arrancar por el final obliga a scrollear hacia
+  // arriba para leerla.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensajes, cargando]);
+    if (mensajes.length === 0) return;
+    ultimoMensajeRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [mensajes.length]);
+
+  // Mientras Scriba está pensando, sí conviene ir al final (para ver el
+  // indicador de carga).
+  useEffect(() => {
+    if (cargando) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [cargando]);
 
   useEffect(() => {
     if (!cargandoInicio) inputRef.current?.focus();
@@ -910,12 +922,15 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
                 prev.accion?.tipo === "completar_parte" &&
                 prev.accion.datos?.nro_doc && prev.accion.datos.nro_doc === m.accion.datos?.nro_doc
               );
+            const esUltimo = i === mensajes.length - 1;
             return (
-            <Mensaje key={i} msg={m} onGo={onGo} hayEditor={!!contexto} yaEsParte={yaEsParte} rolesPartes={contexto?.rolesPartes}
-              cargando={cargando}
-              onReintentar={() => reintentarMensaje(i)}
-              onConfirmarAccion={confirmarAccion}
-            />
+            <div key={i} ref={esUltimo ? ultimoMensajeRef : undefined}>
+              <Mensaje msg={m} onGo={onGo} hayEditor={!!contexto} yaEsParte={yaEsParte} rolesPartes={contexto?.rolesPartes}
+                cargando={cargando}
+                onReintentar={() => reintentarMensaje(i)}
+                onConfirmarAccion={confirmarAccion}
+              />
+            </div>
             );
           })}
           {cargando && <LoadingDots />}
