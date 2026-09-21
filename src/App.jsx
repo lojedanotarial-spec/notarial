@@ -17,6 +17,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FeedbackButton } from "./components/FeedbackButton";
 import { LogsScreen }    from "./screens/LogsScreen";
 import { logError }      from "./utils/logger";
+import { useScribaSesion } from "./hooks/useScribaSesion";
 
 
 const globalStyles = [
@@ -56,6 +57,14 @@ function AppRouter() {
   const [scribaOpen, setScribaOpen] = useState(false);
   const [scribaContexto, setScribaContexto] = useState(null);
   const editorNonceRef = useRef(0);
+  // Instanciado acá (no dentro de ScribaPanel) para que sobreviva a que el
+  // panel se cierre y se vuelva a abrir — ver specs/persistencia-chat-scriba/plan.md
+  const scribaSesion = useScribaSesion(scribaContexto);
+
+  useEffect(() => {
+    scribaSesion.marcarPanelAbierto(scribaOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scribaOpen]);
 
   const handleGo = (targetScreen, targetParams = {}) => {
     if (targetParams.registroActivo) setRegistroActivo(targetParams.registroActivo);
@@ -137,8 +146,8 @@ function AppRouter() {
 
       {/* Botón flotante Scriba */}
       <div className="no-print" style={{ position: "fixed", bottom: 24, right: 24, zIndex: 199 }}>
-        {!scribaOpen && (
-          <div className="scriba-dot" style={{
+        {!scribaOpen && scribaSesion.avisoPendiente && (
+          <div className="scriba-dot" title="Scriba tiene algo nuevo para vos" style={{
             position: "absolute", top: 2, right: 2,
             width: 11, height: 11, borderRadius: "50%",
             background: "#3a7ca5",
@@ -166,6 +175,7 @@ function AppRouter() {
           onClose={() => setScribaOpen(false)}
           contexto={scribaContexto}
           onGo={(screen, params) => { setScribaOpen(false); handleGo(screen, params); }}
+          sesion={scribaSesion}
         />
       )}
     </>
