@@ -26,6 +26,7 @@
       "Bash(npx tsc *)",
       "Bash(npm run *)",
       "Bash(git commit *)",
+      "Bash(git merge *)",
       "Bash(python -c ' *)",
       "Bash(npm test *)",
       "Bash(pkill -f \"vite\")",
@@ -40,5 +41,9 @@
     "additionalDirectories": [
       "C:\\Users\\Florencia Martinez\\.claude\\plans"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
+  "enableAllProjectMcpServers": true
 }
