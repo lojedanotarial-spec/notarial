@@ -3,7 +3,7 @@ import { C } from "../constants";
 import { aplicarTildesNombre } from "../utils/tildesNombres";
 import { useScribaConversacion } from "../hooks/useScribaConversacion";
 import { useAuth } from "../context/AuthContext";
-import { logScriba } from "../utils/logger";
+import { logScriba, submitScribaFeedback } from "../utils/logger";
 
 function renderMarkdown(text) {
   if (!text) return null;
@@ -105,6 +105,67 @@ function BtnCopiar({ texto }) {
         : <><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="4" y="1" width="7" height="8" rx="1.5"/><rect x="1" y="3" width="7" height="8" rx="1.5" fill="none"/></svg> Copiar contenido</>
       }
     </button>
+  );
+}
+
+function BtnFeedback({ logId }) {
+  const [valorado, setValorado] = useState(null); // null | 'positivo' | 'negativo'
+  const [comentario, setComentario] = useState("");
+  const [mostrarComentario, setMostrarComentario] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  function votar(valoracion) {
+    setValorado(valoracion);
+    if (valoracion === "negativo") {
+      setMostrarComentario(true);
+    } else {
+      submitScribaFeedback({ scribaLogId: logId, valoracion });
+      setMostrarComentario(false);
+    }
+  }
+
+  function enviarComentario() {
+    submitScribaFeedback({ scribaLogId: logId, valoracion: "negativo", comentario: comentario.trim() || null });
+    setEnviado(true);
+    setMostrarComentario(false);
+  }
+
+  return (
+    <div style={{ marginTop: 7, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 4 }}>
+        <button onClick={() => votar("positivo")} title="Buena respuesta" style={{
+          background: valorado === "positivo" ? "rgba(46,125,50,.12)" : "transparent",
+          border: "1px solid " + (valorado === "positivo" ? "rgba(46,125,50,.35)" : "rgba(26,35,50,.15)"),
+          borderRadius: 6, padding: "4px 7px", cursor: "pointer",
+          fontSize: 12, lineHeight: 1, transition: "all .15s",
+        }}>👍</button>
+        <button onClick={() => votar("negativo")} title="Respuesta con problemas" style={{
+          background: valorado === "negativo" ? "rgba(192,57,43,.1)" : "transparent",
+          border: "1px solid " + (valorado === "negativo" ? "rgba(192,57,43,.3)" : "rgba(26,35,50,.15)"),
+          borderRadius: 6, padding: "4px 7px", cursor: "pointer",
+          fontSize: 12, lineHeight: 1, transition: "all .15s",
+        }}>👎</button>
+      </div>
+      {mostrarComentario && !enviado && (
+        <div style={{ display: "flex", gap: 6, width: "100%", maxWidth: 320 }}>
+          <input
+            value={comentario}
+            onChange={e => setComentario(e.target.value)}
+            placeholder="¿Qué estuvo mal? (opcional)"
+            style={{
+              flex: 1, padding: "5px 8px", borderRadius: 6, fontSize: 11,
+              border: "1px solid rgba(26,35,50,.2)", fontFamily: "'Montserrat', sans-serif",
+            }}
+            onKeyDown={e => e.key === "Enter" && enviarComentario()}
+          />
+          <button onClick={enviarComentario} style={{
+            background: C.cerulean, border: "none", borderRadius: 6, padding: "5px 10px",
+            color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0,
+          }}>Enviar</button>
+        </div>
+      )}
+      {enviado && <span style={{ fontSize: 10, color: "rgba(26,35,50,.4)" }}>Gracias por el feedback</span>}
+    </div>
   );
 }
 
@@ -576,6 +637,7 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
           </button>
         )}
         {!esUser && <BtnCopiar texto={accion?.tipo === "insertar_texto" ? accion.texto : msg.content} />}
+        {!esUser && msg.logId && <BtnFeedback logId={msg.logId} />}
       </div>
     </div>
   );
@@ -798,7 +860,17 @@ export function ScribaPanel({ onClose, contexto, onGo }) {
       const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
       setMensajes(mensajesFinales);
       guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
-      logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, response: data.respuesta, duration_ms: Date.now() - t0 });
+      logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, response: data.respuesta, duration_ms: Date.now() - t0 })
+        .then(logRow => {
+          if (!logRow?.id) return;
+          setMensajes(prev => {
+            const idx = prev.length - 1;
+            if (idx < 0 || prev[idx].role !== "assistant" || prev[idx].content !== data.respuesta) return prev;
+            const actualizados = [...prev];
+            actualizados[idx] = { ...actualizados[idx], logId: logRow.id };
+            return actualizados;
+          });
+        });
       ultimoFalloRef.current = null;
     } catch (e) {
       setError(e.message);
