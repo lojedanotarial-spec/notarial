@@ -54,6 +54,14 @@ espera:
       señal visible junto al botón de Scriba que sea claramente distinta
       del estado normal (no el punto permanente actual) — para que "tengo
       algo nuevo para ver" sea visualmente obvio. *(UC-1, UC-3)*
+- [ ] La señal es **binaria** (hay algo nuevo / no hay nada nuevo), no un
+      contador — no importa cuántos intercambios se acumularon, solo que
+      hay al menos uno sin ver. *(UC-1, UC-3)*
+- [ ] La señal es **genérica**: no distingue si lo que llegó fue una
+      respuesta exitosa (UC-1) o un intercambio que falló y espera
+      reintento (UC-2) — un solo tipo de señal cubre ambos casos. El
+      detalle (qué pasó exactamente) se ve recién al abrir el panel.
+      *(UC-1, UC-2, UC-3)*
 - [ ] Esa señal desaparece cuando el usuario abre el panel y ve la
       respuesta. *(UC-3)*
 
@@ -72,9 +80,9 @@ espera:
 1. El texto/archivos sin enviar al cerrar el panel — ¿deben preservarse
    también, o el alcance de este spec se limita a intercambios que ya se
    enviaron (el punto 3 del problema queda para otro ítem)?
-2. La señal de "respuesta nueva" — ¿alcanza con un indicador simple
-   (sí/no hay algo nuevo), o interesa un contador de cuántas respuestas
-   llegaron mientras estaba cerrado?
+2. ~~La señal de "respuesta nueva" — ¿binaria o contador?~~ **Resuelto:**
+   binaria y genérica (no distingue éxito de falla, no cuenta cuántas).
+   Ver criterios de aceptación arriba.
 3. Si el usuario recarga la página completa (no solo cierra el panel)
    mientras hay un pedido en curso, ¿ese caso entra en este spec o se
    considera un escenario distinto (se pierde la pestaña entera, no solo

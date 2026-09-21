@@ -4,13 +4,13 @@
 
 ## Actor
 
-Escribano o admin que ya generó la situación de UC-1 (cerró con un pedido
-en curso que resultó exitoso).
+Escribano o admin que ya generó la situación de UC-1 (respuesta exitosa) o
+UC-2 (respuesta fallida) con el panel cerrado.
 
 ## Disparador
 
-El usuario mira la pantalla en algún momento después de que una respuesta
-llegó con el panel cerrado.
+El usuario mira la pantalla en algún momento después de que un intercambio
+se resolvió — bien o mal — con el panel cerrado.
 
 ## Flujo esperado
 
@@ -33,8 +33,9 @@ algo nuevo". Hay que reemplazarlo o complementarlo por una señal que sí
 distinga esos dos estados. Detalle completo en
 `specs/persistencia-chat-scriba/spec.md`.
 
-## Pregunta abierta
+## Decisión de alcance
 
-¿Alcanza con un indicador binario (hay algo nuevo / no hay nada nuevo), o
-interesa un contador de cuántas respuestas llegaron? Ver preguntas
-abiertas en el spec.
+La señal es **binaria** (no cuenta cuántos intercambios se acumularon) y
+**genérica** (no distingue si lo pendiente es una respuesta exitosa de
+UC-1 o un intercambio fallido de UC-2 — ambos casos activan la misma
+señal). El detalle de qué pasó se ve recién al abrir el panel.
