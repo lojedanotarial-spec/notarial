@@ -703,6 +703,45 @@ const SUGERENCIAS = [
   "¿Qué exige la UIF para una compraventa?",
 ];
 
+function HistorialConversaciones({ historial, onCargar, onEliminar }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {historial.slice(0, 5).map(c => (
+        <div key={c.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <button onClick={() => onCargar(c)} style={{
+            flex: 1, background: "transparent", border: "1px solid rgba(26,35,50,.1)",
+            borderRadius: 8, padding: "8px 12px",
+            textAlign: "left", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+            transition: "background .1s", minWidth: 0,
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "#f8f6f2"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+          >
+            <span style={{ fontSize: 12, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {c.titulo || "Consulta anterior"}
+            </span>
+            <span style={{ fontSize: 10, color: "rgba(26,35,50,.35)", flexShrink: 0 }}>
+              {new Date(c.updated_at).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+            </span>
+          </button>
+          <button onClick={() => onEliminar(c.id)}
+            title="Borrar"
+            style={{
+              width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+              background: "transparent", border: "1px solid transparent",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              color: "rgba(26,35,50,.3)", fontSize: 14, transition: "all .15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; e.currentTarget.style.color = "#c0392b"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; e.currentTarget.style.color = "rgba(26,35,50,.3)"; }}
+          >×</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
   const {
     mensajes, input, setInput, cargando, archivos,
@@ -868,19 +907,34 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
           flex: 1, overflowY: "auto",
           padding: "16px 16px 8px",
         }}>
-          {verHistorial && mensajes.length > 0 && (
-            <button onClick={() => setVerHistorial(false)} style={{
-              marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
-              background: "rgba(58,124,165,.08)", border: "1px solid rgba(58,124,165,.25)",
-              borderRadius: 8, padding: "8px 12px", width: "100%",
-              fontSize: 12, fontWeight: 600, color: C.cerulean,
-              fontFamily: "'Inter', sans-serif", cursor: "pointer",
-            }}>
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 3l-5 5 5 5M1 8h14"/></svg>
-              Volver a la consulta en curso
-            </button>
-          )}
-          {(mensajes.length === 0 || verHistorial) && (
+          {verHistorial && mensajes.length > 0 ? (
+            // Viendo historial CON una conversación activa de fondo — nunca
+            // se muestran las sugerencias de "empezar de cero" acá, porque
+            // no es eso lo que está pasando: la conversación sigue viva.
+            <div style={{ paddingBottom: 12 }}>
+              <button onClick={() => setVerHistorial(false)} style={{
+                marginBottom: 14, display: "flex", alignItems: "center", gap: 8,
+                background: "rgba(58,124,165,.08)", border: "1px solid rgba(58,124,165,.25)",
+                borderRadius: 8, padding: "8px 12px", width: "100%",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer", textAlign: "left",
+              }}>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke={C.cerulean} strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M6 3l-5 5 5 5M1 8h14"/></svg>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.cerulean }}>Volver a la consulta en curso</div>
+                  <div style={{ fontSize: 11, color: "rgba(26,35,50,.5)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {mensajes.find(m => m.role === "user")?.content?.slice(0, 60) || "Consulta sin título"}
+                  </div>
+                </div>
+              </button>
+              {historial.length > 0 ? (
+                <HistorialConversaciones historial={historial} onCargar={handleCargarConversacion} onEliminar={eliminarConversacion} />
+              ) : (
+                <div style={{ fontSize: 12, color: "rgba(26,35,50,.4)", fontStyle: "italic", padding: "8px 2px" }}>
+                  No tenés otras consultas guardadas.
+                </div>
+              )}
+            </div>
+          ) : mensajes.length === 0 ? (
             <div style={{ paddingBottom: 12 }}>
               <div style={{ fontSize: 13, color: "rgba(26,35,50,.65)", marginBottom: 16, lineHeight: 1.6 }}>
                 Consultame normativa, pedime un borrador o adjuntá un documento para leerlo.
@@ -907,44 +961,11 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
                     textTransform: "uppercase", color: "rgba(26,35,50,.35)",
                     marginBottom: 8,
                   }}>Retomar consulta</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {historial.slice(0, 5).map(c => (
-                      <div key={c.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        <button onClick={() => handleCargarConversacion(c)} style={{
-                          flex: 1, background: "transparent", border: "1px solid rgba(26,35,50,.1)",
-                          borderRadius: 8, padding: "8px 12px",
-                          textAlign: "left", cursor: "pointer",
-                          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-                          transition: "background .1s", minWidth: 0,
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = "#f8f6f2"}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                        >
-                          <span style={{ fontSize: 12, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {c.titulo || "Consulta anterior"}
-                          </span>
-                          <span style={{ fontSize: 10, color: "rgba(26,35,50,.35)", flexShrink: 0 }}>
-                            {new Date(c.updated_at).toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
-                          </span>
-                        </button>
-                        <button onClick={() => eliminarConversacion(c.id)}
-                          title="Borrar"
-                          style={{
-                            width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-                            background: "transparent", border: "1px solid transparent",
-                            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                            color: "rgba(26,35,50,.3)", fontSize: 14, transition: "all .15s",
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "#fdf0f0"; e.currentTarget.style.borderColor = "#e07070"; e.currentTarget.style.color = "#c0392b"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; e.currentTarget.style.color = "rgba(26,35,50,.3)"; }}
-                        >×</button>
-                      </div>
-                    ))}
-                  </div>
+                  <HistorialConversaciones historial={historial} onCargar={handleCargarConversacion} onEliminar={eliminarConversacion} />
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
           {!verHistorial && mensajes.map((m, i) => {
             const yaEsParte = m.accion?.tipo === "completar_parte" &&

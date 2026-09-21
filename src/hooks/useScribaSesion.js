@@ -13,7 +13,7 @@ const DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordproce
 const LIMITE_ADJUNTOS = 2.4 * 1024 * 1024; // ~2.4MB crudos — margen dentro del límite de body de Vercel (~4.5MB)
 
 export function useScribaSesion(contexto) {
-  const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion, eliminarConversacion } = useScribaConversacion();
+  const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion: cargarConversacionBase, eliminarConversacion } = useScribaConversacion();
   const { registroActivo, usuario, session } = useAuth();
   const registroId = usuario?.registro_numero || registroActivo;
 
@@ -239,6 +239,21 @@ export function useScribaSesion(contexto) {
   // Supabase (no hay ref, ej. tras F5 — fuera de alcance intentar
   // reconstruir adjuntos ahí), precarga el input con el texto del mensaje
   // de usuario anterior para que el usuario reenvíe a mano.
+  // Elegir una conversación del historial. cargarConversacionBase() solo
+  // actualiza mensajesIniciales/conversacionId — actualizar `mensajes`
+  // (lo que realmente se ve) dependía de un efecto que corre una única
+  // vez al cargar la app y nunca se vuelve a disparar. Antes esto se
+  // "arreglaba" solo porque cerrar/reabrir el panel remontaba todo desde
+  // cero; ahora que el hook vive durante toda la sesión, hay que
+  // actualizar `mensajes` acá directamente.
+  async function seleccionarConversacion(conv) {
+    await cargarConversacionBase(conv);
+    setMensajes(conv.mensajes || []);
+    setInput("");
+    setArchivos([]);
+    ultimoFalloRef.current = null;
+  }
+
   function reintentarMensaje(idx) {
     if (cargando) return;
     if (idx === mensajes.length - 1 && ultimoFalloRef.current) {
@@ -264,7 +279,7 @@ export function useScribaSesion(contexto) {
     enviar,
     reintentarMensaje,
     confirmarAccion,
-    cargarConversacion,
+    cargarConversacion: seleccionarConversacion,
     eliminarConversacion,
     marcarPanelAbierto,
   };

@@ -95,7 +95,16 @@ export function useScribaConversacion() {
   async function cargarConversacion(conv) {
     setConversacionId(conv.id);
     setMensajesIniciales(conv.mensajes || []);
-    setHistorial([]);
+    // Repoblar el historial (antes quedaba vacío hasta el próximo refetch
+    // manual — la conversación que se estaba viendo antes de este cambio
+    // "desaparecía" sin ningún lugar desde el que retomarla).
+    const { data } = await supabase
+      .from("scriba_conversaciones")
+      .select("id, mensajes, titulo, updated_at")
+      .eq("usuario_id", session.user.id)
+      .order("updated_at", { ascending: false })
+      .limit(6);
+    setHistorial((data || []).filter(c => c.mensajes?.length > 0 && c.id !== conv.id));
   }
 
   async function eliminarConversacion(id) {
