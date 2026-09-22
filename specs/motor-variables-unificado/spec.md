@@ -1,6 +1,6 @@
 # Spec: Motor de variables unificado para Carga Masiva
 
-**Estado:** 🟡 en revisión — pendiente de aprobación
+**Estado:** ✅ aprobado (22/09/26) — listo para `plan.md`
 **Feature:** [`features/motor-variables-unificado.md`](../../features/motor-variables-unificado.md)
 **Epic:** [`epics/carga-masiva-rebuild.md`](../../epics/carga-masiva-rebuild.md)
 **Casos de uso:** [UC-1](../../usecases/lote-multiples-adquirentes.md) · [UC-2](../../usecases/lote-concordancia-rol.md) · [UC-3](../../usecases/lote-variables-inmueble.md)
