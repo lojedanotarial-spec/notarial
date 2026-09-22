@@ -1,34 +1,13 @@
-﻿ import { numeroALetras, concatenarLimites, concatenarAdquirentes, concatenarEncabezado } from "../utils";
-import { diaLetras, anioLetras } from "../utils";
-import { MESES_LABEL } from "../constants";
-
-const fmtDni = (v) => {
-  if (!v) return "";
-  const n = Number(String(v).replace(/\D/g, ""));
-  return isNaN(n) ? "" : n.toLocaleString("es-AR");
-};
-
-const fmtFechaLetras = (fechaStr) => {
-  if (!fechaStr) return "";
-  const [dia, mes, anio] = fechaStr.split("/").map(Number);
-  if (!dia || !mes || !anio) return fechaStr;
-  return `${dia} de ${MESES_LABEL[mes - 1]?.toLowerCase() || ""} de ${anio}`;
-};
+import { numeroALetras, concatenarLimites, concatenarAdquirentes, concatenarEncabezado } from "../utils";
+import { buildVars } from "./templateVars";
 
 export function generarEscritura(templateHTML, lote, barrio, escribano, fecha, nroEscritura) {
   const adquirentes = lote.partes || [];
-  const primerAdq = adquirentes[0] || {};
-
-  // Fecha
-  const diaStr = String(fecha.dia).padStart(2, "0");
-  const mesStr = String(fecha.mes + 1).padStart(2, "0");
-  const anioStr = String(fecha.anio);
 
   // Superficie en letras
   const parseSup = (v) => parseFloat((v || "0").replace(/\./g, "").replace(",", ".")) || 0;
   const precioNum = parseFloat((lote.precio || "0").replace(/\$|\./g, "").replace(",", "."));
   const retencionNum = parseFloat((lote.retencionGanancias || "0").replace(/\$|\./g, "").replace(",", "."));
-  const registroNum = Number(escribano?.registro || 0);
 
   const supLetras = (num) => {
     if (isNaN(num) || num === 0) return "";
@@ -38,82 +17,66 @@ export function generarEscritura(templateHTML, lote, barrio, escribano, fecha, n
       + " metros cuadrados" + (dec > 0 ? ` con ${dec} decímetros cuadrados` : "");
   };
 
-  // Variables
-  const vars = {
-    // Escribano
-    "ESCRIBANO_NOMBRE":          escribano?.nombre            || "",
-    "ESCRIBANO_CARACTER":        escribano?.caracter          || "",
-    "ESCRIBANO_REGISTRO":        escribano?.registro          || "",
-    "ESCRIBANO_REGISTRO_LETRAS": numeroALetras(registroNum).replace(" CON 00/100",""),
-    "ESCRIBANO_CIRCUNSCRIPCION": escribano?.circunscripcion   || "",
-    "ESCRIBANO_LOCALIDAD":       escribano?.localidad_registro || "",
+  // Variables de partes/escribano/fecha — mismo motor que usa el resto de la app.
+  // Reemplaza al cálculo propio que sólo leía lote.partes[0] (ver plan.md).
+  const varsIdentidad = buildVars({ partes: adquirentes, escribano, fecha });
 
-    // Fecha
-    "FECHA_DIA_LETRAS": diaLetras(fecha.dia),
-    "FECHA_MES": MESES_LABEL[fecha.mes]?.toUpperCase() || "",
-    "FECHA_ANIO_LETRAS": anioLetras(fecha.anio),
-    "FECHA_DIA": diaStr,
-    "FECHA_MES_NUM": mesStr,
-    "FECHA_ANIO": anioStr,
+  // Variables propias de un lote de barrio — sin equivalente en el motor genérico.
+  const varsLote = {
+    // Bloques de texto agregados con todos los adquirentes (no sólo el primero,
+    // esto ya era correcto antes de este cambio — se deja tal cual).
+    ADQUIRENTES_TEXTO: concatenarAdquirentes(adquirentes),
+    ADQUIRENTES_ENCABEZADO: concatenarEncabezado(adquirentes),
+
+    ESCRIBANO_LOCALIDAD: escribano?.localidad_registro || "",
 
     // Escritura
-    "NRO_ESCRITURA": String(nroEscritura || lote.nroEscritura || ""),
-    "NRO_ESCRITURA_LETRAS": numeroALetras(Number(nroEscritura || lote.nroEscritura || 0)).replace(" CON 00/100",""),
-    "FECHA_ESCRITURA": lote.fechaEscritura || "",
-
-    // Adquirentes
-    "ADQUIRENTES_TEXTO": concatenarAdquirentes(adquirentes),
-    "ADQUIRENTES_ENCABEZADO": concatenarEncabezado(adquirentes),
-    "ADQ_TRATAMIENTO": primerAdq.genero === "F" ? "la señora" : "el señor",
-    "ADQ_NOMBRE_COMPLETO": [primerAdq.apellido, primerAdq.nombre].filter(Boolean).join(" "),
-    "ADQ_NACIONALIDAD": primerAdq.nacionalidad || "",
-    "ADQ_TIPO_DOC": primerAdq.tipoDoc || "DNI",
-    "ADQ_NRO_DOC": fmtDni(primerAdq.nroDoc),
-    "ADQ_CUIT": primerAdq.cuit || "",
-    "ADQ_FECHA_NAC": fmtFechaLetras(primerAdq.fechaNac),
-    "ADQ_ESTADO_CIVIL": primerAdq.estadoCivil || "",
-    "ADQ_DOMICILIO": [primerAdq.calle, primerAdq.numero, primerAdq.localidad].filter(Boolean).join(", "),
+    NRO_ESCRITURA: String(nroEscritura || lote.nroEscritura || ""),
+    NRO_ESCRITURA_LETRAS: numeroALetras(Number(nroEscritura || lote.nroEscritura || 0)).replace(" CON 00/100",""),
+    FECHA_ESCRITURA: lote.fechaEscritura || "",
 
     // Inmueble
-    "MANZANA": lote.manzana || "",
-    "LOTE": lote.lote || "",
-    "FRENTE_CALLE": barrio.frente || "",
-    "SUP_MENSURA": lote.supMensura || "",
-    "SUP_MENSURA_LETRAS": supLetras(parseSup(lote.supMensura)),
-    "SUP_TITULO_I":          lote.supTitulo1 || "",
-    "SUP_TITULO_I_LETRAS":   supLetras(parseSup(lote.supTitulo1)),
-    "SUP_TITULO_II":         lote.supTitulo2 || "",
-    "SUP_TITULO_II_LETRAS":  supLetras(parseSup(lote.supTitulo2)),
-    "SUP_TITULO_III":        lote.supTitulo3 || "",
-    "SUP_TITULO_III_LETRAS": supLetras(parseSup(lote.supTitulo3)),
-    "SUP_TITULO_IV":         lote.supTitulo4 || "",
-    "SUP_TITULO_IV_LETRAS":  supLetras(parseSup(lote.supTitulo4)),
-    "LIMITES": concatenarLimites(lote),
-    "PLANO_MENSURA": barrio.plano || "",
+    MANZANA: lote.manzana || "",
+    LOTE: lote.lote || "",
+    FRENTE_CALLE: barrio.frente || "",
+    SUP_MENSURA: lote.supMensura || "",
+    SUP_MENSURA_LETRAS: supLetras(parseSup(lote.supMensura)),
+    SUP_TITULO_I:          lote.supTitulo1 || "",
+    SUP_TITULO_I_LETRAS:   supLetras(parseSup(lote.supTitulo1)),
+    SUP_TITULO_II:         lote.supTitulo2 || "",
+    SUP_TITULO_II_LETRAS:  supLetras(parseSup(lote.supTitulo2)),
+    SUP_TITULO_III:        lote.supTitulo3 || "",
+    SUP_TITULO_III_LETRAS: supLetras(parseSup(lote.supTitulo3)),
+    SUP_TITULO_IV:         lote.supTitulo4 || "",
+    SUP_TITULO_IV_LETRAS:  supLetras(parseSup(lote.supTitulo4)),
+    LIMITES: concatenarLimites(lote),
+    PLANO_MENSURA: barrio.plano || "",
 
     // Precio
-    "PRECIO_NUMEROS": lote.precio || "",
-    "PRECIO_LETRAS": "PESOS " + numeroALetras(precioNum),
-    "RETENCION_GANANCIAS":        lote.retencionGanancias || "",
-    "RETENCION_GANANCIAS_LETRAS": "PESOS " + numeroALetras(retencionNum),
+    PRECIO_NUMEROS: lote.precio || "",
+    PRECIO_LETRAS: "PESOS " + numeroALetras(precioNum),
+    RETENCION_GANANCIAS:        lote.retencionGanancias || "",
+    RETENCION_GANANCIAS_LETRAS: "PESOS " + numeroALetras(retencionNum),
 
     // Certificados
-    "CERT_REGISTRO_NRO": lote.certRegistro || "",
-    "CERT_REGISTRO_FECHA": lote.fechaRegistro || "",
-    "CERT_CATASTRO_NRO": lote.certCatastro || "",
-    "CERT_CATASTRO_FECHA": lote.fechaCatastro || "",
-    "NOMENCLATURA": lote.nomenclatura || "",
-    "AVALUO": lote.avaluo || "",
-    "PADRON_TERRITORIAL": lote.padronRentas || "",
-    "PADRON_MUNICIPAL": lote.padronMuni || "",
+    CERT_REGISTRO_NRO: lote.certRegistro || "",
+    CERT_REGISTRO_FECHA: lote.fechaRegistro || "",
+    CERT_CATASTRO_NRO: lote.certCatastro || "",
+    CERT_CATASTRO_FECHA: lote.fechaCatastro || "",
+    NOMENCLATURA: lote.nomenclatura || "",
+    AVALUO: lote.avaluo || "",
+    PADRON_TERRITORIAL: lote.padronRentas || "",
+    PADRON_MUNICIPAL: lote.padronMuni || "",
 
     // Transmitente (del barrio)
-    "TRANSMITENTE_NOMBRE": barrio.transmitente || "",
-    "TRANSMITENTE_CUIT": barrio.cuit || "",
-    "MATRICULA_SIRC": barrio.matricula || "",
+    TRANSMITENTE_NOMBRE: barrio.transmitente || "",
+    TRANSMITENTE_CUIT: barrio.cuit || "",
+    MATRICULA_SIRC: barrio.matricula || "",
   };
 
-let resultado = templateHTML;
+  const vars = { ...varsIdentidad, ...varsLote };
+
+  let resultado = templateHTML;
   for (const [key, value] of Object.entries(vars)) {
     const display = value
       ? `<span class="var-filled">${value}</span>`
