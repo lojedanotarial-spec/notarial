@@ -706,7 +706,7 @@ const SUGERENCIAS = [
 function HistorialConversaciones({ historial, onCargar, onEliminar }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      {historial.slice(0, 5).map(c => (
+      {historial.map(c => (
         <div key={c.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <button onClick={() => onCargar(c)} style={{
             flex: 1, background: "transparent", border: "1px solid rgba(26,35,50,.1)",
@@ -907,29 +907,39 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
           flex: 1, overflowY: "auto",
           padding: "16px 16px 8px",
         }}>
-          {verHistorial && mensajes.length > 0 ? (
-            // Viendo historial CON una conversación activa de fondo — nunca
-            // se muestran las sugerencias de "empezar de cero" acá, porque
-            // no es eso lo que está pasando: la conversación sigue viva.
+          {verHistorial ? (
+            // Vista de navegación dedicada — nunca se mezcla con las
+            // sugerencias de "empezar de cero", que son para otra situación
+            // (no hay ninguna conversación, ni activa ni pasada).
             <div style={{ paddingBottom: 12 }}>
-              <button onClick={() => setVerHistorial(false)} style={{
-                marginBottom: 14, display: "flex", alignItems: "center", gap: 8,
-                background: "rgba(58,124,165,.08)", border: "1px solid rgba(58,124,165,.25)",
-                borderRadius: 8, padding: "8px 12px", width: "100%",
-                fontFamily: "'Inter', sans-serif", cursor: "pointer", textAlign: "left",
-              }}>
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke={C.cerulean} strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}><path d="M6 3l-5 5 5 5M1 8h14"/></svg>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: C.cerulean }}>Volver a la consulta en curso</div>
-                  <div style={{ fontSize: 11, color: "rgba(26,35,50,.5)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {mensajes.find(m => m.role === "user")?.content?.slice(0, 60) || "Consulta sin título"}
+              {mensajes.length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(26,35,50,.35)", marginBottom: 8 }}>
+                    En curso
                   </div>
-                </div>
-              </button>
+                  <button onClick={() => setVerHistorial(false)} style={{
+                    marginBottom: 20, display: "flex", alignItems: "center", gap: 10,
+                    background: "rgba(58,124,165,.08)", border: "1px solid rgba(58,124,165,.3)",
+                    borderRadius: 8, padding: "10px 12px", width: "100%",
+                    fontFamily: "'Inter', sans-serif", cursor: "pointer", textAlign: "left",
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.cerulean, flexShrink: 0 }} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {mensajes.find(m => m.role === "user")?.content?.slice(0, 60) || "Consulta sin título"}
+                      </div>
+                      <div style={{ fontSize: 11, color: C.cerulean, fontWeight: 600, marginTop: 1 }}>Tocá para volver</div>
+                    </div>
+                  </button>
+                </>
+              )}
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(26,35,50,.35)", marginBottom: 8 }}>
+                Anteriores
+              </div>
               {historial.length > 0 ? (
                 <HistorialConversaciones historial={historial} onCargar={handleCargarConversacion} onEliminar={eliminarConversacion} />
               ) : (
-                <div style={{ fontSize: 12, color: "rgba(26,35,50,.4)", fontStyle: "italic", padding: "8px 2px" }}>
+                <div style={{ fontSize: 12, color: "rgba(26,35,50,.4)", fontStyle: "italic", padding: "4px 2px" }}>
                   No tenés otras consultas guardadas.
                 </div>
               )}
@@ -960,7 +970,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
                     fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
                     textTransform: "uppercase", color: "rgba(26,35,50,.35)",
                     marginBottom: 8,
-                  }}>Retomar consulta</div>
+                  }}>Conversaciones anteriores</div>
                   <HistorialConversaciones historial={historial} onCargar={handleCargarConversacion} onEliminar={eliminarConversacion} />
                 </div>
               )}
