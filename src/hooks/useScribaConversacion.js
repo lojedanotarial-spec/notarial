@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 
+// Antes era 5/6 — apenas alcanzaba para "las últimas de hoy", no para que
+// el historial sirva como navegación real de verdad.
+const LIMITE_HISTORIAL = 30;
+
 export function useScribaConversacion() {
   const { session, registroActivo, usuario } = useAuth();
   const registroId = usuario?.registro_numero || registroActivo || null;
@@ -23,7 +27,7 @@ export function useScribaConversacion() {
       .select("id, mensajes, titulo, updated_at")
       .eq("usuario_id", session.user.id)
       .order("updated_at", { ascending: false })
-      .limit(6);
+      .limit(LIMITE_HISTORIAL + 1);
 
     if (data?.length) {
       const [ultima, ...resto] = data;
@@ -32,7 +36,7 @@ export function useScribaConversacion() {
         setMensajesIniciales(ultima.mensajes);
         setHistorial(resto.filter(c => c.mensajes?.length > 0));
       } else {
-        setHistorial(data.filter(c => c.mensajes?.length > 0).slice(0, 5));
+        setHistorial(data.filter(c => c.mensajes?.length > 0).slice(0, LIMITE_HISTORIAL));
       }
     }
     setCargandoInicio(false);
@@ -88,14 +92,23 @@ export function useScribaConversacion() {
       .select("id, mensajes, titulo, updated_at")
       .eq("usuario_id", session.user.id)
       .order("updated_at", { ascending: false })
-      .limit(5);
+      .limit(LIMITE_HISTORIAL);
     setHistorial((data || []).filter(c => c.mensajes?.length > 0));
   }
 
   async function cargarConversacion(conv) {
     setConversacionId(conv.id);
     setMensajesIniciales(conv.mensajes || []);
-    setHistorial([]);
+    // Repoblar el historial (antes quedaba vacío hasta el próximo refetch
+    // manual — la conversación que se estaba viendo antes de este cambio
+    // "desaparecía" sin ningún lugar desde el que retomarla).
+    const { data } = await supabase
+      .from("scriba_conversaciones")
+      .select("id, mensajes, titulo, updated_at")
+      .eq("usuario_id", session.user.id)
+      .order("updated_at", { ascending: false })
+      .limit(LIMITE_HISTORIAL + 1);
+    setHistorial((data || []).filter(c => c.mensajes?.length > 0 && c.id !== conv.id));
   }
 
   async function eliminarConversacion(id) {
