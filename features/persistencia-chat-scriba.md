@@ -1,7 +1,7 @@
 # Feature: Persistencia del chat al cerrar/reabrir el panel
 
 **Epic:** [Continuidad y confiabilidad del panel de Scriba](../epics/scriba-continuidad-chat.md)
-**Estado:** 🔵 En curso
+**Estado:** ✅ Terminado (21/09/26)
 **Spec:** [`specs/persistencia-chat-scriba/`](../specs/persistencia-chat-scriba/)
 
 ## Qué entrega

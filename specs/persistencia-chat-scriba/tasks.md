@@ -1,7 +1,7 @@
 # Tasks: Persistencia del chat de Scriba + aviso de respuesta pendiente
 
 **Plan:** [`plan.md`](plan.md) (aprobado)
-**Estado:** en revisión (fase 3 de 3 — ver `specs/README.md`)
+**Estado:** ✅ implementado y mergeado a `main` (21/09/26) — 4 correcciones adicionales encontradas en smoke test manual antes de mergear (falla al cambiar de conversación, "Volver"/"+Nueva" duplicando conversaciones, scroll al mensaje equivocado, navegación de historial rediseñada por pedido explícito)
 
 Orden estricto — cada tarea es verificable por separado antes de pasar a
 la siguiente. Implementación en rama propia (`feat/scriba-persistencia-chat`

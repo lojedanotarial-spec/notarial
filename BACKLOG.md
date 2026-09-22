@@ -25,20 +25,13 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 - **Reconstrucción de Carga Masiva** — ventana de ~2 semanas, escrituras de
   barrios próximas. Interrumpe el límite de WIP=1 normal por razón de
-  negocio real, no por desorden.
+  negocio real, no por desorden. El fix urgente de arranque (crash al
+  crear barrio + `jszip`) ya está en producción — arranca ahora la
+  Feature 1 (motor de variables unificado).
   — [epic](epics/carga-masiva-rebuild.md)
-  — fix urgente ya en PR: [`fix/bulk-nuevo-barrio-crash`](https://github.com/lojedanotarial-spec/notarial/pull/new/fix/bulk-nuevo-barrio-crash) (crash al crear barrio + dependencia `jszip` faltante)
-
-## 🔵 En curso (pausado por la urgencia de arriba)
-
-- **Persistencia del chat de Scriba + aviso de respuesta pendiente** —
-  implementación completa, PR abierta, pendiente de smoke test manual y
-  merge. No perdido, solo esperando.
-  — [epic](epics/scriba-continuidad-chat.md) · [feature](features/persistencia-chat-scriba.md) · [spec](specs/persistencia-chat-scriba/) · [PR](https://github.com/lojedanotarial-spec/notarial/pull/new/feat/scriba-persistencia-chat)
 
 ## 🟢 Próximo
 
-- Mejoras UX del panel de Scriba (historial, navegación, presentación de respuestas)
 - JWT real para OnlyOffice (hoy desactivado — deuda de seguridad aceptada explícitamente durante la migración a Clouding)
 - Confirmar guardado de ediciones OnlyOffice → Supabase end-to-end (el callback existe, falta validarlo con el servidor ya estable)
 
@@ -61,6 +54,8 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 ## ✅ Recién terminado
 
+- Persistencia del chat de Scriba al cerrar/reabrir el panel + rediseño de navegación de historial (2026-09-21) — 8 bugs reales encontrados y corregidos en smoke test manual antes de mergear
+- Fix crash al crear barrio nuevo en Carga masiva + dependencia `jszip` faltante (2026-09-21)
 - Feedback 👍/👎 por respuesta de Scriba + módulo de aprendizaje diario (2026-09-21)
 - Validaciones deterministas (`validar_limites_inmueble`, `calcular_edad`) + límite de alcance en Scriba
 - Buscador de instrumentos por nombre en "Crear documento"
