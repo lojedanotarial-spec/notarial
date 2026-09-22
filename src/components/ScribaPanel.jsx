@@ -915,7 +915,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
               {mensajes.length > 0 && (
                 <>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(26,35,50,.35)", marginBottom: 8 }}>
-                    En curso
+                    Actual
                   </div>
                   <button onClick={() => setVerHistorial(false)} style={{
                     marginBottom: 20, display: "flex", alignItems: "center", gap: 10,
