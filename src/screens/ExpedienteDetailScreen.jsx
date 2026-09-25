@@ -453,7 +453,7 @@ function ModalVincularDoc({ docsDisp, queryVincular, setQueryVincular, filtroTip
         if (Array.isArray(d.partes)) {
           return d.partes.some(p =>
             `${p.nombre || ""} ${p.apellido || ""}`.toLowerCase().includes(q) ||
-            p.dni?.includes(q)
+            p.nroDoc?.includes(q)
           );
         }
         return false;
