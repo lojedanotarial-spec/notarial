@@ -274,7 +274,7 @@ export function LogsScreen({ onBack }) {
       fontFamily: "'Montserrat', sans-serif", overflow: "hidden",
       background: C.warm,
     }}>
-      <NavBar onGo={({ screen }) => screen === "home" ? onBack() : null} screenTitle="Logs internos" />
+      <NavBar onVolver={onBack} onGo={screen => screen === "home" ? onBack() : null} screenTitle="Logs internos" />
 
       {/* Sub-tabs */}
       <div style={{
