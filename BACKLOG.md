@@ -35,6 +35,7 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 ## 🟢 Próximo
 
+- **Bug intermitente: a veces cambiar una variable del panel en el editor individual no regenera el documento** (reportado 25/09/26, "de vez en cuando se rompe"). Se encontró y arregló una causa concreta y determinística (descripción de inmueble sin disparador de regeneración conectado), pero el patrón intermitente no se reprodujo exacto — no está confirmado que sea la única causa. Vigilar si vuelve a pasar.
 - JWT real para OnlyOffice (hoy desactivado — deuda de seguridad aceptada explícitamente durante la migración a Clouding)
 - Confirmar guardado de ediciones OnlyOffice → Supabase end-to-end (el callback existe, falta validarlo con el servidor ya estable)
 
