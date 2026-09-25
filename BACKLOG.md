@@ -28,7 +28,8 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
   negocio real, no por desorden. Feature 1 (motor de variables unificado)
   y Feature 2 (editor unificado OnlyOffice para "ver documento" de un
   lote) terminadas y en producción (2026-09-25) — arranca ahora la
-  Feature 3 (formulario de carga dinámico por lote).
+  Feature 7 (expedientes de barrio en Drive + escanear documentación por
+  lote), reordenada antes que la 3-6 por pedido explícito del 25/09/26.
   — [epic](epics/carga-masiva-rebuild.md)
 
 ## 🟢 Próximo
@@ -39,13 +40,6 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 ## 🟡 Después
 
-- **Idea (no arrancada, posible epic propio): Carga masiva desde Google Drive**
-  — si el barrio ya tiene la carpeta de Drive con los documentos escaneados
-  de cada lote (mismo patrón que `driveHelper.js` usa hoy para expedientes),
-  extraer datos directo de esos documentos y precargar campos del lote en
-  vez de tipearlos a mano. Arrancaría chico: DNI de las partes primero, no
-  el lote completo. No es crítico ahora — anotado para después de que
-  salgan las escrituras urgentes.
 - Revisión de datos del presupuesto notarial por Fátima (`scripts/datos_sensibles.md`, valores marcados ⚠️)
 - Plantilla F-04 (`ModalFormulario` ya tiene el selector)
 - Informe de Dominio (`HerramientasScreen`, familia Automotor)

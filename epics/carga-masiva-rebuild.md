@@ -61,18 +61,24 @@ producción en `ExpedienteDetailScreen.jsx`).
 | 4 | Import de lotes en tabla (la "masiva" real) | 1 | Cargar N lotes de una sin pasar por el modal de a uno |
 | 5 | Curación de modelo por barrio (staff, IA + manual) | 1 | Alimenta a 1 y 3: sin variables detectadas, no hay formulario que generar |
 | 6 | Exportación masiva sobre el motor unificado | 1 | `exportarBarrioZip.js` pasa a generar con el motor nuevo, no con `generarEscritura.js` |
-| 7 | Guardado de expedientes de barrio/lote en Drive | — (reusa `driveHelper.js`) | Independiente del resto, puede ir en paralelo |
+| 7 | Expedientes de barrio en Drive + escanear documentación por lote | 2 | Alcance definido el 25/09/26 (ver abajo) — reusa `driveHelper.js` y el motor de escaneo (`ScanBtn`/`/api/vision`) ya probados en el resto de la app, sin inventar IA nueva. Depende de 2 porque el lugar natural para el botón "Escanear" es el panel del editor unificado de un lote. |
 
-Sin spec/plan/tasks todavía para las Features 3-7 — quedan para cuando se
-acuerde el orden real de trabajo dado el tiempo disponible.
+Sin spec/plan/tasks todavía para las Features 3-6 — quedan para cuando se
+acuerde el orden real de trabajo dado el tiempo disponible. La Feature 7
+ya tiene spec/plan/tasks — ver [`specs/escaneo-drive-carga-masiva/`](../specs/escaneo-drive-carga-masiva/).
 
-## Fuera de este epic (pero anotado en `BACKLOG.md`)
+### Alcance de la Feature 7 (definido 25/09/26)
 
-- **Carga masiva desde Google Drive** (idea, no arrancada) — extraer datos
-  directo de los documentos escaneados ya guardados en la carpeta de Drive
-  del barrio (mismo patrón que `driveHelper.js`), arrancando por el DNI de
-  las partes. Posible epic propio más adelante, no crítico para la ventana
-  urgente actual.
+Cada barrio es un expediente de Drive (mismo patrón que
+`ExpedienteDetailScreen.jsx`), con subcarpetas por manzana y lote. El
+modelo del barrio vive en la raíz del expediente; la documentación
+escaneada y la escritura generada de cada lote viven en la subcarpeta de
+ese lote. Desde el panel de un lote (editor unificado, Feature 2), un
+botón "Escanear" abre un selector de los archivos ya guardados en la
+carpeta Drive de ESE lote — el escribano elige cuál, y corre el mismo
+motor de extracción que ya usa el resto de la app (`ScanBtn`/`/api/vision`)
+para autocompletar los datos de la parte. No hay detección automática de
+"qué archivo es de quién" — el escribano siempre elige a mano.
 
 ## Fuera de este epic
 
