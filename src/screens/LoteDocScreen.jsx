@@ -420,7 +420,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
       <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
         {/* DOCUMENTO (editor unificado) */}
-        <div style={{ flex:1, position:"relative", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+        <div style={{ flex:1, position:"relative", display:"flex", overflow:"hidden" }}>
           <OnlyOfficeEditor
             documentUrl={documentUrl}
             documentKey={documentKey}
@@ -434,10 +434,12 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
           />
         </div>
 
-        {/* PANEL LATERAL */}
+        {/* PANEL LATERAL — sin overflow:hidden a propósito: el handle de
+            abajo vive a left:-11px, fuera del propio borde del panel, y
+            necesita poder asomar (mismo patrón que EditorScreen). */}
         <div style={{ width: panelExpandido ? 420 : 240, flexShrink:0, background:C.porcelain,
                       borderLeft:"1px solid rgba(26,35,50,.15)",
-                      display:"flex", flexDirection:"column", overflow:"hidden",
+                      display:"flex", flexDirection:"column",
                       transition:"width .2s ease", position:"relative" }}>
           {/* Handle flotante para expandir/contraer — mismo patrón que EditorScreen */}
           <button
