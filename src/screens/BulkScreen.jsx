@@ -599,6 +599,7 @@ export function BulkScreen({ onGo }) {
   const [vista, setVista] = useState({ tipo: "lista" });
   const [modalNombre, setModalNombre] = useState(false);
   const [nombreNuevo, setNombreNuevo] = useState("");
+  const [errorNombre, setErrorNombre] = useState("");
   const [cargando, setCargando] = useState(true);
   const [historial, setHistorial] = useState([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(true);
@@ -649,15 +650,21 @@ export function BulkScreen({ onGo }) {
   };
 
   const confirmarNuevoBarrio = async () => {
-    if (!nombreNuevo.trim()) return;
+    const nombre = nombreNuevo.trim();
+    if (!nombre) return;
+    const yaExiste = barrios.some(b => (b.nombre || "").trim().toLowerCase() === nombre.toLowerCase());
+    if (yaExiste) {
+      setErrorNombre(`Ya existe un barrio llamado "${nombre}". Elegí otro nombre o abrí el que ya está cargado.`);
+      return;
+    }
     const { data } = await supabase.from("barrios")
-      .insert({ nombre: nombreNuevo.trim(), registro_id: registroNumero, created_at: new Date().toISOString() })
+      .insert({ nombre, registro_id: registroNumero, created_at: new Date().toISOString() })
       .select().single();
     if (data) {
       setBarrios(prev => [{ ...data, lotes: [] }, ...prev]);
       setVista({ tipo: "detalle", barrioId: data.id });
     }
-    setModalNombre(false); setNombreNuevo("");
+    setModalNombre(false); setNombreNuevo(""); setErrorNombre("");
   };
 
   const eliminarBarrio = async (bid) => {
@@ -730,13 +737,14 @@ export function BulkScreen({ onGo }) {
           }
         }} />
       {modalNombre && (
-        <Modal title="Nuevo barrio" onClose={() => { setModalNombre(false); setNombreNuevo(""); }}
-          footer={<><Btn onClick={() => { setModalNombre(false); setNombreNuevo(""); }}>Cancelar</Btn><Btn primary onClick={confirmarNuevoBarrio}>Crear</Btn></>}>
+        <Modal title="Nuevo barrio" onClose={() => { setModalNombre(false); setNombreNuevo(""); setErrorNombre(""); }}
+          footer={<><Btn onClick={() => { setModalNombre(false); setNombreNuevo(""); setErrorNombre(""); }}>Cancelar</Btn><Btn primary onClick={confirmarNuevoBarrio}>Crear</Btn></>}>
           <Fg label="Nombre del barrio o loteo">
-            <input autoFocus value={nombreNuevo} onChange={e => setNombreNuevo(e.target.value)}
+            <input autoFocus value={nombreNuevo} onChange={e => { setNombreNuevo(e.target.value); setErrorNombre(""); }}
               onKeyDown={e => e.key === "Enter" && confirmarNuevoBarrio()}
               placeholder="ej: Barrio Portal del Algarrobal"
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "#FDFCFA", fontSize: 14, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" }}/>
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 7, border: "1px solid " + (errorNombre ? "#c0392b" : "rgba(26,35,50,.14)"), background: "#FDFCFA", fontSize: 14, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" }}/>
+            {errorNombre && <div style={{ fontSize: 12, color: "#c0392b", marginTop: 6 }}>{errorNombre}</div>}
           </Fg>
         </Modal>
       )}
