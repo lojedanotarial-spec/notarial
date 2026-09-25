@@ -125,6 +125,7 @@ export function AuthProvider({ children }) {
 
   // Admin: cargar todos los miembros de un registro cuando cambia el registro activo
   useEffect(() => {
+    console.log("[AuthContext] efecto miembros — is_admin:", miUsuario?.is_admin, "registroActivo:", registroActivo);
     if (!miUsuario?.is_admin || !registroActivo) return;
     setMiembrosCargados(false);
     supabase
@@ -133,6 +134,7 @@ export function AuthProvider({ children }) {
       .eq("registro", registroActivo)
       .then(({ data, error }) => {
         if (error) console.error("[AuthContext] Error cargando miembros del registro", registroActivo, error);
+        console.log("[AuthContext] miembros cargados:", data?.length, data);
         setMiembros(ordenarMiembros(data));
         setMiembrosCargados(true);
       });
