@@ -55,15 +55,24 @@ producción en `ExpedienteDetailScreen.jsx`).
 
 | # | Feature | Depende de | Por qué en ese orden |
 |---|---|---|---|
-| 1 | Motor de variables unificado | — | Todo lo demás se apoya en esto; sin esto, cada feature nueva duplicaría más lógica |
-| 2 | Formulario de carga dinámico por lote | 1 | El formulario se genera a partir de las variables que detecta el motor unificado |
-| 3 | Import de lotes en tabla (la "masiva" real) | 1 | Cargar N lotes de una sin pasar por el modal de a uno |
-| 4 | Curación de modelo por barrio (staff, IA + manual) | 1 | Alimenta a 1 y 2: sin variables detectadas, no hay formulario que generar |
-| 5 | Exportación masiva sobre el motor unificado | 1 | `exportarBarrioZip.js` pasa a generar con el motor nuevo, no con `generarEscritura.js` |
-| 6 | Guardado de expedientes de barrio/lote en Drive | — (reusa `driveHelper.js`) | Independiente de 1-5, puede ir en paralelo |
+| 1 | Motor de variables unificado | — | ✅ Terminada (2026-09-25). Todo lo demás se apoya en esto. |
+| 2 | Ver documento de un lote sobre el editor unificado (OnlyOffice + panel lateral) | 1 | Reemplaza la vista previa propia de `LoteDocScreen` por el mismo sistema que ya usa el resto de la app — necesario para poder corregir a mano una escritura puntual (una letra, un número, una circunstancia particular) sin tocar el modelo del barrio entero. El mecanismo difícil (generar DOCX, subir, abrir en OnlyOffice, no perder ediciones manuales al regenerar) ya existe y se reusa de `EditorScreen`, no se inventa de nuevo. |
+| 3 | Formulario de carga dinámico por lote | 1 | El formulario se genera a partir de las variables que detecta el motor unificado |
+| 4 | Import de lotes en tabla (la "masiva" real) | 1 | Cargar N lotes de una sin pasar por el modal de a uno |
+| 5 | Curación de modelo por barrio (staff, IA + manual) | 1 | Alimenta a 1 y 3: sin variables detectadas, no hay formulario que generar |
+| 6 | Exportación masiva sobre el motor unificado | 1 | `exportarBarrioZip.js` pasa a generar con el motor nuevo, no con `generarEscritura.js` |
+| 7 | Guardado de expedientes de barrio/lote en Drive | — (reusa `driveHelper.js`) | Independiente del resto, puede ir en paralelo |
 
-Sin spec/plan/tasks todavía — quedan para cuando se acuerde el orden real
-de trabajo dado el tiempo disponible.
+Sin spec/plan/tasks todavía para las Features 3-7 — quedan para cuando se
+acuerde el orden real de trabajo dado el tiempo disponible.
+
+## Fuera de este epic (pero anotado en `BACKLOG.md`)
+
+- **Carga masiva desde Google Drive** (idea, no arrancada) — extraer datos
+  directo de los documentos escaneados ya guardados en la carpeta de Drive
+  del barrio (mismo patrón que `driveHelper.js`), arrancando por el DNI de
+  las partes. Posible epic propio más adelante, no crítico para la ventana
+  urgente actual.
 
 ## Fuera de este epic
 

@@ -25,9 +25,12 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 - **Reconstrucción de Carga Masiva** — ventana de ~2 semanas, escrituras de
   barrios próximas. Interrumpe el límite de WIP=1 normal por razón de
-  negocio real, no por desorden. El fix urgente de arranque (crash al
-  crear barrio + `jszip`) ya está en producción — arranca ahora la
-  Feature 1 (motor de variables unificado).
+  negocio real, no por desorden. Feature 1 (motor de variables unificado)
+  terminada y en producción (2026-09-25) — arranca ahora la Feature de
+  "ver documento" de un lote sobre el editor unificado (OnlyOffice +
+  panel lateral), reemplazando la vista previa propia — necesaria para
+  poder corregir a mano una escritura puntual sin tocar el modelo del
+  barrio entero.
   — [epic](epics/carga-masiva-rebuild.md)
 
 ## 🟢 Próximo
@@ -37,6 +40,13 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 ## 🟡 Después
 
+- **Idea (no arrancada, posible epic propio): Carga masiva desde Google Drive**
+  — si el barrio ya tiene la carpeta de Drive con los documentos escaneados
+  de cada lote (mismo patrón que `driveHelper.js` usa hoy para expedientes),
+  extraer datos directo de esos documentos y precargar campos del lote en
+  vez de tipearlos a mano. Arrancaría chico: DNI de las partes primero, no
+  el lote completo. No es crítico ahora — anotado para después de que
+  salgan las escrituras urgentes.
 - Revisión de datos del presupuesto notarial por Fátima (`scripts/datos_sensibles.md`, valores marcados ⚠️)
 - Plantilla F-04 (`ModalFormulario` ya tiene el selector)
 - Informe de Dominio (`HerramientasScreen`, familia Automotor)
