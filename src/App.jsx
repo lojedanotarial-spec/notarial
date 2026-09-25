@@ -50,10 +50,25 @@ const globalStyles = [
   ".scriba-dot { animation: dot-breathe 2s ease-in-out infinite; }",
 ].join("\n");
 
+// Persistir pantalla + params en sessionStorage: sobrevive a un F5 (no a
+// cerrar la pestaña/navegador, a propósito -- no queremos reabrir un
+// documento de hace días como si fuera la sesión de ahora). No cubre la
+// navegación interna de BulkScreen (barrio → lote dentro de Carga Masiva),
+// que vive en su propio estado, no acá.
+const NAV_KEY_SCREEN = "notarial_screen";
+const NAV_KEY_PARAMS = "notarial_params";
+
+function leerPantallaGuardada() {
+  try { return sessionStorage.getItem(NAV_KEY_SCREEN) || "home"; } catch { return "home"; }
+}
+function leerParamsGuardados() {
+  try { return JSON.parse(sessionStorage.getItem(NAV_KEY_PARAMS) || "{}"); } catch { return {}; }
+}
+
 function AppRouter() {
   const { session, cargando, usuario, miUsuario, perfilCargado, logout, setRegistroActivo, registroActivo } = useAuth();
-  const [screen, setScreen] = useState("home");
-  const [params, setParams] = useState({});
+  const [screen, setScreen] = useState(leerPantallaGuardada);
+  const [params, setParams] = useState(leerParamsGuardados);
   const [scribaOpen, setScribaOpen] = useState(false);
   const [scribaContexto, setScribaContexto] = useState(null);
   const editorNonceRef = useRef(0);
@@ -77,6 +92,10 @@ function AppRouter() {
     if (targetScreen === "editor") editorNonceRef.current += 1;
     setParams(targetParams);
     setScreen(targetScreen);
+    try {
+      sessionStorage.setItem(NAV_KEY_SCREEN, targetScreen);
+      sessionStorage.setItem(NAV_KEY_PARAMS, JSON.stringify(targetParams));
+    } catch { /* params no serializable o storage lleno -- no persistir, no romper la navegación */ }
   };
 
   useEffect(() => {
