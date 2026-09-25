@@ -593,10 +593,26 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
   );
 }
 
+// Persistir en qué barrio/lote de Carga Masiva estaba el usuario, para
+// sobrevivir a un F5 -- volver a un lote puntual implica más pasos que
+// otras pantallas (lista → barrio → lote), así que perderlo pesa más acá.
+// sessionStorage a propósito (ver App.jsx): sobrevive un refresh, no
+// reabre un lote de hace días como si fuera la sesión de ahora.
+const VISTA_BULK_KEY = "notarial_bulk_vista";
+
+function leerVistaGuardada() {
+  try { return JSON.parse(sessionStorage.getItem(VISTA_BULK_KEY) || "null") || { tipo: "lista" }; }
+  catch { return { tipo: "lista" }; }
+}
+
 export function BulkScreen({ onGo }) {
   const { miUsuario, usuario, registroActivo } = useAuth();
   const [barrios, setBarrios] = useState([]);
-  const [vista, setVista] = useState({ tipo: "lista" });
+  const [vista, setVistaState] = useState(leerVistaGuardada);
+  const setVista = (nuevaVista) => {
+    setVistaState(nuevaVista);
+    try { sessionStorage.setItem(VISTA_BULK_KEY, JSON.stringify(nuevaVista)); } catch { /* no romper la navegación */ }
+  };
   const [modalNombre, setModalNombre] = useState(false);
   const [nombreNuevo, setNombreNuevo] = useState("");
   const [errorNombre, setErrorNombre] = useState("");
