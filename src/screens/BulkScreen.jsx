@@ -501,8 +501,7 @@ function ListaBarrios({ barrios, onSeleccionar, onAgregar, onEliminar, onGo, car
                   <>
                     <div style={{ fontSize:40, marginBottom:12 }}>🏘</div>
                     <div style={{ fontSize:16, fontWeight:600, color:"#1a2332", marginBottom:6 }}>No hay barrios cargados</div>
-                    <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20 }}>Creá un nuevo barrio para empezar</div>
-                    <button onClick={onAgregar} style={{ padding:"8px 20px", borderRadius:8, border:"none", background:C.cerulean, color:"#fff", fontSize:13, fontWeight:700, fontFamily:"'Inter', sans-serif", cursor:"pointer" }}>+ Nuevo barrio</button>
+                    <div style={{ fontSize:13, color:"rgba(26,35,50,.6)" }}>Creá un nuevo barrio para empezar</div>
                   </>
                 )}
               </div>
@@ -628,20 +627,21 @@ export function BulkScreen({ onGo }) {
   }, [registroNumero]);
 
   useEffect(() => {
-    if (!usuario) return;
+    if (!usuario || !registroNumero) return;
     async function cargarHistorial() {
       setCargandoHistorial(true);
       const { data } = await supabase
         .from("documentos")
         .select("id, titulo, estado, updated_at, lote_id")
         .eq("template_key", "escrituraBarrio")
+        .eq("registro_id", registroNumero)
         .order("updated_at", { ascending: false })
         .limit(5);
       setHistorial(data || []);
       setCargandoHistorial(false);
     }
     cargarHistorial();
-  }, [usuario]);
+  }, [usuario, registroNumero]);
 
   const updBarrio = async (bid, campo, valor) => {
     setBarrios(prev => prev.map(b => b.id === bid ? { ...b, [campo]: valor } : b));
