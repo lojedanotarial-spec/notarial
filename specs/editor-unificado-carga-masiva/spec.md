@@ -1,6 +1,6 @@
 # Spec: Ver documento de un lote sobre el editor unificado
 
-**Estado:** 🟡 en revisión — pendiente de aprobación
+**Estado:** ✅ aprobado (25/09/26) — listo para `plan.md`. Nota del usuario al aprobar: prestar atención especial en `plan.md` a los mecanismos y reglas exactas de edición después de cambios manuales (ver UC-3).
 **Feature:** [`features/editor-unificado-carga-masiva.md`](../../features/editor-unificado-carga-masiva.md)
 **Epic:** [`epics/carga-masiva-rebuild.md`](../../epics/carga-masiva-rebuild.md)
 **Casos de uso:** [UC-1](../../usecases/lote-correccion-puntual.md) · [UC-2](../../usecases/lote-generacion-inicial-editor-unificado.md) · [UC-3](../../usecases/lote-cambio-dato-tras-edicion-manual.md)
