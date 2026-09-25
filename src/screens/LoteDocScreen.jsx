@@ -420,7 +420,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
       <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
         {/* DOCUMENTO (editor unificado) */}
-        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+        <div style={{ flex:1, position:"relative", display:"flex", flexDirection:"column", overflow:"hidden" }}>
           <OnlyOfficeEditor
             documentUrl={documentUrl}
             documentKey={documentKey}
