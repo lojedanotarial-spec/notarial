@@ -176,6 +176,7 @@ function PanelLote({ lote, escribano, miembros, onChange, onCambioInmediato, onC
 export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
   const { miUsuario, miembros, usuario, registroActivo } = useAuth();
   const [lote, setLote] = useState({ ...loteInicial });
+  const [panelExpandido, setPanelExpandido] = useState(false);
   const [templateHTML, setTemplateHTML] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [initialDocId, setInitialDocId] = useState(null);
@@ -434,9 +435,29 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
         </div>
 
         {/* PANEL LATERAL */}
-        <div style={{ width:240, flexShrink:0, background:C.porcelain,
+        <div style={{ width: panelExpandido ? 420 : 240, flexShrink:0, background:C.porcelain,
                       borderLeft:"1px solid rgba(26,35,50,.15)",
-                      display:"flex", flexDirection:"column", overflow:"hidden" }}>
+                      display:"flex", flexDirection:"column", overflow:"hidden",
+                      transition:"width .2s ease", position:"relative" }}>
+          {/* Handle flotante para expandir/contraer — mismo patrón que EditorScreen */}
+          <button
+            onClick={() => setPanelExpandido(e => !e)}
+            title={panelExpandido ? "Contraer panel" : "Expandir panel"}
+            style={{
+              position:"absolute", left:-11, top:"50%", transform:"translateY(-50%)",
+              width:16, height:44, borderRadius:"8px 0 0 8px", zIndex:210,
+              border:"1px solid rgba(26,35,50,.15)", borderRight:"none",
+              background:C.porcelain, color:"rgba(26,35,50,.45)",
+              cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+              boxShadow:"-2px 0 6px rgba(26,35,50,.08)",
+            }}>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              {panelExpandido
+                ? <path d="M5 2.5L8.5 6 5 9.5"/>
+                : <path d="M7 2.5L3.5 6 7 9.5"/>
+              }
+            </svg>
+          </button>
           <div style={{ padding:"12px 14px", borderBottom:"1px solid rgba(26,35,50,.1)",
                         fontSize:14, fontWeight:700, color:C.dark }}>
             Datos del lote
