@@ -351,6 +351,17 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     regenerarPorCambio();
   }, [vehiculos, clausulasActivas]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Descripción de inmueble: mismo criterio que vehiculos/clausulas — se aplica
+  // desde un modal (ModalDescripcionInmueble), no tecleo continuo. Bug real
+  // encontrado 25/09/26: su onApply tocaba extravars pero ese cambio nunca
+  // disparaba regeneración (extravars no está en el efecto de arriba a
+  // propósito, para no regenerar en cada tecla de los campos libres del
+  // instrumento) — quedaba huérfano. inmuebleEstructurado es el estado propio
+  // de este modal, así que engancha acá sin afectar el resto.
+  useEffect(() => {
+    regenerarPorCambio();
+  }, [inmuebleEstructurado]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── CARGA DE DOCUMENTO EXISTENTE ──────────────────────────────────────────
   useEffect(() => {
     if (!params.docId) return;
