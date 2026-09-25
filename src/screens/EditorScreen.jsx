@@ -7,6 +7,7 @@ import {
 } from "../constants";
 import { NavBar }  from "../components/NavBar";
 import { Modal }   from "../components/Modal";
+import { ConfirmRegenerar } from "../components/ConfirmRegenerar";
 import { Btn }     from "../components/ui/Btn";
 import { Warn }    from "../components/ui/FormElements";
 import { ModalPartes }    from "../components/modals/ModalPartes";
@@ -55,41 +56,6 @@ const ROLES_CONTEXTUALES = {
   fe_vida:                ["Compareciente", null],
 };
 
-
-function ConfirmRegenerar({ onConfirm, onCancel }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(26,35,50,.5)",
-      zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      <div style={{
-        background: C.porcelain, borderRadius: 12, padding: "24px 24px 18px",
-        width: 340, boxShadow: "0 8px 32px rgba(26,35,50,.18)",
-      }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>
-          ¿Regenerar el documento?
-        </div>
-        <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20, lineHeight: 1.5 }}>
-          El documento tiene ediciones de texto manuales. Si regenerás, esas ediciones se van a perder y el texto vuelve al template con las nuevas variables.
-        </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={onCancel}
-                  style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)",
-                           background: "transparent", fontSize: 13, fontWeight: 600, color: C.dark,
-                           cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
-            Cancelar
-          </button>
-          <button onClick={onConfirm}
-                  style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #c9a961",
-                           background: "#c9a961", fontSize: 13, fontWeight: 700, color: "#fff",
-                           cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
-            Sí, regenerar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function PanelSection({ label, onClick, children, alerta }) {
   return (
