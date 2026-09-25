@@ -20,7 +20,13 @@ export function AdminScreen({ onGo }) {
         if (!agrupados[r.registro]) agrupados[r.registro] = [];
         agrupados[r.registro].push(r);
       }
-      setRegistros(Object.entries(agrupados).sort(([a], [b]) => Number(a) - Number(b)));
+      // Registro de prueba (McLeod) siempre arriba — es el que se usa para testing
+      const REGISTRO_TEST = "9876";
+      setRegistros(Object.entries(agrupados).sort(([a], [b]) => {
+        if (a === REGISTRO_TEST) return -1;
+        if (b === REGISTRO_TEST) return 1;
+        return Number(a) - Number(b);
+      }));
       setCargando(false);
     }
     cargar();
