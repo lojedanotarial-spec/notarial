@@ -1,7 +1,7 @@
 # Tasks: Ver documento de un lote sobre el editor unificado
 
 **Plan:** [`plan.md`](plan.md) (aprobado)
-**Estado:** ⬜ no iniciado
+**Estado:** ✅ implementado y mergeado a `main` (25/09/26) — smoke test manual en producción encontró y corrigió bugs adicionales no cubiertos por el spec original: botón "Volver" roto en Logs internos, nombres de barrio duplicados sin validar, fuga de datos entre registros en "Últimas escrituras" de Carga Masiva, botón de expandir panel tapado por z-index/overflow, y navegación de toda la app (no solo esta feature) sin persistencia ante un F5 — agregada tanto a nivel `App.jsx` como dentro de `BulkScreen`
 
 Orden estricto — cada tarea es verificable por separado antes de pasar a
 la siguiente. Implementación en rama propia (`feat/editor-unificado-carga-masiva`

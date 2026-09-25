@@ -1,7 +1,7 @@
 # Feature: Ver documento de un lote sobre el editor unificado
 
 **Epic:** [Reconstrucción de Carga Masiva](../epics/carga-masiva-rebuild.md)
-**Estado:** 🔵 En curso
+**Estado:** ✅ Terminado (25/09/26)
 **Spec:** [`specs/editor-unificado-carga-masiva/`](../specs/editor-unificado-carga-masiva/)
 
 ## Qué entrega

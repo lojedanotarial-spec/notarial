@@ -26,11 +26,9 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 - **Reconstrucción de Carga Masiva** — ventana de ~2 semanas, escrituras de
   barrios próximas. Interrumpe el límite de WIP=1 normal por razón de
   negocio real, no por desorden. Feature 1 (motor de variables unificado)
-  terminada y en producción (2026-09-25) — arranca ahora la Feature de
-  "ver documento" de un lote sobre el editor unificado (OnlyOffice +
-  panel lateral), reemplazando la vista previa propia — necesaria para
-  poder corregir a mano una escritura puntual sin tocar el modelo del
-  barrio entero.
+  y Feature 2 (editor unificado OnlyOffice para "ver documento" de un
+  lote) terminadas y en producción (2026-09-25) — arranca ahora la
+  Feature 3 (formulario de carga dinámico por lote).
   — [epic](epics/carga-masiva-rebuild.md)
 
 ## 🟢 Próximo
@@ -65,6 +63,8 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 ## ✅ Recién terminado
 
+- Editor unificado (OnlyOffice) para "ver documento" de un lote en Carga Masiva (2026-09-25) — smoke test en producción encontró y corrigió, de paso: botón "Volver" roto en Logs internos, nombres de barrio duplicados sin validar, fuga de datos entre registros en "Últimas escrituras", y agregó persistencia de navegación en `sessionStorage` (sobrevivir a un F5) tanto a nivel app como dentro de Carga Masiva
+- Motor de variables unificado para Carga Masiva (2026-09-25) — ver PROYECTO.md #94
 - Persistencia del chat de Scriba al cerrar/reabrir el panel + rediseño de navegación de historial (2026-09-21) — 8 bugs reales encontrados y corregidos en smoke test manual antes de mergear
 - Fix crash al crear barrio nuevo en Carga masiva + dependencia `jszip` faltante (2026-09-21)
 - Feedback 👍/👎 por respuesta de Scriba + módulo de aprendizaje diario (2026-09-21)

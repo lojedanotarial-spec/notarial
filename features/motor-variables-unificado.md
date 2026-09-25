@@ -1,7 +1,7 @@
 # Feature: Motor de variables unificado para Carga Masiva
 
 **Epic:** [Reconstrucción de Carga Masiva](../epics/carga-masiva-rebuild.md)
-**Estado:** 🔵 En curso
+**Estado:** ✅ Terminado (25/09/26)
 **Spec:** [`specs/motor-variables-unificado/`](../specs/motor-variables-unificado/)
 
 ## Qué entrega

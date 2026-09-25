@@ -1,7 +1,7 @@
 # Tasks: Motor de variables unificado para Carga Masiva
 
 **Plan:** [`plan.md`](plan.md) (aprobado)
-**Estado:** ⬜ no iniciado
+**Estado:** ✅ implementado y mergeado a `main` (25/09/26) — 11 tests nuevos (`generarEscritura.test.js`) cubriendo los 3 UC, 207/207 tests pasando. `construirVarsLote()` extraída como función propia durante la implementación de la Feature siguiente (editor unificado), sin cambio de comportamiento
 
 Orden estricto — cada tarea es verificable por separado antes de pasar a
 la siguiente. Implementación en rama propia (`feat/motor-variables-unificado`
