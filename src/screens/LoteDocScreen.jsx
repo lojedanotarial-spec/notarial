@@ -11,6 +11,8 @@ import { buildDocxGenerico } from "../utils/buildDocxGenerico";
 import { useAutoguardado } from "../hooks/useAutoguardado";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
+import { obtenerCarpetaLoteDrive } from "../utils/loteDrive";
+import { subirArchivoDrive, reemplazarContenidoArchivoDrive } from "../utils/driveHelper";
 
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
@@ -37,7 +39,70 @@ function PanelSection({ label, children, onClick }) {
   );
 }
 
-function PanelLote({ lote, escribano, miembros, onChange, onCambioInmediato, onCambioDiferido }) {
+function SeccionDocumentacion({ lote, barrio, session, upd }) {
+  const [archivos, setArchivos] = useState(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const inputRef = useRef(null);
+
+  const cargar = useCallback(async () => {
+    const { data } = await supabase.from("archivos").select("*")
+      .eq("lote_id", lote.id).order("created_at", { ascending: false });
+    setArchivos(data || []);
+  }, [lote.id]);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  async function subir(file) {
+    if (!session?.provider_token) {
+      alert("Necesitás iniciar sesión con Google para subir documentación a Drive.");
+      return;
+    }
+    setSubiendo(true);
+    try {
+      let folderId = lote.driveFolderId;
+      if (!folderId) {
+        const { loteFolderId } = await obtenerCarpetaLoteDrive(session, { barrio, lote });
+        folderId = loteFolderId;
+        upd("driveFolderId", folderId);
+      }
+      const resultado = await subirArchivoDrive(session, file, file.name, file.type, folderId);
+      await supabase.from("archivos").insert({
+        lote_id: lote.id, drive_file_id: resultado.id, nombre: file.name, mime_type: file.type, tipo: "documentacion",
+      });
+      await cargar();
+    } catch (e) {
+      alert("Error al subir el archivo: " + e.message);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  return (
+    <PanelSection label="Documentación">
+      <input ref={inputRef} type="file" style={{ display:"none" }}
+        onChange={e => { const f = e.target.files?.[0]; if (f) subir(f); e.target.value = ""; }} />
+      {archivos === null ? (
+        <div style={{ fontSize:12, color:"rgba(26,35,50,.4)" }}>Cargando...</div>
+      ) : archivos.length === 0 ? (
+        <div style={{ fontSize:12, color:"rgba(26,35,50,.4)", fontStyle:"italic" }}>Sin documentación subida</div>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:6 }}>
+          {archivos.map(a => (
+            <div key={a.id} style={{ fontSize:12, color:C.dark, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+              {a.nombre}
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ fontSize:12, color:C.cerulean, marginTop:6, fontWeight:500, cursor: subiendo ? "default" : "pointer" }}
+           onClick={() => !subiendo && inputRef.current?.click()}>
+        {subiendo ? "Subiendo..." : "+ Subir archivo"}
+      </div>
+    </PanelSection>
+  );
+}
+
+function PanelLote({ lote, barrio, session, escribano, miembros, onChange, onCambioInmediato, onCambioDiferido }) {
   const [partesAbierto, setPartesAbierto] = useState(false);
   const upd = (campo, valor) => onChange({ ...lote, [campo]: valor });
   const sInp = { ...inp, fontSize:12, padding:"6px 9px" };
@@ -69,6 +134,10 @@ function PanelLote({ lote, escribano, miembros, onChange, onCambioInmediato, onC
           <InputFecha style={sInp} value={lote.fechaEscritura || ""} onChange={v => upd("fechaEscritura", v)} onBlur={onCambioInmediato}/>
         </Fg>
       </PanelSection>
+
+      {/* DOCUMENTACIÓN — independiente de si ya se generó la escritura;
+          en la práctica la documentación llega primero (ver spec). */}
+      <SeccionDocumentacion lote={lote} barrio={barrio} session={session} upd={upd} />
 
       {/* ADQUIRENTES */}
       <PanelSection label="Adquirentes" onClick={() => setPartesAbierto(true)}>
@@ -167,6 +236,7 @@ function PanelLote({ lote, escribano, miembros, onChange, onCambioInmediato, onC
           onApply={partes => { onCambioDiferido(); upd("partes", partes); setPartesAbierto(false); }}
           onClose={() => setPartesAbierto(false)}
           showRol={true}
+          loteId={lote.id}
         />
       )}
     </div>
@@ -174,7 +244,7 @@ function PanelLote({ lote, escribano, miembros, onChange, onCambioInmediato, onC
 }
 
 export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
-  const { miUsuario, miembros, usuario, registroActivo } = useAuth();
+  const { miUsuario, miembros, usuario, registroActivo, session } = useAuth();
   const [lote, setLote] = useState({ ...loteInicial });
   const [panelExpandido, setPanelExpandido] = useState(false);
   const [templateHTML, setTemplateHTML] = useState(null);
@@ -303,12 +373,40 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
       // dispara su propio onDocumentStateChange al recargar — ignorarlo unos
       // segundos para no confundirlo con una edición manual real.
       ignorarEdicionesHastaRef.current = Date.now() + 3000;
+
+      // Copia en Drive (UC-3) — best-effort: si falla o no hay sesión de
+      // Google, no bloquea la generación (que ya terminó bien en oo-docs).
+      // Se reemplaza el contenido del mismo archivo en vez de subir uno
+      // nuevo cada vez, para que la carpeta del lote no se llene de
+      // copias viejas por cada corrección menor.
+      if (session?.provider_token) {
+        try {
+          const { loteFolderId } = await obtenerCarpetaLoteDrive(session, { barrio, lote });
+          const mimeDocx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+          const nombreArchivo = `Escritura - Mz ${lote.manzana || "?"} Lote ${lote.lote || "?"}.docx`;
+          const camposNuevos = {};
+          if (loteFolderId !== lote.driveFolderId) camposNuevos.driveFolderId = loteFolderId;
+          if (lote.driveEscrituraFileId) {
+            await reemplazarContenidoArchivoDrive(session, lote.driveEscrituraFileId, blob, mimeDocx);
+          } else {
+            const subida = await subirArchivoDrive(session, blob, nombreArchivo, mimeDocx, loteFolderId);
+            camposNuevos.driveEscrituraFileId = subida.id;
+          }
+          if (Object.keys(camposNuevos).length > 0) {
+            const loteConDrive = { ...lote, ...camposNuevos };
+            setLote(loteConDrive);
+            await supabase.from("lotes").update({ datos_json: loteConDrive }).eq("id", lote.id);
+          }
+        } catch (e) {
+          console.warn("No se pudo sincronizar la escritura con Drive:", e);
+        }
+      }
     } catch (e) {
       alert("Error al generar el documento: " + e.message);
     } finally {
       setGenerating(false);
     }
-  }, [templateHTML, lote, barrio, escribano, fecha]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [templateHTML, lote, barrio, escribano, fecha, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);
 
@@ -466,6 +564,8 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
           </div>
           <PanelLote
             lote={lote}
+            barrio={barrio}
+            session={session}
             escribano={escribano}
             miembros={miembros}
             onChange={handleCambioLote}

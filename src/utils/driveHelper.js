@@ -96,6 +96,35 @@ export function urlDescargaDrive(fileId) {
 }
 
 /**
+ * Descarga el contenido de un archivo de Drive como Blob, autenticado
+ * con el token de la app (a diferencia de urlDescargaDrive, que arma
+ * un link para un <a href>, no bytes fetcheables).
+ */
+export async function descargarArchivoDrive(session, fileId) {
+  const token = getToken(session);
+  const res = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Error descargando archivo de Drive: ${res.status}`);
+  return await res.blob();
+}
+
+/**
+ * Reemplaza el contenido de un archivo de Drive ya existente, sin
+ * crear uno nuevo ni tocar su nombre.
+ */
+export async function reemplazarContenidoArchivoDrive(session, fileId, blob, mimeType) {
+  const token = getToken(session);
+  const res = await fetch(`${DRIVE_UPLOAD}/files/${fileId}?uploadType=media`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": mimeType },
+    body: blob,
+  });
+  if (!res.ok) throw new Error(`Error reemplazando archivo de Drive: ${res.status}`);
+  return await res.json();
+}
+
+/**
  * Lista los archivos de una carpeta de Drive.
  */
 export async function listarArchivosDrive(session, folderId) {

@@ -11,6 +11,7 @@ import { InputFecha, InputDinero, InputDecimal } from "../components/ui/Masked";
 import { ModeloScreen } from "./ModeloScreen";
 import { LoteDocScreen } from "./LoteDocScreen";
 import { exportarBarrioZip } from "../utils/exportarBarrioZip";
+import { buscarOCrearCarpetaDrive } from "../utils/driveHelper";
 
 const LOTE_VACIO = () => ({
   id: crypto.randomUUID(),
@@ -25,7 +26,32 @@ const LOTE_VACIO = () => ({
   certCatastro: "", fechaCatastro: "", nomenclatura: "",
   padronRentas: "", avaluo: "", padronMuni: "",
   partes: [],
+  driveFolderId: "", driveEscrituraFileId: "",
 });
+
+// Parsea un rango de lotes de una manzana: "1-12" o "3,5,7-11" (saltos).
+// La numeración real no es uniforme entre manzanas, así que no alcanza
+// con pedir "cuántos lotes tiene el barrio" -- hace falta un rango por
+// manzana (ver specs/escaneo-drive-carga-masiva).
+function parsearRangoLotes(input) {
+  const texto = (input || "").trim();
+  if (!texto) return { numeros: [], error: "Ingresá al menos un lote (ej: 1-12)" };
+  const partes = texto.split(",").map(s => s.trim()).filter(Boolean);
+  const numeros = [];
+  for (const parte of partes) {
+    const rango = parte.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (rango) {
+      const desde = parseInt(rango[1], 10), hasta = parseInt(rango[2], 10);
+      if (desde > hasta) return { numeros: [], error: `Rango inválido: "${parte}"` };
+      for (let n = desde; n <= hasta; n++) numeros.push(String(n));
+    } else if (/^\d+$/.test(parte)) {
+      numeros.push(parte);
+    } else {
+      return { numeros: [], error: `No se pudo interpretar "${parte}"` };
+    }
+  }
+  return { numeros: [...new Set(numeros)], error: null };
+}
 
 function estaCompleto(l) {
   return !!(l.manzana && l.lote && l.partes.length > 0 &&
@@ -234,12 +260,83 @@ function ModalLote({ lote, onSave, onClose }) {
   );
 }
 
-function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote, onVolver, onModelo, onVerDoc, onGo }) {
+function ModalEstructuraLotes({ onConfirmar, onClose }) {
+  const [filas, setFilas] = useState([{ manzana: "", rango: "" }]);
+  const [errores, setErrores] = useState({});
+
+  const upd = (idx, campo, valor) => {
+    setFilas(prev => prev.map((f, i) => i === idx ? { ...f, [campo]: valor } : f));
+  };
+  const agregarFila = () => setFilas(prev => [...prev, { manzana: "", rango: "" }]);
+  const quitarFila = idx => setFilas(prev => prev.filter((_, i) => i !== idx));
+
+  const inp = {
+    width: "100%", padding: "7px 9px", borderRadius: 6,
+    border: "1px solid rgba(26,35,50,.14)", background: "#FDFCFA",
+    fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif",
+    outline: "none", boxSizing: "border-box",
+  };
+
+  function handleConfirmar() {
+    const nuevosErrores = {};
+    const filasValidas = [];
+    filas.forEach((f, idx) => {
+      const manzana = f.manzana.trim();
+      if (!manzana) { nuevosErrores[idx] = "Falta el nombre de la manzana"; return; }
+      const { numeros, error } = parsearRangoLotes(f.rango);
+      if (error) { nuevosErrores[idx] = error; return; }
+      filasValidas.push({ manzana, numeros });
+    });
+    setErrores(nuevosErrores);
+    if (filasValidas.length === 0) return;
+    onConfirmar(filasValidas);
+  }
+
+  return (
+    <Modal title="Crear estructura de lotes" onClose={onClose}
+      footer={<><Btn onClick={onClose}>Cancelar</Btn><Btn primary onClick={handleConfirmar}>Crear estructura</Btn></>}>
+      <div style={{ fontSize: 12, color: "rgba(26,35,50,.6)", marginBottom: 4, lineHeight: 1.5 }}>
+        Declará las manzanas y sus lotes antes de tener los datos de cada
+        adquirente — crea los lotes vacíos y sus carpetas de Drive, listas
+        para recibir documentación desde ahora.
+      </div>
+      {filas.map((f, idx) => (
+        <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 2fr 28px", gap: 8, alignItems: "start" }}>
+          <Fg label="Manzana">
+            <input style={inp} value={f.manzana} onChange={e => upd(idx, "manzana", e.target.value.toUpperCase())} placeholder="ej: A"/>
+          </Fg>
+          <Fg label="Lotes">
+            <input style={inp} value={f.rango} onChange={e => upd(idx, "rango", e.target.value)} placeholder="ej: 1-12 ó 3,5,7-11"/>
+            {errores[idx] && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 4 }}>{errores[idx]}</div>}
+          </Fg>
+          {filas.length > 1 && (
+            <button onClick={() => quitarFila(idx)} style={{
+              marginTop: 20, width: 26, height: 26, borderRadius: 6, cursor: "pointer",
+              border: "1px solid rgba(26,35,50,.15)", background: "transparent",
+              fontSize: 13, color: "#1a2332", fontFamily: "'Inter', sans-serif",
+            }}>×</button>
+          )}
+        </div>
+      ))}
+      <button onClick={agregarFila} style={{
+        padding: "7px 10px", border: "1px dashed rgba(26,35,50,.2)", borderRadius: 8,
+        fontSize: 12, color: C.dark, background: "transparent",
+        fontFamily: "'Inter', sans-serif", cursor: "pointer", textAlign: "center",
+      }}>+ Agregar manzana</button>
+    </Modal>
+  );
+}
+
+function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstructura, onEliminarLote, onVolver, onModelo, onVerDoc, onGo }) {
   const [editandoLote, setEditandoLote] = useState(null);
   const [confirmLote, setConfirmLote] = useState(null);
   const [verModelo, setVerModelo] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [progreso, setProgreso] = useState(null);
+  const [modalEstructura, setModalEstructura] = useState(false);
+  const [estructurando, setEstructurando] = useState(false);
+  const [progresoEstructura, setProgresoEstructura] = useState(null);
+  const [resultadoEstructura, setResultadoEstructura] = useState(null);
   const loteEditar = editandoLote ? barrio.lotes.find(l => l.id === editandoLote) : null;
   const completosCount = barrio.lotes.filter(estaCompleto).length;
   const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: C.porcelain, fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" };
@@ -307,7 +404,10 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
             <span style={{ fontSize: 13, fontWeight: 700, color: "#1a2332" }}>
               Lotes <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,35,50,.4)" }}>{completosCount}/{barrio.lotes.length} completos</span>
             </span>
-            <button onClick={() => onAgregarLote(barrio.id)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px dashed rgba(26,35,50,.25)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1a2332", fontFamily: "'Inter', sans-serif", cursor: "pointer" }}>+ Agregar lote</button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setModalEstructura(true)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px dashed rgba(26,35,50,.25)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1a2332", fontFamily: "'Inter', sans-serif", cursor: "pointer" }}>Crear estructura de lotes</button>
+              <button onClick={() => onAgregarLote(barrio.id)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px dashed rgba(26,35,50,.25)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1a2332", fontFamily: "'Inter', sans-serif", cursor: "pointer" }}>+ Agregar lote</button>
+            </div>
           </div>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
@@ -386,6 +486,52 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onEliminarLote
           onConfirm={() => { onEliminarLote(barrio.id, confirmLote.id); setConfirmLote(null); }}
           onCancel={() => setConfirmLote(null)}
         />
+      )}
+      {modalEstructura && (
+        <ModalEstructuraLotes
+          onClose={() => setModalEstructura(false)}
+          onConfirmar={async filasValidas => {
+            setModalEstructura(false);
+            setEstructurando(true);
+            setProgresoEstructura({ actual: 0, total: 0 });
+            const resultado = await onCrearEstructura(barrio.id, filasValidas, p => setProgresoEstructura(p));
+            setEstructurando(false);
+            setProgresoEstructura(null);
+            if (resultado) setResultadoEstructura(resultado);
+          }}
+        />
+      )}
+      {estructurando && progresoEstructura && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.55)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ background:C.porcelain, borderRadius:14, padding:"28px 32px", minWidth:320, boxShadow:"0 8px 40px rgba(26,35,50,.2)", textAlign:"center", fontFamily:"'Inter', sans-serif" }}>
+            <div style={{ fontSize:15, fontWeight:700, color:"#1a2332", marginBottom:8 }}>Creando estructura de lotes...</div>
+            <div style={{ fontSize:13, color:"rgba(26,35,50,.5)", marginBottom:16 }}>
+              {progresoEstructura.manzana ? `Mz ${progresoEstructura.manzana} · Lote ${progresoEstructura.lote}` : "Iniciando..."}
+            </div>
+            <div style={{ background:"rgba(26,35,50,.08)", borderRadius:6, height:8, overflow:"hidden" }}>
+              <div style={{ height:"100%", borderRadius:6, background:"#3a7ca5", width:`${progresoEstructura.total ? Math.round((progresoEstructura.actual/progresoEstructura.total)*100) : 0}%`, transition:"width .3s" }}/>
+            </div>
+            <div style={{ fontSize:12, color:"rgba(26,35,50,.4)", marginTop:8 }}>{progresoEstructura.actual} / {progresoEstructura.total}</div>
+          </div>
+        </div>
+      )}
+      {resultadoEstructura && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.45)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ background:C.porcelain, borderRadius:12, padding:"24px 24px 18px", width:340, boxShadow:"0 8px 32px rgba(26,35,50,.18)", fontFamily:"'Inter', sans-serif" }}>
+            <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:8 }}>Estructura creada</div>
+            <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20, lineHeight:1.5 }}>
+              {resultadoEstructura.creados} lote{resultadoEstructura.creados === 1 ? "" : "s"} nuevo{resultadoEstructura.creados === 1 ? "" : "s"} creado{resultadoEstructura.creados === 1 ? "" : "s"}, con su carpeta de Drive lista.
+              {resultadoEstructura.saltados > 0 && <> {resultadoEstructura.saltados} ya existía{resultadoEstructura.saltados === 1 ? "" : "n"} y se salte{resultadoEstructura.saltados === 1 ? "ó" : "aron"}.</>}
+            </div>
+            <div style={{ display:"flex", justifyContent:"flex-end" }}>
+              <button onClick={() => setResultadoEstructura(null)} style={{
+                padding:"7px 16px", borderRadius:7, border:"1px solid " + C.cerulean,
+                background:C.cerulean, fontSize:13, fontWeight:600, color:"#FDFCFA",
+                cursor:"pointer", fontFamily:"'Inter', sans-serif",
+              }}>Listo</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -606,7 +752,7 @@ function leerVistaGuardada() {
 }
 
 export function BulkScreen({ onGo }) {
-  const { miUsuario, usuario, registroActivo } = useAuth();
+  const { miUsuario, usuario, registroActivo, session } = useAuth();
   const [barrios, setBarrios] = useState([]);
   const [vista, setVistaState] = useState(leerVistaGuardada);
   const setVista = (nuevaVista) => {
@@ -710,11 +856,73 @@ export function BulkScreen({ onGo }) {
     setBarrios(prev => prev.map(b => b.id === bid ? { ...b, lotes: b.lotes.filter(l => l.id !== lid) } : b));
   };
 
+  // Pre-crea varios lotes vacíos de una (manzana por manzana, con su
+  // rango de lotes) y su carpeta de Drive correspondiente -- para que
+  // la documentación que llega antes de tener datos de cada adquirente
+  // tenga dónde ir desde el primer día (ver UC-1 Parte B).
+  const crearEstructuraLotes = async (bid, filasValidas, onProgress) => {
+    const barrioActual = barrios.find(b => b.id === bid);
+    if (!barrioActual) return null;
+    if (!session?.provider_token) {
+      alert("Necesitás iniciar sesión con Google para crear la estructura de carpetas.");
+      return null;
+    }
+
+    const existentes = new Set(barrioActual.lotes.map(l => `${(l.manzana || "").toUpperCase()}|${l.lote}`));
+    const pendientes = [];
+    for (const fila of filasValidas) {
+      for (const numero of fila.numeros) {
+        const key = `${fila.manzana}|${numero}`;
+        if (existentes.has(key)) continue;
+        existentes.add(key);
+        pendientes.push({ manzana: fila.manzana, lote: numero });
+      }
+    }
+    const totalDeclarados = filasValidas.reduce((acc, f) => acc + f.numeros.length, 0);
+    const saltados = totalDeclarados - pendientes.length;
+
+    let barrioFolderId = barrioActual.drive_folder_id;
+    if (!barrioFolderId) {
+      const raizId = await buscarOCrearCarpetaDrive(session, "Notarial");
+      barrioFolderId = await buscarOCrearCarpetaDrive(session, barrioActual.nombre, raizId);
+      await supabase.from("barrios").update({ drive_folder_id: barrioFolderId }).eq("id", bid);
+    }
+
+    const manzanaFolderIds = {};
+    const nuevosLotes = [];
+    let creados = 0;
+    try {
+      for (let i = 0; i < pendientes.length; i++) {
+        const { manzana, lote: numero } = pendientes[i];
+        onProgress?.({ actual: i + 1, total: pendientes.length, manzana, lote: numero });
+
+        if (!manzanaFolderIds[manzana]) {
+          manzanaFolderIds[manzana] = await buscarOCrearCarpetaDrive(session, `Manzana ${manzana}`, barrioFolderId);
+        }
+        const loteFolderId = await buscarOCrearCarpetaDrive(session, `Lote ${numero}`, manzanaFolderIds[manzana]);
+
+        const loteObj = { ...LOTE_VACIO(), manzana, lote: numero, driveFolderId: loteFolderId };
+        const { data } = await supabase.from("lotes")
+          .insert({ barrio_id: bid, datos_json: loteObj, created_at: new Date().toISOString() })
+          .select().single();
+        if (data) {
+          nuevosLotes.push({ ...loteObj, id: data.id });
+          creados++;
+        }
+      }
+    } finally {
+      if (nuevosLotes.length > 0) {
+        setBarrios(prev => prev.map(b => b.id === bid ? { ...b, lotes: [...b.lotes, ...nuevosLotes] } : b));
+      }
+    }
+    return { creados, saltados };
+  };
+
   const barrioActual = barrios.find(b => b.id === vista.barrioId) || null;
 
   if (vista.tipo === "detalle" && barrioActual) {
     return <DetalleBarrio barrio={barrioActual} onUpd={updBarrio} onUpdLote={updLote}
-      onAgregarLote={agregarLote} onEliminarLote={eliminarLote}
+      onAgregarLote={agregarLote} onCrearEstructura={crearEstructuraLotes} onEliminarLote={eliminarLote}
       onVolver={() => setVista({ tipo: "lista" })}
       onModelo={() => setVista({ tipo: "modelo", barrioId: barrioActual.id })}
       onVerDoc={lote => setVista({ tipo: "lote", barrioId: barrioActual.id, lote })}

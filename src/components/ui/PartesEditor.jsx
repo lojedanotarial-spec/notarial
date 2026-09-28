@@ -168,10 +168,99 @@ function ScanBtn({ onDatos, tipo = "documento", style }) {
     </>
   );
 }
+
+// Escanear un documento ya guardado en la carpeta de Drive de un lote
+// (Carga Masiva) en vez de subir uno del dispositivo. Se lista desde la
+// tabla `archivos` (mismo patrón que `expediente_archivos`, no una
+// llamada en vivo a la API de Drive) y se reusa escanearDocumento() tal
+// cual -- por eso este componente vive en el mismo archivo.
+function ScanDriveBtn({ loteId, onDatos, style }) {
+  const { session } = useAuth();
+  const [abierto, setAbierto] = useState(false);
+  const [archivos, setArchivos] = useState(null); // null = cargando
+  const [progreso, setProgreso] = useState("");
+
+  async function abrir() {
+    setAbierto(true);
+    setArchivos(null);
+    const { data } = await supabase.from("archivos").select("*")
+      .eq("lote_id", loteId).order("created_at", { ascending: false });
+    setArchivos(data || []);
+  }
+
+  async function elegir(archivo) {
+    setProgreso("…");
+    try {
+      const blob = await descargarArchivoDrive(session, archivo.drive_file_id);
+      const file = new File([blob], archivo.nombre || "documento", { type: archivo.mime_type || blob.type });
+      const res = await escanearDocumento(file);
+      onDatos(res);
+      setAbierto(false);
+    } catch {
+      alert("No se pudo leer el documento elegido.");
+    } finally {
+      setProgreso("");
+    }
+  }
+
+  return (
+    <>
+      <button type="button" onClick={abrir}
+        style={{
+          display:"flex", alignItems:"center", gap:5, padding:"5px 10px",
+          border:"1px solid " + C.cerulean, borderRadius:6, background:"transparent",
+          color:C.cerulean, fontSize:11, fontWeight:700, cursor:"pointer",
+          fontFamily:"'Montserrat',sans-serif", ...style,
+        }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        Escanear desde Drive
+      </button>
+      {abierto && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center" }}
+             onClick={e => e.target === e.currentTarget && !progreso && setAbierto(false)}>
+          <div style={{ background:C.porcelain, borderRadius:12, padding:20, width:360, maxHeight:420, display:"flex", flexDirection:"column", boxShadow:"0 8px 32px rgba(26,35,50,.18)" }}>
+            <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:12 }}>Elegir archivo del lote</div>
+            <div style={{ overflowY:"auto", flex:1 }}>
+              {archivos === null ? (
+                <div style={{ fontSize:12, color:"rgba(26,35,50,.5)" }}>Cargando...</div>
+              ) : archivos.length === 0 ? (
+                <div style={{ fontSize:12, color:"rgba(26,35,50,.5)", fontStyle:"italic" }}>
+                  Todavía no hay archivos subidos para este lote.
+                </div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {archivos.map(a => (
+                    <button key={a.id} onClick={() => elegir(a)} disabled={!!progreso}
+                      style={{ textAlign:"left", padding:"8px 10px", borderRadius:7,
+                               border:"1px solid rgba(26,35,50,.14)", background:"transparent",
+                               fontSize:12, color:C.dark, cursor: progreso ? "default" : "pointer",
+                               fontFamily:"'Inter', sans-serif" }}>
+                      {progreso ? "Leyendo..." : (a.nombre || "Archivo sin nombre")}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ display:"flex", justifyContent:"flex-end", marginTop:16 }}>
+              <button onClick={() => !progreso && setAbierto(false)} style={{
+                padding:"6px 14px", borderRadius:7, border:"1px solid rgba(26,35,50,.14)",
+                background:"transparent", fontSize:12, fontWeight:600, color:C.dark,
+                cursor: progreso ? "default" : "pointer", fontFamily:"'Inter', sans-serif",
+              }}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 import { Fg } from "./FormElements";
 import { Btn } from "./Btn";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
+import { descargarArchivoDrive } from "../../utils/driveHelper";
 
 const fmtDni = (v) => {
   if (!v) return "";
@@ -451,7 +540,7 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
   );
 }
 
-export function PartesEditor({ partes, onChange, showRol = true, rolesContextuales }) {
+export function PartesEditor({ partes, onChange, showRol = true, rolesContextuales, loteId }) {
   const { usuario, registroActivo } = useAuth();
   const registroNumero = usuario?.registro_numero || registroActivo;
   const [openId, setOpenId] = useState(partes[0]?.id ?? null);
@@ -647,6 +736,18 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     aplicarEscaneo(persona);
                   }
                 }} style={{ flexShrink:0, alignSelf:"flex-start" }}/>
+                {loteId && (
+                  <ScanDriveBtn loteId={loteId} onDatos={datos => {
+                    const persona = datos?.personas?.[0];
+                    if (!persona) return alert("No se encontraron datos de persona en el documento.");
+                    const actual = partes.find(x => x.id === openId) || {};
+                    if (tieneDatosPropios(actual)) {
+                      setConfirmEscaneo({ persona });
+                    } else {
+                      aplicarEscaneo(persona);
+                    }
+                  }} style={{ flexShrink:0, alignSelf:"flex-start" }}/>
+                )}
               </div>
 
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>

@@ -36,6 +36,10 @@ Masiva no está conectada a ninguna de las dos cosas.
   hoy — ni para guardar documentación ni para generar expedientes.
 - La escritura generada de un lote se guarda únicamente en la base de
   datos de la aplicación; no existe ninguna copia en Drive.
+- Un lote solo se crea de a uno, vacío, con el botón "+ Agregar lote"
+  (`agregarLote` en `BulkScreen.jsx`) — no hay forma de crear varios de
+  una, ni de indicar de entrada a qué manzana pertenece cada uno más
+  allá de cargarlo a mano en `ModalLote` después de creado.
 
 ## Comportamiento deseado (criterios de aceptación)
 
@@ -46,6 +50,11 @@ Masiva no está conectada a ninguna de las dos cosas.
 - [ ] Subir un archivo a un lote lo guarda en la subcarpeta
       correspondiente — creando el expediente del barrio y/o la
       subcarpeta del lote si todavía no existen. *(UC-1)*
+- [ ] El escribano puede pre-crear de una varios lotes vacíos de un
+      barrio, declarando manzana por manzana su rango de lotes (la
+      numeración no es uniforme entre manzanas) — cada lote pre-creado
+      queda con su carpeta de Drive lista para recibir documentación
+      antes de tener ningún dato cargado. *(UC-1)*
 - [ ] Desde el lote, un escribano puede iniciar un escaneo eligiendo un
       archivo entre los que **ya están guardados en la carpeta de Drive
       de ese lote puntual** — no del disco de su computadora, y no de
