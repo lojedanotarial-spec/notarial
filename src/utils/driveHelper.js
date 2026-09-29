@@ -13,6 +13,21 @@ function getToken(session) {
   return token;
 }
 
+function errorDrive(mensaje, status) {
+  const e = new Error(`${mensaje}: ${status}`);
+  e.status = status;
+  return e;
+}
+
+/**
+ * true si el error viene de un token de Google vencido/inválido (401) —
+ * distinto de "no hay token" (session sin provider_token). Útil para
+ * mostrar "volvé a iniciar sesión con Google" en vez de un error genérico.
+ */
+export function esErrorSesionVencida(e) {
+  return e?.status === 401;
+}
+
 /**
  * Busca una carpeta por nombre dentro de un parent (o en root si parentId es null).
  * Devuelve el ID si existe, null si no.
@@ -24,7 +39,7 @@ export async function buscarCarpetaDrive(session, nombre, parentId = null) {
   const res = await fetch(`${DRIVE_API}/files?q=${q}&fields=files(id)`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error(`Error buscando carpeta Drive: ${res.status}`);
+  if (!res.ok) throw errorDrive("Error buscando carpeta Drive", res.status);
   const data = await res.json();
   return data.files?.[0]?.id || null;
 }
@@ -53,7 +68,7 @@ export async function crearCarpetaDrive(session, nombre, parentId = null) {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(meta),
   });
-  if (!res.ok) throw new Error(`Error creando carpeta Drive: ${res.status}`);
+  if (!res.ok) throw errorDrive("Error creando carpeta Drive", res.status);
   const data = await res.json();
   return data.id;
 }
@@ -84,7 +99,7 @@ export async function subirArchivoDrive(session, blob, nombre, mimeType, folderI
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   });
-  if (!res.ok) throw new Error(`Error subiendo a Drive: ${res.status}`);
+  if (!res.ok) throw errorDrive("Error subiendo a Drive", res.status);
   return await res.json(); // { id, name, webViewLink }
 }
 
@@ -105,7 +120,7 @@ export async function descargarArchivoDrive(session, fileId) {
   const res = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error(`Error descargando archivo de Drive: ${res.status}`);
+  if (!res.ok) throw errorDrive("Error descargando archivo de Drive", res.status);
   return await res.blob();
 }
 
@@ -120,7 +135,7 @@ export async function reemplazarContenidoArchivoDrive(session, fileId, blob, mim
     headers: { Authorization: `Bearer ${token}`, "Content-Type": mimeType },
     body: blob,
   });
-  if (!res.ok) throw new Error(`Error reemplazando archivo de Drive: ${res.status}`);
+  if (!res.ok) throw errorDrive("Error reemplazando archivo de Drive", res.status);
   return await res.json();
 }
 
@@ -134,7 +149,7 @@ export async function listarArchivosDrive(session, folderId) {
     `${DRIVE_API}/files?q=${q}&fields=files(id,name,mimeType,webViewLink,createdTime)`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
-  if (!res.ok) throw new Error(`Error listando Drive: ${res.status}`);
+  if (!res.ok) throw errorDrive("Error listando Drive", res.status);
   const data = await res.json();
   return data.files || [];
 }

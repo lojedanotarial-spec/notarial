@@ -196,8 +196,10 @@ function ScanDriveBtn({ loteId, onDatos, style }) {
       const res = await escanearDocumento(file);
       onDatos(res);
       setAbierto(false);
-    } catch {
-      alert("No se pudo leer el documento elegido.");
+    } catch (e) {
+      alert(esErrorSesionVencida(e)
+        ? "Tu sesión de Google venció. Cerrá sesión y volvé a iniciarla con Google, después probá de nuevo."
+        : "No se pudo leer el documento elegido.");
     } finally {
       setProgreso("");
     }
@@ -260,7 +262,7 @@ import { Fg } from "./FormElements";
 import { Btn } from "./Btn";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
-import { descargarArchivoDrive } from "../../utils/driveHelper";
+import { descargarArchivoDrive, esErrorSesionVencida } from "../../utils/driveHelper";
 
 const fmtDni = (v) => {
   if (!v) return "";

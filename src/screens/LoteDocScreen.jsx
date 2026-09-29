@@ -12,7 +12,7 @@ import { useAutoguardado } from "../hooks/useAutoguardado";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import { obtenerCarpetaLoteDrive } from "../utils/loteDrive";
-import { subirArchivoDrive, reemplazarContenidoArchivoDrive } from "../utils/driveHelper";
+import { subirArchivoDrive, reemplazarContenidoArchivoDrive, esErrorSesionVencida } from "../utils/driveHelper";
 
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
@@ -71,7 +71,9 @@ function SeccionDocumentacion({ lote, barrio, session, upd }) {
       });
       await cargar();
     } catch (e) {
-      alert("Error al subir el archivo: " + e.message);
+      alert(esErrorSesionVencida(e)
+        ? "Tu sesión de Google venció. Cerrá sesión y volvé a iniciarla con Google, después subí el archivo de nuevo."
+        : "Error al subir el archivo: " + e.message);
     } finally {
       setSubiendo(false);
     }

@@ -11,7 +11,7 @@ import { InputFecha, InputDinero, InputDecimal } from "../components/ui/Masked";
 import { ModeloScreen } from "./ModeloScreen";
 import { LoteDocScreen } from "./LoteDocScreen";
 import { exportarBarrioZip } from "../utils/exportarBarrioZip";
-import { buscarOCrearCarpetaDrive } from "../utils/driveHelper";
+import { buscarOCrearCarpetaDrive, esErrorSesionVencida } from "../utils/driveHelper";
 
 const LOTE_VACIO = () => ({
   id: crypto.randomUUID(),
@@ -494,10 +494,13 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
             setModalEstructura(false);
             setEstructurando(true);
             setProgresoEstructura({ actual: 0, total: 0 });
-            const resultado = await onCrearEstructura(barrio.id, filasValidas, p => setProgresoEstructura(p));
-            setEstructurando(false);
-            setProgresoEstructura(null);
-            if (resultado) setResultadoEstructura(resultado);
+            try {
+              const resultado = await onCrearEstructura(barrio.id, filasValidas, p => setProgresoEstructura(p));
+              if (resultado) setResultadoEstructura(resultado);
+            } finally {
+              setEstructurando(false);
+              setProgresoEstructura(null);
+            }
           }}
         />
       )}
@@ -881,17 +884,21 @@ export function BulkScreen({ onGo }) {
     const totalDeclarados = filasValidas.reduce((acc, f) => acc + f.numeros.length, 0);
     const saltados = totalDeclarados - pendientes.length;
 
-    let barrioFolderId = barrioActual.drive_folder_id;
-    if (!barrioFolderId) {
-      const raizId = await buscarOCrearCarpetaDrive(session, "Notarial");
-      barrioFolderId = await buscarOCrearCarpetaDrive(session, barrioActual.nombre, raizId);
-      await supabase.from("barrios").update({ drive_folder_id: barrioFolderId }).eq("id", bid);
-    }
-
     const manzanaFolderIds = {};
     const nuevosLotes = [];
     let creados = 0;
+    // Todo lo que toca Drive (incluida la resolución de la carpeta del
+    // barrio) va en el mismo try/catch -- si el token de Google venció a
+    // mitad de camino (401), se corta ahí, se avisa, y se guarda lo que
+    // ya se alcanzó a crear en vez de dejar la pantalla colgada.
     try {
+      let barrioFolderId = barrioActual.drive_folder_id;
+      if (!barrioFolderId) {
+        const raizId = await buscarOCrearCarpetaDrive(session, "Notarial");
+        barrioFolderId = await buscarOCrearCarpetaDrive(session, barrioActual.nombre, raizId);
+        await supabase.from("barrios").update({ drive_folder_id: barrioFolderId }).eq("id", bid);
+      }
+
       for (let i = 0; i < pendientes.length; i++) {
         const { manzana, lote: numero } = pendientes[i];
         onProgress?.({ actual: i + 1, total: pendientes.length, manzana, lote: numero });
@@ -910,6 +917,10 @@ export function BulkScreen({ onGo }) {
           creados++;
         }
       }
+    } catch (e) {
+      alert(esErrorSesionVencida(e)
+        ? "Tu sesión de Google venció. Cerrá sesión y volvé a iniciarla con Google, después repetí esta acción."
+        : "Error creando la estructura de lotes: " + e.message);
     } finally {
       if (nuevosLotes.length > 0) {
         setBarrios(prev => prev.map(b => b.id === bid ? { ...b, lotes: [...b.lotes, ...nuevosLotes] } : b));
