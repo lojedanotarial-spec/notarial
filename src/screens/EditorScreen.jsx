@@ -229,8 +229,6 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   }, [templateId]);
 
   const handleGenerar = useCallback(async () => {
-    // eslint-disable-next-line no-console -- diagnóstico temporal, ver nota arriba
-    console.log("[EditorScreen] handleGenerar corriendo con partes:", JSON.stringify(partes.map(p => ({ nombre: p.nombre, apellido: p.apellido, nroDoc: p.nroDoc }))));
     setGenerating(true);
     try {
       const extravarsConFormulario = {
@@ -322,8 +320,6 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   useEffect(() => {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
-    // eslint-disable-next-line no-console -- diagnóstico temporal, ver PROYECTO.md / BACKLOG.md ("cambiar variables no impacta el documento")
-    console.log("[EditorScreen] efecto partes/etc — generateAfterRef:", generateAfterRef.current, "hasOoEditsRef:", hasOoEditsRef.current, "partes:", JSON.stringify(partes.map(p => ({ nombre: p.nombre, apellido: p.apellido, nroDoc: p.nroDoc }))));
     if (generateAfterRef.current) {
       generateAfterRef.current = false;
       if (hasOoEditsRef.current) {
@@ -402,6 +398,14 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         setDocumentKey(data.document_key);
         setHasOoEdits(true); // conservar posibles ediciones anteriores
         // skipAutoGenerateRef ya arrancó en true, lo dejamos así
+        // BUG encontrado 30/09/26 ("cambiar variables no impacta el documento"):
+        // generatedOnceRef solo se pone en true dentro de handleGenerar(), que acá
+        // nunca corre (a propósito, para no pisar el DOCX guardado). Sin esto, el
+        // efecto que dispara la regeneración por cambios de panel (partes,
+        // escribano, etc.) se cortaba en su primera línea para SIEMPRE en un
+        // documento reabierto — que es el caso más común de uso real, no un caso
+        // borde. LoteDocScreen.jsx ya lo hace bien; acá faltaba.
+        generatedOnceRef.current = true;
       } else {
         // Doc antiguo sin DOCX guardado — dejar que el auto-generate lo cree
         skipAutoGenerateRef.current = false;
@@ -672,8 +676,6 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   }
 
   const applyAndGen = (setter) => (val) => {
-    // eslint-disable-next-line no-console -- diagnóstico temporal, ver nota arriba
-    console.log("[EditorScreen] applyAndGen — nuevo valor:", JSON.stringify(val));
     generateAfterRef.current = true;
     setter(val);
   };
