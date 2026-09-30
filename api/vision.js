@@ -104,7 +104,9 @@ export async function extraerDocumento(imagenes) {
     messages: [{
       role: "user",
       content: [
-        ...imagenes.map(img => ({ type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data } })),
+        ...imagenes.map(img => img.mediaType === "application/pdf"
+          ? { type: "document", source: { type: "base64", media_type: img.mediaType, data: img.data } }
+          : { type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data } }),
         { type: "text", text: PROMPT_EXTRACCION },
       ],
     }],

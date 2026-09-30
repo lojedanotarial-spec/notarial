@@ -62,7 +62,33 @@ function titleCaseDomicilio(str) {
 }
 import { aplicarTildesNombre } from "../../utils/tildesNombres";
 
+async function enviarAVision(data, mediaType) {
+  const res = await fetch("/api/vision", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imagen: { data, mediaType } }),
+  });
+  return res.json();
+}
+
+function leerArchivoBase64(archivo) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(archivo);
+  });
+}
+
 async function escanearDocumento(archivo) {
+  // Un PDF no se puede decodificar con Image/canvas (eso solo sirve para
+  // rasters) — se manda tal cual en base64, Claude lee el PDF directamente
+  // (incluso si es un escaneo, página por página) sin necesidad de convertirlo
+  // a imagen primero.
+  if (archivo.type === "application/pdf") {
+    const base64 = await leerArchivoBase64(archivo);
+    return enviarAVision(base64, "application/pdf");
+  }
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(archivo);
@@ -75,14 +101,7 @@ async function escanearDocumento(archivo) {
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
-      fetch("/api/vision", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imagen: { data: base64, mediaType: "image/jpeg" } }),
-      })
-        .then(r => r.json())
-        .then(resolve)
-        .catch(reject);
+      enviarAVision(base64, "image/jpeg").then(resolve).catch(reject);
     };
     img.onerror = reject;
     img.src = url;
