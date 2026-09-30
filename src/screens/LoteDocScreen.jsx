@@ -346,6 +346,10 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
   const handleGenerar = useCallback(async () => {
     if (!templateHTML) return;
+    // Nunca generar con el placeholder de arranque de un admin ("Admin",
+    // ver AuthContext.jsx) -- mismo guardia que EditorScreen.jsx (ver ahí
+    // el porqué, encontrado 30/09/26).
+    if (!escribano?.nombre || escribano.nombre.trim() === "Admin") return;
     setGenerating(true);
     try {
       const varsLote = construirVarsLote(lote, barrio, escribano, lote.nroEscritura);

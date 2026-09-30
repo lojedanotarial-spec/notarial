@@ -229,6 +229,14 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   }, [templateId]);
 
   const handleGenerar = useCallback(async () => {
+    // Nunca generar con el placeholder de arranque de un admin ("Admin",
+    // ver AuthContext.jsx) -- encontrado 30/09/26: un documento quedó
+    // guardado para siempre con ese escribano inválido porque la
+    // regeneración corrió antes de que se seleccionara el titular real.
+    // El efecto de auto-generación reintenta solo cuando "escribano" cambia
+    // (está en sus deps), así que este return es seguro: en cuanto el
+    // titular se seleccione de verdad, se vuelve a intentar.
+    if (!escribano?.nombre || escribano.nombre.trim() === "Admin") return;
     setGenerating(true);
     try {
       const extravarsConFormulario = {
