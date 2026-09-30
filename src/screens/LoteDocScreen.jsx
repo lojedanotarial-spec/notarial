@@ -300,7 +300,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
       const { data: doc } = await supabase
         .from("documentos")
-        .select("id, document_key")
+        .select("id, document_key, tiene_ediciones_manuales")
         .eq("lote_id", lote.id)
         .maybeSingle();
 
@@ -317,14 +317,17 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
         setInitialDocId(doc.id);
         if (doc.document_key) {
           // Ya hay un DOCX generado — abrirlo tal cual, sin regenerar.
-          // Conservador a propósito: no hay forma de saber si tiene
-          // ediciones manuales sin abrir el archivo, así que se asume que sí.
+          // tiene_ediciones_manuales se persiste con certeza cada vez que se
+          // generó/editó el documento (ver useAutoguardado) -- se lee ese
+          // valor real en vez de asumir "sí" siempre. Documentos viejos, de
+          // antes de que existiera esta columna, quedan en null -- ahí sí se
+          // asume "sí" de forma conservadora, porque genuinamente no se sabe.
           const { data: urlData } = supabase.storage
             .from("oo-docs")
             .getPublicUrl(`${doc.document_key}.docx`);
           setDocumentUrl(urlData.publicUrl);
           setDocumentKey(doc.document_key);
-          setHasOoEdits(true);
+          setHasOoEdits(doc.tiene_ediciones_manuales !== false);
           generatedOnceRef.current = true;
           skipAutoGenerateRef.current = true;
         }
@@ -463,6 +466,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
     contenido: { lote, barrio, fecha },
     templateKey: "escrituraBarrio",
     documentKey,
+    tieneEdicionesManuales: hasOoEdits,
     // Bloqueado hasta terminar de cargar: initialDocId llega de una consulta
     // async (ver "Cargar template del barrio" más arriba) — si el autoguardado
     // arrancara antes de que resuelva, podría insertar un documento duplicado

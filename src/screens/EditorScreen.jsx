@@ -396,7 +396,12 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
           .getPublicUrl(`${data.document_key}.docx`);
         setDocumentUrl(urlData.publicUrl);
         setDocumentKey(data.document_key);
-        setHasOoEdits(true); // conservar posibles ediciones anteriores
+        // tiene_ediciones_manuales se persiste con certeza cada vez que se
+        // generó/editó el documento (ver useAutoguardado) -- se lee ese valor
+        // real en vez de asumir "sí" siempre. Documentos viejos, de antes de
+        // que existiera esta columna, quedan en null -- ahí sí se asume "sí"
+        // de forma conservadora, porque genuinamente no se sabe.
+        setHasOoEdits(data.tiene_ediciones_manuales !== false);
         // skipAutoGenerateRef ya arrancó en true, lo dejamos así
         // BUG encontrado 30/09/26 ("cambiar variables no impacta el documento"):
         // generatedOnceRef solo se pone en true dentro de handleGenerar(), que acá
@@ -659,6 +664,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     tipoActo: templateSlug,
     clausulas: clausulasActivas,
     documentKey,
+    tieneEdicionesManuales: hasOoEdits,
     registroNumero: miUsuario?.registro || registroActivo,
     usuarioId: usuario?.id,
     initialDocId: params?.docId,
