@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
-import { subirArchivoDrive, buscarOCrearCarpetaDrive, urlDescargaDrive } from "../utils/driveHelper";
+import { subirArchivoDrive, buscarOCrearCarpetaDrive, urlDescargaDrive, esErrorSesionVencida } from "../utils/driveHelper";
 
 const ESTADOS = [
   { key: "abierto",    label: "Abierto",    color: "#3a7ca5" },
@@ -173,7 +173,9 @@ export function ExpedienteDetailScreen({ onGo, params }) {
       });
       await cargar();
     } catch (e) {
-      alert("Error subiendo archivo: " + e.message);
+      alert(esErrorSesionVencida(e)
+        ? "Tu sesión de Google venció. Cerrá sesión y volvé a iniciarla con Google, después subí el archivo de nuevo."
+        : "Error subiendo archivo: " + e.message);
     } finally {
       setSubiendo(false);
     }
