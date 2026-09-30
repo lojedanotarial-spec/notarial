@@ -25,18 +25,19 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 - **Reconstrucción de Carga Masiva** — ventana de ~2 semanas, escrituras de
   barrios próximas. Interrumpe el límite de WIP=1 normal por razón de
-  negocio real, no por desorden. Feature 1 (motor de variables unificado)
-  y Feature 2 (editor unificado OnlyOffice para "ver documento" de un
-  lote) terminadas y en producción (2026-09-25) — arranca ahora la
-  Feature 7 (expedientes de barrio en Drive + escanear documentación por
-  lote), reordenada antes que la 3-6 por pedido explícito del 25/09/26.
-  — [epic](epics/carga-masiva-rebuild.md)
+  negocio real, no por desorden. Feature 1 y Feature 2 terminadas
+  (2026-09-25). Feature 7 (expedientes de barrio en Drive + escanear
+  documentación por lote): T1-T6 implementados y en producción
+  (2026-09-30) — falta T7 (smoke test completo de punta a punta, con
+  sesión de Google real) y T8 (cierre formal: PROYECTO.md, ADO).
+  — [epic](epics/carga-masiva-rebuild.md) · [spec](specs/escaneo-drive-carga-masiva/)
 
 ## 🟢 Próximo
 
-- **Bug intermitente: a veces cambiar una variable del panel en el editor individual no regenera el documento** (reportado 25/09/26, "de vez en cuando se rompe"). Se encontró y arregló una causa concreta y determinística (descripción de inmueble sin disparador de regeneración conectado), pero el patrón intermitente no se reprodujo exacto — no está confirmado que sea la única causa. Vigilar si vuelve a pasar.
-- JWT real para OnlyOffice (hoy desactivado — deuda de seguridad aceptada explícitamente durante la migración a Clouding)
 - Confirmar guardado de ediciones OnlyOffice → Supabase end-to-end (el callback existe, falta validarlo con el servidor ya estable)
+- JWT real para OnlyOffice (hoy desactivado — deuda de seguridad aceptada explícitamente durante la migración a Clouding)
+- Quitar el `console.log` de diagnóstico en `AuthContext.jsx` (efecto de carga de miembros) — quedó de una investigación anterior, ya no hace falta con el fix de admin→McLeod directo del 30/09/26
+- Confirmar que el automatismo de horario de Clouding (con verificación de estado real, no solo el 202 de aceptación) sostiene bien varios ciclos seguidos — reforzado 30/09/26 tras un fallo silencioso real
 
 ## 🟡 Después
 
@@ -57,6 +58,12 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 ## ✅ Recién terminado
 
+- **Bug más antiguo del editor, resuelto de raíz (2026-09-30)**: cambiar cualquier dato del panel en un documento *reabierto* (no uno nuevo) nunca regeneraba el documento — `generatedOnceRef` solo se marcaba dentro de `handleGenerar()`, que a propósito no corre al reabrir un DOCX ya guardado, así que el efecto que dispara la regeneración se cortaba en su primera línea para siempre. Aplicado a `EditorScreen.jsx` y `LoteDocScreen.jsx` (que ya lo tenía bien). Encontrado con reproducción real + logs de diagnóstico temporales (ya removidos).
+- Ediciones manuales de OnlyOffice: dejar de asumir siempre "sí hay texto a mano sin guardar" al reabrir un documento — ahora se persiste el dato real (`tiene_ediciones_manuales`) y se lee al reabrir, en vez de preguntar confirmación en cada primer cambio sin necesidad (2026-09-30)
+- Fix: un documento podía quedar generado (y guardado para siempre) con "Admin" como escribano — el placeholder de arranque de una cuenta admin se colaba en la ventana de carrera antes de seleccionar el titular real. Ahora el admin carga directo el registro real (McLeod) desde el login, sin placeholder, más un guardia en `handleGenerar()` que nunca genera con escribano vacío o "Admin" (2026-09-30)
+- Escaneo de documentos (DNI, tarjeta verde) no leía PDF — ahora se rasteriza en el navegador con `pdfjs-dist` antes de mandarlo, mismo camino liviano que las fotos; sin límite de tamaño real (2026-09-30)
+- Scriba: `extraer_documento` descartaba los PDF adjuntos antes de analizarlos; el límite de tamaño de adjuntos se medía en crudo antes de comprimir la imagen, rechazando fotos de celular normales sin necesidad (2026-09-30)
+- Automatización de horario de Clouding: ya no confía en que la API haya *aceptado* el pedido (202) — verifica el estado real del servidor después de pedir start/stop, reintenta una vez, y falla visiblemente (con notificación de GitHub) si no lo logra (2026-09-30)
 - Editor unificado (OnlyOffice) para "ver documento" de un lote en Carga Masiva (2026-09-25) — smoke test en producción encontró y corrigió, de paso: botón "Volver" roto en Logs internos, nombres de barrio duplicados sin validar, fuga de datos entre registros en "Últimas escrituras", y agregó persistencia de navegación en `sessionStorage` (sobrevivir a un F5) tanto a nivel app como dentro de Carga Masiva
 - Motor de variables unificado para Carga Masiva (2026-09-25) — ver PROYECTO.md #94
 - Persistencia del chat de Scriba al cerrar/reabrir el panel + rediseño de navegación de historial (2026-09-21) — 8 bugs reales encontrados y corregidos en smoke test manual antes de mergear
