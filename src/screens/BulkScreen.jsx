@@ -13,6 +13,7 @@ import { LoteDocScreen } from "./LoteDocScreen";
 import { exportarBarrioZip } from "../utils/exportarBarrioZip";
 import { buscarOCrearCarpetaDrive, subirArchivoDrive, esErrorSesionVencida } from "../utils/driveHelper";
 import { obtenerCarpetaLoteDrive } from "../utils/loteDrive";
+import { IconoDrive, IconoSubirDrive } from "../components/ui/DriveIcons";
 
 const LOTE_VACIO = () => ({
   id: crypto.randomUUID(),
@@ -371,13 +372,13 @@ function AccionesDrive({ lote, barrio, session, onUpdLote }) {
         <a href={`https://drive.google.com/drive/folders/${lote.driveFolderId}`} target="_blank" rel="noopener noreferrer"
           title="Ver la carpeta de Drive de este lote"
           style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Inter', sans-serif", textDecoration: "none", display: "flex", alignItems: "center" }}>
-          📂
+          <IconoDrive size={13} />
         </a>
       )}
       <button type="button" onClick={() => !subiendo && inputRef.current?.click()} disabled={subiendo}
         title="Subir un archivo a la carpeta de Drive de este lote"
-        style={{ padding: "4px 8px", borderRadius: 6, cursor: subiendo ? "default" : "pointer", border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Inter', sans-serif" }}>
-        {subiendo ? "…" : "⬆️"}
+        style={{ padding: "4px 8px", borderRadius: 6, cursor: subiendo ? "default" : "pointer", border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center" }}>
+        {subiendo ? "…" : <IconoSubirDrive size={13} />}
       </button>
     </>
   );

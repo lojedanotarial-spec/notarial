@@ -3,6 +3,7 @@ import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import { subirArchivoDrive, buscarOCrearCarpetaDrive, urlVistaPreviaDrive, esErrorSesionVencida } from "../utils/driveHelper";
+import { IconoDrive, IconoSubirDrive } from "../components/ui/DriveIcons";
 
 const ESTADOS = [
   { key: "abierto",    label: "Abierto",    color: "#3a7ca5" },
@@ -233,8 +234,8 @@ export function ExpedienteDetailScreen({ onGo, params }) {
         {expediente.drive_folder_id && (
           <a href={`https://drive.google.com/drive/folders/${expediente.drive_folder_id}`} target="_blank" rel="noopener noreferrer"
             title="Abrir la carpeta de Drive en una pestaña nueva"
-            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(253,252,250,.75)", fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 11, textDecoration: "none", flexShrink: 0 }}>
-            📂 Ver en Drive
+            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(253,252,250,.75)", fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 11, textDecoration: "none", flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
+            <IconoDrive size={12} /> Ver en Drive
           </a>
         )}
       </div>
@@ -365,8 +366,9 @@ export function ExpedienteDetailScreen({ onGo, params }) {
                       background: subiendo ? C.cerulean + "88" : C.cerulean,
                       color: "#fff", fontSize: 12, fontWeight: 700, cursor: subiendo ? "default" : "pointer",
                       fontFamily: "'Montserrat',sans-serif",
+                      display: "flex", alignItems: "center", gap: 6,
                     }}>
-                    {subiendo ? "Subiendo..." : "↑ Subir a Drive"}
+                    {subiendo ? "Subiendo..." : <><IconoSubirDrive size={13} color="#fff" /> Subir a Drive</>}
                   </button>
                 </div>
                 {!session?.provider_token && (

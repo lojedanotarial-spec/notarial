@@ -2,6 +2,7 @@
 import { C, ELABELS } from "../constants";
 import { useAuth } from "../context/AuthContext";
 import { Modal } from "./Modal";
+import { IconoDrive } from "./ui/DriveIcons";
 
 const ESTADO_COLORS = {
   borrador: { bg: "rgba(255,255,255,.1)",  color: "rgba(255,138,138,0.85)",    border: "rgba(255,255,255,.2)"  },
@@ -344,9 +345,9 @@ export function NavBar({
                 background: "transparent", color: "rgba(255,255,255,.75)",
                 fontSize: 12, fontWeight: 600, padding: "5px 12px",
                 fontFamily: "'Inter', sans-serif", cursor: "pointer", flexShrink: 0,
-                display: "flex", alignItems: "center", gap: 5, textDecoration: "none",
+                display: "flex", alignItems: "center", gap: 6, textDecoration: "none",
               }}>
-                📂 Ver en Drive
+                <IconoDrive size={13} /> Ver en Drive
               </a>
             )}
 
