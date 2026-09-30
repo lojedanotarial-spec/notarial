@@ -111,6 +111,14 @@ export function urlDescargaDrive(fileId) {
 }
 
 /**
+ * URL del visor nativo de Drive (PDF, imagen, etc.) -- muestra el archivo
+ * en una vista previa dentro de Drive, sin forzar la descarga.
+ */
+export function urlVistaPreviaDrive(fileId) {
+  return `https://drive.google.com/file/d/${fileId}/view`;
+}
+
+/**
  * Descarga el contenido de un archivo de Drive como Blob, autenticado
  * con el token de la app (a diferencia de urlDescargaDrive, que arma
  * un link para un <a href>, no bytes fetcheables).

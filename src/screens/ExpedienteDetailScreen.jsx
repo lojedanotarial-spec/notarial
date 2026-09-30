@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
-import { subirArchivoDrive, buscarOCrearCarpetaDrive, urlDescargaDrive, esErrorSesionVencida } from "../utils/driveHelper";
+import { subirArchivoDrive, buscarOCrearCarpetaDrive, urlVistaPreviaDrive, esErrorSesionVencida } from "../utils/driveHelper";
 
 const ESTADOS = [
   { key: "abierto",    label: "Abierto",    color: "#3a7ca5" },
@@ -398,7 +398,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 8 }}>
-                          <a href={urlDescargaDrive(a.drive_file_id)} target="_blank" rel="noreferrer"
+                          <a href={urlVistaPreviaDrive(a.drive_file_id)} target="_blank" rel="noreferrer"
                             style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid " + C.cerulean, color: C.cerulean, fontSize: 11, fontWeight: 700, textDecoration: "none", fontFamily: "'Montserrat',sans-serif" }}>
                             Ver
                           </a>
