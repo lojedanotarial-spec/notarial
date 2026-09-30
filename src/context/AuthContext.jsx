@@ -37,18 +37,26 @@ export function AuthProvider({ children }) {
     setUsuario(u);
 
     if (u.is_admin) {
-      setMiUsuario({ nombre: "Admin", apellido: "", is_admin: true });
-      setMiembros([]);
-      setPerfilCargado(true);
-      // Cargar registro propio del admin como default (si tiene registros_id asignado)
-      if (u.registros_id) {
-        supabase
-          .from("registros")
-          .select("registro")
-          .eq("id", u.registros_id)
-          .single()
-          .then(({ data }) => { if (data?.registro) setRegistroActivo(data.registro); });
+      // Cargar directo el registro propio del admin (McLeod, reg. 9876) en vez
+      // de arrancar con un placeholder ("Admin") y corregirlo después -- esa
+      // ventana de dos pasos es lo que dejó un documento real generado con
+      // "Admin" como escribano, guardado así para siempre (encontrado
+      // 30/09/26). u.registros_id ya apunta a la fila del titular real, igual
+      // que para un usuario no-admin -- se carga de la misma forma, sin
+      // ventana de carrera.
+      const { data: yo } = u.registros_id
+        ? await supabase.from("registros").select("*").eq("id", u.registros_id).single()
+        : { data: null };
+      setMiUsuario(yo ? { ...yo, is_admin: true } : { nombre: "Admin", apellido: "", is_admin: true });
+      if (yo?.registro) {
+        setRegistroActivo(yo.registro);
+        const { data: m } = await supabase.from("registros").select("*").eq("registro", yo.registro);
+        setMiembros(ordenarMiembros(m));
+        setMiembrosCargados(true);
+      } else {
+        setMiembros([]);
       }
+      setPerfilCargado(true);
       return;
     }
 
