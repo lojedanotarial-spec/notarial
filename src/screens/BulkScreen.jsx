@@ -384,7 +384,7 @@ function AccionesDrive({ lote, barrio, session, onUpdLote }) {
   );
 }
 
-function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstructura, onEliminarLote, onVolver, onModelo, onVerDoc, onGo }) {
+function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstructura, onCompletarCarpetas, onEliminarLote, onVolver, onModelo, onVerDoc, onGo }) {
   const [editandoLote, setEditandoLote] = useState(null);
   const [confirmLote, setConfirmLote] = useState(null);
   const [verModelo, setVerModelo] = useState(false);
@@ -394,6 +394,9 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
   const [estructurando, setEstructurando] = useState(false);
   const [progresoEstructura, setProgresoEstructura] = useState(null);
   const [resultadoEstructura, setResultadoEstructura] = useState(null);
+  const [completandoCarpetas, setCompletandoCarpetas] = useState(false);
+  const [progresoCompletar, setProgresoCompletar] = useState(null);
+  const [resultadoCompletar, setResultadoCompletar] = useState(null);
   const loteEditar = editandoLote ? barrio.lotes.find(l => l.id === editandoLote) : null;
   const completosCount = barrio.lotes.filter(estaCompleto).length;
   const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: C.porcelain, fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" };
@@ -463,6 +466,21 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
               Lotes <span style={{ fontSize: 12, fontWeight: 400, color: "rgba(26,35,50,.4)" }}>{completosCount}/{barrio.lotes.length} completos</span>
             </span>
             <div style={{ display: "flex", gap: 8 }}>
+              {barrio.lotes.some(l => l.manzana && l.lote && !l.driveFolderId) && (
+                <button onClick={async () => {
+                  setCompletandoCarpetas(true);
+                  setProgresoCompletar({ actual: 0, total: 0 });
+                  try {
+                    const resultado = await onCompletarCarpetas(barrio.id, p => setProgresoCompletar(p));
+                    if (resultado) setResultadoCompletar(resultado);
+                  } finally {
+                    setCompletandoCarpetas(false);
+                    setProgresoCompletar(null);
+                  }
+                }} style={{ padding: "5px 14px", borderRadius: 6, border: "1px dashed rgba(201,169,97,.5)", background: "rgba(201,169,97,.08)", fontSize: 12, fontWeight: 600, color: "#8a6d2f", fontFamily: "'Inter', sans-serif", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                  <IconoDrive size={12} /> Completar carpetas de Drive
+                </button>
+              )}
               <button onClick={() => setModalEstructura(true)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px dashed rgba(26,35,50,.25)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1a2332", fontFamily: "'Inter', sans-serif", cursor: "pointer" }}>Crear estructura de lotes</button>
               <button onClick={() => onAgregarLote(barrio.id)} style={{ padding: "5px 14px", borderRadius: 6, border: "1px dashed rgba(26,35,50,.25)", background: "transparent", fontSize: 12, fontWeight: 600, color: "#1a2332", fontFamily: "'Inter', sans-serif", cursor: "pointer" }}>+ Agregar lote</button>
             </div>
@@ -587,6 +605,40 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
             </div>
             <div style={{ display:"flex", justifyContent:"flex-end" }}>
               <button onClick={() => setResultadoEstructura(null)} style={{
+                padding:"7px 16px", borderRadius:7, border:"1px solid " + C.cerulean,
+                background:C.cerulean, fontSize:13, fontWeight:600, color:"#FDFCFA",
+                cursor:"pointer", fontFamily:"'Inter', sans-serif",
+              }}>Listo</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {completandoCarpetas && progresoCompletar && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.55)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ background:C.porcelain, borderRadius:14, padding:"28px 32px", minWidth:320, boxShadow:"0 8px 40px rgba(26,35,50,.2)", textAlign:"center", fontFamily:"'Inter', sans-serif" }}>
+            <div style={{ fontSize:15, fontWeight:700, color:"#1a2332", marginBottom:8 }}>Completando carpetas de Drive...</div>
+            <div style={{ fontSize:13, color:"rgba(26,35,50,.5)", marginBottom:16 }}>
+              {progresoCompletar.manzana ? `Mz ${progresoCompletar.manzana} · Lote ${progresoCompletar.lote}` : "Iniciando..."}
+            </div>
+            <div style={{ background:"rgba(26,35,50,.08)", borderRadius:6, height:8, overflow:"hidden" }}>
+              <div style={{ height:"100%", borderRadius:6, background:"#3a7ca5", width:`${progresoCompletar.total ? Math.round((progresoCompletar.actual/progresoCompletar.total)*100) : 0}%`, transition:"width .3s" }}/>
+            </div>
+            <div style={{ fontSize:12, color:"rgba(26,35,50,.4)", marginTop:8 }}>{progresoCompletar.actual} / {progresoCompletar.total}</div>
+          </div>
+        </div>
+      )}
+      {resultadoCompletar && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.45)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ background:C.porcelain, borderRadius:12, padding:"24px 24px 18px", width:340, boxShadow:"0 8px 32px rgba(26,35,50,.18)", fontFamily:"'Inter', sans-serif" }}>
+            <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:8 }}>Carpetas completadas</div>
+            <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20, lineHeight:1.5 }}>
+              {resultadoCompletar.completadas === 0
+                ? "No había ningún lote con datos cargados al que le faltara carpeta de Drive."
+                : <>Se completó la carpeta de Drive de {resultadoCompletar.completadas} lote{resultadoCompletar.completadas === 1 ? "" : "s"}.</>}
+              {resultadoCompletar.sinDatos > 0 && <> {resultadoCompletar.sinDatos} lote{resultadoCompletar.sinDatos === 1 ? "" : "s"} todavía no tiene{resultadoCompletar.sinDatos === 1 ? "" : "n"} manzana/lote cargados, así que no se le{resultadoCompletar.sinDatos === 1 ? "" : "s"} pudo crear la carpeta todavía.</>}
+            </div>
+            <div style={{ display:"flex", justifyContent:"flex-end" }}>
+              <button onClick={() => setResultadoCompletar(null)} style={{
                 padding:"7px 16px", borderRadius:7, border:"1px solid " + C.cerulean,
                 background:C.cerulean, fontSize:13, fontWeight:600, color:"#FDFCFA",
                 cursor:"pointer", fontFamily:"'Inter', sans-serif",
@@ -1010,11 +1062,75 @@ export function BulkScreen({ onGo }) {
     return { creados, carpetasCompletadas };
   };
 
+  // Barre TODOS los lotes ya existentes de un barrio (no solo los de una
+  // corrida puntual de "Crear estructura de lotes") y le crea/vincula la
+  // carpeta de Drive al que le falte -- sin importar cómo se haya cargado
+  // (a mano, uno por uno, antes o después de que existiera la creación
+  // masiva). Pedido explícito 30/09/26 tras encontrar un lote cargado a
+  // mano que quedó sin carpeta porque nunca coincidió con el rango
+  // declarado en ninguna corrida de la estructura masiva.
+  const completarCarpetasDrive = async (bid, onProgress) => {
+    const barrioActual = barrios.find(b => b.id === bid);
+    if (!barrioActual) return null;
+    if (!session?.provider_token) {
+      alert("Necesitás iniciar sesión con Google para crear la estructura de carpetas.");
+      return null;
+    }
+
+    const pendientes = barrioActual.lotes.filter(l => l.manzana && l.lote && !l.driveFolderId);
+    const sinDatos = barrioActual.lotes.filter(l => (!l.manzana || !l.lote) && !l.driveFolderId).length;
+    if (pendientes.length === 0) return { completadas: 0, sinDatos };
+
+    const manzanaFolderIds = {};
+    const actualizados = [];
+    let completadas = 0;
+    try {
+      let barrioFolderId = barrioActual.drive_folder_id;
+      if (!barrioFolderId) {
+        const raizId = await buscarOCrearCarpetaDrive(session, "Notarial");
+        barrioFolderId = await buscarOCrearCarpetaDrive(session, barrioActual.nombre, raizId);
+        await supabase.from("barrios").update({ drive_folder_id: barrioFolderId }).eq("id", bid);
+      }
+
+      for (let i = 0; i < pendientes.length; i++) {
+        const lote = pendientes[i];
+        onProgress?.({ actual: i + 1, total: pendientes.length, manzana: lote.manzana, lote: lote.lote });
+
+        const manzana = (lote.manzana || "").toUpperCase();
+        if (!manzanaFolderIds[manzana]) {
+          manzanaFolderIds[manzana] = await buscarOCrearCarpetaDrive(session, `Manzana ${manzana}`, barrioFolderId);
+        }
+        const loteFolderId = await buscarOCrearCarpetaDrive(session, `Lote ${lote.lote}`, manzanaFolderIds[manzana]);
+
+        const loteActualizado = { ...lote, driveFolderId: loteFolderId };
+        await supabase.from("lotes").update({ datos_json: loteActualizado }).eq("id", lote.id);
+        actualizados.push({ id: lote.id, loteActualizado });
+        completadas++;
+      }
+    } catch (e) {
+      alert(esErrorSesionVencida(e)
+        ? "Tu sesión de Google venció. Cerrá sesión y volvé a iniciarla con Google, después repetí esta acción."
+        : "Error completando las carpetas de Drive: " + e.message);
+    } finally {
+      if (actualizados.length > 0) {
+        setBarrios(prev => prev.map(b => {
+          if (b.id !== bid) return b;
+          let lotes = b.lotes;
+          for (const { id, loteActualizado } of actualizados) {
+            lotes = lotes.map(l => l.id === id ? loteActualizado : l);
+          }
+          return { ...b, lotes };
+        }));
+      }
+    }
+    return { completadas, sinDatos };
+  };
+
   const barrioActual = barrios.find(b => b.id === vista.barrioId) || null;
 
   if (vista.tipo === "detalle" && barrioActual) {
     return <DetalleBarrio barrio={barrioActual} onUpd={updBarrio} onUpdLote={updLote}
-      onAgregarLote={agregarLote} onCrearEstructura={crearEstructuraLotes} onEliminarLote={eliminarLote}
+      onAgregarLote={agregarLote} onCrearEstructura={crearEstructuraLotes} onCompletarCarpetas={completarCarpetasDrive} onEliminarLote={eliminarLote}
       onVolver={() => setVista({ tipo: "lista" })}
       onModelo={() => setVista({ tipo: "modelo", barrioId: barrioActual.id })}
       onVerDoc={lote => setVista({ tipo: "lote", barrioId: barrioActual.id, lote })}
