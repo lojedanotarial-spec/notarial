@@ -76,30 +76,49 @@ async function enviarAVision(data, mediaType) {
   return json;
 }
 
-function leerArchivoBase64(archivo) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(archivo);
-  });
+// Renderiza una página de PDF a un canvas, con el mismo tope de 1200px y
+// misma calidad JPEG que ya se usa para fotos -- así un PDF entra por el
+// camino liviano que ya funciona, en vez de mandar los bytes crudos (que
+// pueden ser varios MB por una sola foto de DNI escaneada con el celular).
+async function rasterizarPaginaPdf(page) {
+  const MAX = 1200;
+  const base = page.getViewport({ scale: 1 });
+  const scale = MAX / Math.max(base.width, base.height);
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+  return canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
 }
 
-const LIMITE_PDF_ESCANEO = 3 * 1024 * 1024; // ~3MB crudo (~4MB en base64) -- margen bajo el límite de body de Vercel
+// Un DNI/tarjeta verde escaneado a PDF es casi siempre 1 página -- tope
+// para no colgar el navegador si por error se elige un PDF de muchas.
+const MAX_PAGINAS_PDF = 3;
+
+async function rasterizarPdf(archivo) {
+  const pdfjsLib = await import("pdfjs-dist");
+  const { default: workerUrl } = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+
+  const buffer = await archivo.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const paginas = Math.min(pdf.numPages, MAX_PAGINAS_PDF);
+  const base64s = [];
+  for (let i = 1; i <= paginas; i++) {
+    base64s.push(await rasterizarPaginaPdf(await pdf.getPage(i)));
+  }
+  return base64s;
+}
 
 async function escanearDocumento(archivo) {
-  // Un PDF no se puede decodificar con Image/canvas (eso solo sirve para
-  // rasters) — se manda tal cual en base64, Claude lee el PDF directamente
-  // (incluso si es un escaneo, página por página) sin necesidad de convertirlo
-  // a imagen primero. A diferencia de una foto, no hay forma de comprimirlo
-  // acá, así que se avisa antes de mandarlo en vez de fallar sin explicación
-  // del lado del servidor si es demasiado pesado.
   if (archivo.type === "application/pdf") {
-    if (archivo.size > LIMITE_PDF_ESCANEO) {
-      throw new Error("el PDF pesa más de 3MB — probá exportarlo más liviano o escaneá página por página");
+    const paginas = await rasterizarPdf(archivo);
+    let acumulado = null;
+    for (const base64 of paginas) {
+      acumulado = mergePersonas(acumulado, await enviarAVision(base64, "image/jpeg"));
     }
-    const base64 = await leerArchivoBase64(archivo);
-    return enviarAVision(base64, "application/pdf");
+    return acumulado;
   }
   return new Promise((resolve, reject) => {
     const img = new Image();
