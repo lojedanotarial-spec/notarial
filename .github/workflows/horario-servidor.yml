@@ -29,12 +29,62 @@ jobs:
             echo "action=start" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Ejecutar accion en Clouding
+      # Clouding puede aceptar el pedido (HTTP 202) y no ejecutarlo -- pasó
+      # el 30/09/26 (el cron de arranque de las 07:50 corrió "bien" pero el
+      # servidor siguió apagado). Este paso ya no confía en el 202: pide la
+      # accion, espera hasta 5 minutos verificando el estado REAL del
+      # servidor, y si no llegó, reintenta una vez más antes de fallar. Si
+      # sigue sin lograrlo, el job termina en rojo -- GitHub notifica solo
+      # al dueño del repo ante un fallo de un workflow programado, así que
+      # un fallo real deja de pasar desapercibido.
+      - name: Ejecutar y verificar en Clouding
+        env:
+          API_KEY: ${{ secrets.CLOUDING_API_KEY }}
+          SERVER_ID: ${{ secrets.CLOUDING_SERVER_ID }}
+          ACTION: ${{ steps.determine.outputs.action }}
         run: |
-          RESPUESTA=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -H "X-API-KEY: ${{ secrets.CLOUDING_API_KEY }}" \
-            "https://api.clouding.io/v1/servers/${{ secrets.CLOUDING_SERVER_ID }}/${{ steps.determine.outputs.action }}" \
-            -w "\nHTTP_STATUS:%{http_code}\n")
-          echo "$RESPUESTA"
-          echo "$RESPUESTA" | grep -q "HTTP_STATUS:202" || (echo "Fallo la accion" && exit 1)
+          ESTADO_ESPERADO="Active"
+          [ "$ACTION" = "stop" ] && ESTADO_ESPERADO="Stopped"
+
+          pedir_accion() {
+            RESPUESTA=$(curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -H "X-API-KEY: $API_KEY" \
+              "https://api.clouding.io/v1/servers/$SERVER_ID/$ACTION" \
+              -w "\nHTTP_STATUS:%{http_code}\n")
+            echo "$RESPUESTA"
+            echo "$RESPUESTA" | grep -q "HTTP_STATUS:202" || { echo "Clouding no aceptó el pedido de $ACTION"; exit 1; }
+          }
+
+          estado_actual() {
+            curl -s -H "X-API-KEY: $API_KEY" "https://api.clouding.io/v1/servers/$SERVER_ID" \
+              | grep -o '"status":"[^"]*"' | cut -d'"' -f4
+          }
+
+          esperar_estado() {
+            for i in $(seq 1 20); do
+              sleep 15
+              ESTADO=$(estado_actual)
+              echo "intento $i: $ESTADO"
+              [ "$ESTADO" = "$ESTADO_ESPERADO" ] && return 0
+            done
+            return 1
+          }
+
+          pedir_accion
+
+          if esperar_estado; then
+            echo "OK: servidor en estado '$ESTADO_ESPERADO'"
+            exit 0
+          fi
+
+          echo "El servidor no llegó a '$ESTADO_ESPERADO' después de 5 minutos (quedó en '$ESTADO') -- reintentando una vez"
+          pedir_accion
+
+          if esperar_estado; then
+            echo "OK tras reintento: servidor en estado '$ESTADO_ESPERADO'"
+            exit 0
+          fi
+
+          echo "FALLO: el servidor sigue sin llegar a '$ESTADO_ESPERADO' (estado final: '$ESTADO') después de reintentar"
+          exit 1
