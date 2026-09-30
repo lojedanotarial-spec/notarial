@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { C, PARTE_VACIA } from "../constants";
 import { NavBar } from "../components/NavBar";
 import { Modal } from "../components/Modal";
@@ -11,7 +11,8 @@ import { InputFecha, InputDinero, InputDecimal } from "../components/ui/Masked";
 import { ModeloScreen } from "./ModeloScreen";
 import { LoteDocScreen } from "./LoteDocScreen";
 import { exportarBarrioZip } from "../utils/exportarBarrioZip";
-import { buscarOCrearCarpetaDrive, esErrorSesionVencida } from "../utils/driveHelper";
+import { buscarOCrearCarpetaDrive, subirArchivoDrive, esErrorSesionVencida } from "../utils/driveHelper";
+import { obtenerCarpetaLoteDrive } from "../utils/loteDrive";
 
 const LOTE_VACIO = () => ({
   id: crypto.randomUUID(),
@@ -327,6 +328,61 @@ function ModalEstructuraLotes({ onConfirmar, onClose }) {
   );
 }
 
+// Shortcut de Drive por lote, en la tabla del barrio -- ver la carpeta
+// (si ya existe) y subir un archivo directo, sin tener que entrar a
+// "Ver documento" primero. Crea la carpeta al vuelo si todavía no existe.
+function AccionesDrive({ lote, barrio, session, onUpdLote }) {
+  const [subiendo, setSubiendo] = useState(false);
+  const inputRef = useRef(null);
+
+  async function subir(file) {
+    if (!session?.provider_token) {
+      alert("Necesitás iniciar sesión con Google para subir documentación a Drive.");
+      return;
+    }
+    setSubiendo(true);
+    try {
+      let folderId = lote.driveFolderId;
+      let loteActualizado = lote;
+      if (!folderId) {
+        const { loteFolderId } = await obtenerCarpetaLoteDrive(session, { barrio, lote });
+        folderId = loteFolderId;
+        loteActualizado = { ...lote, driveFolderId: folderId };
+      }
+      const resultado = await subirArchivoDrive(session, file, file.name, file.type, folderId);
+      await supabase.from("archivos").insert({
+        lote_id: lote.id, drive_file_id: resultado.id, nombre: file.name, mime_type: file.type, tipo: "documentacion",
+      });
+      if (loteActualizado !== lote) onUpdLote(barrio.id, lote.id, loteActualizado);
+    } catch (e) {
+      alert(esErrorSesionVencida(e)
+        ? "Tu sesión de Google venció. Cerrá sesión y volvé a iniciarla con Google, después subí el archivo de nuevo."
+        : "Error al subir el archivo: " + e.message);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  return (
+    <>
+      <input ref={inputRef} type="file" style={{ display: "none" }}
+        onChange={e => { const f = e.target.files?.[0]; if (f) subir(f); e.target.value = ""; }} />
+      {lote.driveFolderId && (
+        <a href={`https://drive.google.com/drive/folders/${lote.driveFolderId}`} target="_blank" rel="noopener noreferrer"
+          title="Ver la carpeta de Drive de este lote"
+          style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Inter', sans-serif", textDecoration: "none", display: "flex", alignItems: "center" }}>
+          📂
+        </a>
+      )}
+      <button type="button" onClick={() => !subiendo && inputRef.current?.click()} disabled={subiendo}
+        title="Subir un archivo a la carpeta de Drive de este lote"
+        style={{ padding: "4px 8px", borderRadius: 6, cursor: subiendo ? "default" : "pointer", border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Inter', sans-serif" }}>
+        {subiendo ? "…" : "⬆️"}
+      </button>
+    </>
+  );
+}
+
 function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstructura, onEliminarLote, onVolver, onModelo, onVerDoc, onGo }) {
   const [editandoLote, setEditandoLote] = useState(null);
   const [confirmLote, setConfirmLote] = useState(null);
@@ -340,7 +396,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
   const loteEditar = editandoLote ? barrio.lotes.find(l => l.id === editandoLote) : null;
   const completosCount = barrio.lotes.filter(estaCompleto).length;
   const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: C.porcelain, fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" };
-  const { miUsuario, usuario, registroActivo } = useAuth();
+  const { miUsuario, usuario, registroActivo, session } = useAuth();
   const [verDocLote, setVerDocLote] = useState(null);
     useEffect(() => {
       if (verDocLote) { onVerDoc(verDocLote); setVerDocLote(null); }
@@ -446,6 +502,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
                           </svg>
                           Ver documento
                         </button>
+                        <AccionesDrive lote={l} barrio={barrio} session={session} onUpdLote={onUpdLote} />
                         <button onClick={() => setConfirmLote(l)}
                           style={{ padding: "4px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(26,35,50,.15)", background: "transparent", fontSize: 13, color: "#1a2332", fontFamily: "'Inter', sans-serif" }}
                           onMouseEnter={e => { e.currentTarget.style.color = "#c0392b"; e.currentTarget.style.borderColor = "#c0392b"; }}
@@ -525,7 +582,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
             <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:8 }}>Estructura creada</div>
             <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20, lineHeight:1.5 }}>
               {resultadoEstructura.creados} lote{resultadoEstructura.creados === 1 ? "" : "s"} nuevo{resultadoEstructura.creados === 1 ? "" : "s"} creado{resultadoEstructura.creados === 1 ? "" : "s"}, con su carpeta de Drive lista.
-              {resultadoEstructura.saltados > 0 && <> {resultadoEstructura.saltados} ya existía{resultadoEstructura.saltados === 1 ? "" : "n"} y se salte{resultadoEstructura.saltados === 1 ? "ó" : "aron"}.</>}
+              {resultadoEstructura.carpetasCompletadas > 0 && <> {resultadoEstructura.carpetasCompletadas} ya existía{resultadoEstructura.carpetasCompletadas === 1 ? "" : "n"} cargado{resultadoEstructura.carpetasCompletadas === 1 ? "" : "s"} a mano y se le{resultadoEstructura.carpetasCompletadas === 1 ? "" : "s"} completó la carpeta de Drive.</>}
             </div>
             <div style={{ display:"flex", justifyContent:"flex-end" }}>
               <button onClick={() => setResultadoEstructura(null)} style={{
@@ -872,22 +929,28 @@ export function BulkScreen({ onGo }) {
       return null;
     }
 
-    const existentes = new Set(barrioActual.lotes.map(l => `${(l.manzana || "").toUpperCase()}|${l.lote}`));
-    const pendientes = [];
+    // Si la combinación manzana+lote ya existe como fila (cargada a mano
+    // antes de usar este modal), no se duplica la fila -- pero sí se le
+    // completa la carpeta de Drive si todavía no la tiene. Antes se
+    // saltaba del todo, dejando ese lote sin carpeta para siempre
+    // (encontrado 30/09/26).
+    const porClave = new Map(barrioActual.lotes.map(l => [`${(l.manzana || "").toUpperCase()}|${l.lote}`, l]));
+    const tareas = [];
+    const vistos = new Set();
     for (const fila of filasValidas) {
       for (const numero of fila.numeros) {
         const key = `${fila.manzana}|${numero}`;
-        if (existentes.has(key)) continue;
-        existentes.add(key);
-        pendientes.push({ manzana: fila.manzana, lote: numero });
+        if (vistos.has(key)) continue;
+        vistos.add(key);
+        tareas.push({ manzana: fila.manzana, lote: numero, existente: porClave.get(key) || null });
       }
     }
-    const totalDeclarados = filasValidas.reduce((acc, f) => acc + f.numeros.length, 0);
-    const saltados = totalDeclarados - pendientes.length;
 
     const manzanaFolderIds = {};
     const nuevosLotes = [];
+    const actualizados = [];
     let creados = 0;
+    let carpetasCompletadas = 0;
     // Todo lo que toca Drive (incluida la resolución de la carpeta del
     // barrio) va en el mismo try/catch -- si el token de Google venció a
     // mitad de camino (401), se corta ahí, se avisa, y se guarda lo que
@@ -900,22 +963,31 @@ export function BulkScreen({ onGo }) {
         await supabase.from("barrios").update({ drive_folder_id: barrioFolderId }).eq("id", bid);
       }
 
-      for (let i = 0; i < pendientes.length; i++) {
-        const { manzana, lote: numero } = pendientes[i];
-        onProgress?.({ actual: i + 1, total: pendientes.length, manzana, lote: numero });
+      for (let i = 0; i < tareas.length; i++) {
+        const { manzana, lote: numero, existente } = tareas[i];
+        onProgress?.({ actual: i + 1, total: tareas.length, manzana, lote: numero });
+
+        if (existente && existente.driveFolderId) continue; // ya tiene fila y carpeta
 
         if (!manzanaFolderIds[manzana]) {
           manzanaFolderIds[manzana] = await buscarOCrearCarpetaDrive(session, `Manzana ${manzana}`, barrioFolderId);
         }
         const loteFolderId = await buscarOCrearCarpetaDrive(session, `Lote ${numero}`, manzanaFolderIds[manzana]);
 
-        const loteObj = { ...LOTE_VACIO(), manzana, lote: numero, driveFolderId: loteFolderId };
-        const { data } = await supabase.from("lotes")
-          .insert({ barrio_id: bid, datos_json: loteObj, created_at: new Date().toISOString() })
-          .select().single();
-        if (data) {
-          nuevosLotes.push({ ...loteObj, id: data.id });
-          creados++;
+        if (existente) {
+          const loteActualizado = { ...existente, driveFolderId: loteFolderId };
+          await supabase.from("lotes").update({ datos_json: loteActualizado }).eq("id", existente.id);
+          actualizados.push({ id: existente.id, loteActualizado });
+          carpetasCompletadas++;
+        } else {
+          const loteObj = { ...LOTE_VACIO(), manzana, lote: numero, driveFolderId: loteFolderId };
+          const { data } = await supabase.from("lotes")
+            .insert({ barrio_id: bid, datos_json: loteObj, created_at: new Date().toISOString() })
+            .select().single();
+          if (data) {
+            nuevosLotes.push({ ...loteObj, id: data.id });
+            creados++;
+          }
         }
       }
     } catch (e) {
@@ -923,11 +995,18 @@ export function BulkScreen({ onGo }) {
         ? "Tu sesión de Google venció. Cerrá sesión y volvé a iniciarla con Google, después repetí esta acción."
         : "Error creando la estructura de lotes: " + e.message);
     } finally {
-      if (nuevosLotes.length > 0) {
-        setBarrios(prev => prev.map(b => b.id === bid ? { ...b, lotes: [...b.lotes, ...nuevosLotes] } : b));
+      if (nuevosLotes.length > 0 || actualizados.length > 0) {
+        setBarrios(prev => prev.map(b => {
+          if (b.id !== bid) return b;
+          let lotes = [...b.lotes, ...nuevosLotes];
+          for (const { id, loteActualizado } of actualizados) {
+            lotes = lotes.map(l => l.id === id ? loteActualizado : l);
+          }
+          return { ...b, lotes };
+        }));
       }
     }
-    return { creados, saltados };
+    return { creados, carpetasCompletadas };
   };
 
   const barrioActual = barrios.find(b => b.id === vista.barrioId) || null;
