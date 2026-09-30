@@ -228,6 +228,13 @@ export function ExpedienteDetailScreen({ onGo, params }) {
           style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: stateInfo.color + "22", color: stateInfo.color, fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>
           {ESTADOS.map(e => <option key={e.key} value={e.key}>{e.label}</option>)}
         </select>
+        {expediente.drive_folder_id && (
+          <a href={`https://drive.google.com/drive/folders/${expediente.drive_folder_id}`} target="_blank" rel="noopener noreferrer"
+            title="Abrir la carpeta de Drive en una pestaña nueva"
+            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(253,252,250,.75)", fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 11, textDecoration: "none", flexShrink: 0 }}>
+            📂 Ver en Drive
+          </a>
+        )}
       </div>
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>

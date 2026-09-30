@@ -524,6 +524,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
         indicadorGuardado={generating ? "Generando documento..." : indicador}
         onGo={handleGoConAviso}
         onVolver={handleVolver}
+        driveUrl={lote.driveFolderId ? `https://drive.google.com/drive/folders/${lote.driveFolderId}` : undefined}
       />
 
       <div style={{ flex:1, display:"flex", overflow:"hidden" }}>

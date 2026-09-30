@@ -351,6 +351,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
         onGo={onGo}
         screenTitle={barrio.nombre}
         onVolver={onVolver}
+        driveUrl={barrio.drive_folder_id ? `https://drive.google.com/drive/folders/${barrio.drive_folder_id}` : undefined}
         onModelo={onModelo}
         modeloLabel="Ver modelo"
         exportLabel="Exportar ZIP"

@@ -210,6 +210,7 @@ export function NavBar({
   showVarHighlight, onToggleVarHighlight,
   onFormato,
   onExpediente,
+  driveUrl,
   onGo, onVolver,
 }) {
   const { iniciales, usuario } = useAuth();
@@ -335,6 +336,18 @@ export function NavBar({
               }}>
                 📁 Expediente
               </button>
+            )}
+
+            {driveUrl && (
+              <a href={driveUrl} target="_blank" rel="noopener noreferrer" title="Abrir la carpeta de Drive en una pestaña nueva" style={{
+                border: "1px solid rgba(255,255,255,.2)", borderRadius: 6,
+                background: "transparent", color: "rgba(255,255,255,.75)",
+                fontSize: 12, fontWeight: 600, padding: "5px 12px",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer", flexShrink: 0,
+                display: "flex", alignItems: "center", gap: 5, textDecoration: "none",
+              }}>
+                📂 Ver en Drive
+              </a>
             )}
 
             {onFormato && (
