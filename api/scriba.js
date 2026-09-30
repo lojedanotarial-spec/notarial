@@ -1935,9 +1935,9 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL,
       const imagenes = (input.indices || [])
         .map(i => documentos_adjuntos[i])
         .filter(Boolean)
-        .filter(d => d.mediaType !== "application/pdf" && d.mediaType !== DOCX_MEDIA_TYPE)
+        .filter(d => d.mediaType !== DOCX_MEDIA_TYPE) // un .docx no es analizable como documento de identidad/vehículo
         .map(d => ({ data: d.data, mediaType: d.mediaType }));
-      if (!imagenes.length) return { error: "No encontré esos adjuntos como imágenes para analizar." };
+      if (!imagenes.length) return { error: "No encontré esos adjuntos como imágenes o PDFs para analizar." };
       try {
         return await extraerDocumento(imagenes);
       } catch (e) {

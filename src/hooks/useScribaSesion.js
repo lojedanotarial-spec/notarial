@@ -40,13 +40,24 @@ export function useScribaSesion(contexto) {
 
   function handleFiles(files) {
     if (!files?.length) return;
-    const actual = archivos.reduce((s, a) => s + (a.sizeBytes || 0), 0);
-    const nuevo = files.reduce((s, f) => s + f.size, 0);
-    if (actual + nuevo > LIMITE_ADJUNTOS) {
-      alert("Los archivos adjuntados son demasiado pesados en conjunto. Adjuntá menos archivos o archivos más livianos (límite ~2.4MB en total).");
-      return;
-    }
     files.forEach(agregarArchivo);
+  }
+
+  // El límite se aplica sobre el peso REAL que se va a transmitir -- para
+  // una imagen eso es DESPUÉS de comprimir (una foto de celular sin editar
+  // pesa crudo 3-8MB, pero termina pesando una fracción de eso una vez
+  // reducida a 1200px; juzgarla por el tamaño crudo la rechazaba de entrada
+  // sin necesidad). Para PDF/docx, que se mandan sin comprimir, el tamaño
+  // real es el crudo.
+  function agregarConLimite(nuevoArchivo) {
+    setArchivos(prev => {
+      const actual = prev.reduce((s, a) => s + (a.sizeBytes || 0), 0);
+      if (actual + nuevoArchivo.sizeBytes > LIMITE_ADJUNTOS) {
+        alert("Los archivos adjuntados son demasiado pesados en conjunto. Adjuntá menos archivos o archivos más livianos (límite ~2.4MB en total).");
+        return prev;
+      }
+      return [...prev, nuevoArchivo];
+    });
   }
 
   function agregarArchivo(file) {
@@ -57,7 +68,7 @@ export function useScribaSesion(contexto) {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = ev.target.result.split(",")[1];
-        setArchivos(prev => [...prev, { data: base64, mediaType, nombre: file.name, sizeBytes: file.size }]);
+        agregarConLimite({ data: base64, mediaType, nombre: file.name, sizeBytes: file.size });
       };
       reader.readAsDataURL(file);
       return;
@@ -75,7 +86,11 @@ export function useScribaSesion(contexto) {
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
-      setArchivos(prev => [...prev, { data: base64, mediaType: "image/jpeg", nombre: file.name, sizeBytes: Math.round(base64.length * 0.75) }]);
+      agregarConLimite({ data: base64, mediaType: "image/jpeg", nombre: file.name, sizeBytes: Math.round(base64.length * 0.75) });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      alert(`No pude leer "${file.name}" — el formato no es un PDF, un .docx ni una imagen reconocible.`);
     };
     img.src = url;
   }
