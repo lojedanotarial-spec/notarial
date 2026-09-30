@@ -230,7 +230,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   const handleGenerar = useCallback(async () => {
     // eslint-disable-next-line no-console -- diagnóstico temporal, ver nota arriba
-    console.log("[EditorScreen] handleGenerar corriendo con partes:", partes);
+    console.log("[EditorScreen] handleGenerar corriendo con partes:", JSON.stringify(partes.map(p => ({ nombre: p.nombre, apellido: p.apellido, nroDoc: p.nroDoc }))));
     setGenerating(true);
     try {
       const extravarsConFormulario = {
@@ -323,7 +323,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
     // eslint-disable-next-line no-console -- diagnóstico temporal, ver PROYECTO.md / BACKLOG.md ("cambiar variables no impacta el documento")
-    console.log("[EditorScreen] efecto partes/etc — generateAfterRef:", generateAfterRef.current, "hasOoEditsRef:", hasOoEditsRef.current, "partes:", partes);
+    console.log("[EditorScreen] efecto partes/etc — generateAfterRef:", generateAfterRef.current, "hasOoEditsRef:", hasOoEditsRef.current, "partes:", JSON.stringify(partes.map(p => ({ nombre: p.nombre, apellido: p.apellido, nroDoc: p.nroDoc }))));
     if (generateAfterRef.current) {
       generateAfterRef.current = false;
       if (hasOoEditsRef.current) {
@@ -673,7 +673,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   const applyAndGen = (setter) => (val) => {
     // eslint-disable-next-line no-console -- diagnóstico temporal, ver nota arriba
-    console.log("[EditorScreen] applyAndGen — nuevo valor:", val);
+    console.log("[EditorScreen] applyAndGen — nuevo valor:", JSON.stringify(val));
     generateAfterRef.current = true;
     setter(val);
   };
