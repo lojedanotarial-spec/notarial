@@ -68,7 +68,12 @@ async function enviarAVision(data, mediaType) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ imagen: { data, mediaType } }),
   });
-  return res.json();
+  const json = await res.json();
+  // Sin este chequeo, un error del backend (p.ej. Anthropic rechazando el
+  // archivo) se leía igual como "éxito" -- devolvía { error: "..." } como si
+  // fueran datos válidos, sin avisar nada.
+  if (!res.ok) throw new Error(json?.error || `Error del servidor: ${res.status}`);
+  return json;
 }
 
 function leerArchivoBase64(archivo) {
@@ -80,12 +85,19 @@ function leerArchivoBase64(archivo) {
   });
 }
 
+const LIMITE_PDF_ESCANEO = 3 * 1024 * 1024; // ~3MB crudo (~4MB en base64) -- margen bajo el límite de body de Vercel
+
 async function escanearDocumento(archivo) {
   // Un PDF no se puede decodificar con Image/canvas (eso solo sirve para
   // rasters) — se manda tal cual en base64, Claude lee el PDF directamente
   // (incluso si es un escaneo, página por página) sin necesidad de convertirlo
-  // a imagen primero.
+  // a imagen primero. A diferencia de una foto, no hay forma de comprimirlo
+  // acá, así que se avisa antes de mandarlo en vez de fallar sin explicación
+  // del lado del servidor si es demasiado pesado.
   if (archivo.type === "application/pdf") {
+    if (archivo.size > LIMITE_PDF_ESCANEO) {
+      throw new Error("el PDF pesa más de 3MB — probá exportarlo más liviano o escaneá página por página");
+    }
     const base64 = await leerArchivoBase64(archivo);
     return enviarAVision(base64, "application/pdf");
   }
@@ -151,11 +163,18 @@ function ScanBtn({ onDatos, tipo = "documento", style }) {
             let acumulado = null;
             for (let i = 0; i < files.length; i++) {
               if (files.length > 1) setProgreso(`${i+1}/${files.length}`);
-              const res = await escanearDocumento(files[i]);
+              let res;
+              try {
+                res = await escanearDocumento(files[i]);
+              } catch (e) {
+                throw new Error(`"${files[i].name}": ${e?.message || "error desconocido"}`);
+              }
               acumulado = mergePersonas(acumulado, res);
             }
             onDatos(acumulado);
-          } catch { alert("No se pudo leer alguno de los documentos."); }
+          } catch (e) {
+            alert(`No se pudo leer el documento. ${e?.message || ""}`);
+          }
           finally { setProgreso(""); e.target.value = ""; }
         }}
       />
