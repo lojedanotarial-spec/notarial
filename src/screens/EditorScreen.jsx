@@ -229,6 +229,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   }, [templateId]);
 
   const handleGenerar = useCallback(async () => {
+    // eslint-disable-next-line no-console -- diagnóstico temporal, ver nota arriba
+    console.log("[EditorScreen] handleGenerar corriendo con partes:", partes);
     setGenerating(true);
     try {
       const extravarsConFormulario = {
@@ -320,6 +322,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   useEffect(() => {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
+    // eslint-disable-next-line no-console -- diagnóstico temporal, ver PROYECTO.md / BACKLOG.md ("cambiar variables no impacta el documento")
+    console.log("[EditorScreen] efecto partes/etc — generateAfterRef:", generateAfterRef.current, "hasOoEditsRef:", hasOoEditsRef.current, "partes:", partes);
     if (generateAfterRef.current) {
       generateAfterRef.current = false;
       if (hasOoEditsRef.current) {
@@ -667,7 +671,12 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     setModal("expediente");
   }
 
-  const applyAndGen = (setter) => (val) => { generateAfterRef.current = true; setter(val); };
+  const applyAndGen = (setter) => (val) => {
+    // eslint-disable-next-line no-console -- diagnóstico temporal, ver nota arriba
+    console.log("[EditorScreen] applyAndGen — nuevo valor:", val);
+    generateAfterRef.current = true;
+    setter(val);
+  };
 
   function handleGo(screen, p) {
     // hayPendiente sólo cubre partes/escribano/fecha/protocolo/instrumento/
