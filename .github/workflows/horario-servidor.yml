@@ -31,12 +31,18 @@ jobs:
 
       # Clouding puede aceptar el pedido (HTTP 202) y no ejecutarlo -- pasó
       # el 30/09/26 (el cron de arranque de las 07:50 corrió "bien" pero el
-      # servidor siguió apagado). Este paso ya no confía en el 202: pide la
-      # accion, espera hasta 5 minutos verificando el estado REAL del
-      # servidor, y si no llegó, reintenta una vez más antes de fallar. Si
-      # sigue sin lograrlo, el job termina en rojo -- GitHub notifica solo
-      # al dueño del repo ante un fallo de un workflow programado, así que
-      # un fallo real deja de pasar desapercibido.
+      # servidor siguió apagado). Este paso no confía en el 202: pide la
+      # accion y espera hasta 5 minutos verificando el estado REAL de la VM
+      # en Clouding, con un reintento antes de fallar.
+      #
+      # Encontrado 01/10/26: ni siquiera alcanza con que la VM esté "Active"
+      # -- eso solo dice que la máquina prendió, no que el servicio de
+      # OnlyOffice adentro ya terminó de bootear y está respondiendo. El
+      # 30/09 esto dio "falso positivo": la VM llegó a Active, el job cerró
+      # en verde, pero el servicio real tardó más y quedó caído para el
+      # usuario igual. Por eso, solo para "start", se agrega un segundo
+      # chequeo: además de la VM activa, esperar a que el healthcheck HTTP
+      # responda 200 de verdad antes de dar el arranque por terminado.
       - name: Ejecutar y verificar en Clouding
         env:
           API_KEY: ${{ secrets.CLOUDING_API_KEY }}
@@ -71,20 +77,38 @@ jobs:
             return 1
           }
 
+          esperar_servicio_onlyoffice() {
+            for i in $(seq 1 20); do
+              sleep 15
+              CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://onlyoffice.notarial.lat/healthcheck || echo "000")
+              echo "healthcheck intento $i: HTTP $CODE"
+              [ "$CODE" = "200" ] && return 0
+            done
+            return 1
+          }
+
+          verificacion_completa() {
+            esperar_estado || return 1
+            if [ "$ACTION" = "start" ]; then
+              esperar_servicio_onlyoffice || { echo "La VM llegó a Active pero OnlyOffice no respondió"; return 1; }
+            fi
+            return 0
+          }
+
           pedir_accion
 
-          if esperar_estado; then
-            echo "OK: servidor en estado '$ESTADO_ESPERADO'"
+          if verificacion_completa; then
+            echo "OK: $ACTION completado y verificado de verdad"
             exit 0
           fi
 
-          echo "El servidor no llegó a '$ESTADO_ESPERADO' después de 5 minutos (quedó en '$ESTADO') -- reintentando una vez"
+          echo "No se completó $ACTION correctamente -- reintentando una vez"
           pedir_accion
 
-          if esperar_estado; then
-            echo "OK tras reintento: servidor en estado '$ESTADO_ESPERADO'"
+          if verificacion_completa; then
+            echo "OK tras reintento: $ACTION completado y verificado de verdad"
             exit 0
           fi
 
-          echo "FALLO: el servidor sigue sin llegar a '$ESTADO_ESPERADO' (estado final: '$ESTADO') después de reintentar"
+          echo "FALLO: $ACTION no se completó después de reintentar"
           exit 1
