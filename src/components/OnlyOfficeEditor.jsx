@@ -114,7 +114,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       }
     }
 
-    // Recreate completo (primera carga o tras fallo de refreshFile)
+    // Recreate (primera carga, tras fallo de refreshFile, o reconexión)
     setReady(false);
     setReconnecting(false);
 
@@ -123,9 +123,20 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       editorRef.current = null;
     }
 
-    delete window.DocsAPI;
-    const old = document.getElementById("oo-api-script");
-    if (old) old.remove();
+    // El SDK de OnlyOffice registra su propio Service Worker al cargar
+    // api.js -- no está pensado para que se lo saque y reinyecte en la
+    // misma página sin un refresh real. Encontrado 05/10/26: hacer eso en
+    // cada regeneración (refreshFile fallando) dejaba el segundo request a
+    // api.js "pending" para siempre, con el editor colgado en "Cargando
+    // editor..." después del primer cambio -- el servidor estaba sano, el
+    // problema era reinyectar el script. Si window.DocsAPI ya existe
+    // (cargado una vez en esta misma sesión de página), se reusa en vez de
+    // volver a pedir el script -- createEditor() ya soporta apuntar a un
+    // documento distinto con la misma instancia del SDK.
+    if (window.DocsAPI) {
+      createEditor();
+      return;
+    }
 
     const loadScript = () => {
       const existing = document.getElementById("oo-api-script");
@@ -151,15 +162,18 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
     };
     loadScript();
 
+    // Sin borrar window.DocsAPI ni el script acá a propósito -- este
+    // cleanup corre en CADA cambio de documentUrl/documentKey (cada
+    // regeneración), no solo al desmontar el componente. El SDK una vez
+    // cargado se reusa para toda la sesión de página (ver nota arriba);
+    // destroyEditor() ya libera la instancia del documento en sí, que es
+    // lo único que hace falta liberar acá.
     return () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       if (editorRef.current) {
         try { editorRef.current.destroyEditor(); } catch {}
         editorRef.current = null;
       }
-      delete window.DocsAPI;
-      const s = document.getElementById("oo-api-script");
-      if (s) s.remove();
     };
   }, [documentUrl, documentKey, serverUrl, createEditor, reloadTrigger]);
 
