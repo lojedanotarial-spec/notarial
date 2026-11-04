@@ -7,12 +7,16 @@
 # - --network host: el contenedor escucha directo en el host, asi UFW filtra de verdad.
 #   (Con "-p 80:80" Docker inserta reglas de iptables ANTES de UFW y el firewall no aplica.)
 # - Solo Cloudflare puede llegar a 80/443. SSH abierto, pero solo con clave.
-# - JWT_ENABLED=false por ahora: el frontend todavia no firma tokens. Se activa en el
-#   cutover a produccion (BACKLOG: "JWT real para OnlyOffice").
+# - JWT activo (HS256, header Authorization). El secreto es el MISMO que OO_JWT_SECRET en Vercel
+#   (lo usan api/oo-config.js para firmar y api/oo-callback.js para verificar). Se pasa por
+#   variable de entorno, no queda en el repo:
+#   ssh -i ~/.ssh/notarial_oo root@<IP> "OO_JWT_SECRET=$OO_JWT_SECRET bash -s" < scripts/setup_onlyoffice_contabo.sh
+#   (Supabase Storage publico ignora la cabecera Authorization que OO agrega al descargar; GitHub raw no.)
 # - Swap de 4 GB y logs de Docker acotados para que nunca se llene el disco.
 set -euo pipefail
 
 OO_IMAGE="onlyoffice/documentserver:10.0.0.1"
+: "${OO_JWT_SECRET:?falta OO_JWT_SECRET (ver comentario de uso)}"
 PUBKEY_MARK="notarial-oo-20261103"
 export DEBIAN_FRONTEND=noninteractive
 
@@ -79,7 +83,7 @@ mkdir -p /app/onlyoffice/{logs,data,lib}
 # entra al origen por el puerto 80; si el origen redirige 80->443 queda en bucle de 301.
 # El UFW deja pasar 80/443 solo desde IPs de Cloudflare.
 docker run -d --name onlyoffice --restart=always --network host \
-  -e JWT_ENABLED=false \
+  -e JWT_ENABLED=true -e JWT_SECRET="$OO_JWT_SECRET" -e JWT_HEADER=Authorization -e JWT_IN_BODY=false \
   -v /app/onlyoffice/logs:/var/log/onlyoffice \
   -v /app/onlyoffice/data:/var/www/onlyoffice/Data \
   -v /app/onlyoffice/lib:/var/lib/onlyoffice \
