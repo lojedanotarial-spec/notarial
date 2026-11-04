@@ -34,10 +34,11 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 ## 🟢 Próximo
 
-- Confirmar guardado de ediciones OnlyOffice → Supabase end-to-end (el callback existe, falta validarlo con el servidor ya estable)
-- JWT real para OnlyOffice (hoy desactivado — deuda de seguridad aceptada explícitamente durante la migración a Clouding)
+- ~~Confirmar guardado de ediciones OnlyOffice → Supabase end-to-end~~ — hecho 04/11/26: abrir con token, editar, cerrar y verificar el .docx en Supabase con la edición
+- ~~JWT real para OnlyOffice~~ — hecho 04/11/26 (`api/oo-config.js` firma, `api/oo-callback.js` verifica; servidor nuevo en Contabo)
+- Bucket `oo-docs` es público: cualquiera con la URL de un documento lo descarga. Evaluar URLs firmadas de corta vida (ojo: OO descarga el documento desde su servidor, así que la URL debe durar lo que tarde en abrirse)
 - Quitar el `console.log` de diagnóstico en `AuthContext.jsx` (efecto de carga de miembros) — quedó de una investigación anterior, ya no hace falta con el fix de admin→McLeod directo del 30/09/26
-- Confirmar que el automatismo de horario de Clouding (con verificación de estado real, no solo el 202 de aceptación) sostiene bien varios ciclos seguidos — reforzado 30/09/26 tras un fallo silencioso real
+- ~~Automatismo de horario de Clouding~~ — eliminado 04/11/26 (Clouding dado de baja; apagar de noche nunca ahorró plata porque factura igual apagado)
 
 ## 🟡 Después
 
