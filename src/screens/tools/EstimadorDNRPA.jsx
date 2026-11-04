@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { C, inp } from "../../constants";
+import { enviarAVision, archivoABase64 } from "../../utils/apiFetch";
 
 const ARANCEL_DNRPA = 0.01;
 const ARANCEL_NRO1  = 1300;
@@ -197,17 +198,7 @@ function ScanButton({ onScanned, escaneando, setEscaneando }) {
     if (!file?.type.startsWith("image/")) return;
     setEscaneando(true);
     try {
-      const b64 = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = e => res(e.target.result.split(",")[1]);
-        r.onerror = rej;
-        r.readAsDataURL(file);
-      });
-      const resp = await fetch("/api/vision", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imagen: { data: b64, mediaType: file.type } }),
-      });
-      const d = await resp.json();
+      const d = await enviarAVision(await archivoABase64(file), file.type);
       onScanned(d?.tipo_documento === "tarjeta_verde" && d.vehiculo ? d.vehiculo : null);
     } catch { onScanned(null); }
     finally { setEscaneando(false); }

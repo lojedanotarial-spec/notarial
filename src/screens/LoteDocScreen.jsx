@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { C, inp } from "../constants";
 import { NavBar } from "../components/NavBar";
 import { Fg } from "../components/ui/FormElements";
@@ -13,6 +13,7 @@ import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import { obtenerCarpetaLoteDrive } from "../utils/loteDrive";
 import { subirArchivoDrive, reemplazarContenidoArchivoDrive, esErrorSesionVencida } from "../utils/driveHelper";
+import { parseFechaDDMMAAAA } from "../utils/fechas";
 
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
@@ -267,12 +268,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
   useEffect(() => { hasOoEditsRef.current = hasOoEdits; }, [hasOoEdits]);
 
-  const fechaDeEscritura = () => {
-    if (!lote.fechaEscritura) return { dia: new Date().getDate(), mes: new Date().getMonth(), anio: new Date().getFullYear() };
-    const [dia, mes, anio] = lote.fechaEscritura.split("/").map(Number);
-    return { dia: dia || new Date().getDate(), mes: (mes - 1) || new Date().getMonth(), anio: anio || new Date().getFullYear() };
-  };
-  const fecha = fechaDeEscritura();
+  const fecha = useMemo(() => parseFechaDDMMAAAA(lote.fechaEscritura), [lote.fechaEscritura]);
 
   const escribano = miUsuario ? {
     nombre: miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,

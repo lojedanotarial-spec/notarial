@@ -4,6 +4,7 @@ import mammoth from "mammoth";
 import { buildVars, sustituirVars, contarClausulas } from "../src/utils/templateVars.js";
 import { extraerDocumento } from "./vision.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./_supabaseConfig.js";
+import { exigirUsuario } from "./_auth.js";
 
 const DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -1551,7 +1552,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, userToken = null, documentos_adjuntos = [] } = req.body;
+  // Solo usuarios logueados (gasta crédito de Anthropic). El token de la sesión también arma el
+  // cliente de Supabase, así las consultas de las tools corren con los permisos (RLS) del usuario.
+  const userToken = await exigirUsuario(req, res);
+  if (!userToken) return;
+
+  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, documentos_adjuntos = [] } = req.body || {};
 
   if (!mensaje?.trim()) {
     return res.status(400).json({ error: "Mensaje requerido" });
@@ -1562,10 +1568,9 @@ export default async function handler(req, res) {
   }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, userToken
-    ? { global: { headers: { Authorization: `Bearer ${userToken}` } } }
-    : {}
-  );
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${userToken}` } },
+  });
 
   const ahora = new Date();
   const fechaHoy = `${ahora.getDate().toString().padStart(2,"0")}/${(ahora.getMonth()+1).toString().padStart(2,"0")}/${ahora.getFullYear()}`;

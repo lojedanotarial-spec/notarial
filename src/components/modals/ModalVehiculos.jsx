@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { C, inp } from "../../constants";
+import { enviarAVision } from "../../utils/apiFetch";
 
 async function escanearVehiculo(archivo) {
   return new Promise((resolve, reject) => {
@@ -14,11 +15,7 @@ async function escanearVehiculo(archivo) {
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
-      fetch("/api/vision", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imagen: { data: base64, mediaType: "image/jpeg" } }),
-      }).then(r => r.json()).then(resolve).catch(reject);
+      enviarAVision(base64, "image/jpeg").then(resolve).catch(reject);
     };
     img.onerror = reject;
     img.src = url;

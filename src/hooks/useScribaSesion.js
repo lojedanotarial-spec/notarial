@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useScribaConversacion } from "./useScribaConversacion";
 import { useAuth } from "../context/AuthContext";
 import { logScriba } from "../utils/logger";
+import { apiPost } from "../utils/apiFetch";
 
 // Dueño del estado de una sesión de Scriba (mensajes, borrador, adjuntos,
 // pedido en curso, aviso de "hay algo nuevo"). Se instancia UNA vez en
@@ -14,7 +15,7 @@ const LIMITE_ADJUNTOS = 2.4 * 1024 * 1024; // ~2.4MB crudos — margen dentro de
 
 export function useScribaSesion(contexto) {
   const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion: cargarConversacionBase, eliminarConversacion } = useScribaConversacion();
-  const { registroActivo, usuario, session } = useAuth();
+  const { registroActivo, usuario } = useAuth();
   const registroId = usuario?.registro_numero || registroActivo;
 
   const [mensajes, setMensajes] = useState([]);
@@ -181,21 +182,13 @@ export function useScribaSesion(contexto) {
     setMensajes(nuevosMensajes);
     const t0 = Date.now();
     try {
-      const res = await fetch("/api/scriba", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mensaje: textoUsuario,
-          mensajes_anteriores: mensajesBase,
-          contexto: contexto || null,
-          registroId: registroId || null,
-          userToken: session?.access_token || null,
-          documentos_adjuntos: archivosActuales.map(a => ({ data: a.data, mediaType: a.mediaType, nombre: a.nombre })),
-        }),
+      const data = await apiPost("/api/scriba", {
+        mensaje: textoUsuario,
+        mensajes_anteriores: mensajesBase,
+        contexto: contexto || null,
+        registroId: registroId || null,
+        documentos_adjuntos: archivosActuales.map(a => ({ data: a.data, mediaType: a.mediaType, nombre: a.nombre })),
       });
-      let data;
-      try { data = await res.json(); } catch { throw new Error(`Error del servidor (${res.status})`); }
-      if (!res.ok) throw new Error(data.error || "Error del servidor");
       const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
       setMensajes(mensajesFinales);
       guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));

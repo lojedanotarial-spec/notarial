@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { exigirUsuario } from "./_auth.js";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -119,8 +120,9 @@ export async function extraerDocumento(imagenes) {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (!(await exigirUsuario(req, res))) return;
 
-  const { imagen } = req.body;
+  const { imagen } = req.body || {};
   if (!imagen?.data || !imagen?.mediaType) return res.status(400).json({ error: "Imagen requerida" });
 
   try {

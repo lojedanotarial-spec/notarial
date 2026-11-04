@@ -61,20 +61,7 @@ function titleCaseDomicilio(str) {
   }).join(' ');
 }
 import { aplicarTildesNombre } from "../../utils/tildesNombres";
-
-async function enviarAVision(data, mediaType) {
-  const res = await fetch("/api/vision", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imagen: { data, mediaType } }),
-  });
-  const json = await res.json();
-  // Sin este chequeo, un error del backend (p.ej. Anthropic rechazando el
-  // archivo) se leía igual como "éxito" -- devolvía { error: "..." } como si
-  // fueran datos válidos, sin avisar nada.
-  if (!res.ok) throw new Error(json?.error || `Error del servidor: ${res.status}`);
-  return json;
-}
+import { enviarAVision } from "../../utils/apiFetch";
 
 // Renderiza una página de PDF a un canvas, con el mismo tope de 1200px y
 // misma calidad JPEG que ya se usa para fotos -- así un PDF entra por el

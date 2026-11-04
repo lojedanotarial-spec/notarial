@@ -3,19 +3,13 @@
 // El secreto OO_JWT_SECRET y la service key viven solo acá (Vercel); el navegador nunca los ve.
 // Con JWT activo en el Document Server, una config sin token válido no abre documentos.
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./_supabaseConfig.js";
+import { SUPABASE_URL } from "./_supabaseConfig.js";
+import { tokenDeRequest, usuarioValido } from "./_auth.js";
 import { signOoJwt, OO_KEY_RE } from "./_ooJwt.js";
 
 const BUCKET = "oo-docs";
 const URL_TTL_SEGUNDOS = 15 * 60; // OO descarga el documento al abrir (segundos); sobra margen. Se re-firma en cada apertura.
 const CALLBACK_HOSTS = ["notarial.lat", "www.notarial.lat"];
-
-async function usuarioValido(accessToken) {
-  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}` },
-  });
-  return r.ok;
-}
 
 // Devuelve un string con el motivo si la config no es aceptable, o null si está bien.
 // La URL del documento NO viene del cliente: la arma el servidor a partir de la key.
@@ -50,9 +44,7 @@ export default async function handler(req, res) {
   const serviceKey = process.env.SUPABASE_SERVICE_KEY;
   if (!secret || !serviceKey) return res.status(500).json({ error: "Servidor sin configurar" });
 
-  const auth = req.headers.authorization || "";
-  const accessToken = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  if (!accessToken || !(await usuarioValido(accessToken))) {
+  if (!(await usuarioValido(tokenDeRequest(req)))) {
     return res.status(401).json({ error: "No autenticado" });
   }
 
