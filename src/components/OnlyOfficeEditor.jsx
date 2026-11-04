@@ -51,7 +51,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
         fileType: "docx",
         key:      documentKey,
         title:    documentTitleRef.current || "Documento notarial",
-        url:      documentUrl,
+        // url: la agrega el servidor (URL firmada de corta vida, ver /api/oo-config)
         permissions: { edit: true, print: true, download: true },
       },
       documentType: "word",
@@ -84,10 +84,11 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
       reconnectTimer.current = setTimeout(() => createEditor(), 12000);
     };
 
-    firmarConfigOO(config).then((token) => {
+    firmarConfigOO(config).then(({ token, url }) => {
       if (mySeq !== createSeq.current) return; // llegó tarde: ya hay un createEditor más nuevo
       editorRef.current = new window.DocsAPI.DocEditor("oo-container", {
         ...config,
+        document: { ...config.document, url },
         token,
         height: "100%",
         width:  "100%",
@@ -121,18 +122,17 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
           fileType: "docx",
           key:      documentKey,
           title:    documentTitleRef.current || "Documento notarial",
-          url:      documentUrl,
           permissions: { edit: true, print: true, download: true },
         },
         documentType: "word",
         editorConfig: { mode: "edit", lang: "es", callbackUrl: `${window.location.origin}/api/oo-callback?key=${documentKey}` },
       };
-      // El token es asíncrono: si refreshFile falla (o no se pudo firmar) se recrea el editor completo.
+      // El token y la URL firmada son asíncronos: si refreshFile falla (o no se pudo firmar) se recrea el editor completo.
       const mySeq = ++createSeq.current;
       firmarConfigOO(cfg)
-        .then((token) => {
+        .then(({ token, url }) => {
           if (mySeq !== createSeq.current) return;
-          editorRef.current.refreshFile({ ...cfg, token });
+          editorRef.current.refreshFile({ ...cfg, document: { ...cfg.document, url }, token });
         })
         .catch((e) => {
           if (mySeq !== createSeq.current) return;

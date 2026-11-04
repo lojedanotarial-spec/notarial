@@ -3,7 +3,6 @@ import { createHmac } from "node:crypto";
 import { signOoJwt, verifyOoJwt, OO_KEY_RE } from "../../api/_ooJwt.js";
 import { bodyVerificado } from "../../api/oo-callback.js";
 import { validarConfig } from "../../api/oo-config.js";
-import { SUPABASE_URL } from "../../api/_supabaseConfig.js";
 
 const SECRET = "secreto-de-prueba";
 
@@ -67,13 +66,13 @@ describe("oo-callback · bodyVerificado", () => {
 describe("oo-config · validarConfig", () => {
   const key = "doc-123";
   const ok = () => ({
-    document: { key, url: `${SUPABASE_URL}/storage/v1/object/public/oo-docs/${key}.docx` },
+    document: { key },
     editorConfig: { callbackUrl: `https://notarial.lat/api/oo-callback?key=${key}` },
   });
   it("acepta una config legítima", () => expect(validarConfig(ok(), "notarial.lat")).toBeNull());
-  it("rechaza documentos fuera del bucket oo-docs", () => {
+  it("ignora la url que mande el cliente (la arma el servidor, firmada)", () => {
     const c = ok(); c.document.url = "https://evil.example/x.docx";
-    expect(validarConfig(c, "notarial.lat")).toMatch(/url/);
+    expect(validarConfig(c, "notarial.lat")).toBeNull();
   });
   it("rechaza callback a otro host o a otra ruta", () => {
     let c = ok(); c.editorConfig.callbackUrl = `https://evil.example/api/oo-callback?key=${key}`;

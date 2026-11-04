@@ -322,10 +322,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
           // valor real en vez de asumir "sí" siempre. Documentos viejos, de
           // antes de que existiera esta columna, quedan en null -- ahí sí se
           // asume "sí" de forma conservadora, porque genuinamente no se sabe.
-          const { data: urlData } = supabase.storage
-            .from("oo-docs")
-            .getPublicUrl(`${doc.document_key}.docx`);
-          setDocumentUrl(urlData.publicUrl);
+          setDocumentUrl(`${doc.document_key}.docx`); // ruta en el bucket privado (ver /api/oo-config)
           setDocumentKey(doc.document_key);
           setHasOoEdits(doc.tiene_ediciones_manuales !== false);
           generatedOnceRef.current = true;
@@ -370,9 +367,8 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
         });
       if (uploadError) throw new Error(`Error al subir archivo: ${uploadError.message}`);
 
-      const { data: { publicUrl } } = supabase.storage.from("oo-docs").getPublicUrl(filePath);
-
-      setDocumentUrl(publicUrl);
+      // Bucket privado: documentUrl es la ruta; la URL firmada la arma /api/oo-config al abrir el editor.
+      setDocumentUrl(filePath);
       setDocumentKey(key);
       generatedOnceRef.current = true;
       setHasOoEdits(false);
@@ -497,11 +493,15 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
     onGo(screen, p);
   }
 
-  const handleExportar = () => {
+  const handleExportar = async () => {
     if (!documentUrl) return;
+    // Bucket privado: URL firmada de 60 s, solo para esta descarga.
+    const { data, error } = await supabase.storage
+      .from("oo-docs")
+      .createSignedUrl(documentUrl, 60, { download: `${docTitle}.docx` });
+    if (error || !data?.signedUrl) { console.error("[exportar] no se pudo firmar la URL:", error); return; }
     const a = document.createElement("a");
-    a.href = documentUrl;
-    a.download = `${docTitle}.docx`;
+    a.href = data.signedUrl;
     a.click();
   };
 

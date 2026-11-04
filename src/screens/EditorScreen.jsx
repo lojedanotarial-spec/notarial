@@ -272,11 +272,9 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         });
       if (uploadError) throw new Error(`Error al subir archivo: ${uploadError.message}`);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("oo-docs")
-        .getPublicUrl(filePath);
-
-      setDocumentUrl(publicUrl);
+      // El bucket oo-docs es privado: documentUrl es solo la ruta del archivo. OnlyOffice recibe
+      // una URL firmada de corta vida que arma el servidor en cada apertura (/api/oo-config).
+      setDocumentUrl(filePath);
       setDocumentKey(key);
       generatedOnceRef.current = true;
       setHasOoEdits(false);
@@ -399,10 +397,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
       if (data.document_key) {
         // Hay un DOCX guardado — abrirlo directamente sin regenerar
-        const { data: urlData } = supabase.storage
-          .from("oo-docs")
-          .getPublicUrl(`${data.document_key}.docx`);
-        setDocumentUrl(urlData.publicUrl);
+        setDocumentUrl(`${data.document_key}.docx`); // ruta en el bucket privado (ver /api/oo-config)
         setDocumentKey(data.document_key);
         // tiene_ediciones_manuales se persiste con certeza cada vez que se
         // generó/editó el documento (ver useAutoguardado) -- se lee ese valor
