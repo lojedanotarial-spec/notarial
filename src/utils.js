@@ -1,7 +1,7 @@
 ﻿import { useEffect } from "react";
 import { MESES_ORD, ANIOS_LETRAS } from "./constants.js";
 
-import { fmtDni } from "./utils/formato";
+import { fmtDni } from "./utils/formato.js";
 export function useClickOutside(ref, cb) {
   useEffect(() => {
     const h = (e) => {

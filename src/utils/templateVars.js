@@ -1,8 +1,8 @@
 import { diaLetras, anioLetras, numeroALetras } from "../utils.js";
 import { textoInterviene } from "./buildInterviene.js";
 
-import { MESES } from "./fechas";
-import { fmtDni } from "./formato";
+import { MESES } from "./fechas.js";
+import { fmtDni } from "./formato.js";
 const MESES_UP = MESES.map(m => m.toUpperCase());
 
 // Capitaliza cada palabra: "RAUL ALBERTO" → "Raúl Alberto"
