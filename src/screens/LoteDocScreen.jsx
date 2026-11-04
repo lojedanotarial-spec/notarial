@@ -18,6 +18,7 @@ import { parseFechaDDMMAAAA } from "../utils/fechas";
 import { nombreDeMiembro, escribanoDesdeMiembro } from "../utils/escribano";
 import { subirDocxOO } from "../utils/ooDocs";
 import { DOCX_MIME } from "../utils/docxMime";
+import { useDocumentoOO } from "../hooks/useDocumentoOO";
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
 function PanelSection({ label, children, onClick }) {
@@ -256,20 +257,14 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
   const [templateHTML, setTemplateHTML] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [initialDocId, setInitialDocId] = useState(null);
-  const [documentUrl, setDocumentUrl] = useState(null);
-  const [documentKey, setDocumentKey] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [hasOoEdits, setHasOoEdits] = useState(false);
-  const [pendingRegen, setPendingRegen] = useState(false);
-
-  const hasOoEditsRef = useRef(false);
-  const hasUnsavedOoEditRef = useRef(false);
-  const generatedOnceRef = useRef(false);
-  const skipAutoGenerateRef = useRef(false);
-  const ignorarEdicionesHastaRef = useRef(0);
-  const handleGenerarRef = useRef(null);
-
-  useEffect(() => { hasOoEditsRef.current = hasOoEdits; }, [hasOoEdits]);
+  // Documento abierto en OnlyOffice + reglas de regeneración (ver hooks/useDocumentoOO.js)
+  const {
+    documentUrl, documentKey, generating, setGenerating,
+    hasOoEdits, pendingRegen,
+    hasUnsavedOoEditRef, generatedOnceRef, skipAutoGenerateRef, handleGenerarRef,
+    registrarGenerado, abrirExistente, alEditar,
+    regenerarSiCorresponde, confirmarRegenerar, cancelarRegenerar,
+  } = useDocumentoOO();
 
   const fecha = useMemo(() => parseFechaDDMMAAAA(lote.fechaEscritura), [lote.fechaEscritura]);
 
@@ -310,16 +305,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
         setInitialDocId(doc.id);
         if (doc.document_key) {
           // Ya hay un DOCX generado — abrirlo tal cual, sin regenerar.
-          // tiene_ediciones_manuales se persiste con certeza cada vez que se
-          // generó/editó el documento (ver useAutoguardado) -- se lee ese
-          // valor real en vez de asumir "sí" siempre. Documentos viejos, de
-          // antes de que existiera esta columna, quedan en null -- ahí sí se
-          // asume "sí" de forma conservadora, porque genuinamente no se sabe.
-          setDocumentUrl(`${doc.document_key}.docx`); // ruta en el bucket privado (ver /api/oo-config)
-          setDocumentKey(doc.document_key);
-          setHasOoEdits(doc.tiene_ediciones_manuales !== false);
-          generatedOnceRef.current = true;
-          skipAutoGenerateRef.current = true;
+          abrirExistente(doc.document_key, doc.tiene_ediciones_manuales);
         }
       }
 
@@ -353,16 +339,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
       const { key, filePath } = await subirDocxOO(blob);
 
       // Bucket privado: documentUrl es la ruta; la URL firmada la arma /api/oo-config al abrir el editor.
-      setDocumentUrl(filePath);
-      setDocumentKey(key);
-      generatedOnceRef.current = true;
-      setHasOoEdits(false);
-      hasUnsavedOoEditRef.current = false;
-      setPendingRegen(false);
-      // El refreshFile de OnlyOffice (disparado por el cambio de documentUrl)
-      // dispara su propio onDocumentStateChange al recargar — ignorarlo unos
-      // segundos para no confundirlo con una edición manual real.
-      ignorarEdicionesHastaRef.current = Date.now() + 3000;
+      registrarGenerado({ key, filePath });
 
       // Copia en Drive (UC-3) — best-effort: si falla o no hay sesión de
       // Google, no bloquea la generación (que ya terminó bien en oo-docs).
@@ -415,14 +392,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
   // Regenera (o pide confirmación si hay ediciones manuales de OnlyOffice sin
   // guardar) — mismo mecanismo que EditorScreen (ver plan.md de esta feature).
-  const regenerarPorCambio = useCallback(() => {
-    if (!generatedOnceRef.current) return;
-    if (hasOoEditsRef.current) {
-      setPendingRegen(true);
-    } else {
-      handleGenerarRef.current?.();
-    }
-  }, []);
+  const regenerarPorCambio = regenerarSiCorresponde;
 
   // Cambios discretos (elegir escribano, aplicar el modal de adquirentes):
   // no se puede llamar regenerarPorCambio() en el mismo handler que el
@@ -519,11 +489,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
             documentKey={documentKey}
             documentTitle={docTitle}
             serverUrl={ONLYOFFICE_URL}
-            onEdit={() => {
-              if (Date.now() < ignorarEdicionesHastaRef.current) return;
-              setHasOoEdits(true);
-              hasUnsavedOoEditRef.current = true;
-            }}
+            onEdit={alEditar}
           />
         </div>
 
@@ -572,8 +538,8 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
       {pendingRegen && (
         <ConfirmRegenerar
-          onConfirm={() => { setHasOoEdits(false); setPendingRegen(false); handleGenerarRef.current?.(); }}
-          onCancel={() => setPendingRegen(false)}
+          onConfirm={confirmarRegenerar}
+          onCancel={cancelarRegenerar}
         />
       )}
     </div>

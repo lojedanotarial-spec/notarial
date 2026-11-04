@@ -26,6 +26,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 
 import { escribanoDesdeMiembro } from "../utils/escribano";
 import { subirDocxOO } from "../utils/ooDocs";
+import { useDocumentoOO } from "../hooks/useDocumentoOO";
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
 // Etiquetas contextuales por template — se muestran en el panel de partes cuando no hay rol asignado
@@ -106,33 +107,19 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const margenKey   = estilos.margenKey;
   const fontSize    = estilos.fontSize;
   const interlineado = estilos.interlineado;
-  const [documentUrl,  setDocumentUrl]  = useState(null);
-  const [documentKey,  setDocumentKey]  = useState(null);
-  const [generating,   setGenerating]   = useState(false);
+  // Documento abierto en OnlyOffice + reglas de regeneración (ver hooks/useDocumentoOO.js)
+  const {
+    documentUrl, documentKey, generating, setGenerating,
+    hasOoEdits, pendingRegen,
+    hasUnsavedOoEditRef, generatedOnceRef, skipAutoGenerateRef, handleGenerarRef,
+    registrarGenerado, abrirExistente, alEditar,
+    regenerarSiCorresponde, confirmarRegenerar, cancelarRegenerar,
+  } = useDocumentoOO({ saltarAutoGenerar: !!params?.docId });
   const [pluginTick,   setPluginTick]   = useState(0);
   const pluginWindowRef   = useRef(null);
   const pendingInsertRef  = useRef(null);
   const [isDirty,          setIsDirty]          = useState(false);
-  const [hasOoEdits,       setHasOoEdits]       = useState(false);
-  const [pendingRegen,     setPendingRegen]      = useState(false);
-  const hasOoEditsRef     = useRef(false);
-  // Distinto de hasOoEdits: hasOoEdits queda en true de forma "pegajosa" para
-  // cualquier documento reabierto (protege contra clobbear ediciones viejas al
-  // regenerar). Este ref, en cambio, es sólo "hay una edición de ESTA sesión
-  // sin persistir" — lo que necesita handleGo para avisar antes de salir.
-  const hasUnsavedOoEditRef = useRef(false);
-  const generatedOnceRef  = useRef(false);
-  const handleGenerarRef  = useRef(null);
   const generateAfterRef  = useRef(false);
-  // Ventana de gracia tras (re)generar: el reload del docx en OnlyOffice dispara
-  // su propio onDocumentStateChange, que si no se ignora marca hasOoEdits=true
-  // por el reload en sí (no por una edición real) y bloquea el próximo cambio
-  // de propiedad detrás del banner de "¿Regenerar?" sin que el usuario edite nada.
-  const ignorarEdicionesHastaRef = useRef(0);
-  // Si abrimos un doc existente, saltamos el auto-generate hasta saber si tiene DOCX guardado
-  const skipAutoGenerateRef = useRef(!!params?.docId);
-
-  useEffect(() => { hasOoEditsRef.current = hasOoEdits; }, [hasOoEdits]);
 
   const [partes,        setPartes]        = useState(() => params?.partes?.length ? params.partes : [PARTE_VACIA()]);
   const [vehiculos,     setVehiculos]     = useState([]);
@@ -239,19 +226,10 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
       const { key, filePath } = await subirDocxOO(blob);
 
-      // El bucket oo-docs es privado: documentUrl es solo la ruta del archivo. OnlyOffice recibe
-      // una URL firmada de corta vida que arma el servidor en cada apertura (/api/oo-config).
-      setDocumentUrl(filePath);
-      setDocumentKey(key);
-      generatedOnceRef.current = true;
-      setHasOoEdits(false);
-      hasUnsavedOoEditRef.current = false;
-      setPendingRegen(false);
+      // El bucket oo-docs es privado: documentUrl es solo la ruta del archivo; OnlyOffice recibe una URL
+      // firmada de corta vida que arma el servidor en cada apertura (/api/oo-config).
+      registrarGenerado({ key, filePath });
       setIsDirty(false);
-      // El refreshFile de OnlyOffice (disparado por el cambio de documentUrl) dispara
-      // su propio onDocumentStateChange al recargar — ignorarlo unos segundos para
-      // no confundirlo con una edición manual real del escribano.
-      ignorarEdicionesHastaRef.current = Date.now() + 3000;
       // Si un modal guardó mientras la generación estaba en curso, regenerar con los nuevos datos
       if (generateAfterRef.current) {
         generateAfterRef.current = false;
@@ -295,11 +273,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     setIsDirty(true);
     if (generateAfterRef.current) {
       generateAfterRef.current = false;
-      if (hasOoEditsRef.current) {
-        setPendingRegen(true);
-      } else {
-        handleGenerarRef.current?.();
-      }
+      regenerarSiCorresponde();
     }
   }, [partes, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, estilos]);
 
@@ -309,12 +283,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const regenerarPorCambio = useCallback(() => {
     if (!generatedOnceRef.current) return;
     setIsDirty(true);
-    if (hasOoEditsRef.current) {
-      setPendingRegen(true);
-    } else {
-      handleGenerarRef.current?.();
-    }
-  }, []);
+    regenerarSiCorresponde();
+  }, [regenerarSiCorresponde]);
 
   // Vehiculos y clausulas siempre regeneran de inmediato — son cambios discretos
   // (un modal que se aplica, un checkbox), no tecleo continuo. Los campos de
@@ -364,23 +334,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
       if (data.document_key) {
         // Hay un DOCX guardado — abrirlo directamente sin regenerar
-        setDocumentUrl(`${data.document_key}.docx`); // ruta en el bucket privado (ver /api/oo-config)
-        setDocumentKey(data.document_key);
-        // tiene_ediciones_manuales se persiste con certeza cada vez que se
-        // generó/editó el documento (ver useAutoguardado) -- se lee ese valor
-        // real en vez de asumir "sí" siempre. Documentos viejos, de antes de
-        // que existiera esta columna, quedan en null -- ahí sí se asume "sí"
-        // de forma conservadora, porque genuinamente no se sabe.
-        setHasOoEdits(data.tiene_ediciones_manuales !== false);
-        // skipAutoGenerateRef ya arrancó en true, lo dejamos así
-        // BUG encontrado 30/09/26 ("cambiar variables no impacta el documento"):
-        // generatedOnceRef solo se pone en true dentro de handleGenerar(), que acá
-        // nunca corre (a propósito, para no pisar el DOCX guardado). Sin esto, el
-        // efecto que dispara la regeneración por cambios de panel (partes,
-        // escribano, etc.) se cortaba en su primera línea para SIEMPRE en un
-        // documento reabierto — que es el caso más común de uso real, no un caso
-        // borde. LoteDocScreen.jsx ya lo hace bien; acá faltaba.
-        generatedOnceRef.current = true;
+        abrirExistente(data.document_key, data.tiene_ediciones_manuales);
       } else {
         // Doc antiguo sin DOCX guardado — dejar que el auto-generate lo cree
         skipAutoGenerateRef.current = false;
@@ -702,11 +656,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
             documentKey={documentKey}
             documentTitle={docTitle}
             serverUrl={ONLYOFFICE_URL}
-            onEdit={() => {
-              if (Date.now() < ignorarEdicionesHastaRef.current) return;
-              setHasOoEdits(true);
-              hasUnsavedOoEditRef.current = true;
-            }}
+            onEdit={alEditar}
           />
         </div>
 
@@ -988,8 +938,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       {/* MODALES */}
       {pendingRegen && (
         <ConfirmRegenerar
-          onConfirm={() => { setHasOoEdits(false); setPendingRegen(false); handleGenerarRef.current?.(); }}
-          onCancel={() => setPendingRegen(false)}
+          onConfirm={confirmarRegenerar}
+          onCancel={cancelarRegenerar}
         />
       )}
       {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
