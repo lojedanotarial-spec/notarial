@@ -16,7 +16,6 @@ import { obtenerCarpetaLoteDrive } from "../utils/loteDrive";
 import { IconoDrive, IconoSubirDrive } from "../components/ui/DriveIcons";
 
 import { nombreDeMiembro, escribanoDesdeMiembro } from "../utils/escribano";
-import { fechaDeHoy } from "../utils/fechas";
 const LOTE_VACIO = () => ({
   id: crypto.randomUUID(),
   nroEscritura: "", fechaEscritura: "", escribano: "",
@@ -428,13 +427,12 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
             return;
           }
           const escribano = miUsuario ? escribanoDesdeMiembro(miUsuario) : {};
-          const fecha = fechaDeHoy();
           setExportando(true);
           setProgreso({ actual: 0, total: barrio.lotes.length, lote: null });
           try {
             await exportarBarrioZip({
               barrio, lotes: barrio.lotes, templateHTML: tmpl.html,
-              escribano, fecha,
+              escribano,
               onProgress: (p) => setProgreso(p),
             });
           } finally {

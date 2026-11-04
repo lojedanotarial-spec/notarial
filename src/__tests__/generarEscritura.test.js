@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { generarEscritura } from "../utils/generarEscritura";
+import { construirVarsLote } from "../utils/generarEscritura";
+import { buildVars } from "../utils/templateVars";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -80,8 +81,18 @@ const TEMPLATE = `
 <p>Encabezado: {{ADQUIRENTES_ENCABEZADO}}</p>
 `;
 
+// Mismas variables que arma el editor del lote (buildVars + construirVarsLote). Una variable
+// vacía deja visible su {{PLACEHOLDER}} para poder verificar qué quedó sin resolver.
 function generar(lote = mkLote(), barrio = mkBarrio()) {
-  return generarEscritura(TEMPLATE, lote, barrio, escribano, fecha, lote.nroEscritura);
+  const vars = {
+    ...buildVars({ partes: lote.partes || [], escribano, fecha }),
+    ...construirVarsLote(lote, barrio, escribano, lote.nroEscritura),
+  };
+  let resultado = TEMPLATE;
+  for (const [key, value] of Object.entries(vars)) {
+    resultado = resultado.replaceAll(`{{${key}}}`, value || `{{${key}}}`);
+  }
+  return resultado;
 }
 
 // ── UC-1: lote con más de un adquirente ────────────────────────────────────────
@@ -157,8 +168,7 @@ describe("UC-2: concordancia de rol y género", () => {
 describe("UC-3: variables de inmueble sin regresión", () => {
   it("genera todas las variables propias del inmueble con el mismo dato cargado", () => {
     const html = generar();
-    expect(html).toContain(">U<");
-    expect(html).toContain(">25<");
+    expect(html).toContain("Manzana U Lote 25");
     expect(html).toContain("210,49");
     expect(html).toContain("metros cuadrados");
     expect(html).toContain("Norte: con Lote N° 24 en 21,14 metros");

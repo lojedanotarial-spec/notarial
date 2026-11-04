@@ -1,136 +1,68 @@
-import {
-  Document, Packer, Paragraph, TextRun,
-  AlignmentType, LineRuleType, SectionType,
-} from "docx";
+// Exporta las escrituras de todos los lotes de un barrio en un ZIP.
+// Usa el MISMO motor que el editor de cada lote (construirVarsLote + buildDocxGenerico), así el
+// documento del ZIP sale idéntico al que se ve en pantalla. Antes tenía su propio camino
+// (HTML -> docx con otra tipografía) que divergía del editor.
+//
+// Si el escribano ya editó a mano el documento de un lote en OnlyOffice, se incluye ESE archivo
+// (si no, la exportación pisaría su trabajo con una versión regenerada). Si nunca se editó, se
+// regenera con los datos actuales del lote.
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { generarEscritura } from "./generarEscritura";
+import { supabase } from "../supabase";
+import { construirVarsLote } from "./generarEscritura";
+import { buildDocxGenerico } from "./buildDocxGenerico";
+import { parseFechaDDMMAAAA } from "./fechas";
 
-const LINE_HEIGHT_PT = 24;
-const HALFPT   = (pt) => pt * 2;
-const mmToTwip = (mm) => Math.round((mm / 25.4) * 1440);
-
-function nodeToRuns(node, inherited = {}) {
-  const runs = [];
-  if (node.nodeType === Node.TEXT_NODE) {
-    const text = node.textContent || "";
-    if (!text) return runs;
-    runs.push(new TextRun({
-      text,
-      font:  inherited.font  || "Sitka Heading",
-      size:  HALFPT(inherited.size || 11),
-      bold:  inherited.bold  || false,
-      color: "1a2332",
-    }));
-    return runs;
+// { [lote_id]: document_key } de los lotes con edición manual guardada.
+async function documentosEditados(lotes) {
+  const ids = lotes.map((l) => l.id).filter(Boolean);
+  if (!ids.length) return {};
+  const { data, error } = await supabase
+    .from("documentos")
+    .select("lote_id, document_key, tiene_ediciones_manuales")
+    .in("lote_id", ids);
+  if (error) {
+    console.warn("[exportarBarrioZip] no se pudieron leer los documentos guardados:", error.message);
+    return {};
   }
-  if (node.nodeType !== Node.ELEMENT_NODE) return runs;
-  const tag = node.tagName?.toLowerCase();
-  if (node.hasAttribute?.("data-variable")) {
-    runs.push(new TextRun({
-      text:  node.textContent || "",
-      font:  inherited.font  || "Sitka Heading",
-      size:  HALFPT(inherited.size || 11),
-      bold:  inherited.bold  || false,
-      color: "1a2332",
-    }));
-    return runs;
+  const porLote = {};
+  for (const d of data || []) {
+    if (d.document_key && d.tiene_ediciones_manuales !== false) porLote[d.lote_id] = d.document_key;
   }
-  const next = { ...inherited };
-  if (tag === "strong" || tag === "b") next.bold    = true;
-  if (tag === "em"     || tag === "i") next.italic  = true;
-  if (tag === "u")                     next.underline = true;
-  const style = node.getAttribute?.("style") || "";
-  if (style.includes("font-weight:700") || style.includes("font-weight: 700")) next.bold = true;
-  node.childNodes.forEach(child => runs.push(...nodeToRuns(child, next)));
-  return runs;
+  return porLote;
 }
 
-function pToParagraph(pEl, fontName, fontSize) {
-  const runs = [];
-  pEl.childNodes.forEach(child =>
-    runs.push(...nodeToRuns(child, { font: fontName, size: fontSize, bold: false, color: "1a2332" }))
-  );
-  return new Paragraph({
-    children: runs,
-    alignment: AlignmentType.JUSTIFIED,
-    spacing: {
-      line:     Math.round((LINE_HEIGHT_PT / 72) * 1440),
-      lineRule: LineRuleType.EXACT,
-      before: 0, after: 0,
-    },
-  });
-}
-
-function marginsXML(top, bottom, left, right) {
-  return `w:top="${top}" w:right="${right}" w:bottom="${bottom}" w:left="${left}" w:header="0" w:footer="0" w:gutter="0"`;
-}
-
-async function loteToDocxBuffer({ html, fontName, fontSize }) {
-  const parser = new DOMParser();
-  const doc2 = parser.parseFromString("<div>" + html + "</div>", "text/html");
-  const paragraphs = [];
-  doc2.querySelectorAll("p").forEach(pEl =>
-    paragraphs.push(pToParagraph(pEl, fontName, fontSize))
-  );
-
-  const top    = mmToTwip(80);
-  const bottom = mmToTwip(20);
-  const left   = mmToTwip(36);
-  const right  = mmToTwip(15);
-
-  const doc = new Document({
-    sections: [{
-      properties: {
-        page: {
-          size:   { width: mmToTwip(210), height: mmToTwip(297) },
-          margin: { top, bottom, left, right },
-        },
-      },
-      children: paragraphs,
-    }],
-  });
-
-  const blob0 = await Packer.toBlob(doc);
-  const buffer = await blob0.arrayBuffer();
-
-  const zipDoc = await JSZip.loadAsync(buffer);
-  let docXml = await zipDoc.file("word/document.xml").async("string");
-  docXml = docXml.replace(/w:pgMar\s+[^/]+\//g, () =>
-    `w:pgMar ${marginsXML(top, bottom, left, right)}/`
-  );
-  zipDoc.file("word/document.xml", docXml);
-
-  let settingsXml = await zipDoc.file("word/settings.xml")?.async("string") || "";
-  if (settingsXml && !settingsXml.includes("w:mirrorMargins")) {
-    settingsXml = settingsXml.replace("</w:settings>", "<w:mirrorMargins/></w:settings>");
-    zipDoc.file("word/settings.xml", settingsXml);
+async function descargarDocumento(documentKey) {
+  const { data, error } = await supabase.storage.from("oo-docs").download(`${documentKey}.docx`);
+  if (error) {
+    console.warn(`[exportarBarrioZip] no se pudo descargar ${documentKey}:`, error.message);
+    return null;
   }
-
-  return zipDoc.generateAsync({ type: "arraybuffer" });
+  return data;
 }
 
-export async function exportarBarrioZip({
-  barrio, lotes, templateHTML, escribano, fecha,
-  fontName = "Sitka Heading", fontSize = 11,
-  onProgress,
-}) {
+export async function exportarBarrioZip({ barrio, lotes, templateHTML, escribano, onProgress }) {
   const zip = new JSZip();
   const folder = zip.folder(barrio.nombre || "barrio");
+  const editados = await documentosEditados(lotes);
 
   for (let i = 0; i < lotes.length; i++) {
     const lote = lotes[i];
     onProgress?.({ actual: i + 1, total: lotes.length, lote });
 
-    const html = generarEscritura(
-      templateHTML, lote, barrio, escribano, fecha, lote.nroEscritura
-    );
+    let blob = editados[lote.id] ? await descargarDocumento(editados[lote.id]) : null;
+    if (!blob) {
+      blob = await buildDocxGenerico({
+        contenido: templateHTML,
+        partes: lote.partes || [],
+        escribano,
+        fecha: parseFechaDDMMAAAA(lote.fechaEscritura),
+        extravars: construirVarsLote(lote, barrio, escribano, lote.nroEscritura),
+      });
+    }
 
-    const buffer = await loteToDocxBuffer({ html, fontName, fontSize });
-
-    const nombre = `Mz_${lote.manzana || "X"}_Lote_${lote.lote || i + 1}.docx`
-      .replace(/[/\\:*?"<>|]/g, "_");
-    folder.file(nombre, buffer);
+    const nombre = `Mz_${lote.manzana || "X"}_Lote_${lote.lote || i + 1}.docx`.replace(/[/\\:*?"<>|]/g, "_");
+    folder.file(nombre, blob);
   }
 
   const zipBlob = await zip.generateAsync({ type: "blob" });

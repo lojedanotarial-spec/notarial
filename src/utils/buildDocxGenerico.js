@@ -1,5 +1,6 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType, UnderlineType } from "docx";
 import { inyectarMargenesSimetricos } from "./docxMargenes";
+import { aTextoPlano } from "./htmlATexto";
 import { buildVars, sustituirVars } from "./templateVars";
 
 // Variables que siempre van en negrita
@@ -167,7 +168,7 @@ export async function buildDocxGenerico({
   }
 
   // Documentos notariales no tienen puntos y aparte: sin \n literales ni saltos múltiples
-  const lineas = (contenido || "")
+  const lineas = aTextoPlano(contenido)
     .replace(/\\n/g, " ")
     .replace(/\r?\n(\r?\n)+/g, "\n")
     .split("\n");
