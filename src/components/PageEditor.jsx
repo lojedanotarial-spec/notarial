@@ -7,7 +7,7 @@ import { addListNodes }       from "prosemirror-schema-list";
 import { history, undo, redo } from "prosemirror-history";
 import { keymap }             from "prosemirror-keymap";
 import { baseKeymap, toggleMark } from "prosemirror-commands";
-import { A4W, A4H, PROT, NOPROT, mm } from "../constants";
+import { A4W, A4H, PROT, NOPROT } from "../constants";
 
 const LINE_HEIGHT_PX = 32;
 

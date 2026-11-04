@@ -83,6 +83,7 @@ export function SelectorScreen({ onGo }) {
         .is("registro_id", null)
         .eq("visible", true)
         .order("frecuencia", { ascending: true });
+      if (error) console.error("[SelectorScreen] error cargando templates:", error);
       const lista = data || [];
       setTemplates(lista);
       if (lista.length) setSelected(lista[0]);

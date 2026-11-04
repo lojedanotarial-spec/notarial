@@ -6,8 +6,8 @@ import { extraerDocumento } from "./vision.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./_supabaseConfig.js";
 import { exigirUsuario } from "./_auth.js";
 
-const DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+import { DOCX_MIME } from "../src/utils/docxMime.js";
 const TEMPLATES_MAP = {
   acta_asamblea:          { id: "1540ea5b-53f2-4dd0-beab-80a3b1645271", nombre: "Acta de asamblea" },
   acta_constatacion:      { id: "a6e4007a-2f90-4478-96fc-89bfa29a8e43", nombre: "Acta de constatación" },
@@ -1808,7 +1808,7 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL,
     if (!documentos_adjuntos.length) return { role: "user", content: mensaje };
     const bloques = await Promise.all(documentos_adjuntos.map(async (d, i) => {
       const esPdf = d.mediaType === "application/pdf";
-      const esDocx = d.mediaType === DOCX_MEDIA_TYPE;
+      const esDocx = d.mediaType === DOCX_MIME;
       let bloque, etiqueta;
       if (esPdf) {
         bloque = { type: "document", source: { type: "base64", media_type: "application/pdf", data: d.data }, title: d.nombre || undefined };
@@ -1940,7 +1940,7 @@ const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL,
       const imagenes = (input.indices || [])
         .map(i => documentos_adjuntos[i])
         .filter(Boolean)
-        .filter(d => d.mediaType !== DOCX_MEDIA_TYPE) // un .docx no es analizable como documento de identidad/vehículo
+        .filter(d => d.mediaType !== DOCX_MIME) // un .docx no es analizable como documento de identidad/vehículo
         .map(d => ({ data: d.data, mediaType: d.mediaType }));
       if (!imagenes.length) return { error: "No encontré esos adjuntos como imágenes o PDFs para analizar." };
       try {

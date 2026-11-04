@@ -4,13 +4,13 @@ import { useAuth } from "../context/AuthContext";
 import { logScriba } from "../utils/logger";
 import { apiPost } from "../utils/apiFetch";
 
+import { DOCX_MIME } from "../utils/docxMime";
 // Dueño del estado de una sesión de Scriba (mensajes, borrador, adjuntos,
 // pedido en curso, aviso de "hay algo nuevo"). Se instancia UNA vez en
 // App.jsx, no dentro de ScribaPanel — así sobrevive a que el panel se
 // cierre y se vuelva a abrir, que es justo lo que antes lo destruía.
 // Ver specs/persistencia-chat-scriba/plan.md para el porqué.
 
-const DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const LIMITE_ADJUNTOS = 2.4 * 1024 * 1024; // ~2.4MB crudos — margen dentro del límite de body de Vercel (~4.5MB)
 
 export function useScribaSesion(contexto) {
@@ -63,9 +63,9 @@ export function useScribaSesion(contexto) {
 
   function agregarArchivo(file) {
     // PDFs y Word (.docx): enviar directo sin comprimir
-    const esDocx = file.type === DOCX_MEDIA_TYPE || file.name?.toLowerCase().endsWith(".docx");
+    const esDocx = file.type === DOCX_MIME || file.name?.toLowerCase().endsWith(".docx");
     if (file.type === "application/pdf" || esDocx) {
-      const mediaType = file.type === "application/pdf" ? "application/pdf" : DOCX_MEDIA_TYPE;
+      const mediaType = file.type === "application/pdf" ? "application/pdf" : DOCX_MIME;
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = ev.target.result.split(",")[1];

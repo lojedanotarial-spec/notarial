@@ -1,3 +1,4 @@
+import { fmtDni as fmtDniUtil } from "./formato.js";
 /**
  * Lógica compartida para generar el bloque INTERVIENE de representaciones.
  * Usada por todos los builders (F08, cert_firma, genérico vía buildVars).
@@ -20,7 +21,7 @@ export function textoInterviene(p) {
     if (esPF) {
       const nombre = [(repr.repr_nombre||"").toUpperCase(), (repr.repr_apellido||"").toUpperCase()].filter(Boolean).join(" ");
       const art    = repr.repr_genero === "F" ? "de la señora" : "del señor";
-      const dni    = repr.repr_dni ? `, con Documento Nacional de Identidad número ${fmtDniTexto(repr.repr_dni)}` : "";
+      const dni    = repr.repr_dni ? `, con Documento Nacional de Identidad número ${fmtDniUtil(repr.repr_dni)}` : "";
       const docs   = repr.documentacion
         ? `; con facultades suficientes para este acto a mérito de la siguiente documentación: ${repr.documentacion}.-`
         : "";
@@ -40,12 +41,6 @@ export function textoInterviene(p) {
   }
 
   return bloques.join(" ") ;
-}
-
-function fmtDniTexto(val) {
-  if (!val) return "";
-  const n = Number(String(val).replace(/\D/g, ""));
-  return isNaN(n) ? "" : n.toLocaleString("es-AR");
 }
 
 /**

@@ -15,6 +15,8 @@ import { buscarOCrearCarpetaDrive, subirArchivoDrive, esErrorSesionVencida } fro
 import { obtenerCarpetaLoteDrive } from "../utils/loteDrive";
 import { IconoDrive, IconoSubirDrive } from "../components/ui/DriveIcons";
 
+import { nombreDeMiembro, escribanoDesdeMiembro } from "../utils/escribano";
+import { fechaDeHoy } from "../utils/fechas";
 const LOTE_VACIO = () => ({
   id: crypto.randomUUID(),
   nroEscritura: "", fechaEscritura: "", escribano: "",
@@ -121,7 +123,7 @@ function Section({ title, children }) {
 function ModalLote({ lote, onSave, onClose }) {
   const [d, setD] = useState({ ...lote });
   const upd = (f, v) => setD(prev => ({ ...prev, [f]: v }));
-  const { miembros, miUsuario } = useAuth();
+  const { miembros } = useAuth();
   const [partesAbierto, setPartesAbierto] = useState(false);
 
   const inp = {
@@ -141,7 +143,7 @@ function ModalLote({ lote, onSave, onClose }) {
       <Modal
         title={"Lote " + (d.manzana || "?") + " - " + (d.lote || "?")}
         onClose={onClose}
-        footer={<><Btn onClick={onClose}>Cancelar</Btn><Btn primary onClick={() => { console.log("guardando lote:", d); onSave(d); onClose(); }}>Guardar</Btn></>}
+        footer={<><Btn onClick={onClose}>Cancelar</Btn><Btn primary onClick={() => { onSave(d); onClose(); }}>Guardar</Btn></>}
       >
         <div style={{ maxHeight: 480, overflowY: "auto", paddingRight: 4 }}>
 <Section title="Escritura">
@@ -149,9 +151,9 @@ function ModalLote({ lote, onSave, onClose }) {
               <Fg label="N° Escritura"><input style={inp} value={d.nroEscritura} onChange={e => upd("nroEscritura", e.target.value)} placeholder="ej: 29"/></Fg>
               <Fg label="Fecha escritura"><InputFecha style={inp} value={d.fechaEscritura} onChange={v => upd("fechaEscritura", v)}/></Fg>
               <Fg label="Escribano">
-                <select style={inp} value={d.escribano || (miembros[0] ? (miembros[0].nombre_preferido || `${miembros[0].nombre} ${miembros[0].apellido}`) : "")} onChange={e => upd("escribano", e.target.value)}>
+                <select style={inp} value={d.escribano || (miembros[0] ? (nombreDeMiembro(miembros[0])) : "")} onChange={e => upd("escribano", e.target.value)}>
                   {miembros.map(m => {
-                    const nombre = m.nombre_preferido || `${m.nombre} ${m.apellido}`;
+                    const nombre = nombreDeMiembro(m);
                     return <option key={m.id} value={nombre}>{nombre}</option>;
                   })}
                 </select>
@@ -387,7 +389,6 @@ function AccionesDrive({ lote, barrio, session, onUpdLote }) {
 function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstructura, onCompletarCarpetas, onEliminarLote, onVolver, onModelo, onVerDoc, onGo }) {
   const [editandoLote, setEditandoLote] = useState(null);
   const [confirmLote, setConfirmLote] = useState(null);
-  const [verModelo, setVerModelo] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [progreso, setProgreso] = useState(null);
   const [modalEstructura, setModalEstructura] = useState(false);
@@ -400,7 +401,7 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
   const loteEditar = editandoLote ? barrio.lotes.find(l => l.id === editandoLote) : null;
   const completosCount = barrio.lotes.filter(estaCompleto).length;
   const inp = { width: "100%", padding: "7px 9px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: C.porcelain, fontSize: 12, color: "#1a2332", fontFamily: "'Inter', sans-serif", outline: "none", boxSizing: "border-box" };
-  const { miUsuario, usuario, registroActivo, session } = useAuth();
+  const { miUsuario, session } = useAuth();
   const [verDocLote, setVerDocLote] = useState(null);
     useEffect(() => {
       if (verDocLote) { onVerDoc(verDocLote); setVerDocLote(null); }
@@ -416,26 +417,18 @@ function DetalleBarrio({ barrio, onUpd, onUpdLote, onAgregarLote, onCrearEstruct
         modeloLabel="Ver modelo"
         exportLabel="Exportar ZIP"
         onExport={async () => {
-          console.log("exportar clicked");
           if (exportando) return;
           const { data: tmpl } = await supabase
             .from("templates_barrio").select("html")
             .eq("barrio_id", barrio.id)
             .order("created_at", { ascending: false })
             .limit(1).maybeSingle();
-          console.log("template:", tmpl);
           if (!tmpl?.html) {
             alert("Este barrio no tiene modelo cargado.");
             return;
           }
-          const escribano = miUsuario ? {
-            nombre: miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
-            caracter: miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
-            registro: miUsuario.registro,
-            circunscripcion: miUsuario.circunscripcion,
-            localidad_registro: miUsuario.localidad_registro,
-          } : {};
-          const fecha = { dia: new Date().getDate(), mes: new Date().getMonth(), anio: new Date().getFullYear() };
+          const escribano = miUsuario ? escribanoDesdeMiembro(miUsuario) : {};
+          const fecha = fechaDeHoy();
           setExportando(true);
           setProgreso({ actual: 0, total: barrio.lotes.length, lote: null });
           try {
@@ -885,7 +878,6 @@ export function BulkScreen({ onGo }) {
   useEffect(() => {
     if (!registroNumero) return;
     async function cargar() {
-      console.log("BulkScreen cargar() — registroNumero:", registroNumero);
       setCargando(true);
       const { data: barriosData } = await supabase
         .from("barrios").select("*").eq("registro_id", registroNumero)

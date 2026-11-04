@@ -31,7 +31,7 @@ export function FeedbackButton({ screen }) {
       });
       setEnviado(true);
       setTimeout(cerrar, 2000);
-    } catch (e) {
+    } catch {
       setErr("No se pudo enviar. Intentá de nuevo.");
     } finally {
       setEnviando(false);

@@ -1,7 +1,8 @@
 import { diaLetras, anioLetras, numeroALetras } from "../utils.js";
 import { textoInterviene } from "./buildInterviene.js";
 
-const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+import { MESES } from "./fechas";
+import { fmtDni } from "./formato";
 const MESES_UP = MESES.map(m => m.toUpperCase());
 
 // Capitaliza cada palabra: "RAUL ALBERTO" → "Raúl Alberto"
@@ -17,7 +18,6 @@ const fmtFechaNac = (v) => {
   return `${Number(dia)} de ${MESES[Number(mes)-1] || ""} de ${anio}`;
 };
 
-const fmtDni = (v) => v ? Number(String(v).replace(/\D/g,"")).toLocaleString("es-AR") : "";
 const fmtDomicilio = (p) => [
   p.barrio  && `Barrio ${p.barrio}`,
   p.manzana && `Manzana ${p.manzana}`,

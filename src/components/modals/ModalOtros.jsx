@@ -7,6 +7,7 @@ import { Modal } from "../Modal";
 import { Btn }   from "../ui/Btn";
 import { Fg, Warn } from "../ui/FormElements";
 
+import { nombreDeMiembro, escribanoDesdeMiembro } from "../../utils/escribano";
 export function ModalEscribano({ escribano, onApply, onClose }) {
   const { miembros: ctxMiembros, registroActivo } = useAuth();
   const [miembros, setMiembros] = useState(ctxMiembros);
@@ -37,18 +38,7 @@ export function ModalEscribano({ escribano, onApply, onClose }) {
   function aplicar() {
     const m = miembros[sel];
     if (!m) return;
-    const ROL_CARACTER = {
-      titular:   m.genero === "f" ? "Notaria Titular"   : "Notario Titular",
-      adscripta: "Notaria Adscripta",
-      adscripto: "Notario Adscripto",
-    };
-    onApply({
-      nombre:          m.nombre_preferido || `${m.nombre} ${m.apellido}`,
-      caracter:        ROL_CARACTER[m.rol] || m.rol,
-      registro:        m.registro,
-      circunscripcion: m.circunscripcion,
-      genero:          m.genero,
-    });
+    onApply(escribanoDesdeMiembro(m));
     onClose();
   }
 
@@ -57,7 +47,7 @@ export function ModalEscribano({ escribano, onApply, onClose }) {
            footer={<><Btn onClick={onClose}>Cancelar</Btn>
                       <Btn primary onClick={aplicar}>Aplicar</Btn></>}>
       {miembros.map((m, i) => {
-        const nombre = m.nombre_preferido || `${m.nombre} ${m.apellido}`;
+        const nombre = nombreDeMiembro(m);
         const iniciales = [m.nombre?.[0], m.apellido?.[0]].filter(Boolean).join("").toUpperCase();
         const ROL_LABEL = { titular: "Titular", adscripta: "Adscripta", adscripto: "Adscripto" };
         return (

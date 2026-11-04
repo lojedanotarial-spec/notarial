@@ -1,4 +1,5 @@
-﻿import { useState, useEffect, useRef } from "react";
+﻿import { fmtDni } from "../../utils/formato";
+import { useState, useEffect, useRef } from "react";
 import { C, DEPARTAMENTOS, PARTE_VACIA, inp } from "../../constants";
 
 // Inferencia de provincia argentina a partir de localidad o departamento
@@ -307,12 +308,6 @@ import { Btn } from "./Btn";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
 import { descargarArchivoDrive, esErrorSesionVencida } from "../../utils/driveHelper";
-
-const fmtDni = (v) => {
-  if (!v) return "";
-  const n = Number(String(v).replace(/\D/g, ""));
-  return isNaN(n) ? "" : n.toLocaleString("es-AR");
-};
 
 function calcularCUIT(dni, genero) {
   const dniStr = String(dni || "").replace(/\D/g, "").padStart(8, "0");

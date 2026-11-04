@@ -6,6 +6,7 @@
 
 import { SUPABASE_URL } from "./_supabaseConfig.js";
 import { verifyOoJwt, OO_KEY_RE } from "./_ooJwt.js";
+import { DOCX_MIME } from "../src/utils/docxMime.js";
 
 const BUCKET = "oo-docs";
 
@@ -56,7 +57,7 @@ export default async function handler(req, res) {
           headers: {
             "Authorization": `Bearer ${SERVICE_KEY}`,
             "apikey":        SERVICE_KEY,
-            "Content-Type":  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "Content-Type":  DOCX_MIME,
             "x-upsert":      "true",
           },
           body: buf,

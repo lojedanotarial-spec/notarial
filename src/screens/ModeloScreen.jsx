@@ -28,7 +28,7 @@ function EditorModelo({ barrio, templateId: initTemplateId, htmlInicial, onVolve
   const [fontSize, setFontSize] = useState(11);
   const [ddOpen,   setDdOpen]   = useState(null);
   const [hojaOn,   setHojaOn]   = useState(true);
-  const [showVars, setShowVars] = useState(true);
+  const [showVars] = useState(true);
   const activeEditor = useRef(null);
   const timerRef     = useRef(null);
   const zoom = ZOOM_LEVELS[zoomIdx];
@@ -183,7 +183,6 @@ export function ModeloScreen({ barrio, onVolver, onGo }) {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-        console.log("template data:", data);
 
       setEstado({
         cargando: false,

@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   C, FUENTES, INTERLINEADOS,
   PARTE_VACIA, ESCRIBANO_INI, FECHA_HOY, PROTOCOLO_INI, INSTRUMENTO_INI,
-  ELABELS, inp,
+  ELABELS,
 } from "../constants";
 import { NavBar }  from "../components/NavBar";
 import { Modal }   from "../components/Modal";
@@ -24,6 +24,8 @@ import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 
+import { escribanoDesdeMiembro } from "../utils/escribano";
+import { subirDocxOO } from "../utils/ooDocs";
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
 // Etiquetas contextuales por template — se muestran en el panel de partes cuando no hay rol asignado
@@ -135,21 +137,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const [partes,        setPartes]        = useState(() => params?.partes?.length ? params.partes : [PARTE_VACIA()]);
   const [vehiculos,     setVehiculos]     = useState([]);
   const [formulario,    setFormulario]    = useState({ tipo: "08", numero: "", dominio: "" });
-  const [escribano,     setEscribano]     = useState(() => {
-    if (!miUsuario) return ESCRIBANO_INI;
-    const ROL_CARACTER_INI = {
-      titular:   miUsuario.genero === "f" ? "Notaria Titular"   : "Notario Titular",
-      adscripta: "Notaria Adscripta",
-      adscripto: "Notario Adscripto",
-    };
-    return {
-      nombre:          miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
-      caracter:        ROL_CARACTER_INI[miUsuario.rol] || (miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a"),
-      registro:        miUsuario.registro,
-      circunscripcion: miUsuario.circunscripcion,
-      genero:          miUsuario.genero,
-    };
-  });
+  const [escribano,     setEscribano]     = useState(() => miUsuario ? escribanoDesdeMiembro(miUsuario) : ESCRIBANO_INI);
   const [templateKey,   setTemplateKey]   = useState(() => {
     if (params?.templateKey) return params.templateKey;
     const SLUG_MAP = {
@@ -172,19 +160,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   useEffect(() => {
     if (!miUsuario?.is_admin || !registroActivo || params?.docId || miembros.length === 0) return;
     const titular = miembros.find(m => m.rol === "titular") || miembros[0];
-    if (titular) {
-      const ROL_CARACTER = {
-        titular:   titular.genero === "f" ? "Notaria Titular"   : "Notario Titular",
-        adscripta: "Notaria Adscripta",
-        adscripto: "Notario Adscripto",
-      };
-      setEscribano({
-        nombre:          titular.nombre_preferido || `${titular.nombre} ${titular.apellido}`,
-        caracter:        ROL_CARACTER[titular.rol] || "Notario/a Titular",
-        registro:        titular.registro,
-        circunscripcion: titular.circunscripcion,
-      });
-    }
+    if (titular) setEscribano(escribanoDesdeMiembro(titular));
   }, [miUsuario?.is_admin, registroActivo, miembros]);
 
   // Documento libre (crear_documento_libre de Scriba): sin templateId, el cuerpo y el
@@ -261,16 +237,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
           })
         : await buildDocxBlanco({ escribano, margenKey, fontSize, fuente, estilos });
 
-      const key      = `doc-${Date.now()}`;
-      const filePath = `${key}.docx`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("oo-docs")
-        .upload(filePath, blob, {
-          contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          upsert: true,
-        });
-      if (uploadError) throw new Error(`Error al subir archivo: ${uploadError.message}`);
+      const { key, filePath } = await subirDocxOO(blob);
 
       // El bucket oo-docs es privado: documentUrl es solo la ruta del archivo. OnlyOffice recibe
       // una URL firmada de corta vida que arma el servidor en cada apertura (/api/oo-config).

@@ -89,11 +89,6 @@ const parseMonto = s => {
   return isNaN(n) ? 0 : n;
 };
 
-const fmtInput = s => {
-  const n = parseMonto(s);
-  return n ? Math.round(n).toLocaleString("es-AR") : s;
-};
-
 /* ─── CÁLCULOS POR TIPO DE ACTO ──────────────────────────────────────────
    Cada función devuelve:
    { adquirente?, transmitente?, compartido?, unico?, notas }
@@ -738,7 +733,7 @@ export function PresupuestoNotarial({ onBack }) {
   const onOverride = (key, val) => setOverrides(prev =>
     val !== undefined
       ? { ...prev, [key]: val }
-      : (({ [key]: _, ...rest }) => rest)(prev)
+      : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key))
   );
   const hasOverrides = Object.keys(overrides).length > 0;
 
@@ -1084,7 +1079,7 @@ export function PresupuestoNotarial({ onBack }) {
 
 /* ─── PRINT MODAL ─────────────────────────────────────────────────────────── */
 
-function PrintModal({ actoDef, resultado, totalGlobal, inputs, tieneSplit, onClose }) {
+function PrintModal({ actoDef, resultado, totalGlobal, tieneSplit, onClose }) {
   const hoy = new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" });
 
   const renderLineas = (lineas) => lineas.map((l, i) => (

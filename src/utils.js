@@ -1,6 +1,7 @@
 ﻿import { useEffect } from "react";
 import { MESES_ORD, ANIOS_LETRAS } from "./constants.js";
 
+import { fmtDni } from "./utils/formato";
 export function useClickOutside(ref, cb) {
   useEffect(() => {
     const h = (e) => {
@@ -88,11 +89,6 @@ export function concatenarLimites(lote) {
 
 export function concatenarAdquirentes(partes) {
   if (!partes || partes.length === 0) return "";
-  const fmtDni = (v) => {
-    if (!v) return "";
-    const n = Number(String(v).replace(/\D/g, ""));
-    return isNaN(n) ? "" : n.toLocaleString("es-AR");
-  };
   return partes.map((p) => {
     const tratamiento = p.genero === "F" ? "la señora" : "el señor";
     const nombre = [p.apellido, p.nombre].filter(Boolean).join(" ");

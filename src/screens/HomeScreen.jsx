@@ -1,4 +1,5 @@
-﻿import { useState, useEffect, useCallback } from "react";
+﻿import { MESES } from "../utils/fechas";
+import { useState, useEffect, useCallback } from "react";
 import { C, ELABELS } from "../constants";
 import { T, R, S } from "../theme";
 import { NavBar } from "../components/NavBar";
@@ -89,16 +90,8 @@ function saludo() {
 
 function fechaHoy() {
   const DIAS  = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-  const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
   const d = new Date();
   return DIAS[d.getDay()] + " " + d.getDate() + " de " + MESES[d.getMonth()] + " de " + d.getFullYear();
-}
-
-function diasAtras(fechaStr) {
-  const diff = Math.floor((Date.now() - new Date(fechaStr).getTime()) / 86400000);
-  if (diff === 0) return "Hoy";
-  if (diff === 1) return "Ayer";
-  return "Hace " + diff + " días";
 }
 
 function fmtFecha(str) {
@@ -297,7 +290,6 @@ export function HomeScreen({ onGo }) {
   useEffect(() => {
     if (!usuario) return;
     async function cargar() {
-      console.log("cargar() — registroActivo:", registroActivo, "usuario:", usuario?.id);
       setCargando(true);
       const query = supabase
         .from("documentos")

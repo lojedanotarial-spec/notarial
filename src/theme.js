@@ -1,21 +1,4 @@
-﻿// ── PALETA ───────────────────────────────────────────────────────────────────
-export const C = {
-  dark:          "#1a2332",
-  porcelain:     "#FDFCFA",
-  warm:          "#f0ece3",
-  cerulean:      "#3a7ca5",
-  ceruleanLight: "rgba(58,124,165,.08)",
-  ceruleanMid:   "rgba(58,124,165,.2)",
-  gold:          "#c9a961",
-  fawn50:        "rgba(201,169,97,.1)",
-  border:        "rgba(26,35,50,.14)",
-  borderStrong:  "rgba(26,35,50,.22)",
-  muted:         "rgba(26,35,50,.5)",
-  faint:         "rgba(26,35,50,.65)",
-  danger:        "#c0392b",
-};
-
-// ── TIPOGRAFÍA — 3 niveles ────────────────────────────────────────────────────
+﻿// ── TIPOGRAFÍA — 3 niveles ────────────────────────────────────────────────────
 export const T = {
   // Nivel 1 — Principal: nombres, valores, títulos
   l1: { fontSize: 14, color: "#1a2332", fontWeight: 600 },

@@ -15,6 +15,9 @@ import { obtenerCarpetaLoteDrive } from "../utils/loteDrive";
 import { subirArchivoDrive, reemplazarContenidoArchivoDrive, esErrorSesionVencida } from "../utils/driveHelper";
 import { parseFechaDDMMAAAA } from "../utils/fechas";
 
+import { nombreDeMiembro, escribanoDesdeMiembro } from "../utils/escribano";
+import { subirDocxOO } from "../utils/ooDocs";
+import { DOCX_MIME } from "../utils/docxMime";
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
 function PanelSection({ label, children, onClick }) {
@@ -118,7 +121,7 @@ function PanelLote({ lote, barrio, session, escribano, miembros, onChange, onCam
         <Fg label="Seleccionar">
           <select style={sInp} value={lote.escribano || ""} onChange={e => { onCambioDiferido(); upd("escribano", e.target.value); }}>
             {miembros.map(m => {
-              const nombre = m.nombre_preferido || `${m.nombre} ${m.apellido}`;
+              const nombre = nombreDeMiembro(m);
               return <option key={m.id} value={nombre}>{nombre}</option>;
             })}
           </select>
@@ -270,13 +273,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
 
   const fecha = useMemo(() => parseFechaDDMMAAAA(lote.fechaEscritura), [lote.fechaEscritura]);
 
-  const escribano = miUsuario ? {
-    nombre: miUsuario.nombre_preferido || `${miUsuario.nombre} ${miUsuario.apellido}`,
-    caracter: miUsuario.rol === "titular" ? "Notario/a Titular" : "Notario/a Adscripto/a",
-    registro: miUsuario.registro,
-    circunscripcion: miUsuario.circunscripcion,
-    localidad_registro: miUsuario.localidad_registro,
-  } : {};
+  const escribano = useMemo(() => (miUsuario ? escribanoDesdeMiembro(miUsuario) : {}), [miUsuario]);
 
   const docTitle = `Escritura - Mz ${lote.manzana || "?"} Lote ${lote.lote || "?"} - ${barrio.nombre}`;
   const registroNumero = miUsuario?.registro || registroActivo;
@@ -353,15 +350,7 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
         extravars: varsLote,
       });
 
-      const key = `doc-${Date.now()}`;
-      const filePath = `${key}.docx`;
-      const { error: uploadError } = await supabase.storage
-        .from("oo-docs")
-        .upload(filePath, blob, {
-          contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          upsert: true,
-        });
-      if (uploadError) throw new Error(`Error al subir archivo: ${uploadError.message}`);
+      const { key, filePath } = await subirDocxOO(blob);
 
       // Bucket privado: documentUrl es la ruta; la URL firmada la arma /api/oo-config al abrir el editor.
       setDocumentUrl(filePath);
@@ -383,14 +372,13 @@ export function LoteDocScreen({ lote: loteInicial, barrio, onVolver, onGo }) {
       if (session?.provider_token) {
         try {
           const { loteFolderId } = await obtenerCarpetaLoteDrive(session, { barrio, lote });
-          const mimeDocx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
           const nombreArchivo = `Escritura - Mz ${lote.manzana || "?"} Lote ${lote.lote || "?"}.docx`;
           const camposNuevos = {};
           if (loteFolderId !== lote.driveFolderId) camposNuevos.driveFolderId = loteFolderId;
           if (lote.driveEscrituraFileId) {
-            await reemplazarContenidoArchivoDrive(session, lote.driveEscrituraFileId, blob, mimeDocx);
+            await reemplazarContenidoArchivoDrive(session, lote.driveEscrituraFileId, blob, DOCX_MIME);
           } else {
-            const subida = await subirArchivoDrive(session, blob, nombreArchivo, mimeDocx, loteFolderId);
+            const subida = await subirArchivoDrive(session, blob, nombreArchivo, DOCX_MIME, loteFolderId);
             camposNuevos.driveEscrituraFileId = subida.id;
           }
           if (Object.keys(camposNuevos).length > 0) {

@@ -167,7 +167,7 @@ function FilaExpediente({ exp, onOpen, onDelete }) {
 }
 
 export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
-  const { session, usuario } = useAuth();
+  const { session } = useAuth();
   const [expedientes, setExpedientes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [modalNuevo, setModalNuevo] = useState(false);
