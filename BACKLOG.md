@@ -37,7 +37,19 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 - ~~Confirmar guardado de ediciones OnlyOffice → Supabase end-to-end~~ — hecho 04/11/26: abrir con token, editar, cerrar y verificar el .docx en Supabase con la edición
 - ~~JWT real para OnlyOffice~~ — hecho 04/11/26 (`api/oo-config.js` firma, `api/oo-callback.js` verifica; servidor nuevo en Contabo)
 - Bucket `oo-docs` es público: cualquiera con la URL de un documento lo descarga. Evaluar URLs firmadas de corta vida (ojo: OO descarga el documento desde su servidor, así que la URL debe durar lo que tarde en abrirse)
-- Quitar el `console.log` de diagnóstico en `AuthContext.jsx` (efecto de carga de miembros) — quedó de una investigación anterior, ya no hace falta con el fix de admin→McLeod directo del 30/09/26
+- ~~Quitar el `console.log` de diagnóstico en `AuthContext.jsx`~~ — hecho 04/11/26 (auditoría de código: salieron los 9 `console.log` de depuración)
+- **Correr `scripts/oo_docs_privado.sql`** en el SQL Editor de Supabase (el código que firma las URLs ya está en producción) y pasar la tabla final de políticas para re-probar con la clave anon. Mientras no se corra, el bucket `oo-docs` sigue siendo público.
+- **Verificar `templates_barrio.html`**: el editor de modelos guarda HTML; desde 04/11/26 `htmlATexto` lo convierte antes de generar. Cargar el primer modelo real de un barrio y confirmar que la escritura sale limpia (sin etiquetas) y con negrita/subrayado.
+- **Probar en vivo el ZIP de barrio**: ahora usa el mismo motor que el editor del lote e incluye los .docx editados a mano. Unit tests cubren el motor, pero la descarga completa no se probó en navegador.
+- **Auditoría de código (04/11/26) — deuda que quedó**:
+  - `api/scriba.js` (467 líneas): extraer `ejecutarTool` (cascada de `if` por nombre de tool) a un módulo por tool.
+  - `buildVars` en `templateVars.js` es una sola función de ~440 líneas; `BulkScreen` (1.185 líneas, 141 estilos inline), `EditorScreen` (29 `useState`) y `PartesEditor` (1.099 líneas) piden partirse.
+  - Dos editores para modelos y documentos: `PageEditor`+`usePagination` (ProseMirror, solo `ModeloScreen`) vs. OnlyOffice. Decidir si los modelos de barrio también pasan a OnlyOffice.
+  - Bundle único de 1,48 MB (406 KB gzip): cargar pantallas y herramientas (`React.lazy`).
+  - Lint: quedan 39 problemas, casi todos reglas de hooks (`exhaustive-deps`, `set-state-in-effect`). El CI no corre lint; sumarlo cuando bajen a 0.
+  - 31 `alert()`/`confirm()` nativos → UX/UI.
+  - `PROYECTO.md` (838 líneas) sigue describiendo GCP/Oracle/Clouding; reescribir las secciones de infraestructura con el estado real (Contabo + Cloudflare).
+  - La URL y la anon key de Supabase están repetidas en `src/supabase.js`, `api/_supabaseConfig.js` y 4 scripts.
 - ~~Automatismo de horario de Clouding~~ — eliminado 04/11/26 (Clouding dado de baja; apagar de noche nunca ahorró plata porque factura igual apagado)
 
 ## 🟡 Después
