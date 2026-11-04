@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { firmarConfigOO } from "../utils/ooConfigToken";
 
 const MAX_RECONNECT_ATTEMPTS = 5; // ~25s de reintentos antes de mostrar mantenimiento
 
@@ -6,6 +7,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
   const editorRef        = useRef(null);
   const reconnectTimer   = useRef(null);
   const reconnectCount   = useRef(0);
+  const createSeq        = useRef(0); // descarta firmas de token que llegan después de un createEditor más nuevo
   const documentTitleRef = useRef(documentTitle);
   const [ready, setReady]               = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
@@ -44,7 +46,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
     const container = document.getElementById("oo-container");
     if (container) container.innerHTML = "";
 
-    editorRef.current = new window.DocsAPI.DocEditor("oo-container", {
+    const config = {
       document: {
         fileType: "docx",
         key:      documentKey,
@@ -70,22 +72,41 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
           features: { spellcheck: true },
         },
       },
-      height: "100%",
-      width:  "100%",
-      events: {
-        onAppReady:      () => { setReady(true); setReconnecting(false); window.dispatchEvent(new CustomEvent("oo:document-ready")); },
-        onReady:         () => { setReady(true); setReconnecting(false); window.dispatchEvent(new CustomEvent("oo:document-ready")); },
-        onDocumentReady: () => { setReady(true); setReconnecting(false); window.dispatchEvent(new CustomEvent("oo:document-ready")); },
-        onError: (e) => {
-          console.error("[OO] error:", e?.data);
-          setReady(false);
-          setReconnecting(true);
-          if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-          reconnectTimer.current = setTimeout(() => createEditor(), 12000);
+    };
+
+    // El token JWT lo firma el servidor (/api/oo-config); el editor se crea cuando llega.
+    // Si dos createEditor() se pisan (reconexión, cambio de documento), gana el último.
+    const mySeq = ++createSeq.current;
+    const reintentar = () => {
+      setReady(false);
+      setReconnecting(true);
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = setTimeout(() => createEditor(), 12000);
+    };
+
+    firmarConfigOO(config).then((token) => {
+      if (mySeq !== createSeq.current) return; // llegó tarde: ya hay un createEditor más nuevo
+      editorRef.current = new window.DocsAPI.DocEditor("oo-container", {
+        ...config,
+        token,
+        height: "100%",
+        width:  "100%",
+        events: {
+          onAppReady:      () => { setReady(true); setReconnecting(false); window.dispatchEvent(new CustomEvent("oo:document-ready")); },
+          onReady:         () => { setReady(true); setReconnecting(false); window.dispatchEvent(new CustomEvent("oo:document-ready")); },
+          onDocumentReady: () => { setReady(true); setReconnecting(false); window.dispatchEvent(new CustomEvent("oo:document-ready")); },
+          onError: (e) => {
+            console.error("[OO] error:", e?.data);
+            reintentar();
+          },
+          onWarning: (e) => console.warn("[OO] warning:", e),
+          onDocumentStateChange: (e) => { if (e?.data) onEdit?.(); },
         },
-        onWarning: (e) => console.warn("[OO] warning:", e),
-        onDocumentStateChange: (e) => { if (e?.data) onEdit?.(); },
-      },
+      });
+    }).catch((e) => {
+      if (mySeq !== createSeq.current) return;
+      console.error("[OO] no se pudo firmar la config:", e);
+      reintentar();
     });
   }, [documentUrl, documentKey, serverUrl]);
 
@@ -95,23 +116,30 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
     // Si el editor ya está vivo, intentar refreshFile en lugar de recrear
     if (editorRef.current) {
       console.log("[OO] refreshFile →", documentKey);
-      try {
-        editorRef.current.refreshFile({
-          document: {
-            fileType: "docx",
-            key:      documentKey,
-            title:    documentTitleRef.current || "Documento notarial",
-            url:      documentUrl,
-            permissions: { edit: true, print: true, download: true },
-          },
-          documentType: "word",
-          editorConfig: { mode: "edit", lang: "es", callbackUrl: `${window.location.origin}/api/oo-callback?key=${documentKey}` },
+      const cfg = {
+        document: {
+          fileType: "docx",
+          key:      documentKey,
+          title:    documentTitleRef.current || "Documento notarial",
+          url:      documentUrl,
+          permissions: { edit: true, print: true, download: true },
+        },
+        documentType: "word",
+        editorConfig: { mode: "edit", lang: "es", callbackUrl: `${window.location.origin}/api/oo-callback?key=${documentKey}` },
+      };
+      // El token es asíncrono: si refreshFile falla (o no se pudo firmar) se recrea el editor completo.
+      const mySeq = ++createSeq.current;
+      firmarConfigOO(cfg)
+        .then((token) => {
+          if (mySeq !== createSeq.current) return;
+          editorRef.current.refreshFile({ ...cfg, token });
+        })
+        .catch((e) => {
+          if (mySeq !== createSeq.current) return;
+          console.warn("[OO] refreshFile falló, recreando:", e);
+          createEditor();
         });
-        return; // no recrear
-      } catch (e) {
-        console.warn("[OO] refreshFile falló, recreando:", e);
-        // cae al recreate completo
-      }
+      return; // no recrear acá: el .catch lo hace si hace falta
     }
 
     // Recreate (primera carga, tras fallo de refreshFile, o reconexión)
@@ -169,6 +197,7 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
     // destroyEditor() ya libera la instancia del documento en sí, que es
     // lo único que hace falta liberar acá.
     return () => {
+      createSeq.current++; // cancela cualquier firma de token en vuelo
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       if (editorRef.current) {
         try { editorRef.current.destroyEditor(); } catch {}
