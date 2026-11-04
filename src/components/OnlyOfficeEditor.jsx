@@ -114,35 +114,12 @@ export function OnlyOfficeEditor({ documentUrl, documentKey, documentTitle, serv
   useEffect(() => {
     if (!documentUrl || !serverUrl) return;
 
-    // Si el editor ya está vivo, intentar refreshFile en lugar de recrear
-    if (editorRef.current) {
-      console.log("[OO] refreshFile →", documentKey);
-      const cfg = {
-        document: {
-          fileType: "docx",
-          key:      documentKey,
-          title:    documentTitleRef.current || "Documento notarial",
-          permissions: { edit: true, print: true, download: true },
-        },
-        documentType: "word",
-        editorConfig: { mode: "edit", lang: "es", callbackUrl: `${window.location.origin}/api/oo-callback?key=${documentKey}` },
-      };
-      // El token y la URL firmada son asíncronos: si refreshFile falla (o no se pudo firmar) se recrea el editor completo.
-      const mySeq = ++createSeq.current;
-      firmarConfigOO(cfg)
-        .then(({ token, url }) => {
-          if (mySeq !== createSeq.current) return;
-          editorRef.current.refreshFile({ ...cfg, document: { ...cfg.document, url }, token });
-        })
-        .catch((e) => {
-          if (mySeq !== createSeq.current) return;
-          console.warn("[OO] refreshFile falló, recreando:", e);
-          createEditor();
-        });
-      return; // no recrear acá: el .catch lo hace si hace falta
-    }
-
-    // Recreate (primera carga, tras fallo de refreshFile, o reconexión)
+    // Siempre se recrea el editor al cambiar de documento (no refreshFile). OnlyOffice 10 expone
+    // refreshFile() sin lanzar error, pero NO abre un documento con otra key: la regeneración se
+    // subía bien a Supabase y el editor seguía mostrando el documento viejo (04/11/26, comprobado
+    // en el log de OO: las keys regeneradas nunca recibieron conexión). Con el OO 9.x anterior
+    // refreshFile fallaba y este mismo camino de recreación era el que hacía el trabajo.
+    // Recreate (primera carga, cambio de documento o reconexión)
     setReady(false);
     setReconnecting(false);
 
