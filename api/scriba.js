@@ -30,7 +30,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "API key no configurada" });
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  // Una vuelta normal tarda 2-30 s (redactar un documento entero con thinking llega a ~30 s), y el
+  // loop puede dar hasta 5 vueltas. El tope de la función es 300 s (vercel.json); el timeout por
+  // llamada evita que una llamada colgada se coma todo ese margen.
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 100_000, maxRetries: 1 });
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: `Bearer ${userToken}` } },
   });
