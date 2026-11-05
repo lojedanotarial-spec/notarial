@@ -235,7 +235,7 @@ export function useScribaSesion(contexto) {
 
     const nombres = archivosActuales.map(a => a.nombre).join(", ");
     const textoUsuario = pregunta || (archivosActuales.length
-      ? (archivosActuales.length > 1 ? `Miral estos archivos: ${nombres}` : `Miral este archivo: ${nombres}`)
+      ? (archivosActuales.length > 1 ? `Mirá estos archivos: ${nombres}` : `Mirá este archivo: ${nombres}`)
       : "");
 
     await procesarEnvio(textoUsuario, archivosActuales, mensajesBase);
