@@ -5,6 +5,7 @@ import { buildVars, sustituirVars, contarClausulas } from "../src/utils/template
 import { extraerDocumento } from "./vision.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./_supabaseConfig.js";
 import { exigirUsuario } from "./_auth.js";
+import { avisarSinRepetir } from "./_telegram.js";
 
 
 import { DOCX_MIME } from "../src/utils/docxMime.js";
@@ -465,6 +466,12 @@ export default async function handler(req, res) {
     return res.status(200).json({ respuesta: "No pude completar la consulta. Intentá de nuevo." });
   } catch (e) {
     console.error("Scriba error:", e);
+    // Sin crédito en Anthropic Scriba queda caída para todos: es lo único que merece aviso inmediato.
+    if (/credit balance/i.test(e.message || "")) {
+      await avisarSinRepetir("scriba-credito", "🔴 Scriba SIN CRÉDITO de Anthropic. Recargá en console.anthropic.com → Plans & Billing. Hasta entonces no responde a nadie.");
+    } else {
+      await avisarSinRepetir("scriba-error", `⚠️ Scriba falló: ${String(e.message).slice(0, 200)}`);
+    }
     return res.status(500).json({ error: e.message });
   }
 }

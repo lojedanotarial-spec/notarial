@@ -19,6 +19,7 @@
 import { AwsClient } from "aws4fetch";
 import { gzipSync } from "node:zlib";
 import { SUPABASE_URL } from "../_supabaseConfig.js";
+import { avisar } from "../_telegram.js";
 
 const BUCKETS_STORAGE = ["oo-docs", "documentos"];
 const PAGINA = 1000;
@@ -176,5 +177,14 @@ export default async function handler(req, res) {
 
   const ok = resumen.errores.length === 0;
   if (!ok) console.error("[backup] terminó con errores:", resumen.errores);
+
+  // Aviso por Telegram: el mensaje diario de OK también sirve de latido (si un día no llega, algo falló).
+  const filas = Object.values(resumen.tablas).reduce((a, n) => a + n, 0);
+  const archivosNuevos = Object.values(resumen.storage).reduce((a, s) => a + s.copiados, 0);
+  const sinCopiar = Object.values(resumen.storage).reduce((a, s) => a + s.pendientes_sin_copiar, 0);
+  await avisar(ok
+    ? `✅ Backup ${hoy} OK\n${Object.keys(resumen.tablas).length} tablas, ${filas.toLocaleString("es-AR")} filas, ${archivosNuevos} archivos nuevos${sinCopiar ? `, ${sinCopiar} pendientes para mañana` : ""} (${resumen.duracion_s} s)`
+    : `🔴 Backup ${hoy} con ERRORES\n${resumen.errores.slice(0, 5).join("\n").slice(0, 700)}`);
+
   return res.status(ok ? 200 : 500).json(resumen);
 }
