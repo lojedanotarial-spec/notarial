@@ -36,9 +36,13 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 - ~~Confirmar guardado de ediciones OnlyOffice → Supabase end-to-end~~ — hecho 04/11/26: abrir con token, editar, cerrar y verificar el .docx en Supabase con la edición
 - ~~JWT real para OnlyOffice~~ — hecho 04/11/26 (`api/oo-config.js` firma, `api/oo-callback.js` verifica; servidor nuevo en Contabo)
-- Bucket `oo-docs` es público: cualquiera con la URL de un documento lo descarga. Evaluar URLs firmadas de corta vida (ojo: OO descarga el documento desde su servidor, así que la URL debe durar lo que tarde en abrirse)
+- ~~Bucket `oo-docs` público~~ — hecho 05/11/26: privado, URLs firmadas de 15 min (`api/oo-config.js`), políticas solo `authenticated`. También se cerró el bucket `documentos` (31 archivos viejos de mayo, sin uso en el código).
 - ~~Quitar el `console.log` de diagnóstico en `AuthContext.jsx`~~ — hecho 04/11/26 (auditoría de código: salieron los 9 `console.log` de depuración)
-- **Correr `scripts/oo_docs_privado.sql`** en el SQL Editor de Supabase (el código que firma las URLs ya está en producción) y pasar la tabla final de políticas para re-probar con la clave anon. Mientras no se corra, el bucket `oo-docs` sigue siendo público.
+- ~~Correr `scripts/oo_docs_privado.sql`~~ — hecho 05/11/26 y verificado con la anon key (lista vacía, URL pública = `Bucket not found`).
+- **Lucas, a mano**: (1) resetear la contraseña de la base de Supabase (quedó pegada en el chat el 05/11); (2) activar la recarga automática de crédito de Anthropic (se agotó el 04/11 a las 15:09 y dejó a Scriba caída).
+- **Supabase advisors (05/11/26, solo nivel WARN)**: `es_admin()` y `mi_registro()` tienen `search_path` mutable y las ejecuta `anon` (devuelven solo datos del que llama: riesgo bajo, migración chica); protección contra contraseñas filtradas apagada (probable que requiera plan Pro).
+- **Scriba: respuestas en streaming**. Un pedido con adjuntos largos tarda 80+ s sin ninguna señal en pantalla; hoy se tapó subiendo `maxDuration` a 300 s, no se resolvió la espera.
+- **Backup, lo que falta**: `pg_dump` o foto del esquema (RLS, funciones, índices), simulacro de restauración en un proyecto limpio — ver sección al final.
 - **Verificar `templates_barrio.html`**: el editor de modelos guarda HTML; desde 04/11/26 `htmlATexto` lo convierte antes de generar. Cargar el primer modelo real de un barrio y confirmar que la escritura sale limpia (sin etiquetas) y con negrita/subrayado.
 - **Probar en vivo el ZIP de barrio**: ahora usa el mismo motor que el editor del lote e incluye los .docx editados a mano. Unit tests cubren el motor, pero la descarga completa no se probó en navegador.
 - **Auditoría de código (04/11/26) — deuda que quedó**:
@@ -58,7 +62,6 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 - Plantilla F-04 (`ModalFormulario` ya tiene el selector)
 - Informe de Dominio (`HerramientasScreen`, familia Automotor)
 - Sync de requirentes con CRM (placeholder visible en `ModalPartes`, sin backend)
-- 54 errores de lint preexistentes (bloquean sumar `lint` al CI)
 
 ## ⚪ Bloqueadas / necesitan decisión externa
 
@@ -71,6 +74,10 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 
 ## ✅ Recién terminado
 
+- **05/11/26 — Scriba y editor**: Scriba caía por timeout de 60 s en pedidos pesados (documento entero con thinking, ~42-82 s): `maxDuration` 60→300 s y timeout propio por llamada a Anthropic; el log `scriba_logs` verificado (registra éxitos y errores). Reabrir un documento ya no lo regenera en blanco (`useDocumentoOO` con ventana de gracia + guardia en `handleGenerar`; test de regresión). Typo "Miral" corregido.
+- **05/11/26 — Seguridad de storage**: `oo-docs` y `documentos` privados, verificado desde afuera. Supabase y Vercel conectados a Claude Code (lectura de logs/tablas).
+- **05/11/26 — Backup diario a R2** (ver sección al final) y código de avisos por Telegram (inactivo, en pausa).
+- **04/11/26 — Auditoría de código**: 5 pasos (seguridad de endpoints de IA, código muerto, un solo lugar para escribano/fechas/DNI/MIME, un motor para el ZIP y el editor del lote, hook `useDocumentoOO` y `scriba.js` 2.206→467 líneas). Incidente: Scriba caída ~30 min por imports sin `.js` (test guarda ahora).
 - **Bug más antiguo del editor, resuelto de raíz (2026-09-30)**: cambiar cualquier dato del panel en un documento *reabierto* (no uno nuevo) nunca regeneraba el documento — `generatedOnceRef` solo se marcaba dentro de `handleGenerar()`, que a propósito no corre al reabrir un DOCX ya guardado, así que el efecto que dispara la regeneración se cortaba en su primera línea para siempre. Aplicado a `EditorScreen.jsx` y `LoteDocScreen.jsx` (que ya lo tenía bien). Encontrado con reproducción real + logs de diagnóstico temporales (ya removidos).
 - Ediciones manuales de OnlyOffice: dejar de asumir siempre "sí hay texto a mano sin guardar" al reabrir un documento — ahora se persiste el dato real (`tiene_ediciones_manuales`) y se lee al reabrir, en vez de preguntar confirmación en cada primer cambio sin necesidad (2026-09-30)
 - Fix: un documento podía quedar generado (y guardado para siempre) con "Admin" como escribano — el placeholder de arranque de una cuenta admin se colaba en la ventana de carrera antes de seleccionar el titular real. Ahora el admin carga directo el registro real (McLeod) desde el login, sin placeholder, más un guardia en `handleGenerar()` que nunca genera con escribano vacío o "Admin" (2026-09-30)
