@@ -101,3 +101,16 @@ Pendiente / límites:
 - **Falta un simulacro de restauración completa** en un proyecto Supabase limpio (script `scripts/restaurar_backup.mjs`).
 - **Monitoreo con aviso por mail**: el backup falla con HTTP 500 y deja el error en los logs de Vercel, pero nadie se entera solo.
 - Resetear la contraseña de la base (quedó pegada en el chat el 05/11/26). Nada del backup la usa, no hay nada que actualizar.
+
+## Monitoreo y avisos por Telegram — 📌 en pausa hasta el número nuevo (retomar ~05/12/26)
+
+Lucas cambia de número de teléfono en ~1 mes y quiere dar de alta el bot con el número nuevo. Todo el código ya está
+desplegado y **no hace nada mientras falten las variables** (no rompe nada): `api/_telegram.js`, aviso diario en
+`api/cron/backup.js`, aviso de "sin crédito" en `api/scriba.js`, y el Worker `workers/monitor/` (+ `scripts/deploy_monitor.mjs`).
+
+Para activarlo (2 min de Lucas, 5 de Claude):
+1. Lucas crea el bot con @BotFather (`/newbot`), agrega `TELEGRAM_BOT_TOKEN=...` a `scripts/.env` (no por chat) y le manda "hola" al bot.
+2. Claude obtiene el `chat_id` (getUpdates), carga `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` en Vercel, corre
+   `node scripts/deploy_monitor.mjs` y verifica con un mensaje de prueba y una caída simulada.
+
+Mientras tanto no hay avisos: el backup diario corre igual, pero si falla solo queda en los logs de Vercel.
