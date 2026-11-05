@@ -200,6 +200,10 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     // (está en sus deps), así que este return es seguro: en cuanto el
     // titular se seleccione de verdad, se vuelve a intentar.
     if (!escribano?.nombre || escribano.nombre.trim() === "Admin") return;
+    // Con plantilla pero sin su contenido todavía (el fetch no volvió), el camino de abajo caería en
+    // buildDocxBlanco y GUARDARÍA un documento en blanco como si fuera el real (05/11/26: pisó un
+    // documento al reabrirlo). Se espera a que llegue la plantilla.
+    if (templateId && !templateContenido) return;
     setGenerating(true);
     try {
       const extravarsConFormulario = {
@@ -240,7 +244,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     } finally {
       setGenerating(false);
     }
-  }, [partes, vehiculos, extravars, clausulasActivas, clausulasDisponibles, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, templateContenido, templateSlug, estilos]);
+  }, [partes, vehiculos, extravars, clausulasActivas, clausulasDisponibles, formulario, escribano, fecha, protocolo, instrumento, margenKey, fontSize, fuente, interlineado, templateContenido, templateId, templateSlug, estilos]);
 
   // Keep ref updated so the mount effect can call the latest version
   useEffect(() => { handleGenerarRef.current = handleGenerar; }, [handleGenerar]);

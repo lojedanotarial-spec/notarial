@@ -28,6 +28,11 @@ export function useDocumentoOO({ saltarAutoGenerar = false } = {}) {
   const generatedOnceRef = useRef(false);
   const skipAutoGenerateRef = useRef(saltarAutoGenerar);
   const ignorarEdicionesHastaRef = useRef(0);
+  // Al reabrir un documento, la pantalla vuelca su estado guardado (partes, cláusulas...) y los
+  // efectos "regenerar al cambiar X" lo ven como un cambio del usuario. Sin esta ventana, un
+  // documento "sin ediciones" se regeneraba solo al abrirlo y, si la plantilla todavía no había
+  // llegado, quedaba reemplazado por un docx en blanco (05/11/26).
+  const ignorarRegeneracionHastaRef = useRef(0);
   // La pantalla le asigna acá su handleGenerar más reciente.
   const handleGenerarRef = useRef(null);
 
@@ -55,6 +60,7 @@ export function useDocumentoOO({ saltarAutoGenerar = false } = {}) {
     // docx guardado). Sin esto, los cambios del panel no regeneraban nunca un documento reabierto.
     generatedOnceRef.current = true;
     skipAutoGenerateRef.current = true;
+    ignorarRegeneracionHastaRef.current = Date.now() + VENTANA_GRACIA_MS;
   }, []);
 
   // onEdit del OnlyOfficeEditor.
@@ -68,6 +74,7 @@ export function useDocumentoOO({ saltarAutoGenerar = false } = {}) {
   // un primer documento generado (en ese caso no hace nada).
   const regenerarSiCorresponde = useCallback(() => {
     if (!generatedOnceRef.current) return false;
+    if (Date.now() < ignorarRegeneracionHastaRef.current) return true; // carga del documento, no un cambio
     if (hasOoEditsRef.current) setPendingRegen(true);
     else handleGenerarRef.current?.();
     return true;
