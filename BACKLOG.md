@@ -86,3 +86,18 @@ Caso de uso → Spec** — ver [`PROCESO.md`](PROCESO.md).
 - Buscador de instrumentos por nombre en "Crear documento"
 - Mensaje de mantenimiento en el editor OnlyOffice (en vez de loop infinito de reconexión)
 - Fix fecha de nacimiento inventada en escaneo de DNI
+
+## Backup diario a R2 (05/11/26) — hecho, con límites conocidos
+
+`api/cron/backup.js` (cron 07:00 UTC) vuelca las 23 tablas de `public` + usuarios de Auth a `tablas/AAAA-MM-DD/*.json.gz`
+(retención 30 días, regla del bucket) y espeja `oo-docs` y `documentos` a `storage/` (incremental, sin borrado).
+Bucket privado `notarial-backups`; credenciales `BACKUP_R2_*` en Vercel (sensibles) y `scripts/.env`. Disparo manual:
+`curl -H "Authorization: Bearer $BACKUP_TRIGGER_TOKEN" https://notarial.lat/api/cron/backup`.
+Verificado: conteos de R2 == base para las 23 tablas y 886 + 31 archivos; una tabla se cargó con `json_populate_recordset`.
+
+Pendiente / límites:
+- **No es un `pg_dump`**: no incluye esquema (RLS, funciones, índices, triggers) ni hashes de contraseñas de Auth. Para eso hace
+  falta la contraseña de la base (secreto de GitHub Actions + `pg_dump` a R2) o una foto del esquema versionada en `docs/`.
+- **Falta un simulacro de restauración completa** en un proyecto Supabase limpio (script `scripts/restaurar_backup.mjs`).
+- **Monitoreo con aviso por mail**: el backup falla con HTTP 500 y deja el error en los logs de Vercel, pero nadie se entera solo.
+- Resetear la contraseña de la base (quedó pegada en el chat el 05/11/26). Nada del backup la usa, no hay nada que actualizar.
