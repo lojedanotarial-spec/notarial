@@ -10,6 +10,7 @@
 // de todos los registros, no solo las de un usuario logueado.
 
 import Anthropic from "@anthropic-ai/sdk";
+import { MODELOS } from "../_modelos.js";
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL } from "../_supabaseConfig.js";
 
@@ -77,7 +78,7 @@ Respondé SOLO con este JSON, sin texto adicional:
 }`;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-5",
+    model: MODELOS.aprendizaje,
     max_tokens: 4000,
     messages: [{ role: "user", content: prompt }],
   });

@@ -6,6 +6,7 @@ import { extraerDocumento } from "./vision.js";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./_supabaseConfig.js";
 import { exigirUsuario } from "./_auth.js";
 import { avisarSinRepetir } from "./_telegram.js";
+import { MODELOS } from "./_modelos.js";
 
 
 import { DOCX_MIME } from "../src/utils/docxMime.js";
@@ -313,7 +314,7 @@ export default async function handler(req, res) {
   try {
     for (let i = 0; i < 5; i++) {
       const response = await client.messages.create({
-        model: "claude-sonnet-5",
+        model: MODELOS.scriba,
         max_tokens: 8192,
         thinking: { type: "adaptive" },
         system: [
@@ -459,6 +460,11 @@ export default async function handler(req, res) {
         continue;
       }
 
+      // Los modelos 5.5 pueden cortar por sus filtros de seguridad (stop_reason "refusal"): sin esto
+      // el usuario recibiría una respuesta vacía sin saber por qué.
+      if (response.stop_reason === "refusal") {
+        return res.status(200).json({ respuesta: "No puedo ayudar con ese pedido. Reformulalo o probá con otra consulta." });
+      }
       const text = response.content.find(c => c.type === "text");
       return res.status(200).json({ respuesta: text?.text || "" });
     }

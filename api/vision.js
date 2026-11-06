@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { exigirUsuario } from "./_auth.js";
+import { MODELOS } from "./_modelos.js";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -100,8 +101,10 @@ export async function extraerDocumento(imagenes) {
     throw new Error("API key no configurada");
   }
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1500,
+    model: MODELOS.vision,
+    // Los modelos 5.5 piensan por defecto y esos tokens cuentan contra max_tokens: con 1500 el JSON
+    // podía quedar cortado. 8192 deja lugar de sobra para pensar y para el JSON (~500 tokens).
+    max_tokens: 8192,
     messages: [{
       role: "user",
       content: [
