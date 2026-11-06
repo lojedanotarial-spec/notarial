@@ -432,4 +432,47 @@ export const GESTIONAR_CLAUSULAS_TOOL = [{
   },
 }];
 
-export const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...GESTIONAR_CLAUSULAS_TOOL, ...VALIDAR_CUIT_TOOL, ...VALIDAR_LIMITES_INMUEBLE_TOOL, ...CALCULAR_EDAD_TOOL];
+export const PEDIR_CAPTURA_TOOL = [{
+  name: "pedir_captura_celular",
+  description: "Muestra un código QR para que el escribano suba fotos de documentos (DNI, licencia, tarjeta verde, etc.) desde su celular, sacándolas en el momento o eligiéndolas de la galería. Usala cuando diga que quiere pasar, subir o mandar fotos o documentos desde el celular. ANTES de llamarla preguntá SOLO lo que falte para saber qué va a subir (de quién es, de qué tipo); si ya lo dijo, no lo repitas. Si dice que va a pasar 'todo junto', o no queda claro después de preguntar, usá modo 'libre' sin insistir. Después del código no hagas nada más: cuando lleguen las fotos recibís los datos leídos en [FOTOS RECIBIDAS DEL CELULAR].",
+  input_schema: {
+    type: "object",
+    properties: {
+      modo: { type: "string", enum: ["libre", "parte", "vehiculos"], description: "'parte' = documentos de UNA persona (frente y dorso); 'vehiculos' = tarjetas/títulos de uno o varios vehículos; 'libre' = mezcla de lo que sea (varias personas, vehículos...)." },
+      rol: { type: "string", description: "Solo para modo 'parte': función de esa persona en el acto (ej: COMPRADOR), si ya se sabe." },
+      mensaje: { type: "string", description: "Texto breve que se muestra junto al código QR (ej: 'Escaneá este código con tu celular y subí las fotos')." },
+    },
+    required: ["modo", "mensaje"],
+  },
+}];
+
+export const DISTRIBUIR_CAPTURA_TOOL = [{
+  name: "distribuir_captura",
+  description: "Prepara la carga de los datos leídos de las fotos del celular en el documento abierto (partes y vehículos), en UN solo paso que el escribano confirma con el botón 'Aplicar todo'. Usala cuando ya sepas quién es quién (los roles) y qué vehículos van. Los datos vienen numerados en [FOTOS RECIBIDAS DEL CELULAR]: indicá cada uno por su número (indice); NUNCA copies los datos. Si algo es ambiguo (quién es comprador y quién vendedor, de qué vehículo es un dorso) PREGUNTÁ antes; lo inequívoco no lo preguntes. Si devuelve un error, corregí los números y volvé a llamarla.",
+  input_schema: {
+    type: "object",
+    properties: {
+      personas: {
+        type: "array",
+        description: "Personas a cargar como partes del documento.",
+        items: {
+          type: "object",
+          properties: {
+            indice: { type: "integer", description: "Número de la persona en [FOTOS RECIBIDAS DEL CELULAR]" },
+            rol: { type: "string", description: "Función en el acto, usando los roles del documento abierto (ej: COMPRADOR, VENDEDOR)" },
+          },
+          required: ["indice", "rol"],
+        },
+      },
+      vehiculos: {
+        type: "array",
+        description: "Vehículos a cargar.",
+        items: { type: "object", properties: { indice: { type: "integer", description: "Número del vehículo en [FOTOS RECIBIDAS DEL CELULAR]" } }, required: ["indice"] },
+      },
+      mensaje: { type: "string", description: "Resumen breve de cómo distribuiste todo (quién es quién)" },
+    },
+    required: ["mensaje"],
+  },
+}];
+
+export const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...GESTIONAR_CLAUSULAS_TOOL, ...VALIDAR_CUIT_TOOL, ...VALIDAR_LIMITES_INMUEBLE_TOOL, ...CALCULAR_EDAD_TOOL, ...PEDIR_CAPTURA_TOOL, ...DISTRIBUIR_CAPTURA_TOOL];

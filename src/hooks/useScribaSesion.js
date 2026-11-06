@@ -3,8 +3,22 @@ import { useScribaConversacion } from "./useScribaConversacion";
 import { useAuth } from "../context/AuthContext";
 import { logScriba } from "../utils/logger";
 import { apiPost } from "../utils/apiFetch";
+import { capturaCompu } from "../utils/capturaApi";
+import { iniciarSesionCaptura, generarSvgQR, capturaCelularHabilitada } from "./useSesionCaptura";
 
 import { DOCX_MIME } from "../utils/docxMime";
+
+// Resultado de la captura del celular -> forma que espera el servidor de Scriba (datos_captura).
+// Las personas "sobrantes" (de una captura de una sola parte) también cuentan: Scriba las ve numeradas.
+function normalizarCaptura(resultado, modo) {
+  return {
+    modo,
+    personas: [...(resultado.personas || []), ...(resultado.sobrantes || [])],
+    vehiculos: (resultado.vehiculos || []).map((v) => ({ vehiculo: v.vehiculo, titular: v.titular || null })),
+    dorsos: resultado.dorsos || [],
+    otros: resultado.otros || [],
+  };
+}
 // Dueño del estado de una sesión de Scriba (mensajes, borrador, adjuntos,
 // pedido en curso, aviso de "hay algo nuevo"). Se instancia UNA vez en
 // App.jsx, no dentro de ScribaPanel — así sobrevive a que el panel se
@@ -15,7 +29,8 @@ const LIMITE_ADJUNTOS = 2.4 * 1024 * 1024; // ~2.4MB crudos — margen dentro de
 
 export function useScribaSesion(contexto) {
   const { mensajesIniciales, cargandoInicio, historial, guardar, nueva, cargarConversacion: cargarConversacionBase, eliminarConversacion } = useScribaConversacion();
-  const { registroActivo, usuario } = useAuth();
+  const { registroActivo, usuario, miUsuario } = useAuth();
+  const capturaHabilitada = capturaCelularHabilitada({ miUsuario, usuario });
   const registroId = usuario?.registro_numero || registroActivo;
 
   const [mensajes, setMensajes] = useState([]);
@@ -27,6 +42,41 @@ export function useScribaSesion(contexto) {
   const iniciadoRef = useRef(false);
   const ultimoFalloRef = useRef(null);
   const panelAbiertoRef = useRef(false);
+
+  // Captura de documentos desde el celular. La sesión del QR vive ACÁ (no en la tarjeta del chat) para que sobreviva
+  // a cerrar y reabrir el panel. Los datos leídos quedan en memoria hasta que el usuario los aplica: viajan a Scriba
+  // en cada pedido (datos_captura) y nunca se guardan en el historial de la conversación.
+  const [capturaActiva, setCapturaActiva] = useState(null); // { estado, svg, fotos, etiqueta, error }
+  const capturaCtrlRef = useRef(null);
+  const capturaDatosRef = useRef(null);
+  const enviarRef = useRef(null);
+
+  function cancelarCaptura() {
+    capturaCtrlRef.current?.detener();
+    capturaCtrlRef.current = null;
+    setCapturaActiva(null);
+  }
+
+  function iniciarCaptura({ modo, rol }) {
+    cancelarCaptura();
+    setCapturaActiva({ estado: "creando", fotos: 0 });
+    capturaCtrlRef.current = iniciarSesionCaptura(capturaCompu, {
+      modo,
+      contexto: rol ? { rol } : {},
+      generarSvg: generarSvgQR,
+      onCambio: (c) => setCapturaActiva((prev) => (prev ? { ...prev, ...(c.sesion ? { etiqueta: c.sesion.etiqueta } : {}), ...c } : prev)),
+      onResultado: async (resultado) => {
+        capturaDatosRef.current = normalizarCaptura(resultado, modo);
+        // Scriba responde con lo que encontró y pregunta lo que falte (ver la nota [FOTOS RECIBIDAS DEL CELULAR])
+        await enviarRef.current?.(`📱 Subí fotos desde el celular: ${resultado.resumen || "listo"}.`);
+      },
+    });
+  }
+
+  function limpiarCapturaDatos() { capturaDatosRef.current = null; }
+
+  // Al desmontar la app, una captura a medias se cancela (el servidor borra todo)
+  useEffect(() => () => capturaCtrlRef.current?.detener(), []);
 
   useEffect(() => {
     if (cargandoInicio || iniciadoRef.current) return;
@@ -106,6 +156,8 @@ export function useScribaSesion(contexto) {
     setInput("");
     setArchivos([]);
     ultimoFalloRef.current = null;
+    cancelarCaptura();
+    limpiarCapturaDatos();
     await nueva();
   }
 
@@ -188,10 +240,13 @@ export function useScribaSesion(contexto) {
         contexto: contexto || null,
         registroId: registroId || null,
         documentos_adjuntos: archivosActuales.map(a => ({ data: a.data, mediaType: a.mediaType, nombre: a.nombre })),
+        ...(capturaHabilitada ? { captura_celular: true } : {}),   // lanzamiento gradual: hoy solo admin
+        ...(capturaDatosRef.current ? { datos_captura: capturaDatosRef.current } : {}),
       });
       const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];
       setMensajes(mensajesFinales);
       guardar(mensajesFinales.map(({ role, content }) => ({ role, content })));
+      if (data.accion?.tipo === "captura_celular") iniciarCaptura(data.accion);
       logScriba({ slug: contexto?.slug, screen: contexto?.screen, input: textoUsuario, response: data.respuesta, duration_ms: Date.now() - t0 })
         .then(logRow => {
           if (!logRow?.id) return;
@@ -273,7 +328,10 @@ export function useScribaSesion(contexto) {
     if (anterior?.role === "user") setInput(anterior.content || "");
   }
 
+  enviarRef.current = enviar; // siempre la versión más nueva (la captura la llama desde fuera del render)
+
   return {
+    capturaActiva, cancelarCaptura, limpiarCapturaDatos,
     mensajes,
     input, setInput,
     cargando,

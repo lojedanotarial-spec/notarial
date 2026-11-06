@@ -76,7 +76,7 @@ export function iniciarSesionCaptura(api, { modo, contexto, onResultado, onCambi
   };
 }
 
-async function generarSvgQR(url) {
+export async function generarSvgQR(url) {
   const QR = (await import("qrcode")).default;
   return QR.toString(url, { type: "svg", margin: 1, width: 240, errorCorrectionLevel: "M" });
 }

@@ -64,14 +64,14 @@ export function esperadasPara(modo) {
 
 const soloDigitos = (s) => String(s || "").replace(/\D/g, "");
 const sinTildes = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
-const vacio = (v) => v === undefined || v === null || String(v).trim() === "";
+export const vacio = (v) => v === undefined || v === null || String(v).trim() === "";
 
 // Qué tan confiable es cada tipo de documento como fuente de nombre/número/fecha (gana el DNI).
 const PRIORIDAD_DOC = { DNI: 0, dni: 0, pasaporte: 1, Pasaporte: 1, licencia: 2, partida_nacimiento: 3, partida_matrimonio: 3 };
 const prioridad = (tipo) => PRIORIDAD_DOC[tipo] ?? 9;
 
 const CLAVES_CRITICAS = ["apellido", "nombre", "nro_doc", "fecha_nac"];
-const CAMPOS_PERSONA = [
+export const CAMPOS_PERSONA = [
   "apellido", "nombre", "nro_doc", "tipo_doc", "genero", "fecha_nac", "estado_civil", "nacionalidad", "cuit",
   "calle", "numero", "barrio", "manzana", "casa", "localidad", "departamento", "provincia", "pais",
 ];

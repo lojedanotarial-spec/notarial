@@ -27,6 +27,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { escribanoDesdeMiembro } from "../utils/escribano";
 import { subirDocxOO } from "../utils/ooDocs";
 import { useDocumentoOO } from "../hooks/useDocumentoOO";
+import { aplicarCapturaAPartes, aplicarCapturaAVehiculos } from "../utils/capturaAplicar";
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
 // Etiquetas contextuales por template — se muestran en el panel de partes cuando no hay rol asignado
@@ -508,6 +509,21 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     };
     window.addEventListener("scriba:insertar", handler);
     return () => window.removeEventListener("scriba:insertar", handler);
+  }, []);
+
+  // "Aplicar todo" de la captura desde el celular: todas las personas y vehículos juntos, y UNA sola regeneración
+  // del documento (los eventos completar_parte / completar_vehiculo de arriba regeneran uno por uno).
+  useEffect(() => {
+    const handler = (e) => {
+      const { personas = [], vehiculos: autos = [] } = e.detail || {};
+      if (personas.length) setPartes(prev => aplicarCapturaAPartes(prev, personas, PARTE_VACIA));
+      if (autos.length) setVehiculos(prev => aplicarCapturaAVehiculos(prev, autos));
+      generateAfterRef.current = true;
+      setIsDirty(true);
+      setTimeout(() => { generateAfterRef.current = false; handleGenerarRef.current?.(); }, 120);
+    };
+    window.addEventListener("scriba:aplicar_captura", handler);
+    return () => window.removeEventListener("scriba:aplicar_captura", handler);
   }, []);
 
   // Plugin: receive "ready" and "open-modal" messages

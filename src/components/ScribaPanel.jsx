@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { C } from "../constants";
 import { aplicarTildesNombre } from "../utils/tildesNombres";
 import { submitScribaFeedback } from "../utils/logger";
+import { PanelQR } from "./CapturaCelular";
 
 function renderMarkdown(text) {
   if (!text) return null;
@@ -337,7 +338,36 @@ function mapearPartesParaEditor(partesAccion) {
   }));
 }
 
-function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPartes, onReintentar, cargando }) {
+// "Aplicar todo": la distribución que armó Scriba a partir de las fotos del celular (quién es quién, qué vehículos),
+// confirmada con un solo botón. Se carga todo junto en el documento abierto y se regenera una sola vez.
+function TarjetaAplicarCaptura({ accion, onAplicado, onConfirmarAccion }) {
+  const [aplicado, setAplicado] = useState(false);
+  function aplicar() {
+    window.dispatchEvent(new CustomEvent("scriba:aplicar_captura", { detail: { personas: accion.personas, vehiculos: accion.vehiculos } }));
+    setAplicado(true);
+    onAplicado?.();
+    onConfirmarAccion?.(`Listo, cargué todo en el documento: ${accion.resumen.join("; ")}.`);
+  }
+  return (
+    <div style={{ marginTop: 8, background: "rgba(58,124,165,.06)", border: "1px solid rgba(58,124,165,.2)", borderRadius: 8, padding: "10px 12px" }}>
+      <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)", marginBottom: 8, fontWeight: 600 }}>Esto es lo que voy a cargar en el documento</div>
+      <ul style={{ margin: "0 0 10px", paddingLeft: 18, fontSize: 13, color: C.dark, lineHeight: 1.7 }}>
+        {accion.resumen.map((linea, i) => <li key={i}>{linea}</li>)}
+      </ul>
+      <button onClick={aplicar} disabled={aplicado} style={{
+        display: "flex", alignItems: "center", gap: 5, padding: "6px 12px",
+        background: aplicado ? "rgba(58,124,165,.12)" : C.cerulean, border: "none", borderRadius: 6,
+        fontSize: 12, fontWeight: 700, color: aplicado ? C.cerulean : "#FDFCFA",
+        cursor: aplicado ? "default" : "pointer", fontFamily: "'Montserrat', sans-serif",
+      }}>
+        {aplicado ? "✓ Aplicado" : "Aplicar todo"}
+      </button>
+      {!aplicado && <div style={{ fontSize: 11, color: "rgba(26,35,50,.5)", marginTop: 6 }}>Si algo no es así, decímelo y lo corrijo antes de aplicar.</div>}
+    </div>
+  );
+}
+
+function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPartes, onReintentar, cargando, capturaActiva, esUltimaCaptura, onCancelarCaptura, onAplicadoCaptura }) {
   const esUser = msg.role === "user";
   const esFallo = !esUser && msg.error === true;
   const accion = msg.accion;
@@ -584,6 +614,27 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
             )}
           </div>
         )}
+        {!esUser && accion?.tipo === "captura_celular" && (
+          <div style={{ marginTop: 8, background: "rgba(58,124,165,.06)", border: "1px solid rgba(58,124,165,.2)", borderRadius: 8, padding: "12px" }}>
+            {esUltimaCaptura && capturaActiva ? (
+              <>
+                <PanelQR estado={capturaActiva.estado} svg={capturaActiva.svg} fotos={capturaActiva.fotos} etiqueta={capturaActiva.etiqueta} error={capturaActiva.error} />
+                {["creando", "abierta", "leida"].includes(capturaActiva.estado) && (
+                  <div style={{ textAlign: "center", marginTop: 10 }}>
+                    <button onClick={onCancelarCaptura} style={{ padding: "5px 14px", borderRadius: 6, border: "1px solid rgba(26,35,50,.2)", background: "transparent", fontSize: 11, fontWeight: 600, color: C.dark, cursor: "pointer", fontFamily: "'Montserrat', sans-serif" }}>
+                      Cancelar captura
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ fontSize: 12, color: "rgba(26,35,50,.5)" }}>Captura desde el celular finalizada o cancelada.</div>
+            )}
+          </div>
+        )}
+        {!esUser && accion?.tipo === "aplicar_captura" && (
+          <TarjetaAplicarCaptura accion={accion} onAplicado={onAplicadoCaptura} onConfirmarAccion={onConfirmarAccion} />
+        )}
         {!esUser && accion?.tipo === "insertar_texto" && (
           <div style={{
             marginTop: 8,
@@ -747,6 +798,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
     historial, cargandoInicio,
     handleFiles, quitarArchivo, handleNueva, enviar, reintentarMensaje,
     confirmarAccion, cargarConversacion, eliminarConversacion,
+    capturaActiva, cancelarCaptura, limpiarCapturaDatos,
   } = sesion;
   const [expandido, setExpandido] = useState(false);
   // Vista de "ver historial" — SOLO cambia qué se muestra, nunca toca la
@@ -987,6 +1039,10 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
             <div key={i} ref={esUltimo ? ultimoMensajeRef : undefined}>
               <Mensaje msg={m} onGo={onGo} hayEditor={!!contexto} yaEsParte={yaEsParte} rolesPartes={contexto?.rolesPartes}
                 cargando={cargando}
+                capturaActiva={capturaActiva}
+                esUltimaCaptura={m.accion?.tipo === "captura_celular" && !mensajes.slice(i + 1).some(x => x.accion?.tipo === "captura_celular")}
+                onCancelarCaptura={cancelarCaptura}
+                onAplicadoCaptura={limpiarCapturaDatos}
                 onReintentar={() => reintentarMensaje(i)}
                 onConfirmarAccion={confirmarAccion}
               />

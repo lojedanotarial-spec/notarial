@@ -12,6 +12,7 @@ import { MODELOS } from "./_modelos.js";
 import { DOCX_MIME } from "../src/utils/docxMime.js";
 import { SYSTEM_PROMPT } from "./_scribaPrompt.js";
 import { TEMPLATES_MAP, tools } from "./_scribaTools.js";
+import { limpiarDatosCaptura, notaDatosCaptura, resolverDistribucion } from "./_capturaScriba.js";
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -22,7 +23,13 @@ export default async function handler(req, res) {
   const userToken = await exigirUsuario(req, res);
   if (!userToken) return;
 
-  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, documentos_adjuntos = [] } = req.body || {};
+  const { mensaje, mensajes_anteriores = [], contexto = null, registroId = null, documentos_adjuntos = [], datos_captura = null, captura_celular = false } = req.body || {};
+  // Datos leídos de las fotos subidas desde el celular: viajan en cada pedido mientras estén pendientes de aplicar
+  // (no se guardan en ningún lado del servidor). Se sanean porque vienen del navegador.
+  const datosCaptura = captura_celular === true ? limpiarDatosCaptura(datos_captura) : null;
+  // Lanzamiento gradual: quien no lo pide (hoy, todos menos el admin) ve exactamente las herramientas de siempre.
+  const HERRAMIENTAS_CAPTURA = ["pedir_captura_celular", "distribuir_captura"];
+  const herramientas = captura_celular === true ? tools : tools.filter(t => !HERRAMIENTAS_CAPTURA.includes(t.name));
 
   if (!mensaje?.trim()) {
     return res.status(400).json({ error: "Mensaje requerido" });
@@ -270,6 +277,12 @@ export default async function handler(req, res) {
         nota: "Este chequeo verifica completitud y coherencia estructural, NO cierre geométrico exacto — eso lo garantiza el plano de mensura del agrimensor.",
       };
     }
+    if (name === "distribuir_captura") {
+      // Solo llega acá si va junto a otras herramientas o con un error: si es válida y va sola, se resuelve más abajo.
+      const r = resolverDistribucion(datosCaptura, input);
+      return r.error ? { error: r.error } : { ok: true, nota: "Preparado: el escribano lo confirma con el botón 'Aplicar todo'." };
+    }
+    if (name === "pedir_captura_celular") return { ok: true, nota: "Se muestra el código QR al escribano." };
     if (name === "calcular_edad") {
       const parsearFecha = (str) => {
         const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(str || "").trim());
@@ -325,10 +338,10 @@ export default async function handler(req, res) {
           },
           {
             type: "text",
-            text: fechaNota + contextoNote + adjuntosNote,
+            text: fechaNota + contextoNote + adjuntosNote + notaDatosCaptura(datosCaptura),
           },
         ],
-        tools,
+        tools: herramientas,
         messages,
       });
 
@@ -367,6 +380,24 @@ export default async function handler(req, res) {
             respuesta: msg,
             accion: { tipo: "completar_parte", datos: datosConIdx },
           });
+        }
+
+        const pedirCaptura = toolUses.find(t => t.name === "pedir_captura_celular");
+        if (pedirCaptura && toolUses.length === 1) {
+          const { modo, rol, mensaje: msg } = pedirCaptura.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "captura_celular", modo: ["libre", "parte", "vehiculos"].includes(modo) ? modo : "libre", rol: rol || null },
+          });
+        }
+
+        const distribuirCaptura = toolUses.find(t => t.name === "distribuir_captura");
+        if (distribuirCaptura && toolUses.length === 1) {
+          const r = resolverDistribucion(datosCaptura, distribuirCaptura.input);
+          if (!r.error) {
+            return res.status(200).json({ respuesta: distribuirCaptura.input.mensaje, accion: r.accion });
+          }
+          // Con error cae al camino general de abajo: el modelo recibe el error y corrige los números.
         }
 
         const completarVehiculo = toolUses.find(t => t.name === "completar_vehiculo");

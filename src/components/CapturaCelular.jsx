@@ -10,7 +10,7 @@ const TEXTO_ESTADO = {
   abierta: "Esperando las fotos del celular…",
   leida: "Revisando lo leído en el celular…",
   confirmada: "Cargando los datos…",
-  entregada: "Listo, los datos ya están cargados.",
+  entregada: "Listo, ya recibí los datos.",
   vencida: "El código venció. Cerrá y generá uno nuevo.",
   cancelada: "La captura se canceló.",
 };
