@@ -1,6 +1,6 @@
 # Plan técnico: Drive de la escribanía
 
-**Estado:** 📝 borrador (fase 2 de 3) — pendiente de aprobación de Lucas. NO escribir código hasta que `tasks.md` esté aprobado
+**Estado:** ✅ aprobado por Lucas el 06/11/26 (enlace de 24 h; solo el administrador conecta). Siguiente: [`tasks.md`](tasks.md). NO escribir código hasta que `tasks.md` esté aprobado
 **Spec:** [`spec.md`](spec.md) (aprobado 06/11/26)
 **Fecha:** 06/11/26
 
