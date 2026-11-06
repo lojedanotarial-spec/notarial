@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { C } from "../constants";
 import { postCelular, camposFaltantes } from "../utils/capturaApi";
 import { prepararArchivo } from "../utils/capturaImagen";
+import CamaraCaptura from "../components/CamaraCaptura";
 
 const MAX_FOTOS = 20;
 const fuente = "'Montserrat', sans-serif";
@@ -68,8 +69,11 @@ export default function CapturaMovil({ codigo }) {
   const [resultado, setResultado] = useState(null);
   const [eleccion, setEleccion] = useState(null);
   const [error, setError] = useState("");
+  const [camaraAbierta, setCamaraAbierta] = useState(false);
   const inputRef = useRef(null);
   const contador = useRef(0);
+  const cola = useRef(Promise.resolve());
+  const grupoRef = useRef(0);
 
   // Que el código de la URL no se filtre a buscadores ni a otros sitios
   useEffect(() => {
@@ -95,29 +99,61 @@ export default function CapturaMovil({ codigo }) {
     return () => { cancelado = true; };
   }, [codigo]);
 
-  async function subirArchivo(archivo, grupoDestino) {
-    const key = `l${++contador.current}`;
-    setItems((prev) => [...prev, { key, nombre: archivo.name, estado: "subiendo", grupo: grupoDestino, vista: null }]);
-    const marcar = (cambios) => setItems((prev) => prev.map((it) => it.key === key ? { ...it, ...cambios } : it));
+  useEffect(() => { grupoRef.current = grupo; });
+
+  // Una foto a la vez: preparar (decodificar y reducir) y subir. En un celular, procesar varias fotos de 12 MP en
+  // paralelo agota la memoria ("memoria insuficiente"): la cola las hace de a una y libera cada lienzo al terminar.
+  function encolar(tarea) {
+    const siguiente = cola.current.then(tarea, tarea);
+    cola.current = siguiente;
+    return siguiente;
+  }
+
+  function marcar(key, cambios) {
+    setItems((prev) => prev.map((it) => it.key === key ? { ...it, ...cambios } : it));
+  }
+
+  async function subirPreparada(key, p, grupoDestino) {
     try {
-      const p = await prepararArchivo(archivo);
-      marcar({ vista: p.vista });
       const r = await postCelular("subir", { c: codigo, mediaType: p.mediaType, data: p.base64, grupo: grupoDestino });
-      marcar({ estado: "ok", fotoId: r.id });
+      marcar(key, { estado: "ok", fotoId: r.id });
     } catch (e) {
       if (e.status === 410 || e.status === 404) setErrorFatal(e.message);
-      marcar({ estado: "error", error: e.message });
+      marcar(key, { estado: "error", error: e.message });
     }
   }
 
+  // Foto sacada con la cámara propia: ya viene reducida, solo falta subirla (en cola, sin trabar el visor)
+  function alSacarFoto(p) {
+    const key = `l${++contador.current}`;
+    const grupoDestino = grupoRef.current;
+    setItems((prev) => [...prev, { key, nombre: "Foto", estado: "subiendo", grupo: grupoDestino, vista: p.vista }]);
+    setFase("fotos"); setResultado(null); setError("");
+    encolar(() => subirPreparada(key, p, grupoDestino));
+  }
+
+  // Fotos elegidas de la galería (o PDF): se preparan y suben de a una
   function alElegir(e) {
     const archivos = Array.from(e.target.files || []);
     e.target.value = "";
     if (!archivos.length) return;
     setError(""); setFase("fotos"); setResultado(null);
-    const lugar = MAX_FOTOS - items.filter((i) => i.estado !== "error").length;
-    if (archivos.length > lugar) setError(`Máximo ${MAX_FOTOS} fotos por lote: se subieron las primeras ${Math.max(lugar, 0)}.`);
-    archivos.slice(0, Math.max(lugar, 0)).forEach((a) => subirArchivo(a, grupo));
+    const lugar = Math.max(MAX_FOTOS - items.filter((i) => i.estado !== "error").length, 0);
+    if (archivos.length > lugar) setError(`Máximo ${MAX_FOTOS} fotos por lote: se subieron las primeras ${lugar}.`);
+    archivos.slice(0, lugar).forEach((archivo) => {
+      const key = `l${++contador.current}`;
+      const grupoDestino = grupo;
+      setItems((prev) => [...prev, { key, nombre: archivo.name, estado: "preparando", grupo: grupoDestino, vista: null }]);
+      encolar(async () => {
+        try {
+          const p = await prepararArchivo(archivo);
+          marcar(key, { vista: p.vista, estado: "subiendo" });
+          await subirPreparada(key, p, grupoDestino);
+        } catch (err) {
+          marcar(key, { estado: "error", error: err.message });
+        }
+      });
+    });
   }
 
   async function quitar(it) {
@@ -131,7 +167,7 @@ export default function CapturaMovil({ codigo }) {
     setError("Elegí de nuevo esa foto para volver a subirla.");
   }
 
-  const subiendo = items.some((i) => i.estado === "subiendo");
+  const subiendo = items.some((i) => i.estado === "subiendo" || i.estado === "preparando");
   const listas = items.filter((i) => i.estado === "ok");
   const esperadas = info?.esperadas?.minimo || 0;
 
@@ -229,11 +265,27 @@ export default function CapturaMovil({ codigo }) {
       <h2 style={{ fontSize: 18, marginBottom: 4 }}>{info.etiqueta}</h2>
       {esperadas > 0 && <p style={{ fontSize: 13, color: C.faint }}>Fotos: <strong>{listas.length}</strong> de {esperadas} ({info.esperadas.texto})</p>}
       <input ref={inputRef} type="file" accept="image/*,application/pdf" multiple style={{ display: "none" }} onChange={alElegir} />
-      <button style={{ ...boton(true), margin: "12px 0 6px" }} onClick={() => inputRef.current?.click()}>
-        {items.length ? "＋ Agregar más fotos" : "📷 Sacar o elegir fotos"}
+      <button style={{ ...boton(true), margin: "12px 0 6px" }} onClick={() => setCamaraAbierta(true)}>
+        📷 {items.length ? "Seguir sacando fotos" : "Abrir la cámara"}
       </button>
-      <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Podés sacar una foto ahora o elegir las que ya tenés guardadas en el teléfono, y mezclarlas.</p>
+      <p style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>Sin flash, y podés sacar todas las fotos seguidas sin cerrar la cámara.</p>
+      <button style={{ ...boton(false), margin: "0 0 6px" }} onClick={() => inputRef.current?.click()}>
+        🖼️ Elegir de la galería
+      </button>
+      <p style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Fotos que ya tenés guardadas en el teléfono (podés marcar varias) o PDF.</p>
       {error && <Aviso tipo="error">{error}</Aviso>}
+      {camaraAbierta && (
+        <CamaraCaptura
+          etiqueta={info.etiqueta}
+          fotos={items}
+          grupo={grupo}
+          esVehiculos={info.modo === "vehiculos"}
+          llena={items.filter((i) => i.estado !== "error").length >= MAX_FOTOS}
+          onFoto={alSacarFoto}
+          onOtroVehiculo={() => setGrupo((g) => g + 1)}
+          onCerrar={() => setCamaraAbierta(false)}
+        />
+      )}
 
       {grupos.map((g) => (
         <div key={g} style={{ margin: "10px 0" }}>
@@ -242,8 +294,8 @@ export default function CapturaMovil({ codigo }) {
             {items.filter((i) => i.grupo === g).map((it) => (
               <div key={it.key} style={{ position: "relative", aspectRatio: "3 / 4", borderRadius: 10, overflow: "hidden", background: "#fff", border: `1px solid ${it.estado === "error" ? "#c0392b" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, textAlign: "center", padding: 4 }}>
                 {it.vista ? <img src={it.vista} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ color: C.muted }}>{it.nombre?.toLowerCase().endsWith(".pdf") ? "PDF" : "Foto"}</span>}
-                <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: it.estado === "error" ? "#c0392b" : it.estado === "subiendo" ? "rgba(26,35,50,.7)" : "rgba(58,124,165,.85)", color: "#fff", fontSize: 10, padding: "2px 0" }}>
-                  {it.estado === "subiendo" ? "Subiendo…" : it.estado === "error" ? "No subió" : "✓"}
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: it.estado === "error" ? "#c0392b" : it.estado === "subiendo" || it.estado === "preparando" ? "rgba(26,35,50,.7)" : "rgba(58,124,165,.85)", color: "#fff", fontSize: 10, padding: "2px 0" }}>
+                  {it.estado === "preparando" ? "Preparando…" : it.estado === "subiendo" ? "Subiendo…" : it.estado === "error" ? "No subió" : "✓"}
                 </div>
                 <button onClick={() => quitar(it)} aria-label="Quitar foto" style={{ position: "absolute", top: 4, right: 4, width: 24, height: 24, borderRadius: 12, border: "none", background: "rgba(26,35,50,.75)", color: "#fff", fontSize: 14, lineHeight: "24px", padding: 0 }}>×</button>
                 {it.estado === "error" && <button onClick={() => reintentar(it)} style={{ position: "absolute", inset: 0, background: "transparent", border: "none" }} aria-label={it.error} title={it.error} />}

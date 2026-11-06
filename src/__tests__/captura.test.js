@@ -275,7 +275,7 @@ describe("purgarVencidas", () => {
 
 // ── Utilidades del celular ───────────────────────────────────────────────────
 
-import { calcularEscala, bytesDeBase64, esPdf, LADO_MAXIMO } from "../utils/capturaImagen.js";
+import { calcularEscala, bytesDeBase64, esPdf, dimensionesFinales, LADO_MAXIMO } from "../utils/capturaImagen.js";
 import { camposFaltantes } from "../utils/capturaApi.js";
 
 describe("reducir fotos", () => {
@@ -284,6 +284,12 @@ describe("reducir fotos", () => {
     expect(calcularEscala(3000, 4000)).toBeCloseTo(0.5);
     expect(calcularEscala(1000, 800)).toBe(1);
     expect(calcularEscala(LADO_MAXIMO, 10)).toBe(1);
+  });
+  it("las dimensiones finales conservan la proporción y nunca dan 0", () => {
+    expect(dimensionesFinales(4000, 3000)).toEqual({ ancho: 2000, alto: 1500 });
+    expect(dimensionesFinales(2560, 1440)).toEqual({ ancho: 2000, alto: 1125 });   // fotograma de la cámara en vivo
+    expect(dimensionesFinales(1080, 1920)).toEqual({ ancho: 1080, alto: 1920 });   // ya entra: no se toca
+    expect(dimensionesFinales(10000, 1)).toEqual({ ancho: 2000, alto: 1 });
   });
   it("calcula los bytes de un base64 sin decodificarlo", () => {
     expect(bytesDeBase64(Buffer.from("hola mundo").toString("base64"))).toBe(10);
