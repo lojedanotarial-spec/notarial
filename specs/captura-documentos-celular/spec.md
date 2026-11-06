@@ -1,6 +1,6 @@
 # Spec: Captura de documentos desde el celular
 
-**Estado:** 📝 borrador (fase 1 de 3 — pendiente de revisión) — NO pasar a `plan.md` hasta aprobarlo
+**Estado:** 📝 borrador casi cerrado (fase 1 de 3) — solo queda abierta la revisión legal (no bloquea el plan técnico, sí el lanzamiento). NO pasar a `plan.md` hasta que Lucas apruebe el spec
 **Feature:** [`features/captura-celular.md`](../../features/captura-celular.md)
 **Epic:** [`epics/captura-documentos-multicanal.md`](../../epics/captura-documentos-multicanal.md)
 **Casos de uso:** [UC-1](../../usecases/captura-desde-parte-generador.md) · [UC-2](../../usecases/captura-desde-scriba.md) · [UC-3](../../usecases/lote-multifoto-confirmacion.md) · [UC-4](../../usecases/foto-ilegible-reintento.md)
@@ -130,7 +130,12 @@ fijo: una parte o vehículos; en el modo libre de Scriba mezclar es lo normal)
 **Privacidad y registro**
 - [ ] Las fotos solo las puede ver el usuario que las sacó y su propio registro
       notarial; nunca otro registro. *(todos)*
-- [ ] Las fotos se borran solas a las 72 horas. *(todos)*
+- [ ] Las fotos se borran en lo primero que ocurra entre estas dos cosas: pasan 72
+      horas, o el usuario confirma la generación del documento. Los datos ya
+      cargados en el documento no se ven afectados por el borrado de las fotos.
+      *(todos)*
+- [ ] Funciona igual en iPhone y en Android, con las fotos que el sistema de cada uno
+      guarda por defecto (en iPhone, incluido el formato HEIC). *(todos)*
 - [ ] Queda constancia de quién subió, cuándo y para qué contexto, sin guardar el
       contenido leído en ese registro. *(todos)*
 - [ ] Las fotos solo pasan por los servicios que Notarial ya usa para leer
@@ -156,15 +161,15 @@ fijo: una parte o vehículos; en el modo libre de Scriba mezclar es lo normal)
 
 ## Preguntas abiertas (a resolver antes de pasar a `plan.md`)
 
-1. **¿iPhone o Android en el equipo?** No cambia lo que entrega esta versión, pero
-   sí cuánto conviene invertir después en el ícono propio en el celular. Si hay
-   iPhone, probar que las fotos HEIC de la galería se lean bien.
-2. **¿Quién sube?** Se asume que solo usuarios del registro (quien tiene sesión en
-   la compu y genera el código). ¿Confirmado?
+1. ~~¿iPhone o Android en el equipo?~~ **Resuelto (06/11/26):** hay de los dos. Hay
+   que probar en ambos, en particular las fotos HEIC de la galería en iPhone. El
+   envío "compartir con Notarial" desde la galería queda descartado (en iPhone no
+   existe).
+2. ~~¿Quién sube?~~ **Resuelto (06/11/26):** solo usuarios del registro, por ahora.
 3. ~~¿Un código por contexto o por sesión?~~ **Resuelto (06/11/26):** un código por
    parte, sin excepción; en vehículos, un código para varios (ver criterios).
-4. **Retención de 72 h**: ¿suficiente, o querés que se borren apenas se confirma la
-   lectura?
+4. ~~Retención de 72 h~~ **Resuelto (06/11/26):** lo primero que ocurra entre 72 h y
+   la confirmación de la generación del documento (ver criterios).
 5. ~~Scriba, ¿carga directo o confirma antes?~~ **Resuelto (06/11/26):** una sola
    confirmación para todo el lote ("Aplicar todo"); nada se escribe antes. Hoy Scriba
    propone cada cambio con su propio botón, así que esto es un comportamiento nuevo
