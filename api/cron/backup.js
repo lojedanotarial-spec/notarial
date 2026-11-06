@@ -26,7 +26,9 @@ const BUCKETS_STORAGE = ["oo-docs", "documentos"];
 // Tablas que NO se copian: guardan datos personales leídos de documentos hasta que se entregan (después se
 // vacían). Una copia en R2 duraría 30 días y contradice la regla de destruir apenas se confirma la lectura.
 // El bucket `capturas` ya queda afuera porque no está en BUCKETS_STORAGE.
-export const TABLAS_EXCLUIDAS = new Set(["capturas"]);
+// `drive_conexiones` (token de Google cifrado) y `drive_enlaces` (enlaces de conexión) tampoco viajan a R2: si hay
+// que restaurar, se reconecta el Drive con un enlace nuevo. `drive_auditoria` sí se respalda.
+export const TABLAS_EXCLUIDAS = new Set(["capturas", "drive_conexiones", "drive_enlaces"]);
 const PAGINA = 1000;
 const PRESUPUESTO_MS = 240_000; // la función tiene 300 s; lo que no entre sigue en la próxima corrida
 const CONCURRENCIA = 8;

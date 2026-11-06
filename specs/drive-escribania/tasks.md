@@ -1,6 +1,6 @@
 # Tareas: Drive de la escribanía
 
-**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 3 de 3). En ejecución: Fase 0 en curso
+**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 3 de 3). En ejecución: Fases 0, 1 y 2 hechas; sigue la Fase 3
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅ (aprobado 06/11/26: enlace 24 h, solo el administrador conecta)
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación.
 
@@ -25,9 +25,9 @@ Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local c
 
 ## Fase 2 — Base de datos
 
-- [ ] **T2.1 🤖** Guardar la definición actual de la política `expediente_arch_acceso` (para poder revertir) en `scripts/drive_escribania_rollback.sql`.
-- [ ] **T2.2 🤖** Escribir `scripts/drive_escribania.sql` (tablas `drive_conexiones`, `drive_enlaces`, `drive_auditoria`; columnas nuevas de `expediente_archivos` y `expedientes`; RLS activado sin políticas en las tres; política de `expediente_archivos` solo `SELECT` filtrando `almacen='escribania'` y `borrado_en IS NULL`) y aplicarlo. *Verif.: consulta a `pg_policy` y `get_advisors` sin alertas nuevas; los 4 archivos viejos quedan con `almacen='personal'`.*
-- [ ] **T2.3 🤖** Agregar `drive_conexiones` y `drive_enlaces` a `TABLAS_EXCLUIDAS` en `api/cron/backup.js`. *Verif.: test del backup actualizado.*
+- [x] **T2.1 🤖** (hecho 06/11/26) Guardar la definición actual de la política `expediente_arch_acceso` para poder revertir: `scripts/drive_escribania_rollback.sql`.
+- [x] **T2.2 🤖** (hecho 06/11/26, **parte aditiva**) `scripts/drive_escribania.sql` aplicado: tablas `drive_conexiones`, `drive_enlaces`, `drive_auditoria` con RLS sin políticas, columnas nuevas en `expediente_archivos` y `expedientes`. Verificado: 4 filas viejas quedaron como `personal`, la política existente no cambió, `get_advisors` solo suma 3 avisos informativos (RLS sin políticas, a propósito). **Cambio de plan:** el reemplazo de la política de `expediente_archivos` por solo lectura (`scripts/drive_escribania_politicas.sql`) pasa a **T6.2**, junto con el deploy, porque la pantalla actual escribe esa tabla desde el navegador.
+- [x] **T2.3 🤖** (hecho 06/11/26) `drive_conexiones` y `drive_enlaces` agregadas a `TABLAS_EXCLUIDAS` en `api/cron/backup.js`, con test (316 en verde).
 
 ## Fase 3 — Lógica pura, con pruebas primero
 
@@ -50,7 +50,7 @@ Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local c
 ## Fase 6 — Verificación y deploy
 
 - [ ] **T6.1 🤖** Tests completos, lint (sin errores nuevos respecto de la base), build. *Verif.: todo verde.*
-- [ ] **T6.2 🤖** Deploy a producción y verificación del estado por la API de GitHub.
+- [ ] **T6.2 🤖** **Primero** aplicar `scripts/drive_escribania_politicas.sql` (cambio de política de `expediente_archivos`; si algo sale mal, `scripts/drive_escribania_rollback.sql`) y **a continuación** deploy a producción, verificado por la API de GitHub. Los dos pasos van juntos para que la pantalla vieja no quede sin permiso de escritura mucho tiempo.
 - [ ] **T6.3 🤖+👤** Checklist manual contra Google real, con el registro **9876** y `lojeda.notarial@gmail.com`:
   - [ ] Generar enlace, abrirlo, autorizar, ver el registro "conectado" con cuenta, fecha y espacio.
   - [ ] Abrir el mismo enlace de nuevo ⇒ "ya usado". Enlace vencido ⇒ mensaje claro. Rechazar en Google ⇒ no queda nada conectado.

@@ -220,6 +220,12 @@ describe("backup", () => {
   it("no copia la tabla de capturas (datos personales leídos de documentos)", () => {
     expect(TABLAS_EXCLUIDAS.has("capturas")).toBe(true);
   });
+
+  it("no copia el token de Drive ni los enlaces de conexión, pero sí la auditoría", () => {
+    expect(TABLAS_EXCLUIDAS.has("drive_conexiones")).toBe(true);
+    expect(TABLAS_EXCLUIDAS.has("drive_enlaces")).toBe(true);
+    expect(TABLAS_EXCLUIDAS.has("drive_auditoria")).toBe(false);
+  });
 });
 
 // Imita lo mínimo de supabase-js que usa la purga: encadenable y con "then" al final.
