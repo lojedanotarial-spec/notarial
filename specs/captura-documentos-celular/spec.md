@@ -1,6 +1,6 @@
 # Spec: Captura de documentos desde el celular
 
-**Estado:** 📝 borrador sin preguntas abiertas (fase 1 de 3) — a la espera de la aprobación explícita de Lucas. NO pasar a `plan.md` hasta entonces
+**Estado:** ✅ aprobado (06/11/26) — implementado, solo admin; ver [`plan.md`](plan.md) y [`tasks.md`](tasks.md) para lo verificado y lo pendiente
 **Feature:** [`features/captura-celular.md`](../../features/captura-celular.md)
 **Epic:** [`epics/captura-documentos-multicanal.md`](../../epics/captura-documentos-multicanal.md)
 **Casos de uso:** [UC-1](../../usecases/captura-desde-parte-generador.md) · [UC-2](../../usecases/captura-desde-scriba.md) · [UC-3](../../usecases/lote-multifoto-confirmacion.md) · [UC-4](../../usecases/foto-ilegible-reintento.md)

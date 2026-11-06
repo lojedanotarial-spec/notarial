@@ -1,7 +1,7 @@
 # Feature: Captura de documentos desde el celular
 
 **Epic:** [Captura de documentos por varios canales](../epics/captura-documentos-multicanal.md)
-**Estado:** 🔵 En curso (spec en revisión, 06/11/26)
+**Estado:** 🔵 En curso — implementado el 06/11/26, visible solo para admin hasta probarlo en iPhone y Android reales
 **Spec:** [`specs/captura-documentos-celular/`](../specs/captura-documentos-celular/)
 
 ## Qué entrega

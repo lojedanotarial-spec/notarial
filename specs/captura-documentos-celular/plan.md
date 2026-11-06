@@ -1,6 +1,15 @@
 # Plan: Captura de documentos desde el celular
 
-**Estado:** ✅ aprobado por Lucas (06/11/26) — en ejecución
+**Estado:** ✅ aprobado por Lucas (06/11/26) — ejecutado (ver `tasks.md`).
+
+**Ajustes durante la ejecución (respecto de lo escrito abajo):**
+- El Worker de purga usa `BACKUP_TRIGGER_TOKEN` (ya existía en Vercel y en `scripts/.env`) en vez de una variable nueva.
+- La sesión del QR de Scriba vive en `useScribaSesion` (App), no en la tarjeta del chat: así sobrevive a cerrar el panel.
+- Los datos leídos viajan a Scriba como `datos_captura` en cada pedido (en memoria del navegador); no entran al historial
+  de la conversación. Scriba los ve numerados y los referencia por índice; el servidor resuelve los datos reales.
+- "Aplicar todo" usa un evento propio (`scriba:aplicar_captura`) que carga todo junto y regenera el documento una vez.
+- Se agregó un tope de 5 lecturas por sesión y funciones SQL atómicas para sumar/quitar fotos.
+- El lanzamiento gradual (solo admin) también aplica a Scriba: el servidor solo ofrece las herramientas nuevas si el cliente lo pide.
 **Spec:** [`spec.md`](spec.md) · **Tareas:** [`tasks.md`](tasks.md)
 
 ## Resumen de la arquitectura
