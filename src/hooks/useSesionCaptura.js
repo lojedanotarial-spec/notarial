@@ -5,10 +5,11 @@ import { capturaCompu } from "../utils/capturaApi";
 
 export const CADA_MS = 2000;
 
-// Lanzamiento gradual: solo admin hasta probarlo en un iPhone y un Android reales (ver tasks.md).
-// Para abrirlo a todos, que devuelva true.
-export function capturaCelularHabilitada(auth) {
-  return !!(auth?.miUsuario?.is_admin || auth?.usuario?.is_admin);
+// Interruptor único de la captura desde el celular (botones de los modales y herramientas de Scriba).
+// Abierto para todos los usuarios desde el 06/11/26. Para volver a restringirlo (por ejemplo a admin) hay que
+// decidirlo explícitamente: return !!(auth?.miUsuario?.is_admin || auth?.usuario?.is_admin);
+export function capturaCelularHabilitada() {
+  return true;
 }
 
 // Máquina de la sesión, sin React (se prueba con una API de mentira). Reglas que garantiza:

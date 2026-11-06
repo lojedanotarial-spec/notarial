@@ -130,3 +130,14 @@ describe("sesión de captura (lado compu)", () => {
     expect(cambios.at(-1)).toEqual({ estado: "error", error: "Modo inválido" });
   });
 });
+
+import { capturaCelularHabilitada } from "../hooks/useSesionCaptura.js";
+
+describe("quién ve la captura desde el celular", () => {
+  it("la ve todo usuario, no solo el admin", () => {
+    expect(capturaCelularHabilitada({ usuario: { is_admin: false }, miUsuario: { is_admin: false } })).toBe(true);
+    expect(capturaCelularHabilitada({ usuario: { is_admin: true } })).toBe(true);
+    expect(capturaCelularHabilitada({})).toBe(true);
+    expect(capturaCelularHabilitada()).toBe(true);
+  });
+});
