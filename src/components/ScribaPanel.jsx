@@ -367,7 +367,7 @@ function TarjetaAplicarCaptura({ accion, onAplicado, onConfirmarAccion }) {
   );
 }
 
-function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPartes, onReintentar, cargando, capturaActiva, esUltimaCaptura, onCancelarCaptura, onAplicadoCaptura }) {
+function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPartes, onReintentar, cargando, capturaActiva, esUltimaCaptura, onCancelarCaptura, onAplicadoCaptura, onAceptarOferta }) {
   const esUser = msg.role === "user";
   const esFallo = !esUser && msg.error === true;
   const accion = msg.accion;
@@ -375,6 +375,7 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
   const esLargo = !esUser && lineas > LINEAS_MAX;
   const [rolesSeleccionados, setRolesSeleccionados] = useState({});
   const [expandidoMsg, setExpandidoMsg] = useState(false);
+  const [ofertaAceptada, setOfertaAceptada] = useState(false);
 
   if (esFallo) {
     return (
@@ -632,6 +633,19 @@ function Mensaje({ msg, onGo, hayEditor, onConfirmarAccion, yaEsParte, rolesPart
             )}
           </div>
         )}
+        {!esUser && accion?.tipo === "ofrecer_captura" && (
+          <div style={{ marginTop: 8 }}>
+            <button onClick={() => { setOfertaAceptada(true); onAceptarOferta?.(accion); }} disabled={ofertaAceptada}
+              style={{
+                display: "flex", alignItems: "center", gap: 7, padding: "9px 14px", borderRadius: 8, border: "none",
+                background: ofertaAceptada ? "rgba(58,124,165,.12)" : C.cerulean, color: ofertaAceptada ? C.cerulean : "#FDFCFA",
+                fontSize: 13, fontWeight: 700, cursor: ofertaAceptada ? "default" : "pointer", fontFamily: "'Montserrat', sans-serif",
+              }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2" /><path d="M11 18h2" /></svg>
+              {ofertaAceptada ? "Código generado más abajo" : "Subir desde el celular"}
+            </button>
+          </div>
+        )}
         {!esUser && accion?.tipo === "aplicar_captura" && (
           <TarjetaAplicarCaptura accion={accion} onAplicado={onAplicadoCaptura} onConfirmarAccion={onConfirmarAccion} />
         )}
@@ -798,7 +812,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
     historial, cargandoInicio,
     handleFiles, quitarArchivo, handleNueva, enviar, reintentarMensaje,
     confirmarAccion, cargarConversacion, eliminarConversacion,
-    capturaActiva, cancelarCaptura, limpiarCapturaDatos,
+    capturaActiva, cancelarCaptura, limpiarCapturaDatos, aceptarOfertaCaptura,
   } = sesion;
   const [expandido, setExpandido] = useState(false);
   // Vista de "ver historial" — SOLO cambia qué se muestra, nunca toca la
@@ -1043,6 +1057,7 @@ export function ScribaPanel({ onClose, contexto, onGo, sesion }) {
                 esUltimaCaptura={m.accion?.tipo === "captura_celular" && !mensajes.slice(i + 1).some(x => x.accion?.tipo === "captura_celular")}
                 onCancelarCaptura={cancelarCaptura}
                 onAplicadoCaptura={limpiarCapturaDatos}
+                onAceptarOferta={aceptarOfertaCaptura}
                 onReintentar={() => reintentarMensaje(i)}
                 onConfirmarAccion={confirmarAccion}
               />

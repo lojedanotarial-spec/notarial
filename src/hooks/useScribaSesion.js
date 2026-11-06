@@ -75,6 +75,18 @@ export function useScribaSesion(contexto) {
 
   function limpiarCapturaDatos() { capturaDatosRef.current = null; }
 
+  // El escribano tocó "Subir desde el celular" en una oferta de Scriba: se agrega un mensaje nuevo (abajo, bien a la
+  // vista) que muestra el QR, y arranca la sesión.
+  function aceptarOfertaCaptura({ modo, rol }) {
+    const mensajeQR = { role: "assistant", content: "Escaneá este código con el celular y subí las fotos.", accion: { tipo: "captura_celular", modo, rol: rol || null } };
+    setMensajes(prev => {
+      const nuevos = [...prev, mensajeQR];
+      guardar(nuevos.map(({ role, content }) => ({ role, content })));
+      return nuevos;
+    });
+    iniciarCaptura({ modo, rol });
+  }
+
   // Al desmontar la app, una captura a medias se cancela (el servidor borra todo)
   useEffect(() => () => capturaCtrlRef.current?.detener(), []);
 
@@ -331,7 +343,7 @@ export function useScribaSesion(contexto) {
   enviarRef.current = enviar; // siempre la versión más nueva (la captura la llama desde fuera del render)
 
   return {
-    capturaActiva, cancelarCaptura, limpiarCapturaDatos,
+    capturaActiva, cancelarCaptura, limpiarCapturaDatos, aceptarOfertaCaptura,
     mensajes,
     input, setInput,
     cargando,

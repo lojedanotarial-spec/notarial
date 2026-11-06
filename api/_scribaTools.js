@@ -432,9 +432,23 @@ export const GESTIONAR_CLAUSULAS_TOOL = [{
   },
 }];
 
+export const OFRECER_CAPTURA_TOOL = [{
+  name: "ofrecer_captura_celular",
+  description: "OFRECE al escribano cargar datos sacando fotos de los documentos con el celular: muestra un botón '📱 Subir desde el celular' que, al tocarlo, genera el código QR. Usala SIEMPRE que el escribano quiera agregar, cargar o completar una parte, persona, compareciente o vehículo (o subir documentos de identidad) y todavía NO haya dicho cómo lo va a hacer: es la forma más rápida y el escribano no tiene por qué saber que existe. No la uses si ya está dictando los datos, si ya adjuntó las fotos en el chat o si pidió el QR (en ese caso usá pedir_captura_celular). En el mensaje ofrecé también las otras vías en una línea (dictar los datos o adjuntar la foto acá) y, si falta, preguntá el rol de la persona en el acto.",
+  input_schema: {
+    type: "object",
+    properties: {
+      modo: { type: "string", enum: ["parte", "vehiculos", "libre"], description: "'parte' = una persona; 'vehiculos' = uno o varios vehículos; 'libre' = varias personas o una mezcla (también si no queda claro)." },
+      rol: { type: "string", description: "Solo para modo 'parte': función de esa persona en el acto (ej: COMPRADOR) si el escribano ya la dijo." },
+      mensaje: { type: "string", description: "Texto breve para el escribano: ofrecé el celular como primera opción y mencioná en una línea que también puede dictar los datos o adjuntar la foto." },
+    },
+    required: ["modo", "mensaje"],
+  },
+}];
+
 export const PEDIR_CAPTURA_TOOL = [{
   name: "pedir_captura_celular",
-  description: "Muestra un código QR para que el escribano suba fotos de documentos (DNI, licencia, tarjeta verde, etc.) desde su celular, sacándolas en el momento o eligiéndolas de la galería. Usala cuando diga que quiere pasar, subir o mandar fotos o documentos desde el celular. ANTES de llamarla preguntá SOLO lo que falte para saber qué va a subir (de quién es, de qué tipo); si ya lo dijo, no lo repitas. Si dice que va a pasar 'todo junto', o no queda claro después de preguntar, usá modo 'libre' sin insistir. Después del código no hagas nada más: cuando lleguen las fotos recibís los datos leídos en [FOTOS RECIBIDAS DEL CELULAR].",
+  description: "Muestra YA el código QR para que el escribano suba fotos de documentos (DNI, licencia, tarjeta verde, etc.) desde su celular, sacándolas en el momento o eligiéndolas de la galería. Usala cuando el escribano pida expresamente pasar, subir o mandar fotos o documentos desde el celular, o pida el QR (si solo quiere agregar una parte o vehículo sin decir cómo, usá ofrecer_captura_celular). ANTES de llamarla preguntá SOLO lo que falte para saber qué va a subir (de quién es, de qué tipo); si ya lo dijo, no lo repitas. Si dice que va a pasar 'todo junto', o no queda claro después de preguntar, usá modo 'libre' sin insistir. Después del código no hagas nada más: cuando lleguen las fotos recibís los datos leídos en [FOTOS RECIBIDAS DEL CELULAR].",
   input_schema: {
     type: "object",
     properties: {
@@ -475,4 +489,4 @@ export const DISTRIBUIR_CAPTURA_TOOL = [{
   },
 }];
 
-export const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...GESTIONAR_CLAUSULAS_TOOL, ...VALIDAR_CUIT_TOOL, ...VALIDAR_LIMITES_INMUEBLE_TOOL, ...CALCULAR_EDAD_TOOL, ...PEDIR_CAPTURA_TOOL, ...DISTRIBUIR_CAPTURA_TOOL];
+export const tools = [...DB_TOOLS, ...ABRIR_EDITOR_TOOL, ...CREAR_DOCUMENTO_LIBRE_TOOL, ...INSERTAR_TOOL, ...MODIFICAR_TOOL, ...COMPLETAR_PARTE_TOOL, ...COMPLETAR_VEHICULO_TOOL, ...EXTRAER_DOCUMENTO_TOOL, ...COMPLETAR_EXTRAVARS_TOOL, ...GESTIONAR_CLAUSULAS_TOOL, ...VALIDAR_CUIT_TOOL, ...VALIDAR_LIMITES_INMUEBLE_TOOL, ...CALCULAR_EDAD_TOOL, ...OFRECER_CAPTURA_TOOL, ...PEDIR_CAPTURA_TOOL, ...DISTRIBUIR_CAPTURA_TOOL];

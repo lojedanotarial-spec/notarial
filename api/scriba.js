@@ -28,7 +28,7 @@ export default async function handler(req, res) {
   // (no se guardan en ningún lado del servidor). Se sanean porque vienen del navegador.
   const datosCaptura = captura_celular === true ? limpiarDatosCaptura(datos_captura) : null;
   // Lanzamiento gradual: quien no lo pide (hoy, todos menos el admin) ve exactamente las herramientas de siempre.
-  const HERRAMIENTAS_CAPTURA = ["pedir_captura_celular", "distribuir_captura"];
+  const HERRAMIENTAS_CAPTURA = ["ofrecer_captura_celular", "pedir_captura_celular", "distribuir_captura"];
   const herramientas = captura_celular === true ? tools : tools.filter(t => !HERRAMIENTAS_CAPTURA.includes(t.name));
 
   if (!mensaje?.trim()) {
@@ -283,6 +283,7 @@ export default async function handler(req, res) {
       return r.error ? { error: r.error } : { ok: true, nota: "Preparado: el escribano lo confirma con el botón 'Aplicar todo'." };
     }
     if (name === "pedir_captura_celular") return { ok: true, nota: "Se muestra el código QR al escribano." };
+    if (name === "ofrecer_captura_celular") return { ok: true, nota: "Se muestra al escribano el botón para subir desde el celular." };
     if (name === "calcular_edad") {
       const parsearFecha = (str) => {
         const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(str || "").trim());
@@ -379,6 +380,15 @@ export default async function handler(req, res) {
           return res.status(200).json({
             respuesta: msg,
             accion: { tipo: "completar_parte", datos: datosConIdx },
+          });
+        }
+
+        const ofrecerCaptura = toolUses.find(t => t.name === "ofrecer_captura_celular");
+        if (ofrecerCaptura && toolUses.length === 1) {
+          const { modo, rol, mensaje: msg } = ofrecerCaptura.input;
+          return res.status(200).json({
+            respuesta: msg,
+            accion: { tipo: "ofrecer_captura", modo: ["libre", "parte", "vehiculos"].includes(modo) ? modo : "libre", rol: rol || null },
           });
         }
 
