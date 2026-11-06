@@ -46,9 +46,20 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
       falta para tener contexto (de quién, de qué tipo, cuántas fotos), y no repita
       lo que el usuario ya dijo. Recién entonces muestra el código dentro de la
       conversación. *(UC-2)*
-- [ ] Si el contexto sigue sin estar claro, Scriba ofrece igualmente el código con
-      el contexto más general (documento de identidad sin rol) en vez de bloquear.
-      *(UC-2)*
+- [ ] **Modo libre desde Scriba:** si el usuario dice que va a pasar "todo junto" (o
+      el contexto sigue sin estar claro después de preguntar), Scriba ofrece el
+      código igualmente, sin bloquear y sin preguntar de más. En ese modo el celular
+      no exige una cantidad ni un tipo de fotos: se puede subir cualquier mezcla
+      (por ejemplo dos DNI y una tarjeta de vehículo). *(UC-2)*
+- [ ] En modo libre, cada foto se clasifica por lo que es (DNI, licencia, tarjeta
+      de vehículo, otra cosa) y Scriba le cuenta al usuario qué encontró en
+      conjunto. *(UC-2)*
+- [ ] Scriba pregunta lo que no puede deducir con certeza (quién es el comprador y
+      quién el vendedor, a qué vehículo corresponde cada foto) y no adivina. Lo que
+      sí es inequívoco no lo pregunta. *(UC-2)*
+- [ ] Con las respuestas, Scriba distribuye los datos en el documento que está
+      abierto (partes y vehículos) por su cuenta, y puede mover o reasignar lo ya
+      cargado si el usuario se lo pide. *(UC-2)*
 - [ ] El código sirve para una sola captura, vence a los 10 minutos y solo permite
       subir fotos para ese contexto: no da acceso a nada más de la cuenta. El
       usuario puede cancelarlo desde la compu y deja de servir. *(UC-1, UC-2)*
@@ -84,7 +95,8 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
 - [ ] Antes de dar nada por cargado, el celular muestra lo leído y deja confirmar o
       repetir. *(UC-3)*
 
-**Fotos que no coinciden con lo esperado**
+**Fotos que no coinciden con lo esperado** (aplica a las capturas con contexto
+fijo: una parte o vehículos; en el modo libre de Scriba mezclar es lo normal)
 - [ ] Captura de una parte: si el lote contiene fotos de más de una persona, el
       celular lo avisa y pregunta cuál es la de esa parte. Las demás no se pierden:
       en la compu se ofrecen para agregarlas como partes nuevas. *(UC-3)*
@@ -104,8 +116,9 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
       confirmación. *(UC-1)*
 - [ ] Desde Scriba, el resultado vuelve a la conversación y Scriba continúa por su
       cuenta, proponiendo qué hacer con lo leído. *(UC-2)*
-- [ ] Nada de lo leído se guarda como persona o vehículo definitivo hasta que el
-      usuario lo confirma. *(UC-3)*
+- [ ] Cargar datos en el documento abierto (un borrador editable) no es lo mismo
+      que guardarlos en el directorio de personas o vehículos: eso último nunca
+      ocurre sin que el usuario lo confirme. *(UC-2, UC-3)*
 
 **Privacidad y registro**
 - [ ] Las fotos solo las puede ver el usuario que las sacó y su propio registro
@@ -145,6 +158,10 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
    parte, sin excepción; en vehículos, un código para varios (ver criterios).
 4. **Retención de 72 h**: ¿suficiente, o querés que se borren apenas se confirma la
    lectura?
-5. **Revisión legal** de que las fotos de DNI se procesen en Estados Unidos
+5. **Scriba, ¿carga directo o confirma antes?** Cuando no hay ninguna duda (por
+   ejemplo un solo DNI y una sola parte vacía), propongo que cargue directo y lo
+   avise, ya que es un borrador editable. ¿O preferís que siempre pregunte antes de
+   mover datos?
+6. **Revisión legal** de que las fotos de DNI se procesen en Estados Unidos
    (Anthropic, Supabase, Vercel). No es nuevo (el escaneo de hoy ya lo hace), pero
    esta feature aumenta el volumen: conviene confirmar con Fátima antes de lanzarla.

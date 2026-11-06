@@ -25,8 +25,21 @@ Dice algo como "quiero subir los documentos de los compradores" o "te paso el DN
 La conversación sigue sola después de la captura; el usuario no tiene que volver a
 pedirle nada a Scriba.
 
+## Variante: lote mixto (modo libre)
+
+El usuario dice "te paso todo junto". Scriba no pregunta nada antes y muestra el
+código; en el celular no se exige ninguna cantidad ni tipo de fotos. Ejemplo:
+dos DNI y la tarjeta de un auto.
+
+1. Se lee y clasifica cada foto.
+2. Scriba cuenta qué encontró ("2 DNI y 1 tarjeta verde") y pregunta lo que no
+   puede deducir: quién es comprador y quién vendedor, a qué vehículo va cada foto.
+3. Con las respuestas, carga cada dato en su lugar en el documento abierto, y puede
+   mover o reasignar si el usuario se lo pide después.
+
 ## Decisión de alcance
 
 Si Scriba no tiene claro el contexto después de preguntar, ofrece igualmente el
-código con el contexto más general posible (documento de identidad sin rol asignado)
-en vez de bloquear al usuario.
+código en modo libre en vez de bloquear al usuario. Cargar en el documento abierto
+(borrador editable) es distinto de guardar en el directorio de personas: eso último
+requiere confirmación del usuario.
