@@ -20,8 +20,13 @@ import { AwsClient } from "aws4fetch";
 import { gzipSync } from "node:zlib";
 import { SUPABASE_URL } from "../_supabaseConfig.js";
 import { avisar } from "../_telegram.js";
+import { clienteServicio, purgarVencidas } from "../_capturaPurga.js";
 
 const BUCKETS_STORAGE = ["oo-docs", "documentos"];
+// Tablas que NO se copian: guardan datos personales leídos de documentos hasta que se entregan (después se
+// vacían). Una copia en R2 duraría 30 días y contradice la regla de destruir apenas se confirma la lectura.
+// El bucket `capturas` ya queda afuera porque no está en BUCKETS_STORAGE.
+export const TABLAS_EXCLUIDAS = new Set(["capturas"]);
 const PAGINA = 1000;
 const PRESUPUESTO_MS = 240_000; // la función tiene 300 s; lo que no entre sigue en la próxima corrida
 const CONCURRENCIA = 8;
@@ -74,7 +79,9 @@ function crearSupabase(serviceKey) {
 async function listarTablas(sb) {
   const api = await sb.json("/rest/v1/", { headers: { Accept: "application/openapi+json" } });
   const defs = api.definitions || api.components?.schemas || {};
-  return Object.entries(defs).map(([nombre, def]) => ({ nombre, ordenarPorId: !!def?.properties?.id }));
+  return Object.entries(defs)
+    .filter(([nombre]) => !TABLAS_EXCLUIDAS.has(nombre))
+    .map(([nombre, def]) => ({ nombre, ordenarPorId: !!def?.properties?.id }));
 }
 
 async function volcarTabla(sb, { nombre, ordenarPorId }) {
@@ -126,6 +133,11 @@ export default async function handler(req, res) {
   const sb = crearSupabase(serviceKey);
   const r2 = crearR2();
   const resumen = { fecha: hoy, tablas: {}, storage: {}, errores: [] };
+
+  // 0) Red de seguridad de la captura desde el celular: destruir lo que haya pasado las 24 h. La purga
+  // principal es horaria (Worker de Cloudflare); esta corrida diaria cubre si ese Worker llegara a fallar.
+  try { resumen.capturas_purgadas = await purgarVencidas(clienteServicio()); }
+  catch (e) { resumen.errores.push(`purga de capturas: ${e.message}`); }
 
   // 1) Tablas
   try {

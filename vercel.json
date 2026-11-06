@@ -6,6 +6,9 @@
     "api/vision.js": {
       "maxDuration": 30
     },
+    "api/captura.js": {
+      "maxDuration": 120
+    },
     "api/dnrpa-valuacion.js": {
       "maxDuration": 10
     },
