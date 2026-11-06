@@ -1,6 +1,6 @@
 # Spec: Drive de la escribanía — conexión y archivos del expediente
 
-**Estado:** 📝 borrador (fase 1 de 3) — pendiente de aprobación de Lucas. NO pasar a `plan.md` hasta entonces
+**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 1 de 3). Siguiente: [`plan.md`](plan.md) → `tasks.md`. NO escribir código hasta que `tasks.md` esté aprobado
 **Feature:** [`features/drive-escribania.md`](../../features/drive-escribania.md)
 **Epic:** [`epics/documentacion-expedientes-drive.md`](../../epics/documentacion-expedientes-drive.md)
 **Casos de uso:** [UC-1](../../usecases/drive-conectar-escribania.md) · [UC-2](../../usecases/drive-archivos-expediente.md) · [UC-3](../../usecases/drive-conexion-rota.md)
@@ -67,6 +67,8 @@ entró a Notarial con Google, y la autorización de Google se pierde a la hora.
       impide los demás. *(UC-2)*
 - [ ] Se aceptan archivos de hasta 25 MB cada uno; uno mayor se rechaza con un mensaje claro.
       *(UC-2)*
+- [ ] El límite de 25 MB se avisa **en la pantalla de subida**, antes de elegir los archivos
+      ("Máximo 25 MB por archivo"), no solo cuando algo se rechaza. *(UC-2)*
 
 **Conexión rota o espacio lleno**
 - [ ] Si Google rechaza la conexión, los usuarios ven "El Drive de la escribanía no está
@@ -101,9 +103,15 @@ entró a Notarial con Google, y la autorización de Google se pierde a la hora.
 2. ~~¿Quién conecta?~~ **Resuelto:** solo el administrador (Lucas).
 3. ~~¿Los archivos se ven solo desde Notarial?~~ **Resuelto:** sí, todos entran por Notarial.
 4. ~~Los 4 archivos de prueba~~ **Resuelto:** se ignoran.
-5. **¿Qué cuenta de Google se usa para las pruebas?** Propuesta: `lojeda.notarial@gmail.com` o un
-   Gmail nuevo solo de pruebas. Decide Lucas.
-6. **¿Existe ya el Gmail de la escribanía de Fátima o hay que crearlo?**
-7. **Borrar:** propongo que cualquier usuario del registro pueda, con registro y recuperable en la
-   papelera. ¿Te parece bien o querés que solo el administrador pueda borrar?
-8. **Tope de 25 MB por archivo:** ¿alcanza para fotos en calidad original y PDF escaneados?
+5. ~~¿Qué cuenta de Google se usa para las pruebas?~~ **Resuelto (06/11/26):** el Drive de
+   `lojeda.notarial@gmail.com`, conectado al registro de prueba. Solo para pruebas.
+6. ~~¿Existe ya el Gmail de la escribanía de Fátima?~~ **Resuelto (06/11/26):** sí, Fátima tiene un
+   mail de escribanía. Falta confirmar si es `@gmail.com` o un Google Workspace con dominio propio.
+7. ~~Borrar~~ **Resuelto (06/11/26):** cualquier usuario del registro puede, igual que hoy puede
+   en el Drive compartido de una escribanía. Queda registrado quién y recuperable en la papelera.
+8. ~~Tope de 25 MB~~ **Resuelto (06/11/26):** 25 MB alcanza (sobra). Se agrega el aviso visible
+   del límite en la pantalla de subida.
+9. ~~Tipo de mail de la escribanía de Fátima~~ **Resuelto (06/11/26):** es `@gmail.com`, sirve.
+
+**Datos de arranque:** registro de prueba = `9876` (el de Lucas, conectado al Drive de
+`lojeda.notarial@gmail.com`); primera escribanía real = registro `853` (Fátima).
