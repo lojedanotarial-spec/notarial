@@ -137,6 +137,14 @@ Todas las acciones de usuario exigen `Authorization: Bearer`. **El registro se d
 
 Cada spike se prueba contra el Drive real de `lojeda.notarial@gmail.com`.
 
+### Resultados (06/11/26) — los tres pasaron, el diseño no cambia
+
+| # | Resultado |
+|---|---|
+| S1 | ✅ Sesión reanudable abierta con `Origin: https://notarial.lat`: el preflight y el `PUT` responden `Access-Control-Allow-Origin: https://notarial.lat` (método `PUT`, cabecera `content-type`). Subida de 20 MB en 2,9 s, tamaño en Drive exacto (20971520). **Pendiente de confirmar en un navegador real en T6.3**: esta prueba fue con cabeceras desde Node, no desde un navegador |
+| S2 | ✅ Una función de Vercel entregó 20 MB en streaming a través de `notarial.lat` (20971520 bytes, 2,9 s). El límite de 4,5 MB no aplica a respuestas en streaming |
+| S3 | ✅ Con `drive.file openid email` Google devuelve el email (en el `id_token` y en `about.get`) y la cuota (`storageQuota`: usado y límite de 15 GB). Los permisos concedidos fueron solo esos |
+
 ## 9. Pruebas
 
 - **Unitarias** (`src/__tests__/drive.test.js` y `driveApi.test.js`, módulo puro `api/_drive.js`): cifrado ida y vuelta y rechazo de datos alterados, vigencia/consumo de enlaces, validación de tamaño y nombre, armado de nombres de carpeta, mapeo de errores de Google a estados, regla de 80 %, no mostrar errores técnicos.

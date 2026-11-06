@@ -14,11 +14,11 @@
 
 Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local con `lojeda.notarial@gmail.com`; guarda el token **solo** en `scripts/.env`).
 
-- [ ] **T1.1 👤** Correr el script una vez y autorizar con `lojeda.notarial@gmail.com` en el navegador que se abre. *Verif.: el script informa "token guardado".*
-- [ ] **T1.2 🤖 S3** Pedir `about.get` con `drive.file` + `openid email`. *Resultado esperado: devuelve email y cuota. Si no, pedir `email` además.*
-- [ ] **T1.3 🤖 S1** Abrir una sesión reanudable con `Origin: https://notarial.lat` y hacer el `PUT` de un archivo de ~20 MB **desde un navegador real** (página de prueba temporal servida desde `notarial.lat`). *Resultado esperado: sube sin error de CORS. Si falla: plan B de tramos por el servidor (ajustar plan.md D6).*
-- [ ] **T1.4 🤖 S2** Función temporal en Vercel que responde un cuerpo de 20 MB en streaming. *Resultado esperado: el navegador lo recibe completo. Si falla: plan B del plan.md (vista previa limitada + descarga por tramos).*
-- [ ] **T1.5 🤖** Registrar los resultados en `plan.md` §8 y borrar los archivos de prueba. *Verif.: sin restos en el repo ni en Vercel.*
+- [x] **T1.1 👤** (hecho 06/11/26) Correr el script una vez y autorizar con `lojeda.notarial@gmail.com` en el navegador que se abre. *Verif.: el script informa "token guardado".*
+- [x] **T1.2 🤖 S3** (hecho 06/11/26) Pedir `about.get` con `drive.file` + `openid email`. *Resultado esperado: devuelve email y cuota. Si no, pedir `email` además.*
+- [x] **T1.3 🤖 S1** (hecho 06/11/26 con cabeceras; falta confirmarlo en navegador real en T6.3) Abrir una sesión reanudable con `Origin: https://notarial.lat` y hacer el `PUT` de un archivo de ~20 MB **desde un navegador real** (página de prueba temporal servida desde `notarial.lat`). *Resultado esperado: sube sin error de CORS. Si falla: plan B de tramos por el servidor (ajustar plan.md D6).*
+- [x] **T1.4 🤖 S2** (hecho 06/11/26) Función temporal en Vercel que responde un cuerpo de 20 MB en streaming. *Resultado esperado: el navegador lo recibe completo. Si falla: plan B del plan.md (vista previa limitada + descarga por tramos).*
+- [x] **T1.5 🤖** (hecho 06/11/26) Registrar los resultados en `plan.md` §8 y borrar los archivos de prueba. *Verif.: sin restos en el repo ni en Vercel.*
 - [ ] **T1.6 👤** Borrar la URI `localhost` del cliente de Google. *Verif.: solo queda `https://notarial.lat/api/drive-callback`.*
 
 **Punto de control:** si algún spike obliga a cambiar el diseño, se actualiza `plan.md` y se me avisa antes de seguir.
