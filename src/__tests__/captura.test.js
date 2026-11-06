@@ -272,3 +272,36 @@ describe("purgarVencidas", () => {
     expect(n).toBeGreaterThanOrEqual(1);
   });
 });
+
+// ── Utilidades del celular ───────────────────────────────────────────────────
+
+import { calcularEscala, bytesDeBase64, esPdf, LADO_MAXIMO } from "../utils/capturaImagen.js";
+import { camposFaltantes } from "../utils/capturaApi.js";
+
+describe("reducir fotos", () => {
+  it("achica el lado mayor a 2000 px y nunca agranda", () => {
+    expect(calcularEscala(4000, 3000)).toBeCloseTo(0.5);
+    expect(calcularEscala(3000, 4000)).toBeCloseTo(0.5);
+    expect(calcularEscala(1000, 800)).toBe(1);
+    expect(calcularEscala(LADO_MAXIMO, 10)).toBe(1);
+  });
+  it("calcula los bytes de un base64 sin decodificarlo", () => {
+    expect(bytesDeBase64(Buffer.from("hola mundo").toString("base64"))).toBe(10);
+    expect(bytesDeBase64(Buffer.from("abc").toString("base64"))).toBe(3);   // sin relleno
+    expect(bytesDeBase64(Buffer.from("ab").toString("base64"))).toBe(2);    // un "="
+    expect(bytesDeBase64("")).toBe(0);
+  });
+  it("reconoce un PDF por tipo o por extensión", () => {
+    expect(esPdf({ type: "application/pdf", name: "x" })).toBe(true);
+    expect(esPdf({ type: "", name: "DNI.PDF" })).toBe(true);
+    expect(esPdf({ type: "image/jpeg", name: "x.jpg" })).toBe(false);
+  });
+});
+
+describe("avisar qué no se pudo leer", () => {
+  it("lista los campos clave vacíos", () => {
+    expect(camposFaltantes({ apellido: "PEREZ", nombre: "JUAN", nro_doc: "1", fecha_nac: "" })).toEqual(["fecha de nacimiento"]);
+    expect(camposFaltantes({})).toEqual(["apellido", "nombre", "número de documento", "fecha de nacimiento"]);
+    expect(camposFaltantes({ apellido: "A", nombre: "B", nro_doc: "1", fecha_nac: "01/01/2000" })).toEqual([]);
+  });
+});

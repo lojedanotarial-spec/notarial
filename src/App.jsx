@@ -18,6 +18,7 @@ import { FeedbackButton } from "./components/FeedbackButton";
 import { LogsScreen }    from "./screens/LogsScreen";
 import { logError }      from "./utils/logger";
 import { useScribaSesion } from "./hooks/useScribaSesion";
+import CapturaMovil from "./screens/CapturaMovil.jsx";
 
 
 const globalStyles = [
@@ -202,6 +203,16 @@ function AppRouter() {
 }
 
 export default function App() {
+  // Página del celular para la captura de documentos: va ANTES del login (el código de la URL es la autorización)
+  const enCaptura = window.location.pathname.match(/^\/c\/([A-Za-z0-9_-]{20,})\/?$/);
+  if (enCaptura) {
+    return (
+      <>
+        <style>{globalStyles}</style>
+        <CapturaMovil codigo={enCaptura[1]} />
+      </>
+    );
+  }
   return (
     <AuthProvider>
       <style>{globalStyles}</style>
