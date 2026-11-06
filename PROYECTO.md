@@ -603,7 +603,7 @@ Diagnóstico más probable: la cuenta/WABA es muy nueva (creada 22-23/08/26) y M
 
 ## Captura de documentos desde el celular (06/11/26)
 
-Spec, plan y tareas en `specs/captura-documentos-celular/`. Estado: en producción, **solo admin** (ver `capturaCelularHabilitada` en `src/hooks/useSesionCaptura.js`) hasta probarlo en un iPhone y un Android reales.
+Spec, plan y tareas en `specs/captura-documentos-celular/`. Estado: en producción **para todos los usuarios** desde el 06/11/26 (interruptor único: `capturaCelularHabilitada` en `src/hooks/useSesionCaptura.js`). Se abrió antes de completar el checklist de iPhone y Android reales (ver `specs/captura-documentos-celular/tasks.md`).
 
 **Cómo funciona.** La compu crea una sesión (`capturas`) y muestra un QR a `https://notarial.lat/c/<codigo>`. El celular abre esa página **sin login** (el código de 32 bytes es la única autorización; en la base solo se guarda su SHA-256), sube fotos de a una (reducidas a 2000 px en el navegador), pide la lectura (`extraerDocumento`, Opus 5.5) y confirma. La compu sondea el estado cada 2 s, aplica los datos y avisa "entregar": ahí el servidor **destruye fotos y lectura**. Tres modos: `parte` (un QR por parte), `vehiculos` (un QR para varios, grupos armados por el usuario en el celular) y `libre` (desde Scriba: mezcla de todo; Scriba clasifica, pregunta quién es quién y propone "Aplicar todo").
 

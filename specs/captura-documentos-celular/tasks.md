@@ -1,6 +1,6 @@
 # Tareas: Captura de documentos desde el celular
 
-**Estado:** implementado y en producción el 06/11/26, **visible solo para admin** hasta completar el checklist manual.
+**Estado:** implementado y en producción el 06/11/26, **abierto a todos los usuarios** (se abrió el mismo día, antes de completar el checklist manual; ver más abajo).
 Convención: ✅ hecha y verificada · 🟡 hecha, falta verificar en celular real · ⬜ pendiente.
 
 ## Fase A — Servidor
@@ -39,8 +39,7 @@ Convención: ✅ hecha y verificada · 🟡 hecha, falta verificar en celular re
 
 ## Checklist manual (lo único que no puedo verificar yo)
 
-Hacerlo como admin (Lucas). Cuando esté completo, se abre a todos cambiando `capturaCelularHabilitada` en
-`src/hooks/useSesionCaptura.js` (y el chequeo equivalente en `useScribaSesion.js`, que usa la misma función).
+Ya está abierto a todos: el checklist sigue pendiente y es lo que falta para darlo por verificado. Si hiciera falta volver a restringirlo, el interruptor único es `capturaCelularHabilitada` en `src/hooks/useSesionCaptura.js`.
 
 - [ ] iPhone: abrir el QR, elegir 2 fotos de la galería (HEIC), sacar una con la cámara, "Listo", confirmar.
 - [ ] Android: lo mismo.
