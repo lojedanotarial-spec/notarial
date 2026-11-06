@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { C, inp } from "../../constants";
 import { enviarAVision } from "../../utils/apiFetch";
+import { CapturaBtn } from "../CapturaCelular";
 
 async function escanearVehiculo(archivo) {
   return new Promise((resolve, reject) => {
@@ -134,6 +135,33 @@ export function ModalVehiculos({ vehiculos, onApply, onClose }) {
 
   const v = draft.find(x => x.id === openId);
 
+  // Datos que llegan de la captura desde el celular: uno o varios vehículos. El primero ocupa el vehículo
+  // abierto si está vacío; los demás se agregan. Un dominio que ya está cargado no se duplica.
+  function aplicarCaptura(resultado) {
+    const lista = (resultado?.vehiculos || []).map(x => x.vehiculo).filter(Boolean);
+    if (!lista.length) throw new Error("No se encontraron datos de vehículo en las fotos.");
+    const mapear = (veh) => ({
+      marca:     (veh.marca     || "").toUpperCase(),
+      modelo:    (veh.modelo    || "").toUpperCase(),
+      tipo_desc: (veh.tipo_desc || "").toUpperCase(),
+      dominio:   (veh.dominio   || "").toUpperCase().replace(/\s/g, ""),
+      chasis:    (veh.chasis    || "").toUpperCase(),
+      motor:     (veh.motor     || "").toUpperCase(),
+    });
+    const vacio = (x) => !x.marca && !x.modelo && !x.dominio && !x.chasis && !x.motor;
+    setDraft(prev => {
+      const siguiente = [...prev];
+      lista.forEach((veh, i) => {
+        const datos = mapear(veh);
+        if (datos.dominio && siguiente.some(x => x.dominio === datos.dominio)) return;
+        const idx = i === 0 ? siguiente.findIndex(x => x.id === openId) : -1;
+        if (idx >= 0 && vacio(siguiente[idx])) siguiente[idx] = { ...siguiente[idx], ...datos };
+        else siguiente.push({ ...VEHICULO_VACIO(), ...datos });
+      });
+      return siguiente;
+    });
+  }
+
   return (
     <Modal title="Vehículos" onClose={onClose}
       footer={<><Btn onClick={onClose}>Cancelar</Btn><Btn primary onClick={() => { onApply(draft); onClose(); }}>Guardar</Btn></>}>
@@ -196,6 +224,7 @@ export function ModalVehiculos({ vehiculos, onApply, onClose }) {
         <div style={{ flex:1, overflowY:"auto", paddingRight:4 }}>
           {v && (
             <>
+              <div style={{ display:"flex", gap:8, alignItems:"flex-start", flexWrap:"wrap" }}>
               <ScanVehiculoBtn onDatos={datos => {
                 const veh = datos?.vehiculo;
                 if (!veh) {
@@ -212,6 +241,9 @@ export function ModalVehiculos({ vehiculos, onApply, onClose }) {
                   motor:         (veh.motor     || "").toUpperCase(),
                 });
               }} />
+              <CapturaBtn modo="vehiculos" titulo="Subir vehículos desde el celular" onResultado={aplicarCaptura}
+                style={{ marginBottom:10, minWidth:160, height:30 }} />
+              </div>
               <Fg label="Tipo">
                 <select style={inp} value={v.tipo_vehiculo}
                   onChange={e => upd(v.id, { tipo_vehiculo: e.target.value })}>

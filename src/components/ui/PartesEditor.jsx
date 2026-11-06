@@ -1,6 +1,7 @@
 ﻿import { fmtDni } from "../../utils/formato";
 import { useState, useEffect, useRef } from "react";
 import { C, DEPARTAMENTOS, PARTE_VACIA, inp } from "../../constants";
+import { CapturaBtn } from "../CapturaCelular";
 
 // Inferencia de provincia argentina a partir de localidad o departamento
 const LOCALIDAD_PROVINCIA = {
@@ -588,6 +589,7 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
   const [confirmQuitar, setConfirmQuitar] = useState(null);
   const [hoverQuitar, setHoverQuitar] = useState(null);
   const [confirmEscaneo, setConfirmEscaneo] = useState(null); // { persona } pendiente de confirmar
+  const [sobrantes, setSobrantes] = useState([]);              // personas extra detectadas por la captura del celular
 
   const upd = (id, fields) => onChange(partes.map(p => p.id === id ? { ...p, ...fields } : p));
 
@@ -674,6 +676,38 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
       departamento: titleCaseDomicilio(merge(persona.departamento, actual.departamento)) || "",
       cuit:         actual.cuit || undefined,
     });
+  }
+
+  // Datos que llegan de la captura desde el celular. Misma regla que el escaneo de archivos: si la parte ya tiene
+  // datos tipeados a mano, pide confirmación antes de pisarlos. Las otras personas que aparecieron en las fotos
+  // no se pierden: quedan en `sobrantes` para agregarlas como partes nuevas con un clic.
+  function aplicarCaptura(resultado) {
+    const persona = resultado?.personas?.[0];
+    if (!persona) throw new Error("No se encontraron datos de persona en las fotos.");
+    const actual = partes.find(x => x.id === openId) || {};
+    if (tieneDatosPropios(actual)) setConfirmEscaneo({ persona });
+    else aplicarEscaneo(persona);
+    setSobrantes((resultado.sobrantes || []).filter(Boolean));
+  }
+
+  function agregarSobrante(persona) {
+    const genero = persona.genero || "";
+    const nueva = {
+      ...PARTE_VACIA(),
+      apellido: (persona.apellido || "").toUpperCase(),
+      nombre: aplicarTildesNombre((persona.nombre || "").toUpperCase()),
+      genero, nacionalidad: persona.nacionalidad || "",
+      tipoDoc: persona.tipo_doc || "DNI", nroDoc: String(persona.nro_doc || "").replace(/\D/g, ""),
+      fechaNac: persona.fecha_nac || "", estadoCivil: persona.estado_civil || "",
+      calle: titleCaseDomicilio(persona.calle) || "", numero: persona.numero || "",
+      barrio: titleCaseDomicilio(persona.barrio) || "", manzana: persona.manzana || "", casa: persona.casa || "",
+      localidad: titleCaseDomicilio(persona.localidad) || "",
+      provincia: titleCaseDomicilio(persona.provincia) || inferirProvincia(persona.localidad, persona.departamento),
+      departamento: persona.departamento || "Ciudad",
+      representaciones: [],
+    };
+    onChange([...partes, nueva]);
+    setSobrantes(prev => prev.filter(x => x !== persona));
   }
 
   // ¿La parte abierta ya tiene datos tipeados a mano que un escaneo podría pisar?
@@ -777,6 +811,8 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                     aplicarEscaneo(persona);
                   }
                 }} style={{ flexShrink:0, alignSelf:"flex-start" }}/>
+                <CapturaBtn modo="parte" contexto={{ rol: p.rol }} titulo="Subir documento desde el celular"
+                  onResultado={aplicarCaptura} style={{ flexShrink:0, alignSelf:"flex-start", height:30 }} />
                 {loteId && (
                   <ScanDriveBtn loteId={loteId} onDatos={datos => {
                     const persona = datos?.personas?.[0];
@@ -790,6 +826,21 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
                   }} style={{ flexShrink:0, alignSelf:"flex-start" }}/>
                 )}
               </div>
+
+              {sobrantes.length > 0 && (
+                <div style={{ background:C.fawn50, border:"1px solid rgba(201,169,97,.4)", borderRadius:8, padding:"10px 12px", marginBottom:12, fontSize:12, color:C.dark }}>
+                  <div style={{ fontWeight:700, marginBottom:6 }}>Las fotos tenían otra(s) persona(s):</div>
+                  {sobrantes.map((s, i) => (
+                    <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom:4 }}>
+                      <span>{[s.apellido, s.nombre].filter(Boolean).join(", ") || "Sin nombre legible"}{s.nro_doc ? ` · DNI ${s.nro_doc}` : ""}</span>
+                      <span style={{ display:"flex", gap:6, flexShrink:0 }}>
+                        <button type="button" onClick={() => agregarSobrante(s)} style={{ padding:"3px 9px", borderRadius:6, border:"none", background:C.cerulean, color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>Agregar como parte nueva</button>
+                        <button type="button" onClick={() => setSobrantes(prev => prev.filter(x => x !== s))} style={{ padding:"3px 9px", borderRadius:6, border:`1px solid ${C.border}`, background:"transparent", color:C.dark, fontSize:11, cursor:"pointer", fontFamily:"'Montserrat',sans-serif" }}>Descartar</button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                 <Fg label="Apellido">
