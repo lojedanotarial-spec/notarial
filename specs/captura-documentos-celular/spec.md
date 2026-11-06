@@ -57,9 +57,16 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
 - [ ] Scriba pregunta lo que no puede deducir con certeza (quién es el comprador y
       quién el vendedor, a qué vehículo corresponde cada foto) y no adivina. Lo que
       sí es inequívoco no lo pregunta. *(UC-2)*
-- [ ] Con las respuestas, Scriba distribuye los datos en el documento que está
-      abierto (partes y vehículos) por su cuenta, y puede mover o reasignar lo ya
-      cargado si el usuario se lo pide. *(UC-2)*
+- [ ] Con las respuestas, Scriba arma la distribución completa (qué persona es qué
+      parte, qué vehículo va en cuál lugar) y la presenta como **un solo resumen
+      con una sola confirmación** ("Aplicar todo"). Nada se escribe en el documento
+      antes de esa confirmación; después de ella, se carga todo junto. *(UC-2)*
+- [ ] Antes de confirmar, el usuario puede corregir la distribución propuesta
+      ("el comprador es el otro") y Scriba rehace el resumen. Después de aplicar,
+      puede mover o reasignar lo ya cargado si se lo pide. *(UC-2)*
+- [ ] Esto convive con lo que Scriba hace hoy en el resto de sus tareas (proponer
+      un cambio con un botón para aplicarlo): no se altera ese comportamiento fuera
+      de la captura de documentos. *(UC-2)*
 - [ ] El código sirve para una sola captura, vence a los 10 minutos y solo permite
       subir fotos para ese contexto: no da acceso a nada más de la cuenta. El
       usuario puede cancelarlo desde la compu y deja de servir. *(UC-1, UC-2)*
@@ -158,10 +165,10 @@ fijo: una parte o vehículos; en el modo libre de Scriba mezclar es lo normal)
    parte, sin excepción; en vehículos, un código para varios (ver criterios).
 4. **Retención de 72 h**: ¿suficiente, o querés que se borren apenas se confirma la
    lectura?
-5. **Scriba, ¿carga directo o confirma antes?** Cuando no hay ninguna duda (por
-   ejemplo un solo DNI y una sola parte vacía), propongo que cargue directo y lo
-   avise, ya que es un borrador editable. ¿O preferís que siempre pregunte antes de
-   mover datos?
+5. ~~Scriba, ¿carga directo o confirma antes?~~ **Resuelto (06/11/26):** una sola
+   confirmación para todo el lote ("Aplicar todo"); nada se escribe antes. Hoy Scriba
+   propone cada cambio con su propio botón, así que esto es un comportamiento nuevo
+   para el caso de la captura.
 6. **Revisión legal** de que las fotos de DNI se procesen en Estados Unidos
    (Anthropic, Supabase, Vercel). No es nuevo (el escaneo de hoy ya lo hace), pero
    esta feature aumenta el volumen: conviene confirmar con Fátima antes de lanzarla.

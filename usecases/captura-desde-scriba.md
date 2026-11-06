@@ -34,7 +34,9 @@ dos DNI y la tarjeta de un auto.
 1. Se lee y clasifica cada foto.
 2. Scriba cuenta qué encontró ("2 DNI y 1 tarjeta verde") y pregunta lo que no
    puede deducir: quién es comprador y quién vendedor, a qué vehículo va cada foto.
-3. Con las respuestas, carga cada dato en su lugar en el documento abierto, y puede
+3. Con las respuestas, arma la distribución completa y la muestra como un solo
+   resumen con un único botón "Aplicar todo". Se puede corregir antes de aplicar.
+4. Al confirmar, carga cada dato en su lugar en el documento abierto, y puede
    mover o reasignar si el usuario se lo pide después.
 
 ## Decisión de alcance
