@@ -1,6 +1,6 @@
 # Spec: Captura de documentos desde el celular
 
-**Estado:** 📝 borrador casi cerrado (fase 1 de 3) — solo queda abierta la revisión legal (no bloquea el plan técnico, sí el lanzamiento). NO pasar a `plan.md` hasta que Lucas apruebe el spec
+**Estado:** 📝 borrador sin preguntas abiertas (fase 1 de 3) — a la espera de la aprobación explícita de Lucas. NO pasar a `plan.md` hasta entonces
 **Feature:** [`features/captura-celular.md`](../../features/captura-celular.md)
 **Epic:** [`epics/captura-documentos-multicanal.md`](../../epics/captura-documentos-multicanal.md)
 **Casos de uso:** [UC-1](../../usecases/captura-desde-parte-generador.md) · [UC-2](../../usecases/captura-desde-scriba.md) · [UC-3](../../usecases/lote-multifoto-confirmacion.md) · [UC-4](../../usecases/foto-ilegible-reintento.md)
@@ -130,10 +130,17 @@ fijo: una parte o vehículos; en el modo libre de Scriba mezclar es lo normal)
 **Privacidad y registro**
 - [ ] Las fotos solo las puede ver el usuario que las sacó y su propio registro
       notarial; nunca otro registro. *(todos)*
-- [ ] Las fotos se borran en lo primero que ocurra entre estas dos cosas: pasan 72
-      horas, o el usuario confirma la generación del documento. Los datos ya
-      cargados en el documento no se ven afectados por el borrado de las fotos.
+- [ ] **Las fotos se destruyen apenas el usuario confirma la lectura**: en la captura
+      de una parte o de vehículos, cuando confirma en el celular y los datos ya
+      llegaron a la compu; en el modo libre de Scriba, cuando toca "Aplicar todo".
       *(todos)*
+- [ ] Junto con las fotos se borra también el resultado de la lectura guardado para
+      esa captura (nombre, número de documento, domicilio, etc.). Lo que ya quedó
+      cargado en el documento no se ve afectado. *(todos)*
+- [ ] Un lote que nunca se confirma (abandonado, o con error de lectura) se destruye
+      solo a las 24 horas como máximo. *(todos)*
+- [ ] Ni las fotos ni lo leído de ellas quedan en las copias de seguridad de la
+      plataforma. *(todos)*
 - [ ] Funciona igual en iPhone y en Android, con las fotos que el sistema de cada uno
       guarda por defecto (en iPhone, incluido el formato HEIC). *(todos)*
 - [ ] Queda constancia de quién subió, cuándo y para qué contexto, sin guardar el
@@ -156,6 +163,9 @@ fijo: una parte o vehículos; en el modo libre de Scriba mezclar es lo normal)
   contexto debe poder extenderse a ellos más adelante, pero no se leen en esta versión.
 - Validar la identidad contra registros oficiales (RENAPER).
 - Aplicación nativa para el celular, o uso sin conexión a internet.
+- Lo que cada proveedor externo (por ejemplo el que lee la imagen) retiene bajo su
+  propia política una vez procesada la foto: destruir nuestra copia no lo alcanza.
+  Se revisa aparte.
 - Cambiar el modelo o el prompt de lectura (se mide aparte; ver "Modelos de IA" en
   `BACKLOG.md`).
 
@@ -168,12 +178,12 @@ fijo: una parte o vehículos; en el modo libre de Scriba mezclar es lo normal)
 2. ~~¿Quién sube?~~ **Resuelto (06/11/26):** solo usuarios del registro, por ahora.
 3. ~~¿Un código por contexto o por sesión?~~ **Resuelto (06/11/26):** un código por
    parte, sin excepción; en vehículos, un código para varios (ver criterios).
-4. ~~Retención de 72 h~~ **Resuelto (06/11/26):** lo primero que ocurra entre 72 h y
-   la confirmación de la generación del documento (ver criterios).
+4. ~~Retención de 72 h~~ **Resuelto (06/11/26):** destrucción apenas se confirma la
+   lectura; tope de 24 h para lotes sin confirmar (ver criterios).
 5. ~~Scriba, ¿carga directo o confirma antes?~~ **Resuelto (06/11/26):** una sola
    confirmación para todo el lote ("Aplicar todo"); nada se escribe antes. Hoy Scriba
    propone cada cambio con su propio botón, así que esto es un comportamiento nuevo
    para el caso de la captura.
-6. **Revisión legal** de que las fotos de DNI se procesen en Estados Unidos
-   (Anthropic, Supabase, Vercel). No es nuevo (el escaneo de hoy ya lo hace), pero
-   esta feature aumenta el volumen: conviene confirmar con Fátima antes de lanzarla.
+6. ~~Revisión legal~~ **Resuelto (06/11/26):** Lucas ya firmó el acuerdo de
+   tratamiento de datos con Supabase; se da por cubierto. Queda como nota (fuera de
+   alcance) lo que Anthropic retiene bajo su propia política al procesar la foto.
