@@ -44,7 +44,7 @@ Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local c
 
 - [ ] **T5.1 🤖** `src/utils/driveApi.js` + tests (subida con progreso, errores traducidos).
 - [ ] **T5.2 🤖** `src/screens/DriveConectar.jsx` + ruta pública `/drive/<codigo>` y `/drive/listo` en `App.jsx` (antes del login). *Verif.: estados vencido, ya usado, rechazado y listo, probados a 360 px.*
-- [ ] **T5.3 🤖** `AdminScreen.jsx`: sección "Drive de las escribanías" (estado, cuenta, espacio, Conectar que copia el enlace, Desconectar con confirmación, advertencia al 80 %).
+- [ ] **T5.3 🤖** `AdminScreen.jsx`: sección "Drive de las escribanías" (estado, cuenta, espacio, Conectar, que genera el enlace y ofrece tres botones: **WhatsApp** (mensaje redactado), **Mail** (redacción de Gmail con asunto y texto listos; Lucas pone el destinatario) y **Copiar enlace**; sin servicio de envío, Desconectar con confirmación, advertencia al 80 %).
 - [ ] **T5.4 🤖** `ExpedienteDetailScreen.jsx`: sacar el pedido de login con Google y el `delete` explícito de archivos; subida múltiple con resultado por archivo; aviso fijo **"Máximo 25 MB por archivo"**; quién subió y cuándo; ver, descargar, borrar con confirmación; aviso cuando el registro no tiene Drive y cuando la conexión está caída. Sacar también el `delete` explícito en `ExpedientesScreen.jsx`. *Verif.: no queda ninguna escritura del navegador a `expediente_archivos`.*
 
 ## Fase 6 — Verificación y deploy
