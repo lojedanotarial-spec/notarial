@@ -35,9 +35,13 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
 ## Comportamiento deseado (criterios de aceptación)
 
 **Inicio de la captura**
-- [ ] Desde el generador manual, cada parte (y el vehículo) tiene un botón para
-      capturar desde el celular. Al usarlo no se le pregunta al usuario qué tipo de
-      documento es ni de quién: la pantalla ya lo sabe. *(UC-1)*
+- [ ] En el modal de partes comparecientes, cada parte tiene su propio botón para
+      capturar desde el celular, y el código es **siempre de una sola parte**. Al
+      usarlo no se le pregunta al usuario qué tipo de documento es ni de quién: la
+      pantalla ya lo sabe. *(UC-1)*
+- [ ] En el modal de vehículos, un mismo código sirve para capturar **varios
+      vehículos seguidos**, sin tener que generar otro código por cada uno.
+      *(UC-1)*
 - [ ] Desde Scriba, pedir subir fotos hace que Scriba pregunte únicamente lo que
       falta para tener contexto (de quién, de qué tipo, cuántas fotos), y no repita
       lo que el usuario ya dijo. Recién entonces muestra el código dentro de la
@@ -56,7 +60,9 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
       cuántas fotos van de las esperadas. *(UC-3)*
 - [ ] Se pueden sacar varias fotos en el mismo lote (como mínimo las dos caras;
       hasta 20 por lote), ver las miniaturas y borrar o repetir cualquiera. *(UC-3)*
-- [ ] También se puede elegir una foto de la galería en lugar de sacarla. *(UC-3)*
+- [ ] No es solo modo cámara: se pueden elegir fotos que ya estaban guardadas en el
+      celular (una o varias a la vez), capturas de pantalla del DNI digital y PDF,
+      mezclables con fotos sacadas en el momento dentro del mismo lote. *(UC-3)*
 - [ ] Las fotos se envían mientras se saca la siguiente; "listo" no obliga a esperar
       que se suba todo. *(UC-3)*
 - [ ] Si el contexto esperaba más fotos de las sacadas, avisa cuál falta antes de
@@ -77,6 +83,19 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
       marcan. *(UC-4)*
 - [ ] Antes de dar nada por cargado, el celular muestra lo leído y deja confirmar o
       repetir. *(UC-3)*
+
+**Fotos que no coinciden con lo esperado**
+- [ ] Captura de una parte: si el lote contiene fotos de más de una persona, el
+      celular lo avisa y pregunta cuál es la de esa parte. Las demás no se pierden:
+      en la compu se ofrecen para agregarlas como partes nuevas. *(UC-3)*
+- [ ] Una misma persona con documentos distintos (por ejemplo DNI y licencia) se
+      fusiona en una sola. Si los datos no coinciden, prevalece el DNI y la
+      diferencia se marca para que el usuario la vea. *(UC-3, UC-4)*
+- [ ] Captura de vehículos: el usuario arma en el celular los grupos de fotos de cada
+      vehículo ("Vehículo 1", "Otro vehículo", ...). El sistema no adivina qué foto
+      corresponde a qué vehículo; respeta los grupos. *(UC-3)*
+- [ ] Una foto que no es de ningún documento esperado (otra cosa) se avisa y no se
+      cuenta como parte del lote. *(UC-4)*
 
 **Destino**
 - [ ] Desde el generador manual, los datos confirmados aparecen en la parte
@@ -118,12 +137,12 @@ recibir una foto sacada en el momento: solo lo que ya esté como archivo adjunto
 ## Preguntas abiertas (a resolver antes de pasar a `plan.md`)
 
 1. **¿iPhone o Android en el equipo?** No cambia lo que entrega esta versión, pero
-   sí cuánto conviene invertir después en el ícono propio en el celular.
+   sí cuánto conviene invertir después en el ícono propio en el celular. Si hay
+   iPhone, probar que las fotos HEIC de la galería se lean bien.
 2. **¿Quién sube?** Se asume que solo usuarios del registro (quien tiene sesión en
    la compu y genera el código). ¿Confirmado?
-3. **¿Un código por contexto o por sesión?** Hoy: un código por cada parte. Si el
-   escribano quiere subir comprador y vendedor seguidos, ¿es aceptable escanear dos
-   veces, o querés poder dejar la captura abierta para varias partes?
+3. ~~¿Un código por contexto o por sesión?~~ **Resuelto (06/11/26):** un código por
+   parte, sin excepción; en vehículos, un código para varios (ver criterios).
 4. **Retención de 72 h**: ¿suficiente, o querés que se borren apenas se confirma la
    lectura?
 5. **Revisión legal** de que las fotos de DNI se procesen en Estados Unidos
