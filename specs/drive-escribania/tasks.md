@@ -8,7 +8,7 @@
 
 - [x] **T0.1 🤖** (hecho 06/11/26) Generar `DRIVE_CIFRADO_CLAVE` (32 bytes, base64) y guardarla en `scripts/.env`. *Verif.: la variable existe y no está en git.*
 - [ ] **T0.2 👤** En Google Cloud, cliente `Notarial Drive escribanias` → agregar una segunda URI de redirección **temporal**: `http://localhost:53682/callback` (solo para los spikes; se borra al terminar la Fase 1). *Verif.: figura en el cliente.*
-- [ ] **T0.3 👤** (cambió: el sistema me bloquea leer la clave de cifrado para cargarla yo) Cargar en Vercel → Settings → Environment Variables, **marcadas "Sensitive"**, entorno Production, copiando los valores de `scripts/.env`: `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET` y `DRIVE_CIFRADO_CLAVE`. **No bloquea la Fase 1 ni las siguientes hasta el deploy (T6.2).** *Verif.: las tres aparecen en la lista; yo lo compruebo por nombre, no por valor.*
+- [x] **T0.3** (hecho 06/11/26) Lucas dio un `VERCEL_TOKEN` en `scripts/.env` y cargué `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET` y `DRIVE_CIFRADO_CLAVE` con `scripts/vercel_env.mjs`. Figuran como Sensitive / Production. *Verif.: listadas por nombre, ningún valor impreso.*
 
 ## Fase 1 — Spikes (de-risk; nada se construye encima hasta tenerlos)
 
