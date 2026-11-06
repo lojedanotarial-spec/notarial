@@ -1,6 +1,6 @@
 # Tareas: Drive de la escribanía
 
-**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 3 de 3). En ejecución: Fases 0, 1 y 2 hechas; sigue la Fase 3
+**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 3 de 3). En ejecución: Fases 0 a 3 hechas; sigue la Fase 4 (API)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅ (aprobado 06/11/26: enlace 24 h, solo el administrador conecta)
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación.
 
@@ -19,7 +19,7 @@ Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local c
 - [x] **T1.3 🤖 S1** (hecho 06/11/26 con cabeceras; falta confirmarlo en navegador real en T6.3) Abrir una sesión reanudable con `Origin: https://notarial.lat` y hacer el `PUT` de un archivo de ~20 MB **desde un navegador real** (página de prueba temporal servida desde `notarial.lat`). *Resultado esperado: sube sin error de CORS. Si falla: plan B de tramos por el servidor (ajustar plan.md D6).*
 - [x] **T1.4 🤖 S2** (hecho 06/11/26) Función temporal en Vercel que responde un cuerpo de 20 MB en streaming. *Resultado esperado: el navegador lo recibe completo. Si falla: plan B del plan.md (vista previa limitada + descarga por tramos).*
 - [x] **T1.5 🤖** (hecho 06/11/26) Registrar los resultados en `plan.md` §8 y borrar los archivos de prueba. *Verif.: sin restos en el repo ni en Vercel.*
-- [ ] **T1.6 👤** Borrar la URI `localhost` del cliente de Google. *Verif.: solo queda `https://notarial.lat/api/drive-callback`.*
+- [x] **T1.6 👤** (hecho 06/11/26) Borrar la URI `localhost` del cliente de Google. *Verif.: solo queda `https://notarial.lat/api/drive-callback`.*
 
 **Punto de control:** si algún spike obliga a cambiar el diseño, se actualiza `plan.md` y se me avisa antes de seguir.
 
@@ -31,7 +31,7 @@ Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local c
 
 ## Fase 3 — Lógica pura, con pruebas primero
 
-- [ ] **T3.1 🤖** `api/_drive.js` + `src/__tests__/drive.test.js` (escribir los tests antes): cifrado ida y vuelta y rechazo de datos alterados o con versión desconocida; vigencia y consumo de enlaces (24 h, un solo uso); `state` firmado y su verificación; validación de tamaño (≤ 25 MB), nombre y tipo; nombre de carpeta de expediente; mapeo de errores de Google a estado (`invalid_grant` → rota, cuota → sin_espacio); regla del 80 %; mensajes al usuario sin texto técnico. *Verif.: tests en verde.*
+- [x] **T3.1 🤖** (hecho 06/11/26: 43 tests propios, 359 en total; incluye `invalid_client` como error de configuración que NO rompe conexiones, y solo se previsualizan imágenes y PDF) `api/_drive.js` + `src/__tests__/drive.test.js` (escribir los tests antes): cifrado ida y vuelta y rechazo de datos alterados o con versión desconocida; vigencia y consumo de enlaces (24 h, un solo uso); `state` firmado y su verificación; validación de tamaño (≤ 25 MB), nombre y tipo; nombre de carpeta de expediente; mapeo de errores de Google a estado (`invalid_grant` → rota, cuota → sin_espacio); regla del 80 %; mensajes al usuario sin texto técnico. *Verif.: tests en verde.*
 
 ## Fase 4 — API (`api/drive.js`)
 
