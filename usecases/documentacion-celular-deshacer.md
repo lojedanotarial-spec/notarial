@@ -12,8 +12,7 @@ Se dio cuenta de que una foto salió movida, cortada o es del documento equivoca
 
 ## Flujo esperado
 
-1. En el celular, la página muestra lo subido en esta sesión, con una miniatura de cada foto y su
-   tipo.
+1. En el celular, la página muestra lo subido en esta sesión, con una miniatura de cada foto.
 2. Toca la foto mala y elige **Quitar**. Se le pide confirmar.
 3. La foto desaparece de la lista del celular y del expediente en la compu. Queda en la papelera del
    Drive de la escribanía, donde se puede recuperar.

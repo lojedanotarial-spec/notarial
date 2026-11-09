@@ -22,7 +22,9 @@ señal, o el Drive de la escribanía dejó de responder o se quedó sin espacio.
 3. **El Drive no está disponible o no tiene espacio:** el celular muestra el mismo mensaje que ve un
    usuario en la compu ("El Drive de la escribanía no está disponible. Avisale a quien administra
    Notarial"), sin errores técnicos. Las fotos pendientes siguen en el celular.
-4. En todos los casos, nada se pierde en silencio: la pantalla siempre dice qué se guardó y qué no.
+4. **Falla solo la identificación automática** (la IA no responde): los archivos igual quedan
+   guardados, con su nombre original, y se pueden renombrar a mano desde la compu.
+5. En todos los casos, nada se pierde en silencio: la pantalla siempre dice qué se guardó y qué no.
 
 ## Resultado esperado
 
