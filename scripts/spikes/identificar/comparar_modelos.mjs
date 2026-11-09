@@ -22,6 +22,9 @@ const CALIDAD = Number(process.argv[4] || 70);
 const MAX_TOKENS = Number(process.argv[5] || 1000);
 const EFFORT = process.argv[6] || "";
 const verdad = JSON.parse(fs.readFileSync(path.join(RAIZ, "verdad.json"), "utf8"));
+// Fotos REALES de Lucas (solo en su equipo, carpeta ignorada por git): si existe verdad_reales.json se suman al conjunto.
+const archivoReales = path.join(RAIZ, "verdad_reales.json");
+if (fs.existsSync(archivoReales)) Object.assign(verdad, JSON.parse(fs.readFileSync(archivoReales, "utf8")));
 
 const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 
@@ -61,6 +64,7 @@ function evaluar(esperado, resp) {
   if (esperado.lado && !esperado.lado_libre && i.lado !== esperado.lado) fallas.push(`lado(${i.lado})`);
   if (esperado.pagina && i.pagina !== esperado.pagina) fallas.push(`pagina(${i.pagina})`);
   if (esperado.paginas_total && i.paginas_total !== esperado.paginas_total) fallas.push(`total(${i.paginas_total})`);
+  if (esperado.sin_persona && (i.apellido || i.nombre)) fallas.push(`persona_de_mas(${i.apellido} ${i.nombre})`);
   if (esperado.apellido && norm(i.apellido) !== norm(esperado.apellido)) fallas.push(`apellido(${i.apellido})`);
   if (esperado.nombre && norm(i.nombre) !== norm(esperado.nombre)) fallas.push(`nombre(${i.nombre})`);
   if (esperado.descripcion_contiene && !norm(i.descripcion).includes(norm(esperado.descripcion_contiene))) fallas.push(`descripcion(${i.descripcion})`);
@@ -73,7 +77,7 @@ async function enLotes(items, n, fn) {
   return out;
 }
 
-const rutas = Object.keys(verdad);
+const rutas = Object.keys(verdad).filter((r) => !process.env.SOLO || r.includes(process.env.SOLO));
 console.log(`${rutas.length} imágenes · modelos: ${MODELOS.join(", ")} · miniatura ≤ ${LADO}px JPEG q${CALIDAD}\n`);
 const todos = {};
 for (const modelo of MODELOS) {
@@ -101,7 +105,7 @@ for (const m of MODELOS) {
   const ms = f.map((x) => x.ms).sort((a, b) => a - b);
   const falla = (clave) => f.filter((x) => x.fallas.some((z) => z.startsWith(clave))).length;
   console.log(`${m}: ${ok}/${f.length} aciertos totales · tokens por foto: ${prom("entrada")} entrada + ${prom("salida")} salida · tiempo mediano ${ms[Math.floor(ms.length / 2)]} ms (máx ${ms.at(-1)})`);
-  console.log(`   fallas → tipo ${falla("tipo")} · lado ${falla("lado")} · página ${falla("pagina") + falla("total")} · persona ${falla("apellido") + falla("nombre")} · sin identificar de más ${falla("sin_identificar")} · inventó ${falla("inventó")} · API ${falla("error_api")}`);
+  console.log(`   fallas → tipo ${falla("tipo")} · lado ${falla("lado")} · página ${falla("pagina") + falla("total")} · persona ${falla("apellido") + falla("nombre") + falla("persona_de_mas")} · sin identificar de más ${falla("sin_identificar")} · inventó ${falla("inventó")} · API ${falla("error_api")}`);
 }
 const salida = path.join(RAIZ, `resultados_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}_${LADO}px_${EFFORT || "std"}.json`);
 fs.writeFileSync(salida, JSON.stringify(todos, null, 2));

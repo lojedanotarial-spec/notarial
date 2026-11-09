@@ -138,6 +138,18 @@ describe("TB.5 · identificar desde el celular", () => {
       expect(e.ia.consultar).not.toHaveBeenCalled();
     }
   });
+  it("CASO REAL: si la foto se quita mientras el modelo la mira, NO se renombra ni se audita como identificada", async () => {
+    const { e, codigo, id } = await conFoto();
+    e.ia.consultar.mockImplementationOnce(async () => {
+      fila(e).borrado_en = new Date(T0).toISOString();   // la persona toca "Quitar" justo mientras se identifica
+      return { texto: JSON.stringify(RESPUESTA_IA), entrada: 1372, salida: 221, parada: "end_turn" };
+    });
+    const r = await identificar(e, codigo, id);
+    expect(r.jsonBody.identificado).toBe(false);
+    expect(e.google.renombrar).not.toHaveBeenCalled();
+    expect(fila(e).nombre).toBe("dni.jpg");
+    expect(e.tablas.drive_auditoria.map((a) => a.accion)).not.toContain("identificar");
+  });
   it("si Drive no deja renombrar, el nombre en la base tampoco cambia (no quedan desfasados)", async () => {
     const { e, codigo, id } = await conFoto({ google: { renombrar: vi.fn(async () => { throw new GoogleError({ status: 404 }); }) } });
     const r = await identificar(e, codigo, id);

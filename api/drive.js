@@ -287,6 +287,10 @@ async function identificarArchivo(d, { arch, exp, registro, miniatura, quien }) 
   const n = normalizarIdentificacion(respuesta.texto);
   if (!n.ok) return marcarSinIdentificar(d, arch);
 
+  // Si mientras el modelo miraba la foto alguien la quitó, no se renombra nada (caso real del 09/11/26: una foto quitada se renombró igual).
+  const { data: vigente } = await d.sb.from("expediente_archivos").select("borrado_en").eq("id", arch.id).maybeSingle();
+  if (!vigente || vigente.borrado_en) return { archivo: archivoPublico({ ...arch, identificacion: "sin_identificar" }), identificado: false };
+
   const { data: otros } = await d.sb.from("expediente_archivos").select("id,nombre").eq("expediente_id", exp.id).eq("almacen", "escribania").is("borrado_en", null);
   const nombre = evitarDuplicado(armarNombreArchivo(n.ident, extensionDe(arch.nombre, arch.mime_type)), (otros || []).filter((o) => o.id !== arch.id).map((o) => o.nombre));
   try {

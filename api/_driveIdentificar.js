@@ -5,8 +5,8 @@
 
 export const TIPOS_IDENTIFICABLES = ["dni", "tarjeta_verde", "poder", "formulario", "otro"];
 const ETIQUETA = { dni: "DNI", tarjeta_verde: "Tarjeta verde", poder: "Poder", formulario: "Formulario 08" };
-const CON_LADO = new Set(["dni", "tarjeta_verde"]);   // estos se identifican por anverso/reverso…
-const CON_PERSONA = new Set(["dni", "otro"]);          // …y estos llevan el nombre de la persona (partidas, licencias…)
+const CON_LADO = new Set(["dni", "tarjeta_verde", "otro"]); // los documentos de dos caras (DNI, tarjeta verde, licencia…) se distinguen por anverso/reverso
+const CON_PERSONA = new Set(["dni", "otro"]);          // y estos llevan el nombre de la persona (partidas, licencias…)
 export const MAX_MINIATURA_BYTES = 400 * 1024;
 const MAX_NOMBRE_ARCHIVO = 150;
 
@@ -25,8 +25,8 @@ Formato:
 {"tipo":"dni|tarjeta_verde|poder|formulario|otro","descripcion":"","apellido":"","nombre":"","lado":"anverso|reverso|null","pagina":null,"paginas_total":null,"legible":true,"confianza":"alta|media|baja"}
 
 Reglas:
-- "apellido" y "nombre" solo de la persona dueña del documento (DNI, partida, licencia...). En poder, formulario y tarjeta_verde dejalos vacíos.
-- "lado" solo para dni y tarjeta_verde. "pagina" y "paginas_total" solo para poder, formulario y otro, y solo si el número está impreso (folio u hoja "2 de 3"); si no, null.
+- "apellido" y "nombre": SOLO el nombre del TITULAR del documento (la persona a quien pertenece: DNI, partida, licencia...), y solo si su nombre está impreso en ESTE lado y lo leés con total claridad. NO uses el nombre de un funcionario, firmante, responsable ("Responsable / in charge"), director, escribano, autoridad que emite, padre o madre, ni de ninguna otra persona nombrada. Si el titular no figura en este lado (por ejemplo el dorso de una licencia), dejalos vacíos. En poder, formulario y tarjeta_verde dejalos vacíos.
+- "lado" para documentos de dos caras (dni, tarjeta_verde y otros como la licencia): anverso = la cara con la foto y los datos del titular, reverso = la otra. Para el resto, null. "pagina" y "paginas_total" solo para poder, formulario y otro de varias hojas, y solo si el número está impreso (folio u hoja "2 de 3"); si no, null.
 - No inventes nada: si no se lee o no es un documento, "legible": false y "confianza": "baja".
 - No devuelvas ningún otro dato del documento.`;
 
@@ -83,7 +83,8 @@ export function normalizarIdentificacion(entrada) {
   const o = extraerObjeto(entrada);
   if (!o) return { ok: false, motivo: "json_invalido" };
   if (o.legible === false || o.legible === "false") return { ok: false, motivo: "ilegible" };
-  if (String(o.confianza ?? "").toLowerCase() === "baja") return { ok: false, motivo: "confianza_baja" };
+  const confianza = String(o.confianza ?? "").toLowerCase();
+  if (confianza === "baja") return { ok: false, motivo: "confianza_baja" };
 
   const pedido = String(o.tipo ?? "").toLowerCase().trim();
   const tipo = TIPOS_IDENTIFICABLES.includes(pedido) ? pedido : "otro";
@@ -91,15 +92,18 @@ export function normalizarIdentificacion(entrada) {
   if (tipo === "otro" && !descripcion) return { ok: false, motivo: "sin_descripcion" };
 
   const lado = CON_LADO.has(tipo) && ["anverso", "reverso"].includes(String(o.lado ?? "").toLowerCase()) ? String(o.lado).toLowerCase() : null;
-  const pagina = CON_LADO.has(tipo) ? null : entero(o.pagina, 1, 999);
+  // Los documentos de dos caras no llevan página; el resto sí (si está impresa). Un "otro" con lado tampoco lleva página.
+  const pagina = tipo === "dni" || tipo === "tarjeta_verde" || lado ? null : entero(o.pagina, 1, 999);
   const total = pagina ? entero(o.paginas_total, pagina, 999) : null;
 
   return {
     ok: true,
     ident: {
       tipo, descripcion,
-      nombre: CON_PERSONA.has(tipo) ? limpiarNombre(o.nombre) : "",
-      apellido: CON_PERSONA.has(tipo) ? limpiarNombre(o.apellido) : "",
+      // El nombre de una persona solo se usa si el modelo está SEGURO. Un nombre mal puesto en un expediente es peor que ninguno
+      // (caso real del 09/11/26: el dorso de una licencia se renombró con el del funcionario que firma, con confianza "media").
+      nombre: CON_PERSONA.has(tipo) && confianza === "alta" ? limpiarNombre(o.nombre) : "",
+      apellido: CON_PERSONA.has(tipo) && confianza === "alta" ? limpiarNombre(o.apellido) : "",
       lado, pagina, paginas_total: total,
     },
   };

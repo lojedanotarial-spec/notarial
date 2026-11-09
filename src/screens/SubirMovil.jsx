@@ -57,7 +57,7 @@ function FilaArchivo({ x, onReintentar, onQuitar }) {
             <div style={{ height: 4, borderRadius: 3, background: "rgba(26,35,50,.1)", marginTop: 4 }}><div style={{ width: `${porcentaje}%`, height: "100%", background: C.cerulean, borderRadius: 3 }} /></div>
           </>
         )}
-        {x.estado === "ok" && <div style={{ fontSize: 12, color: "#27ae60", fontWeight: 600 }}>✓ Guardada{x.identificando ? <span style={{ color: C.muted, fontWeight: 400 }}> · identificando…</span> : ""}</div>}
+        {x.estado === "ok" && <div style={{ fontSize: 12, color: "#27ae60", fontWeight: 600 }}>✓ Guardada{x.identificando ? <span style={{ color: C.muted, fontWeight: 400 }}> · identificando…</span> : x.porIdentificar ? <span style={{ color: C.muted, fontWeight: 400 }}> · falta ponerle nombre</span> : ""}</div>}
         {x.estado === "error" && <div style={{ fontSize: 12, color: "#c0392b", lineHeight: 1.4 }}>{x.mensaje}</div>}
       </div>
       {x.estado === "error" && !x.sinReintento && <button onClick={() => onReintentar(x.id)} style={{ border: `1px solid ${C.cerulean}`, background: "transparent", color: C.cerulean, borderRadius: 8, padding: "7px 10px", fontFamily: fuente, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Reintentar</button>}
@@ -82,6 +82,8 @@ export default function SubirMovil({ codigo }) {
   const terminadaRef = useRef(null);
   const desfase = useRef(0);        // hora del servidor menos hora del celular
   const ultimoSegundo = useRef({ clave: 0, n: 0 });
+  const camaraRef = useRef(false);        // espejo de camaraAbierta: el bucle de identificación lo lee sin depender del render
+  const identificandoRef = useRef(false);
   const inputCamara = useRef(null);
   const inputGaleria = useRef(null);
 
@@ -116,14 +118,27 @@ export default function SubirMovil({ codigo }) {
   const driveCaido = info && info.drive_disponible === false;
   const puedeAgregar = !!info?.vigente && !motivoFin && !driveCaido;
 
-  // Después de guardar una foto, el sistema reconoce el documento y le pone nombre (por ejemplo "DNI García Juan - anverso").
-  // Se hace en segundo plano: nunca frena la subida de la siguiente ni molesta si falla (queda "Sin identificar" en la compu).
-  async function identificarEnSegundoPlano(file, archivoId, itemId) {
+  // PRIMERO se sube TODO; recién después, con la última subida terminada y la cámara cerrada, el sistema reconoce cada documento
+  // y le pone nombre (por ejemplo "DNI García Juan - anverso"), de a uno. Nunca corre en el medio de las subidas (decisión de
+  // Lucas, 09/11/26) y si falla la foto igual queda guardada ("Sin identificar" en la compu).
+  async function identificarPendientes() {
+    if (identificandoRef.current) return;
+    identificandoRef.current = true;
     try {
-      const r = await celular.identificar(codigo, archivoId, await miniaturaParaIdentificar(file));
-      aplicar((c) => marcarItem(c, itemId, { identificando: false, ...(r?.archivo?.nombre ? { nombre: r.archivo.nombre } : {}) }));
-    } catch {
-      aplicar((c) => marcarItem(c, itemId, { identificando: false }));
+      for (;;) {
+        if (terminadaRef.current || corriendo.current || camaraRef.current) break;   // todavía hay subidas o la cámara está abierta
+        const item = colaRef.current.find((x) => x.estado === "ok" && x.porIdentificar && x.file);
+        if (!item) break;
+        aplicar((c) => marcarItem(c, item.id, { identificando: true }));
+        let nombre = null;
+        try {
+          const r = await celular.identificar(codigo, item.archivoId, await miniaturaParaIdentificar(item.file));
+          nombre = r?.archivo?.nombre ?? null;
+        } catch { /* la foto ya está guardada: queda sin identificar y se puede renombrar a mano */ }
+        aplicar((c) => marcarItem(c, item.id, { porIdentificar: false, identificando: false, file: null, ...(nombre ? { nombre } : {}) }));
+      }
+    } finally {
+      identificandoRef.current = false;
     }
   }
 
@@ -140,9 +155,9 @@ export default function SubirMovil({ codigo }) {
         aplicar((c) => marcarItem(c, item.id, { estado: "subiendo", progreso: 0, mensaje: "" }));
         try {
           const archivo = await subirDesdeCelular(codigo, item.file, { onProgreso: (p) => aplicar((c) => marcarItem(c, item.id, { progreso: p })) });
-          const identificar = archivo.identificacion === "pendiente";
-          aplicar((c) => marcarItem(c, item.id, { estado: "ok", progreso: 1, archivoId: archivo.id, file: null, identificando: identificar }));
-          if (identificar) identificarEnSegundoPlano(item.file, archivo.id, item.id);
+          const porIdentificar = archivo.identificacion === "pendiente";
+          // El archivo se conserva en memoria solo hasta identificarlo (después se suelta).
+          aplicar((c) => marcarItem(c, item.id, { estado: "ok", progreso: 1, archivoId: archivo.id, file: porIdentificar ? item.file : null, porIdentificar }));
         } catch (e) {
           if (esErrorDeSesion(e)) {
             terminadaRef.current = e.codigo;
@@ -155,6 +170,7 @@ export default function SubirMovil({ codigo }) {
       }
     } finally {
       corriendo.current = false;
+      identificarPendientes();   // si ya no hay nada por subir y la cámara está cerrada, empieza la identificación
     }
   }
 
@@ -227,6 +243,7 @@ export default function SubirMovil({ codigo }) {
   }
 
   const fotosCamara = cola.filter((x) => x.vista || x.estado !== "ok").slice(-4);
+  const porIdentificar = cola.filter((x) => x.porIdentificar).length;
   return (
     <Marco>
       <Tarjeta>
@@ -239,7 +256,7 @@ export default function SubirMovil({ codigo }) {
         {!motivoFin && !driveCaido && <Aviso>Sacá o elegí <strong>todas</strong> las fotos de una, de cualquier documento y en cualquier orden. No hace falta decir qué es cada una. Se guardan en calidad original (hasta {formatearTamano(MAX_BYTES_ARCHIVO)} cada una).</Aviso>}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 6 }}>
-          <button onClick={() => setCamaraAbierta(true)} disabled={!puedeAgregar} style={boton(true, !puedeAgregar)}>Abrir la cámara</button>
+          <button onClick={() => { camaraRef.current = true; setCamaraAbierta(true); }} disabled={!puedeAgregar} style={boton(true, !puedeAgregar)}>Abrir la cámara</button>
           <button onClick={() => inputCamara.current?.click()} disabled={!puedeAgregar} style={boton(false, !puedeAgregar)}>Usar la cámara del teléfono</button>
           <button onClick={() => inputGaleria.current?.click()} disabled={!puedeAgregar} style={boton(false, !puedeAgregar)}>Elegir de la galería o archivos</button>
         </div>
@@ -255,7 +272,8 @@ export default function SubirMovil({ codigo }) {
               <div style={{ fontSize: 12, color: C.muted }}>{resumen.guardadas} guardada{resumen.guardadas === 1 ? "" : "s"}{resumen.pendientes > 0 ? ` · ${resumen.pendientes} en curso` : ""}{resumen.fallidas > 0 ? ` · ${resumen.fallidas} con error` : ""}</div>
             </div>
             {cola.map((x) => <FilaArchivo key={x.id} x={x} onReintentar={reintentar} onQuitar={(i) => { setErrorQuitar(""); setPorQuitar(i); }} />)}
-            {resumen.guardadas > 0 && resumen.pendientes === 0 && !terminada && (
+            {porIdentificar > 0 && resumen.pendientes === 0 && !camaraAbierta && <Aviso>Ya se subieron todas. Ahora se les pone nombre: {porIdentificar === 1 ? "falta 1" : `faltan ${porIdentificar}`}…</Aviso>}
+            {resumen.guardadas > 0 && resumen.pendientes === 0 && !terminada && porIdentificar === 0 && (
               <button onClick={() => setFinalizado(true)} style={{ ...boton(true), marginTop: 14 }}>Listo</button>
             )}
           </Tarjeta>
@@ -264,7 +282,7 @@ export default function SubirMovil({ codigo }) {
 
       {camaraAbierta && (
         <CamaraArchivo cantidad={cola.length} recientes={fotosCamara} nombrarFoto={nombrarFoto}
-          onFoto={(file) => encolar([file])} onCerrar={() => setCamaraAbierta(false)} />
+          onFoto={(file) => encolar([file])} onCerrar={() => { camaraRef.current = false; setCamaraAbierta(false); identificarPendientes(); }} />
       )}
 
       {porQuitar && (

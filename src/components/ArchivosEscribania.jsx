@@ -95,13 +95,14 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     setCola((c) => [...c, ...nuevos]);
     setSubiendo(true);
     let hubo = false;
+    const paraIdentificar = [];   // PRIMERO se suben todos; recién después se identifican, de a uno (nunca en el medio de las subidas)
     for (const item of nuevos) {
       marcar(item.id, { estado: "subiendo" });
       try {
         const automatico = tipoActual === "automatico";
         const nuevo = await subirArchivoEscribania(item.archivo, { expedienteId, tipo: automatico ? "otro" : tipoActual, automatico, onProgreso: (p) => marcar(item.id, { progreso: p }) });
         setArchivos((prev) => [nuevo, ...prev.filter((a) => a.id !== nuevo.id)]);
-        if (nuevo.identificacion === "pendiente") identificarEnSegundoPlano(item.archivo, nuevo.id);
+        if (nuevo.identificacion === "pendiente") paraIdentificar.push({ file: item.archivo, id: nuevo.id });
         marcar(item.id, { estado: "ok", progreso: 1 });
         setTimeout(() => setCola((c) => c.filter((x) => x.id !== item.id)), 4000);
       } catch (e) {
@@ -111,6 +112,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     }
     setSubiendo(false);
     if (hubo) leerEstado();
+    for (const p of paraIdentificar) await identificarEnSegundoPlano(p.file, p.id);
   }
 
   async function abrir(a) {
@@ -288,6 +290,12 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
             style={{ width: "100%", boxSizing: "border-box", padding: "9px 10px", margin: "4px 0 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: "#fff", fontSize: 13, color: C.dark }}>
             {TIPOS_ARCHIVO.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
           </select>
+          {porEditar.nombre_original && porEditar.nombre_original !== edicion.nombre && (
+            <div style={{ fontSize: 12, color: C.muted, margin: "-6px 0 12px", lineHeight: 1.5 }}>
+              Nombre original: <strong style={{ color: C.dark }}>{porEditar.nombre_original}</strong>{" "}
+              <button onClick={() => setEdicion((x) => ({ ...x, nombre: porEditar.nombre_original }))} style={{ border: "none", background: "transparent", color: C.cerulean, fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 0 }}>Volver al original</button>
+            </div>
+          )}
           {errorEdicion && <Aviso tipo="error">{errorEdicion}</Aviso>}
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
             <button onClick={() => setPorEditar(null)} disabled={guardandoEdicion} style={boton(false, guardandoEdicion)}>Cancelar</button>

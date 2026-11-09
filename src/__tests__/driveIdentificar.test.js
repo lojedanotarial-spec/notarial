@@ -74,13 +74,26 @@ describe("normalizar la respuesta del modelo", () => {
     expect(ok(normalizarIdentificacion(base({ tipo: "tarjeta_verde" }))).apellido).toBe("");
     expect(ok(normalizarIdentificacion(base({ tipo: "otro", descripcion: "Licencia de conducir" }))).apellido).toBe("García");
   });
-  it("lado solo anverso/reverso y solo en DNI y tarjeta verde; página solo en el resto", () => {
+  it("lado solo anverso/reverso y solo en documentos de dos caras (DNI, tarjeta verde, otros como la licencia); página en el resto", () => {
     expect(ok(normalizarIdentificacion(base({ lado: "frente" }))).lado).toBe(null);
     expect(ok(normalizarIdentificacion(base({ lado: "REVERSO" }))).lado).toBe("reverso");
     expect(ok(normalizarIdentificacion(base({ tipo: "tarjeta_verde", lado: "anverso" }))).lado).toBe("anverso");
+    expect(ok(normalizarIdentificacion(base({ tipo: "otro", descripcion: "Licencia de conducir", lado: "reverso" }))).lado).toBe("reverso");
     const p = ok(normalizarIdentificacion(base({ tipo: "poder", lado: "anverso", pagina: 2, paginas_total: 3 })));
     expect(p).toMatchObject({ lado: null, pagina: 2, paginas_total: 3 });
     expect(ok(normalizarIdentificacion(base({ tipo: "dni", pagina: 4 }))).pagina).toBe(null);
+    // un "otro" con lado no lleva además página; sin lado, sí
+    expect(ok(normalizarIdentificacion(base({ tipo: "otro", descripcion: "Título", lado: "anverso", pagina: 2 }))).pagina).toBe(null);
+    expect(ok(normalizarIdentificacion(base({ tipo: "otro", descripcion: "Título", lado: null, pagina: 2 }))).pagina).toBe(2);
+  });
+  it("CASO REAL: el nombre de una persona solo se usa si el modelo está SEGURO (confianza alta)", () => {
+    // 09/11/26: el dorso de una licencia se renombró con el del funcionario que firma, y el modelo había dicho confianza "media".
+    const dudoso = ok(normalizarIdentificacion(base({ tipo: "otro", descripcion: "Licencia de conducir", apellido: "DELGADO", nombre: "ISANDRO", lado: "reverso", confianza: "media" })));
+    expect(dudoso).toMatchObject({ tipo: "otro", lado: "reverso", apellido: "", nombre: "" });
+    expect(armarNombreArchivo(dudoso, ".jpg")).toBe("Licencia de conducir - reverso.jpg");
+    expect(ok(normalizarIdentificacion(base({ confianza: "media" })))).toMatchObject({ tipo: "dni", lado: "anverso", apellido: "", nombre: "" });
+    expect(ok(normalizarIdentificacion(base({ confianza: "ALTA" }))).apellido).toBe("García");
+    expect(ok(normalizarIdentificacion(base({ confianza: undefined }))).apellido).toBe("");
   });
   it("página: entero razonable; el total nunca es menor que la página", () => {
     for (const pagina of [0, -1, 1000, 1.5, "x", null]) expect(ok(normalizarIdentificacion(base({ tipo: "poder", lado: null, pagina }))).pagina, String(pagina)).toBe(null);
@@ -152,8 +165,14 @@ describe("el prompt", () => {
     expect(PROMPT_IDENTIFICAR).toMatch(/JSON/);
     expect(PROMPT_IDENTIFICAR).toMatch(/no inventes/i);
   });
+  it("le dice de quién es el nombre que tiene que leer: del titular, nunca de un funcionario o firmante", () => {
+    expect(PROMPT_IDENTIFICAR).toMatch(/TITULAR/);
+    expect(PROMPT_IDENTIFICAR).toMatch(/Responsable/);
+    expect(PROMPT_IDENTIFICAR).toMatch(/funcionario/);
+    expect(PROMPT_IDENTIFICAR).toMatch(/dorso de una licencia/);
+  });
   it("es corto (cuesta tokens en cada foto)", () => {
-    expect(PROMPT_IDENTIFICAR.length).toBeLessThan(2500);
+    expect(PROMPT_IDENTIFICAR.length).toBeLessThan(3000);
   });
   it("no pide datos que no se guardan (números, domicilios, fechas)", () => {
     expect(PROMPT_IDENTIFICAR).not.toMatch(/nro_doc|domicilio|fecha_nac|cuit|dominio.*:/i);
