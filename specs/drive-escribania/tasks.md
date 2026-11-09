@@ -50,7 +50,7 @@ Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local c
 ## Fase 6 — Verificación y deploy
 
 - [ ] **T6.1 🤖** Tests completos, lint (sin errores nuevos respecto de la base), build. *Verif.: todo verde.*
-- [ ] **T6.2 🤖** **Primero** aplicar `scripts/drive_escribania_politicas.sql` (cambio de política de `expediente_archivos`; si algo sale mal, `scripts/drive_escribania_rollback.sql`) y **a continuación** deploy a producción, verificado por la API de GitHub. Los dos pasos van juntos para que la pantalla vieja no quede sin permiso de escritura mucho tiempo.
+- [~] **T6.2 🤖** (09/11/26: deploy HECHO y verificado, commit 94aa0bf; la política de `expediente_archivos` la rechazó el sistema de permisos: **la aplica Lucas a mano** con `scripts/drive_escribania_politicas.sql`. Orden real: primero el deploy, después la política, para que la pantalla vieja no quedara sin permiso) **Primero** aplicar `scripts/drive_escribania_politicas.sql` (cambio de política de `expediente_archivos`; si algo sale mal, `scripts/drive_escribania_rollback.sql`) y **a continuación** deploy a producción, verificado por la API de GitHub. Los dos pasos van juntos para que la pantalla vieja no quede sin permiso de escritura mucho tiempo.
 - [ ] **T6.3 🤖+👤** Checklist manual contra Google real, con el registro **9876** y `lojeda.notarial@gmail.com`:
   - [ ] Generar enlace, abrirlo, autorizar, ver el registro "conectado" con cuenta, fecha y espacio.
   - [ ] Abrir el mismo enlace de nuevo ⇒ "ya usado". Enlace vencido ⇒ mensaje claro. Rechazar en Google ⇒ no queda nada conectado.
