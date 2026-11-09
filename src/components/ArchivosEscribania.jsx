@@ -4,8 +4,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { C } from "../constants";
 import SubidaCelular from "./SubidaCelular";
-import { borrarArchivoEscribania, driveEstado, guardarBlob, identificarArchivo, listarArchivos, renombrarArchivo, subirArchivoEscribania, traerArchivo } from "../utils/driveApi";
-import { MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano, marcaIdentificacion, hayIdentificacionEnCurso } from "../utils/driveCliente";
+import { borrarArchivoEscribania, driveEstado, guardarBlob, identificarLote, listarArchivos, renombrarArchivo, subirArchivoEscribania, traerArchivo } from "../utils/driveApi";
+import { MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano, marcaIdentificacion, hayIdentificacionEnCurso, partir } from "../utils/driveCliente";
 import { miniaturaParaIdentificar } from "../utils/capturaArchivo";
 
 const fuente = "'Montserrat', sans-serif";
@@ -75,13 +75,19 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     return () => clearInterval(t);
   }, [identificando, refrescar]);
 
-  // Identificación en segundo plano: no frena la subida y, si falla, el archivo queda "Sin identificar".
-  async function identificarEnSegundoPlano(file, archivoId) {
-    try {
-      const r = await identificarArchivo(archivoId, await miniaturaParaIdentificar(file));
-      if (r?.archivo) setArchivos((prev) => prev.map((a) => (a.id === archivoId ? { ...a, ...r.archivo } : a)));
-    } catch {
-      refrescar();
+  // Identificación de lo que se acaba de subir con "Automático": las fotos van JUNTAS (de a 10), así el sistema puede emparejar las caras
+  // de un mismo documento. Si falla, los archivos quedan guardados y "Sin identificar".
+  async function identificarTanda(lista) {
+    for (const tanda of partir(lista)) {
+      try {
+        const items = [];
+        for (const p of tanda) items.push({ archivo_id: p.id, miniatura: await miniaturaParaIdentificar(p.file) });
+        const r = await identificarLote(items);
+        const porId = new Map((r?.archivos || []).map((a) => [a.id, a]));
+        setArchivos((prev) => prev.map((a) => (porId.has(a.id) ? { ...a, ...porId.get(a.id) } : a)));
+      } catch {
+        refrescar();
+      }
     }
   }
 
@@ -112,7 +118,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     }
     setSubiendo(false);
     if (hubo) leerEstado();
-    for (const p of paraIdentificar) await identificarEnSegundoPlano(p.file, p.id);
+    if (paraIdentificar.length) await identificarTanda(paraIdentificar);
   }
 
   async function abrir(a) {

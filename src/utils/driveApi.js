@@ -54,6 +54,10 @@ export const borrarArchivoEscribania = (archivoId) => llamar("borrar", { archivo
 // servidor deja el archivo "Sin identificar"). Devuelve { archivo, identificado }.
 export const identificarArchivo = (archivoId, miniatura) => llamar("identificar", { archivo_id: archivoId, miniatura });
 
+// Lo mismo para TODAS las fotos de una tanda juntas (hasta 10): así el sistema puede emparejar las caras de un mismo documento.
+// `items` = [{ archivo_id, miniatura }]. Devuelve { archivos, identificados }.
+export const identificarLote = (items) => llamar("identificar_lote", { archivos: items });
+
 // Corregir a mano el nombre y/o el tipo de un archivo. Devuelve { archivo }.
 export const renombrarArchivo = (archivoId, { nombre, tipo }) => llamar("renombrar", { archivo_id: archivoId, nombre, ...(tipo ? { tipo } : {}) });
 
@@ -68,6 +72,7 @@ export const celular = {
   info: (codigo) => drivePublico("celular_info", { codigo }),
   quitar: (codigo, archivoId) => drivePublico("celular_quitar", { codigo, archivo_id: archivoId }),
   identificar: (codigo, archivoId, miniatura) => drivePublico("celular_identificar", { codigo, archivo_id: archivoId, miniatura }),
+  identificarLote: (codigo, items) => drivePublico("celular_identificar_lote", { codigo, archivos: items }),
 };
 
 // Sube UN archivo desde el celular: pide la sesión de Google, lo manda directo y lo confirma. Devuelve la fila del archivo.

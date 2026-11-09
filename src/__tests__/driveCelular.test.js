@@ -9,7 +9,7 @@ import {
 import { ACCIONES_AUDITORIA, armarAuditoria } from "../../api/_drive.js";
 import {
   nombreFotoCamara, siguientePendiente, resumenCola, marcarItem, esErrorDeSesion, textoSesionTerminada, cuentaRegresiva,
-  marcaIdentificacion, hayIdentificacionEnCurso, ESPERA_IDENTIFICACION_MS, panelEstado,
+  marcaIdentificacion, hayIdentificacionEnCurso, ESPERA_IDENTIFICACION_MS, panelEstado, partir, FOTOS_POR_LOTE,
 } from "../utils/driveCliente.js";
 
 const T0 = Date.UTC(2026, 10, 9, 15, 0, 0);
@@ -265,5 +265,19 @@ describe("panel de estado de la página del celular (un solo mensaje, claro)", (
   it("nunca muestra términos técnicos", () => {
     const todos = [panelEstado([it_("subiendo")], { conNombre: true }), panelEstado([it_("ok", { porIdentificar: true })], { conNombre: true }), panelEstado([it_("ok")]), panelEstado([it_("error")]), panelEstado([it_("ok"), it_("error")])];
     for (const p of todos) expect(`${p.titulo} ${p.detalle}`).not.toMatch(/identific|miniatura|api|token|410|404|undefined|null/i);
+  });
+});
+
+describe("partir en tandas", () => {
+  it("de a 10 por defecto, sin perder ni repetir nada y en orden", () => {
+    const l = Array.from({ length: 23 }, (_, i) => i);
+    const t = partir(l);
+    expect(FOTOS_POR_LOTE).toBe(10);
+    expect(t.map((x) => x.length)).toEqual([10, 10, 3]);
+    expect(t.flat()).toEqual(l);
+  });
+  it("lista vacía = ninguna tanda; tamaño a medida", () => {
+    expect(partir([])).toEqual([]);
+    expect(partir([1, 2, 3], 2)).toEqual([[1, 2], [3]]);
   });
 });

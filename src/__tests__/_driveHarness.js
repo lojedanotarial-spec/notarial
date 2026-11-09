@@ -128,7 +128,16 @@ export function entorno({ tablas: extraTablas = {}, google = {}, unicos, config 
   const sb = crearSb(tablas, { unicos: { expediente_archivos: (fs, n) => n.almacen === "escribania" && fs.some((f) => f.almacen === "escribania" && f.drive_file_id === n.drive_file_id), ...unicos } });
   const g = crearGoogleFalso(google);
   const reloj = { t: T0 };
-  const ia = { modelo: "claude-haiku-5-5", consultar: vi.fn(async () => ({ texto: JSON.stringify(RESPUESTA_IA), entrada: 1372, salida: 221, parada: "end_turn" })), ...iaExtra };
+  const ia = {
+    modelo: "claude-haiku-5-5",
+    consultar: vi.fn(async () => ({ texto: JSON.stringify(RESPUESTA_IA), entrada: 1372, salida: 221, parada: "end_turn" })),
+    // Por defecto, cada imagen del lote es un DNI sin emparejar (el modelo de mentira no agrupa nada).
+    consultarLote: vi.fn(async (miniaturas) => ({
+      texto: JSON.stringify({ imagenes: miniaturas.map((_, i) => ({ ...RESPUESTA_IA, n: i + 1, grupo: i + 1, evidencia: "ninguna" })) }),
+      entrada: 1372 * miniaturas.length, salida: 221 * miniaturas.length, parada: "end_turn",
+    })),
+    ...iaExtra,
+  };
   const deps = {
     sb, google: g, clientId: "cid", clave: CLAVE, ahora: () => reloj.t, ia,
     config: { identificar: false, identificarCompu: false, ...config },   // por defecto la identificación está apagada, como en producción sin variables

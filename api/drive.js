@@ -25,6 +25,7 @@ import {
 } from "./_driveCelular.js";
 import { validarMiniatura, normalizarIdentificacion, armarNombreArchivo, extensionDe, evitarDuplicado } from "./_driveIdentificar.js";
 import { crearIA } from "./_driveIA.js";
+import { MAX_IMAGENES_LOTE, normalizarLote, aplicarGrupos } from "./_driveLote.js";
 
 export const BASE = "https://notarial.lat";
 export const REDIRECT_URI = `${BASE}/api/drive-callback`;
@@ -272,44 +273,109 @@ async function marcarSinIdentificar(d, arch) {
   return { archivo: archivoPublico({ ...arch, identificacion: "sin_identificar" }), identificado: false };
 }
 
-async function identificarArchivo(d, { arch, exp, registro, miniatura, quien }) {
-  // Un solo intento por archivo: el que logra pasar de "pendiente" a "procesando" es el único que llama al modelo.
+// Lo que sigue a una identificación lograda, igual para una foto sola y para un lote: comprobar que no la quitaron, armar un nombre que
+// no se repita, renombrar en Drive y en la base, y dejar registro con los tokens. `usados` = nombres ya asignados en este mismo lote.
+async function aplicarIdentificacion(d, { arch, exp, registro, ident, quien, uso, usados = [] }) {
+  // Si mientras el modelo miraba la foto alguien la quitó, no se renombra nada (caso real del 09/11/26: una foto quitada se renombró igual).
+  const { data: vigente } = await d.sb.from("expediente_archivos").select("borrado_en").eq("id", arch.id).maybeSingle();
+  if (!vigente || vigente.borrado_en) return { archivo: archivoPublico({ ...arch, identificacion: "sin_identificar" }), identificado: false };
+
+  const { data: otros } = await d.sb.from("expediente_archivos").select("id,nombre").eq("expediente_id", exp.id).eq("almacen", "escribania").is("borrado_en", null);
+  const existentes = [...(otros || []).filter((x) => x.id !== arch.id).map((x) => x.nombre), ...usados];
+  const nombre = evitarDuplicado(armarNombreArchivo(ident, extensionDe(arch.nombre, arch.mime_type)), existentes);
+  try {
+    const { access } = await accesoDe(d, registro);
+    await d.google.renombrar(access, arch.drive_file_id, nombre);
+  } catch { return marcarSinIdentificar(d, arch); }
+
+  const cambios = { nombre, tipo: ident.tipo, identificacion: "ok", nombre_original: arch.nombre_original ?? arch.nombre };
+  const { error } = await d.sb.from("expediente_archivos").update(cambios).eq("id", arch.id);
+  if (error) throw new Error(`update archivo: ${error.message}`);
+  await auditar(d, { registro, usuarioId: quien, accion: "identificar", expedienteId: exp.id, archivoId: arch.id,
+    detalle: { de: arch.nombre, a: nombre, tipo: ident.tipo, modelo: d.ia.modelo ?? null, ...uso } });
+  return { archivo: archivoPublico({ ...arch, ...cambios }), identificado: true };
+}
+
+// Un solo intento por archivo: el que logra pasar de "pendiente" a "procesando" es el único que llama al modelo.
+async function tomarParaIdentificar(d, arch) {
   const { data: tomado } = await d.sb.from("expediente_archivos").update({ identificacion: "procesando" })
     .eq("id", arch.id).eq("identificacion", "pendiente").select("id");
-  if (!tomado?.length) {
-    const { data: actual } = await d.sb.from("expediente_archivos").select("*").eq("id", arch.id).maybeSingle();
-    return { archivo: archivoPublico(actual || arch), identificado: false };
-  }
+  if (tomado?.length) return null;
+  const { data: actual } = await d.sb.from("expediente_archivos").select("*").eq("id", arch.id).maybeSingle();
+  return { archivo: archivoPublico(actual || arch), identificado: false };
+}
+
+// Una foto sola (la usa la acción individual; el camino normal es el lote).
+async function identificarArchivo(d, { arch, exp, registro, miniatura, quien }) {
+  const yaTomado = await tomarParaIdentificar(d, arch);
+  if (yaTomado) return yaTomado;
   const m = validarMiniatura(miniatura);
   if (!m.ok) return marcarSinIdentificar(d, arch);
   let respuesta;
   try { respuesta = await d.ia.consultar(m.base64); } catch { return marcarSinIdentificar(d, arch); }
   const n = normalizarIdentificacion(respuesta.texto);
   if (!n.ok) return marcarSinIdentificar(d, arch);
+  return aplicarIdentificacion(d, { arch, exp, registro, ident: n.ident, quien, uso: { tokens_entrada: respuesta.entrada, tokens_salida: respuesta.salida } });
+}
 
-  // Si mientras el modelo miraba la foto alguien la quitó, no se renombra nada (caso real del 09/11/26: una foto quitada se renombró igual).
-  const { data: vigente } = await d.sb.from("expediente_archivos").select("borrado_en").eq("id", arch.id).maybeSingle();
-  if (!vigente || vigente.borrado_en) return { archivo: archivoPublico({ ...arch, identificacion: "sin_identificar" }), identificado: false };
+// TODAS las fotos de una tanda juntas, en una sola consulta al modelo (de a 10 como máximo): así puede emparejar las caras de un mismo
+// documento entre sí (el dorso de una licencia hereda el nombre del frente). `items` = [{ arch, miniatura }], todos del mismo expediente.
+// Cada foto sigue su propio camino: una que falla queda "Sin identificar" sin afectar a las demás.
+async function identificarLote(d, { items, exp, registro, quien }) {
+  const resultados = new Map();
+  const validos = [];
+  for (const it of items) {
+    const yaTomado = await tomarParaIdentificar(d, it.arch);
+    if (yaTomado) { resultados.set(it.arch.id, yaTomado); continue; }
+    const m = validarMiniatura(it.miniatura);
+    if (!m.ok) { resultados.set(it.arch.id, await marcarSinIdentificar(d, it.arch)); continue; }
+    validos.push({ ...it, base64: m.base64 });
+  }
+  const usados = [];
+  for (let i = 0; i < validos.length; i += MAX_IMAGENES_LOTE) {
+    const tanda = validos.slice(i, i + MAX_IMAGENES_LOTE);
+    let respuesta = null;
+    try { respuesta = await d.ia.consultarLote(tanda.map((x) => x.base64)); } catch { /* todas quedan sin identificar */ }
+    if (!respuesta) { for (const it of tanda) resultados.set(it.arch.id, await marcarSinIdentificar(d, it.arch)); continue; }
+    const finales = aplicarGrupos(normalizarLote(respuesta.texto, tanda.length));
+    const parte = (v) => (v == null ? null : Math.round(v / tanda.length));
+    for (const [k, it] of tanda.entries()) {
+      if (!finales[k].ok) { resultados.set(it.arch.id, await marcarSinIdentificar(d, it.arch)); continue; }
+      const uso = { lote: tanda.length, agrupado: finales[k].agrupado, tokens_entrada: parte(respuesta.entrada), tokens_salida: parte(respuesta.salida) };
+      const r = await aplicarIdentificacion(d, { arch: it.arch, exp, registro, ident: finales[k].ident, quien, uso, usados });
+      if (r.identificado) usados.push(r.archivo.nombre);
+      resultados.set(it.arch.id, r);
+    }
+  }
+  return { archivos: items.map((it) => resultados.get(it.arch.id).archivo), identificados: [...resultados.values()].filter((r) => r.identificado).length };
+}
 
-  const { data: otros } = await d.sb.from("expediente_archivos").select("id,nombre").eq("expediente_id", exp.id).eq("almacen", "escribania").is("borrado_en", null);
-  const nombre = evitarDuplicado(armarNombreArchivo(n.ident, extensionDe(arch.nombre, arch.mime_type)), (otros || []).filter((o) => o.id !== arch.id).map((o) => o.nombre));
-  try {
-    const { access } = await accesoDe(d, registro);
-    await d.google.renombrar(access, arch.drive_file_id, nombre);
-  } catch { return marcarSinIdentificar(d, arch); }
-
-  const cambios = { nombre, tipo: n.ident.tipo, identificacion: "ok", nombre_original: arch.nombre_original ?? arch.nombre };
-  const { error } = await d.sb.from("expediente_archivos").update(cambios).eq("id", arch.id);
-  if (error) throw new Error(`update archivo: ${error.message}`);
-  await auditar(d, { registro, usuarioId: quien, accion: "identificar", expedienteId: exp.id, archivoId: arch.id,
-    detalle: { de: arch.nombre, a: nombre, tipo: n.ident.tipo, modelo: d.ia.modelo ?? null, tokens_entrada: respuesta.entrada, tokens_salida: respuesta.salida } });
-  return { archivo: archivoPublico({ ...arch, ...cambios }), identificado: true };
+const MAX_ARCHIVOS_POR_PEDIDO = 20;
+function listaDeLote(body) {
+  const lista = Array.isArray(body.archivos) ? body.archivos : null;
+  if (!lista || !lista.length) throw new ErrorHttp(400, "Falta la lista de archivos.");
+  if (lista.length > MAX_ARCHIVOS_POR_PEDIDO) throw new ErrorHttp(400, "Son demasiados archivos juntos.");
+  return lista;
 }
 
 // Desde la compu (usuario con sesión): para lo que se subió con "Automático".
 async function identificar(d, perfil, body) {
   const { arch, exp, registro } = await archivoAutorizado(d, perfil, body.archivo_id);
   return identificarArchivo(d, { arch, exp, registro, miniatura: body.miniatura, quien: perfil.id });
+}
+
+// Desde la compu: todos los archivos de una subida con "Automático", juntos (tienen que ser del mismo expediente).
+async function identificarLoteCompu(d, perfil, body) {
+  const lista = listaDeLote(body);
+  const items = [];
+  let ctx = null;
+  for (const e of lista) {
+    const c = await archivoAutorizado(d, perfil, e?.archivo_id);
+    if (ctx && c.exp.id !== ctx.exp.id) throw new ErrorHttp(400, "Los archivos tienen que ser del mismo expediente.");
+    ctx = ctx || c;
+    items.push({ arch: c.arch, miniatura: e?.miniatura });
+  }
+  return identificarLote(d, { items, exp: ctx.exp, registro: ctx.registro, quien: perfil.id });
 }
 
 // ── Subir desde el celular: acciones de la compu ─────────────────────────────
@@ -424,6 +490,20 @@ async function celularIdentificar(d, _perfil, body) {
   const { data: arch } = await d.sb.from("expediente_archivos").select("*").eq("id", String(body.archivo_id || "")).maybeSingle();
   if (!puedeQuitar(arch, sesion)) throw new ErrorHttp(404, "No encontré esa foto.");
   return identificarArchivo(d, { arch, exp, registro, miniatura: body.miniatura, quien: sesion.usuario_id });
+}
+
+// Identifica juntos los archivos de ESTA sesión (nunca uno ajeno).
+async function celularIdentificarLote(d, _perfil, body) {
+  const lista = listaDeLote(body);
+  const sesion = await exigirSesion(d, body.codigo, { paraConfirmar: true });
+  const { exp, registro } = await expedienteDeSesion(d, sesion);
+  const items = [];
+  for (const e of lista) {
+    const { data: arch } = await d.sb.from("expediente_archivos").select("*").eq("id", String(e?.archivo_id || "")).maybeSingle();
+    if (!puedeQuitar(arch, sesion)) throw new ErrorHttp(404, "No encontré esa foto.");
+    items.push({ arch, miniatura: e?.miniatura });
+  }
+  return identificarLote(d, { items, exp, registro, quien: sesion.usuario_id });
 }
 
 async function celularQuitar(d, _perfil, body) {
@@ -586,9 +666,9 @@ async function callback(d, req, res) {
 const PUBLICAS = {
   enlace_info: (d, p, b) => enlaceInfo(d, b), enlace_iniciar: (d, p, b) => enlaceIniciar(d, b),
   celular_info: celularInfo, celular_iniciar_subida: celularIniciarSubida, celular_confirmar: celularConfirmar, celular_quitar: celularQuitar,
-  celular_identificar: celularIdentificar,
+  celular_identificar: celularIdentificar, celular_identificar_lote: celularIdentificarLote,
 };
-const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar };
+const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar, identificar_lote: identificarLoteCompu };
 const DE_ADMIN = { admin_estado: adminEstado, admin_enlace: adminEnlace, admin_desconectar: adminDesconectar };
 
 export function depsReales() {

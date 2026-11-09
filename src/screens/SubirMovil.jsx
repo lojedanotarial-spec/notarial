@@ -7,7 +7,7 @@ import { C } from "../constants";
 import { celular, subirDesdeCelular } from "../utils/driveApi";
 import {
   MAX_BYTES_ARCHIVO, validarArchivoLocal, formatearTamano, nombreFotoCamara, siguientePendiente, resumenCola, marcarItem,
-  esErrorDeSesion, textoSesionTerminada, cuentaRegresiva, panelEstado,
+  esErrorDeSesion, textoSesionTerminada, cuentaRegresiva, panelEstado, FOTOS_POR_LOTE,
 } from "../utils/driveCliente";
 import { miniaturaDe, miniaturaParaIdentificar } from "../utils/capturaArchivo";
 import CamaraArchivo from "../components/CamaraArchivo";
@@ -152,15 +152,20 @@ export default function SubirMovil({ codigo }) {
     try {
       for (;;) {
         if (terminadaRef.current || corriendo.current || camaraRef.current) break;   // todavía hay subidas o la cámara está abierta
-        const item = colaRef.current.find((x) => x.estado === "ok" && x.porIdentificar && x.file);
-        if (!item) break;
-        aplicar((c) => marcarItem(c, item.id, { identificando: true }));
-        let nombre = null;
+        // Se mandan TODAS las fotos juntas (hasta 10 por consulta): así el sistema puede emparejar las caras de un mismo documento
+        // (el dorso de una licencia toma el nombre del frente).
+        const tanda = colaRef.current.filter((x) => x.estado === "ok" && x.porIdentificar && x.file).slice(0, FOTOS_POR_LOTE);
+        if (!tanda.length) break;
+        const ids = new Set(tanda.map((x) => x.id));
+        aplicar((c) => c.map((x) => (ids.has(x.id) ? { ...x, identificando: true } : x)));
+        const nombres = new Map();
         try {
-          const r = await celular.identificar(codigo, item.archivoId, await miniaturaParaIdentificar(item.file));
-          nombre = r?.archivo?.nombre ?? null;
-        } catch { /* la foto ya está guardada: queda sin identificar y se puede renombrar a mano */ }
-        aplicar((c) => marcarItem(c, item.id, { porIdentificar: false, identificando: false, file: null, ...(nombre ? { nombre } : {}) }));
+          const items = [];
+          for (const x of tanda) items.push({ archivo_id: x.archivoId, miniatura: await miniaturaParaIdentificar(x.file) });   // de a una: cuida la memoria
+          const r = await celular.identificarLote(codigo, items);
+          for (const a of r?.archivos || []) nombres.set(a.id, a.nombre);
+        } catch { /* las fotos ya están guardadas: quedan sin identificar y se pueden renombrar a mano */ }
+        aplicar((c) => c.map((x) => (ids.has(x.id) ? { ...x, porIdentificar: false, identificando: false, file: null, ...(nombres.get(x.archivoId) ? { nombre: nombres.get(x.archivoId) } : {}) } : x)));
       }
     } finally {
       identificandoRef.current = false;

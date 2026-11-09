@@ -101,6 +101,14 @@ export function panelEstado(cola, { terminada = false, conNombre = false } = {})
   return { fase: "error", paso: null, titulo: "No se pudo subir", detalle: "Mirá el error en la lista y tocá \"Reintentar\".", progreso: null, conBoton: false };
 }
 
+// Tamaño de cada consulta de identificación (el servidor también parte de a 10): más fotos juntas = más contexto, pero más lenta.
+export const FOTOS_POR_LOTE = 10;
+export function partir(lista, n = FOTOS_POR_LOTE) {
+  const tandas = [];
+  for (let i = 0; i < lista.length; i += n) tandas.push(lista.slice(i, i + n));
+  return tandas;
+}
+
 // El servidor contesta 410 (vencida / cerrada) o 404 (código inexistente) cuando la sesión ya no sirve.
 export const esErrorDeSesion = (e) => (e?.status === 410 || e?.status === 404) && ["vencida", "cerrada", "inexistente"].includes(e?.codigo);
 
