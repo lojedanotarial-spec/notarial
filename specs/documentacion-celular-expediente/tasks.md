@@ -1,6 +1,6 @@
 # Tareas: Subir documentación al expediente desde el celular
 
-**Estado:** ✅ aprobado por Lucas el 09/11/26, con un cambio de orden: **primero todo salvo la identificación automática (etapa A); el "agente" que identifica y renombra queda para después (etapa B)**. En ejecución: etapa A (fases 1 a 5 y T6.1 hechas; sigue el deploy)
+**Estado:** ✅ aprobado por Lucas el 09/11/26, con un cambio de orden: **primero todo salvo la identificación automática (etapa A); el "agente" que identifica y renombra queda para después (etapa B)**. En ejecución: etapa A (fases 1 a 6 hechas y desplegadas; falta la prueba manual con teléfonos reales, fase 7)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación.
 
@@ -46,8 +46,8 @@ Lucas prefirió no juntar fotos reales ahora. La identificación es un módulo s
 ## Fase 6 — Verificación y deploy
 
 - [x] **T6.1 (hecho 09/11/26) 🤖** Tests completos, lint (sin problemas nuevos respecto de la base: hoy 46) y build.
-- [ ] **T6.2 🤖** Deploy y verificación por la API de GitHub.
-- [ ] **T6.3 🤖** Verificación en producción de lo que se pueda sin teléfono: rechazos sin sesión, código inexistente, página `/s/…` a 360 px.
+- [x] **T6.2 (hecho 09/11/26) 🤖** Deploy y verificación por la API de GitHub.
+- [x] **T6.3 (hecho 09/11/26) 🤖** Verificación en producción de lo que se pueda sin teléfono: rechazos sin sesión, código inexistente, página `/s/…` a 360 px. **Además, prueba de punta a punta con el Drive real del 9876 (sesión técnica con código propio): subida de 5 MB y de 18 MB directo a Google (CORS ok), confirmación, lista, rechazo de un id inventado (404) y de la acción `ver` con el código (401), y quitado a la papelera; todo en la auditoría con `via: celular`. Los archivos de prueba quedaron en la papelera de Drive.**
 
 ## Fase 7 — Prueba manual con teléfonos reales (Lucas + Claude)
 
