@@ -33,7 +33,7 @@ describe("T4.1 · entrada, autenticación y quién es quién", () => {
     const { llamar, conectar } = entorno();
     conectar("853");
     const r = await llamar({ accion: "estado", registro_numero: "111" }, "tok-fati");
-    expect(r.jsonBody).toEqual({ conectado: true, operativa: true, estado: "activa", sin_espacio: false });
+    expect(r.jsonBody).toEqual({ conectado: true, operativa: true, estado: "activa", sin_espacio: false, identificar_compu: false });
     expect(JSON.stringify(r.jsonBody)).not.toContain("escribania@gmail.com");
     expect((await llamar({ accion: "estado" }, "tok-otro")).jsonBody).toMatchObject({ conectado: false, estado: "no_conectado" });
   });

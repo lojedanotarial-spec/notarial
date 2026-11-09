@@ -89,6 +89,26 @@ export function cuentaRegresiva(expiraEn, ahora = Date.now()) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
+// ── Identificación automática: qué se muestra en cada archivo ────────────────
+
+export const ESPERA_IDENTIFICACION_MS = 3 * 60 * 1000; // si pasó más de esto "identificando", algo falló: se trata como "sin identificar"
+
+// Marca de un archivo en la lista (o null si no hay nada que mostrar). `ahora` se inyecta para probarlo.
+export function marcaIdentificacion(archivo, ahora = Date.now()) {
+  const estado = archivo?.identificacion;
+  if (estado === "pendiente" || estado === "procesando") {
+    const edad = ahora - new Date(archivo.created_at).getTime();
+    return Number.isFinite(edad) && edad > ESPERA_IDENTIFICACION_MS
+      ? { clave: "sin_identificar", texto: "Sin identificar", tono: "aviso" }
+      : { clave: "identificando", texto: "Identificando…", tono: "info" };
+  }
+  if (estado === "sin_identificar") return { clave: "sin_identificar", texto: "Sin identificar", tono: "aviso" };
+  if (estado === "ok") return { clave: "ok", texto: "Nombre automático", tono: "ok" };
+  return null; // manual, o archivos de antes de la identificación
+}
+
+export const hayIdentificacionEnCurso = (archivos, ahora = Date.now()) => archivos.some((a) => marcaIdentificacion(a, ahora)?.clave === "identificando");
+
 // ── Panel del administrador ──────────────────────────────────────────────────
 
 // Cómo se muestra el Drive de un registro (lo que devuelve admin_estado). `accion` = el botón que corresponde.

@@ -17,4 +17,11 @@ export const MODELOS = {
 
   // Resumen nocturno de conversaciones. Es texto → texto, no necesita más.
   aprendizaje: "claude-sonnet-5-5",
+
+  // Identificar y renombrar documentos subidos al expediente (tipo, anverso/reverso, página, persona), a partir de una miniatura.
+  // Es la tarea más simple y de más volumen de la plataforma, y un error es barato (queda "Sin identificar" o se corrige a mano).
+  // Medido el 09/11/26 con 42 imágenes de prueba: Haiku 5.5 y Sonnet 5.5 aciertan 42/42; Haiku cuesta ~$0,00025 por foto y Sonnet
+  // ~$0,0036 (14 veces más). Cumple el piso de la generación 5.5. Ojo: piensa antes de responder y eso cuenta contra max_tokens
+  // (ver api/_driveIA.js: max_tokens 1000 y effort bajo).
+  identificacion: "claude-haiku-5-5",
 };

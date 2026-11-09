@@ -25,6 +25,43 @@ export function fotogramaAFile(video, nombre, calidad = CALIDAD_ARCHIVO) {
   });
 }
 
+export const LADO_IDENTIFICAR = 1000;
+const TOPE_BYTES_IDENTIFICAR = 380 * 1024; // el servidor rechaza más de 400 KB
+
+function blobABase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1]);
+    r.onerror = () => reject(new Error("No pude leer la miniatura"));
+    r.readAsDataURL(blob);
+  });
+}
+
+// Miniatura para IDENTIFICAR el documento (≤ 1000 px, JPEG): es lo único que se manda a la IA, no la foto original.
+// Devuelve el base64 (sin prefijo) o null si el navegador no puede abrir ese formato; en ese caso el archivo igual queda
+// guardado y se marca "Sin identificar".
+export async function miniaturaParaIdentificar(file, lado = LADO_IDENTIFICAR) {
+  try {
+    if (!file?.type?.startsWith("image/") || typeof createImageBitmap !== "function") return null;
+    const bmp = await createImageBitmap(file);
+    const e = Math.min(1, lado / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bmp.width * e));
+    canvas.height = Math.max(1, Math.round(bmp.height * e));
+    canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close?.();
+    let blob = null;
+    for (const calidad of [0.7, 0.5, 0.35]) {
+      blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", calidad));
+      if (blob && blob.size <= TOPE_BYTES_IDENTIFICAR) break;
+    }
+    liberar(canvas);
+    return blob && blob.size <= TOPE_BYTES_IDENTIFICAR ? await blobABase64(blob) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Miniatura chica (data URL) para mostrar en la lista sin decodificar la foto entera una y otra vez (cuida la memoria).
 // Si el navegador no puede abrir ese formato (por ejemplo HEIC en algunos equipos), devuelve null y se muestra un ícono.
 export async function miniaturaDe(file, lado = 140) {

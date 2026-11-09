@@ -39,16 +39,20 @@ export async function listarArchivos(expedienteId) {
 }
 
 // Sube un archivo: pide la sesión al servidor, lo manda directo a Google y lo registra. Devuelve la fila del archivo.
-export async function subirArchivoEscribania(file, { expedienteId, tipo = "otro", onProgreso } = {}) {
+export async function subirArchivoEscribania(file, { expedienteId, tipo = "otro", automatico = false, onProgreso } = {}) {
   const v = validarArchivoLocal(file);
   if (!v.ok) throw new Error(v.mensaje);
   const sesion = await llamar("iniciar_subida", { expediente_id: expedienteId, nombre: file.name, mime: file.type, tamano: file.size, tipo });
   const { id } = await subirASesion(sesion.sesion_url, file, sesion.mime, onProgreso);
-  const { archivo } = await llamar("confirmar_subida", { expediente_id: expedienteId, drive_file_id: id, tipo: sesion.tipo });
+  const { archivo } = await llamar("confirmar_subida", { expediente_id: expedienteId, drive_file_id: id, tipo: sesion.tipo, ...(automatico ? { identificar: true } : {}) });
   return archivo;
 }
 
 export const borrarArchivoEscribania = (archivoId) => llamar("borrar", { archivo_id: archivoId });
+
+// Identificación y nombre automáticos (después de subir). `miniatura` = base64 de un JPEG chico (o null si no se pudo armar: el
+// servidor deja el archivo "Sin identificar"). Devuelve { archivo, identificado }.
+export const identificarArchivo = (archivoId, miniatura) => llamar("identificar", { archivo_id: archivoId, miniatura });
 
 // Corregir a mano el nombre y/o el tipo de un archivo. Devuelve { archivo }.
 export const renombrarArchivo = (archivoId, { nombre, tipo }) => llamar("renombrar", { archivo_id: archivoId, nombre, ...(tipo ? { tipo } : {}) });
@@ -63,6 +67,7 @@ export const celularCerrar = (sesionId) => llamar("celular_cerrar", { sesion_id:
 export const celular = {
   info: (codigo) => drivePublico("celular_info", { codigo }),
   quitar: (codigo, archivoId) => drivePublico("celular_quitar", { codigo, archivo_id: archivoId }),
+  identificar: (codigo, archivoId, miniatura) => drivePublico("celular_identificar", { codigo, archivo_id: archivoId, miniatura }),
 };
 
 // Sube UN archivo desde el celular: pide la sesión de Google, lo manda directo y lo confirma. Devuelve la fila del archivo.

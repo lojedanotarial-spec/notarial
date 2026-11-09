@@ -23,6 +23,8 @@ import {
 import {
   calcularVencimientoSesion, motivoSesionInvalida, urlSesion, puedeQuitar, resumenSesionParaCelular, vencimientoLimpieza,
 } from "./_driveCelular.js";
+import { validarMiniatura, normalizarIdentificacion, armarNombreArchivo, extensionDe, evitarDuplicado } from "./_driveIdentificar.js";
+import { crearIA } from "./_driveIA.js";
 
 export const BASE = "https://notarial.lat";
 export const REDIRECT_URI = `${BASE}/api/drive-callback`;
@@ -118,7 +120,10 @@ const archivoPublico = (a) => ({
 async function estado(d, perfil, body = {}) {
   const registro = body.expediente_id ? (await expedienteAutorizado(d, perfil, body.expediente_id)).registro : perfil.registro;
   const c = registro ? await conexionDe(d, registro) : null;
-  return { conectado: !!c, operativa: c?.estado === "activa", estado: c ? c.estado : "no_conectado", sin_espacio: !!c?.sin_espacio };
+  return {
+    conectado: !!c, operativa: c?.estado === "activa", estado: c ? c.estado : "no_conectado", sin_espacio: !!c?.sin_espacio,
+    identificar_compu: !!d.config?.identificarCompu, // la pantalla ofrece "Automático" solo si el servidor lo tiene prendido
+  };
 }
 
 async function asegurarRaiz(d, access, conexion) {
@@ -175,12 +180,12 @@ async function prepararSubida(d, { exp, registro }, v) {
 
 async function confirmarSubida(d, perfil, body) {
   const ctx = await expedienteAutorizado(d, perfil, body.expediente_id);
-  return registrarSubida(d, ctx, { fileId: String(body.drive_file_id || ""), tipo: body.tipo, quien: { id: perfil.id, nombre: perfil.nombre } });
+  return registrarSubida(d, ctx, { fileId: String(body.drive_file_id || ""), tipo: body.tipo, quien: { id: perfil.id, nombre: perfil.nombre }, identificar: body.identificar === true });
 }
 
 // Núcleo de "confirmar lo subido", compartido por la compu y el celular. `quien` = a quién se le atribuye (en el celular,
 // el usuario que generó el QR). El servidor le pregunta a Google por el archivo y no confía en lo que diga el navegador.
-async function registrarSubida(d, { exp, registro }, { fileId, tipo, quien, origen = "compu", sesionId = null }) {
+async function registrarSubida(d, { exp, registro }, { fileId, tipo, quien, origen = "compu", sesionId = null, identificar = false }) {
   const { access } = await accesoDe(d, registro);
   if (!fileId) throw new ErrorHttp(400, "Falta el archivo.");
   let meta;
@@ -202,6 +207,10 @@ async function registrarSubida(d, { exp, registro }, { fileId, tipo, quien, orig
     expediente_id: exp.id, drive_file_id: fileId, nombre: v.nombre, tipo: v.tipo, mime_type: v.mime, tamano: v.tamano,
     almacen: "escribania", subido_por: quien.id, subido_por_nombre: quien.nombre,
     origen, sesion_id: sesionId, nombre_original: v.nombre,
+    // Identificación automática (después de guardar, nunca antes): desde el celular siempre que esté prendida; desde la compu
+    // solo si la persona eligió "Automático" y está prendida. Solo las imágenes se identifican (un PDF cuesta varias veces más).
+    identificacion: (origen === "celular" ? !!d.config?.identificar : !!d.config?.identificarCompu && identificar)
+      ? (/^image\//.test(v.mime) ? "pendiente" : "sin_identificar") : null,
   };
   const { data: nueva, error } = await d.sb.from("expediente_archivos").insert(fila).select().single();
   let guardada = nueva;
@@ -252,6 +261,51 @@ async function borrar(d, perfil, body) {
   await d.sb.from("expediente_archivos").update({ borrado_en: new Date(d.ahora()).toISOString(), borrado_por: perfil.id }).eq("id", arch.id);
   await auditar(d, { registro, usuarioId: perfil.id, accion: "borrar", expedienteId: exp.id, archivoId: arch.id, detalle: { nombre: arch.nombre } });
   return { ok: true };
+}
+
+// ── Identificación y nombre automáticos (UC-4) ───────────────────────────────
+// Se hace DESPUÉS de guardar, con una miniatura que arma el navegador. Nunca frena ni rompe una subida: ante cualquier falla el
+// archivo queda "Sin identificar" con su nombre original. De lo que lee el modelo solo se guardan el nombre y el tipo.
+
+async function marcarSinIdentificar(d, arch) {
+  await d.sb.from("expediente_archivos").update({ identificacion: "sin_identificar" }).eq("id", arch.id);
+  return { archivo: archivoPublico({ ...arch, identificacion: "sin_identificar" }), identificado: false };
+}
+
+async function identificarArchivo(d, { arch, exp, registro, miniatura, quien }) {
+  // Un solo intento por archivo: el que logra pasar de "pendiente" a "procesando" es el único que llama al modelo.
+  const { data: tomado } = await d.sb.from("expediente_archivos").update({ identificacion: "procesando" })
+    .eq("id", arch.id).eq("identificacion", "pendiente").select("id");
+  if (!tomado?.length) {
+    const { data: actual } = await d.sb.from("expediente_archivos").select("*").eq("id", arch.id).maybeSingle();
+    return { archivo: archivoPublico(actual || arch), identificado: false };
+  }
+  const m = validarMiniatura(miniatura);
+  if (!m.ok) return marcarSinIdentificar(d, arch);
+  let respuesta;
+  try { respuesta = await d.ia.consultar(m.base64); } catch { return marcarSinIdentificar(d, arch); }
+  const n = normalizarIdentificacion(respuesta.texto);
+  if (!n.ok) return marcarSinIdentificar(d, arch);
+
+  const { data: otros } = await d.sb.from("expediente_archivos").select("id,nombre").eq("expediente_id", exp.id).eq("almacen", "escribania").is("borrado_en", null);
+  const nombre = evitarDuplicado(armarNombreArchivo(n.ident, extensionDe(arch.nombre, arch.mime_type)), (otros || []).filter((o) => o.id !== arch.id).map((o) => o.nombre));
+  try {
+    const { access } = await accesoDe(d, registro);
+    await d.google.renombrar(access, arch.drive_file_id, nombre);
+  } catch { return marcarSinIdentificar(d, arch); }
+
+  const cambios = { nombre, tipo: n.ident.tipo, identificacion: "ok", nombre_original: arch.nombre_original ?? arch.nombre };
+  const { error } = await d.sb.from("expediente_archivos").update(cambios).eq("id", arch.id);
+  if (error) throw new Error(`update archivo: ${error.message}`);
+  await auditar(d, { registro, usuarioId: quien, accion: "identificar", expedienteId: exp.id, archivoId: arch.id,
+    detalle: { de: arch.nombre, a: nombre, tipo: n.ident.tipo, modelo: d.ia.modelo ?? null, tokens_entrada: respuesta.entrada, tokens_salida: respuesta.salida } });
+  return { archivo: archivoPublico({ ...arch, ...cambios }), identificado: true };
+}
+
+// Desde la compu (usuario con sesión): para lo que se subió con "Automático".
+async function identificar(d, perfil, body) {
+  const { arch, exp, registro } = await archivoAutorizado(d, perfil, body.archivo_id);
+  return identificarArchivo(d, { arch, exp, registro, miniatura: body.miniatura, quien: perfil.id });
 }
 
 // ── Subir desde el celular: acciones de la compu ─────────────────────────────
@@ -357,6 +411,15 @@ async function celularConfirmar(d, _perfil, body) {
   return registrarSubida(d, await expedienteDeSesion(d, sesion), {
     fileId: String(body.drive_file_id || ""), tipo: "otro", quien: { id: sesion.usuario_id, nombre: sesion.usuario_nombre }, origen: "celular", sesionId: sesion.id,
   });
+}
+
+// Identifica un archivo subido en ESTA sesión (nunca uno ajeno).
+async function celularIdentificar(d, _perfil, body) {
+  const sesion = await exigirSesion(d, body.codigo, { paraConfirmar: true });
+  const { exp, registro } = await expedienteDeSesion(d, sesion);
+  const { data: arch } = await d.sb.from("expediente_archivos").select("*").eq("id", String(body.archivo_id || "")).maybeSingle();
+  if (!puedeQuitar(arch, sesion)) throw new ErrorHttp(404, "No encontré esa foto.");
+  return identificarArchivo(d, { arch, exp, registro, miniatura: body.miniatura, quien: sesion.usuario_id });
 }
 
 async function celularQuitar(d, _perfil, body) {
@@ -519,8 +582,9 @@ async function callback(d, req, res) {
 const PUBLICAS = {
   enlace_info: (d, p, b) => enlaceInfo(d, b), enlace_iniciar: (d, p, b) => enlaceIniciar(d, b),
   celular_info: celularInfo, celular_iniciar_subida: celularIniciarSubida, celular_confirmar: celularConfirmar, celular_quitar: celularQuitar,
+  celular_identificar: celularIdentificar,
 };
-const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar };
+const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar };
 const DE_ADMIN = { admin_estado: adminEstado, admin_enlace: adminEnlace, admin_desconectar: adminDesconectar };
 
 export function depsReales() {
@@ -531,6 +595,9 @@ export function depsReales() {
     clave: process.env.DRIVE_CIFRADO_CLAVE,
     usuarioDeToken,
     ahora: () => Date.now(),
+    ia: crearIA({ apiKey: process.env.ANTHROPIC_API_KEY }),
+    // Interruptores de la identificación automática: se apagan en un minuto, sin tocar el código (variables en Vercel).
+    config: { identificar: process.env.DRIVE_IDENTIFICAR === "1", identificarCompu: process.env.DRIVE_IDENTIFICAR_COMPU === "1" },
   };
 }
 

@@ -14,7 +14,7 @@ export const STATE_VENCE_MS = 15 * 60 * 1000;         // tiempo para completar l
 export const UMBRAL_CUOTA = 0.8;
 export const TIPOS_ARCHIVO = ["dni", "tarjeta_verde", "poder", "formulario", "otro"];
 export const SCOPES_GOOGLE = ["https://www.googleapis.com/auth/drive.file", "openid", "email"];
-export const ACCIONES_AUDITORIA = ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "celular_abrir", "celular_cerrar", "renombrar"];
+export const ACCIONES_AUDITORIA = ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "celular_abrir", "celular_cerrar", "renombrar", "identificar"];
 const PREVISUALIZABLES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
 
 // ── Enlaces de conexión ──────────────────────────────────────────────────────

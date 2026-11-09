@@ -4,8 +4,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { C } from "../constants";
 import SubidaCelular from "./SubidaCelular";
-import { borrarArchivoEscribania, driveEstado, guardarBlob, listarArchivos, renombrarArchivo, subirArchivoEscribania, traerArchivo } from "../utils/driveApi";
-import { MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano } from "../utils/driveCliente";
+import { borrarArchivoEscribania, driveEstado, guardarBlob, identificarArchivo, listarArchivos, renombrarArchivo, subirArchivoEscribania, traerArchivo } from "../utils/driveApi";
+import { MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano, marcaIdentificacion, hayIdentificacionEnCurso } from "../utils/driveCliente";
+import { miniaturaParaIdentificar } from "../utils/capturaArchivo";
 
 const fuente = "'Montserrat', sans-serif";
 const MENSAJE_DRIVE_CAIDO = "El Drive de la escribanía no está disponible. Avisale a quien administra Notarial.";
@@ -33,7 +34,7 @@ function Modal({ children, ancho = 420, onCerrar }) {
 
 export default function ArchivosEscribania({ expedienteId, archivos, setArchivos, carpetaId }) {
   const [estadoDrive, setEstadoDrive] = useState(null);
-  const [tipo, setTipo] = useState("otro");
+  const [tipo, setTipo] = useState(null); // null = lo que corresponda: "Automático" si el servidor lo ofrece, si no "Otro"
   const [cola, setCola] = useState([]);
   const [subiendo, setSubiendo] = useState(false);
   const [vista, setVista] = useState(null);       // { archivo, url, cargando, error }
@@ -59,9 +60,30 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
   useEffect(() => { leerEstado(); }, [expedienteId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => { if (urlVista.current) URL.revokeObjectURL(urlVista.current); }, []);
 
+  // "Automático" (identificar y poner nombre solos después de subir) solo si el servidor lo tiene prendido.
+  const automaticoDisponible = !!estadoDrive?.identificar_compu;
+  const tipoActual = tipo ?? (automaticoDisponible ? "automatico" : "otro");
   const sinDrive = estadoDrive && !estadoDrive.conectado;
   const caido = estadoDrive && estadoDrive.conectado && !estadoDrive.operativa;
   const puedeSubir = !subiendo && !sinDrive && !caido;
+
+  // Mientras haya archivos identificándose, vuelve a pedir la lista cada 3 segundos para que aparezca el nombre nuevo.
+  const identificando = hayIdentificacionEnCurso(archivos);
+  useEffect(() => {
+    if (!identificando) return undefined;
+    const t = setInterval(() => { refrescar(); }, 3000);
+    return () => clearInterval(t);
+  }, [identificando, refrescar]);
+
+  // Identificación en segundo plano: no frena la subida y, si falla, el archivo queda "Sin identificar".
+  async function identificarEnSegundoPlano(file, archivoId) {
+    try {
+      const r = await identificarArchivo(archivoId, await miniaturaParaIdentificar(file));
+      if (r?.archivo) setArchivos((prev) => prev.map((a) => (a.id === archivoId ? { ...a, ...r.archivo } : a)));
+    } catch {
+      refrescar();
+    }
+  }
 
   const marcar = (id, cambios) => setCola((c) => c.map((x) => (x.id === id ? { ...x, ...cambios } : x)));
 
@@ -76,8 +98,10 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     for (const item of nuevos) {
       marcar(item.id, { estado: "subiendo" });
       try {
-        const nuevo = await subirArchivoEscribania(item.archivo, { expedienteId, tipo, onProgreso: (p) => marcar(item.id, { progreso: p }) });
+        const automatico = tipoActual === "automatico";
+        const nuevo = await subirArchivoEscribania(item.archivo, { expedienteId, tipo: automatico ? "otro" : tipoActual, automatico, onProgreso: (p) => marcar(item.id, { progreso: p }) });
         setArchivos((prev) => [nuevo, ...prev.filter((a) => a.id !== nuevo.id)]);
+        if (nuevo.identificacion === "pendiente") identificarEnSegundoPlano(item.archivo, nuevo.id);
         marcar(item.id, { estado: "ok", progreso: 1 });
         setTimeout(() => setCola((c) => c.filter((x) => x.id !== item.id)), 4000);
       } catch (e) {
@@ -157,8 +181,9 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <label htmlFor="tipo-archivo" style={{ fontSize: 12, color: C.muted }}>Tipo:</label>
-          <select id="tipo-archivo" value={tipo} onChange={(e) => setTipo(e.target.value)}
+          <select id="tipo-archivo" value={tipoActual} onChange={(e) => setTipo(e.target.value)}
             style={{ padding: "6px 10px", borderRadius: 7, border: `1px solid ${C.border}`, background: "#fff", fontFamily: fuente, fontSize: 12, color: C.dark }}>
+            {automaticoDisponible && <option value="automatico">Automático (le pone nombre solo)</option>}
             {TIPOS_ARCHIVO.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
           </select>
         </div>
@@ -210,9 +235,12 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
               <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
                 <span style={{ fontSize: 20 }}>{a.mime_type?.startsWith("image/") ? "🖼️" : "📄"}</span>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nombre}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {a.nombre}
+                    {(() => { const m = marcaIdentificacion(a); return m && m.clave !== "ok" ? <span style={{ marginLeft: 8, padding: "1px 7px", borderRadius: 10, fontSize: 10, fontWeight: 700, color: m.tono === "aviso" ? "#8a6d1f" : C.cerulean, background: m.tono === "aviso" ? "rgba(201,169,97,.18)" : C.ceruleanLight }}>{m.texto}</span> : null; })()}
+                  </div>
                   <div style={{ fontSize: 10.5, color: C.muted, lineHeight: 1.5 }}>
-                    {etiquetaTipo(a.tipo)}{a.tamano ? ` · ${formatearTamano(a.tamano)}` : ""} · {fechaHora(a.created_at)}{a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ""}{a.origen === "celular" ? " · 📱 desde el celular" : ""}
+                    {etiquetaTipo(a.tipo)}{a.tamano ? ` · ${formatearTamano(a.tamano)}` : ""} · {fechaHora(a.created_at)}{a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ""}{a.origen === "celular" ? " · 📱 desde el celular" : ""}{a.identificacion === "ok" ? " · nombre automático" : ""}
                   </div>
                 </div>
               </div>

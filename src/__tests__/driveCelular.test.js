@@ -9,6 +9,7 @@ import {
 import { ACCIONES_AUDITORIA, armarAuditoria } from "../../api/_drive.js";
 import {
   nombreFotoCamara, siguientePendiente, resumenCola, marcarItem, esErrorDeSesion, textoSesionTerminada, cuentaRegresiva,
+  marcaIdentificacion, hayIdentificacionEnCurso, ESPERA_IDENTIFICACION_MS,
 } from "../utils/driveCliente.js";
 
 const T0 = Date.UTC(2026, 10, 9, 15, 0, 0);
@@ -196,5 +197,32 @@ describe("cuenta regresiva del QR", () => {
     expect(cuentaRegresiva(exp, T0 + 31 * MIN)).toBe("0:00");
     expect(cuentaRegresiva("basura", T0)).toBe("0:00");
     expect(cuentaRegresiva(null, T0)).toBe("0:00");
+  });
+});
+
+describe("marca de identificación en la lista", () => {
+  const ahora = Date.UTC(2026, 10, 9, 15, 10, 0);
+  const a = (identificacion, haceMs = 5000) => ({ identificacion, created_at: new Date(ahora - haceMs).toISOString() });
+  it("recién subido: 'Identificando…'", () => {
+    for (const e of ["pendiente", "procesando"]) expect(marcaIdentificacion(a(e), ahora)).toMatchObject({ clave: "identificando", texto: "Identificando…" });
+  });
+  it("si lleva más de 3 minutos 'identificando', algo falló: se muestra como 'Sin identificar'", () => {
+    expect(marcaIdentificacion(a("pendiente", 4 * MIN), ahora)).toMatchObject({ clave: "sin_identificar" });
+    expect(marcaIdentificacion(a("procesando", 3 * MIN - 1), ahora).clave).toBe("identificando");
+    expect(ESPERA_IDENTIFICACION_MS).toBe(3 * MIN);
+  });
+  it("sin identificar, ok y lo que no tiene marca", () => {
+    expect(marcaIdentificacion(a("sin_identificar"), ahora)).toMatchObject({ texto: "Sin identificar", tono: "aviso" });
+    expect(marcaIdentificacion(a("ok"), ahora)).toMatchObject({ clave: "ok" });
+    for (const e of ["manual", null, undefined]) expect(marcaIdentificacion(a(e), ahora)).toBe(null);
+    expect(marcaIdentificacion(null, ahora)).toBe(null);
+  });
+  it("una fecha inválida no rompe: sigue 'identificando'", () => {
+    expect(marcaIdentificacion({ identificacion: "pendiente", created_at: "basura" }, ahora).clave).toBe("identificando");
+  });
+  it("detecta si hay algo en curso (para seguir consultando la lista)", () => {
+    expect(hayIdentificacionEnCurso([a("ok"), a("pendiente")], ahora)).toBe(true);
+    expect(hayIdentificacionEnCurso([a("ok"), a("sin_identificar"), a("pendiente", 10 * MIN)], ahora)).toBe(false);
+    expect(hayIdentificacionEnCurso([], ahora)).toBe(false);
   });
 });

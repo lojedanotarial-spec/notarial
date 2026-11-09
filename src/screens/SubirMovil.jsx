@@ -9,7 +9,7 @@ import {
   MAX_BYTES_ARCHIVO, validarArchivoLocal, formatearTamano, nombreFotoCamara, siguientePendiente, resumenCola, marcarItem,
   esErrorDeSesion, textoSesionTerminada, cuentaRegresiva,
 } from "../utils/driveCliente";
-import { miniaturaDe } from "../utils/capturaArchivo";
+import { miniaturaDe, miniaturaParaIdentificar } from "../utils/capturaArchivo";
 import CamaraArchivo from "../components/CamaraArchivo";
 
 const fuente = "'Montserrat', sans-serif";
@@ -57,7 +57,7 @@ function FilaArchivo({ x, onReintentar, onQuitar }) {
             <div style={{ height: 4, borderRadius: 3, background: "rgba(26,35,50,.1)", marginTop: 4 }}><div style={{ width: `${porcentaje}%`, height: "100%", background: C.cerulean, borderRadius: 3 }} /></div>
           </>
         )}
-        {x.estado === "ok" && <div style={{ fontSize: 12, color: "#27ae60", fontWeight: 600 }}>✓ Guardada</div>}
+        {x.estado === "ok" && <div style={{ fontSize: 12, color: "#27ae60", fontWeight: 600 }}>✓ Guardada{x.identificando ? <span style={{ color: C.muted, fontWeight: 400 }}> · identificando…</span> : ""}</div>}
         {x.estado === "error" && <div style={{ fontSize: 12, color: "#c0392b", lineHeight: 1.4 }}>{x.mensaje}</div>}
       </div>
       {x.estado === "error" && !x.sinReintento && <button onClick={() => onReintentar(x.id)} style={{ border: `1px solid ${C.cerulean}`, background: "transparent", color: C.cerulean, borderRadius: 8, padding: "7px 10px", fontFamily: fuente, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Reintentar</button>}
@@ -116,6 +116,17 @@ export default function SubirMovil({ codigo }) {
   const driveCaido = info && info.drive_disponible === false;
   const puedeAgregar = !!info?.vigente && !motivoFin && !driveCaido;
 
+  // Después de guardar una foto, el sistema reconoce el documento y le pone nombre (por ejemplo "DNI García Juan - anverso").
+  // Se hace en segundo plano: nunca frena la subida de la siguiente ni molesta si falla (queda "Sin identificar" en la compu).
+  async function identificarEnSegundoPlano(file, archivoId, itemId) {
+    try {
+      const r = await celular.identificar(codigo, archivoId, await miniaturaParaIdentificar(file));
+      aplicar((c) => marcarItem(c, itemId, { identificando: false, ...(r?.archivo?.nombre ? { nombre: r.archivo.nombre } : {}) }));
+    } catch {
+      aplicar((c) => marcarItem(c, itemId, { identificando: false }));
+    }
+  }
+
   // Sube de a un archivo (cuida la memoria del teléfono). Un archivo que falla no frena a los demás; si la sesión termina,
   // lo que queda se conserva en pantalla y se cuenta como "sin guardar".
   async function correr() {
@@ -129,7 +140,9 @@ export default function SubirMovil({ codigo }) {
         aplicar((c) => marcarItem(c, item.id, { estado: "subiendo", progreso: 0, mensaje: "" }));
         try {
           const archivo = await subirDesdeCelular(codigo, item.file, { onProgreso: (p) => aplicar((c) => marcarItem(c, item.id, { progreso: p })) });
-          aplicar((c) => marcarItem(c, item.id, { estado: "ok", progreso: 1, archivoId: archivo.id, file: null }));
+          const identificar = archivo.identificacion === "pendiente";
+          aplicar((c) => marcarItem(c, item.id, { estado: "ok", progreso: 1, archivoId: archivo.id, file: null, identificando: identificar }));
+          if (identificar) identificarEnSegundoPlano(item.file, archivo.id, item.id);
         } catch (e) {
           if (esErrorDeSesion(e)) {
             terminadaRef.current = e.codigo;
