@@ -18,7 +18,7 @@ import {
   MAX_BYTES_ARCHIVO, STATE_VENCE_MS, generarCodigo, hashCodigo, calcularVencimientoEnlace, motivoEnlaceInvalido,
   cifrar, descifrar, firmarState, verificarState, validarArchivo, nombreCarpetaExpediente, esPrevisualizable,
   clasificarErrorGoogle, mensajeParaUsuario, armarAuditoria, armarUrlAutorizacion, urlDeRetorno, resumenConexion,
-  esAdmin, registroDelUsuario, nombreParaRenombrar, tipoValido,
+  esAdmin, registroDelUsuario, nombreParaRenombrar, tipoValido, limitePurgaArchivos,
 } from "./_drive.js";
 import {
   calcularVencimientoSesion, motivoSesionInvalida, urlSesion, puedeQuitar, resumenSesionParaCelular, vencimientoLimpieza,
@@ -262,6 +262,42 @@ async function borrar(d, perfil, body) {
   await d.sb.from("expediente_archivos").update({ borrado_en: new Date(d.ahora()).toISOString(), borrado_por: perfil.id }).eq("id", arch.id);
   await auditar(d, { registro, usuarioId: perfil.id, accion: "borrar", expedienteId: exp.id, archivoId: arch.id, detalle: { nombre: arch.nombre } });
   return { ok: true };
+}
+
+// ── Sincronizar con Drive ────────────────────────────────────────────────────
+// Notarial solo se entera de lo que borra él mismo. Si alguien borra un archivo directo en Drive, la fila seguía en la lista. Acá se
+// compara lo anotado con lo que HAY en la carpeta del expediente (una consulta a Drive) y lo que ya no está, o está en la papelera,
+// se oculta y queda en el historial. Si algo falla al consultar Drive, NO se oculta nada (nunca se asume que algo se borró).
+const MAX_VERIFICACIONES = 50;
+
+async function sincronizar(d, perfil, body) {
+  const { exp, registro } = await expedienteAutorizado(d, perfil, body.expediente_id);
+  // Limpieza oportunista: filas ocultas hace más de 30 días (los dos cupos de cron están usados).
+  await d.sb.from("expediente_archivos").delete().eq("almacen", "escribania").lt("borrado_en", limitePurgaArchivos(d.ahora()));
+
+  const { data: filas } = await d.sb.from("expediente_archivos").select("id,nombre,drive_file_id")
+    .eq("expediente_id", exp.id).eq("almacen", "escribania").is("borrado_en", null);
+  if (!filas?.length || !exp.drive_carpeta_escribania_id) return { ocultados: 0 };
+  const c = await conexionDe(d, registro);
+  if (!c || c.estado !== "activa") return { ocultados: 0, disponible: false };
+
+  let access, presentes;
+  try {
+    ({ access } = await accesoDe(d, registro));
+    presentes = await d.google.listarCarpeta(access, exp.drive_carpeta_escribania_id);
+  } catch { return { ocultados: 0, disponible: false }; }
+
+  let ocultados = 0;
+  for (const fila of filas.filter((x) => !presentes.has(x.drive_file_id)).slice(0, MAX_VERIFICACIONES)) {
+    let estado;
+    try { estado = await d.google.estadoArchivo(access, fila.drive_file_id); } catch { continue; }
+    if (estado.existe && !estado.papelera) continue;   // lo movieron a otra carpeta: sigue existiendo, no se oculta
+    await d.sb.from("expediente_archivos").update({ borrado_en: new Date(d.ahora()).toISOString() }).eq("id", fila.id).is("borrado_en", null);
+    await auditar(d, { registro, usuarioId: perfil.id, accion: "borrado_en_drive", expedienteId: exp.id, archivoId: fila.id,
+      detalle: { nombre: fila.nombre, motivo: estado.existe ? "papelera" : "eliminado" } });
+    ocultados++;
+  }
+  return { ocultados };
 }
 
 // ── Identificación y nombre automáticos (UC-4) ───────────────────────────────
@@ -668,7 +704,7 @@ const PUBLICAS = {
   celular_info: celularInfo, celular_iniciar_subida: celularIniciarSubida, celular_confirmar: celularConfirmar, celular_quitar: celularQuitar,
   celular_identificar: celularIdentificar, celular_identificar_lote: celularIdentificarLote,
 };
-const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar, identificar_lote: identificarLoteCompu };
+const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar, identificar_lote: identificarLoteCompu, sincronizar };
 const DE_ADMIN = { admin_estado: adminEstado, admin_enlace: adminEnlace, admin_desconectar: adminDesconectar };
 
 export function depsReales() {

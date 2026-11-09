@@ -12,9 +12,14 @@ export const MAX_BYTES_ARCHIVO = 25 * MB;
 export const ENLACE_VENCE_MS = 24 * 60 * 60 * 1000;  // el enlace de conexión sirve 24 h y una sola vez
 export const STATE_VENCE_MS = 15 * 60 * 1000;         // tiempo para completar la pantalla de Google
 export const UMBRAL_CUOTA = 0.8;
+// Lo borrado (desde Notarial o directo en Drive) deja de figurar en la lista al instante; la fila oculta se elimina a los 30 días, que es
+// lo que Drive guarda en su papelera (después ya no se puede recuperar el archivo, así que no tiene sentido guardar su nombre).
+// El HISTORIAL de actividad, en cambio, se conserva completo hasta que se borra el expediente (decisión de Lucas, 09/11/26).
+export const PURGA_ARCHIVOS_MS = 30 * 24 * 60 * 60 * 1000;
+export const limitePurgaArchivos = (ahora = Date.now()) => new Date(ahora - PURGA_ARCHIVOS_MS).toISOString();
 export const TIPOS_ARCHIVO = ["dni", "tarjeta_verde", "poder", "formulario", "otro"];
 export const SCOPES_GOOGLE = ["https://www.googleapis.com/auth/drive.file", "openid", "email"];
-export const ACCIONES_AUDITORIA = ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "celular_abrir", "celular_cerrar", "renombrar", "identificar"];
+export const ACCIONES_AUDITORIA = ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "celular_abrir", "celular_cerrar", "renombrar", "identificar", "borrado_en_drive"];
 const PREVISUALIZABLES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
 
 // ── Enlaces de conexión ──────────────────────────────────────────────────────

@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { C } from "../constants";
 import SubidaCelular from "./SubidaCelular";
-import { borrarArchivoEscribania, driveEstado, guardarBlob, identificarLote, listarArchivos, renombrarArchivo, subirArchivoEscribania, traerArchivo } from "../utils/driveApi";
+import { borrarArchivoEscribania, driveEstado, guardarBlob, identificarLote, listarArchivos, renombrarArchivo, sincronizarDrive, subirArchivoEscribania, traerArchivo } from "../utils/driveApi";
 import { MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano, marcaIdentificacion, hayIdentificacionEnCurso, partir } from "../utils/driveCliente";
 import { miniaturaParaIdentificar } from "../utils/capturaArchivo";
 
@@ -42,6 +42,9 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
   const [borrando, setBorrando] = useState(false);
   const [errorGeneral, setErrorGeneral] = useState("");
   const [qrAbierto, setQrAbierto] = useState(false);
+  const [avisoSync, setAvisoSync] = useState("");
+  const [sincronizando, setSincronizando] = useState(false);
+  const ultimaSync = useRef(0);
   const [porEditar, setPorEditar] = useState(null);
   const [edicion, setEdicion] = useState({ nombre: "", tipo: "otro" });
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
@@ -57,7 +60,25 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
   async function leerEstado() {
     try { setEstadoDrive(await driveEstado(expedienteId)); } catch { setEstadoDrive({ conectado: true, operativa: true, estado: "activa", sin_espacio: false, desconocido: true }); }
   }
-  useEffect(() => { leerEstado(); }, [expedienteId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Notarial solo se entera de lo que borra él mismo: si alguien borra un archivo directo en Drive, se compara con lo que hay en la carpeta y
+  // se oculta. Automático al abrir la pestaña (a lo sumo una vez por minuto) y a mano con "Actualizar". Si Drive no responde, no oculta nada.
+  async function sincronizar(manual = false) {
+    if (!manual && Date.now() - ultimaSync.current < 60_000) return;
+    ultimaSync.current = Date.now();
+    if (manual) setSincronizando(true);
+    try {
+      const r = await sincronizarDrive(expedienteId);
+      if (r?.ocultados > 0) {
+        await refrescar();
+        setAvisoSync(`Se ${r.ocultados === 1 ? "ocultó 1 archivo que se borró" : `ocultaron ${r.ocultados} archivos que se borraron`} directo en Drive.`);
+      } else if (manual) {
+        setAvisoSync(r?.disponible === false ? "No pude consultar el Drive en este momento. Probá de nuevo en un rato." : "La lista está al día con el Drive.");
+      }
+    } catch { /* es una comprobación de cortesía: si falla, la lista queda como está */ } finally {
+      if (manual) setSincronizando(false);
+    }
+  }
+  useEffect(() => { leerEstado(); sincronizar(); }, [expedienteId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => { if (urlVista.current) URL.revokeObjectURL(urlVista.current); }, []);
 
   // "Automático" (identificar y poner nombre solos después de subir) solo si el servidor lo tiene prendido.
@@ -185,6 +206,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
       {caido && <Aviso tipo="error">{MENSAJE_DRIVE_CAIDO}</Aviso>}
       {estadoDrive?.sin_espacio && !caido && !sinDrive && <Aviso tipo="error">El Drive de la escribanía no tiene más espacio. Avisale a quien administra Notarial.</Aviso>}
       {errorGeneral && <Aviso tipo="error">{errorGeneral}</Aviso>}
+      {avisoSync && <Aviso>{avisoSync} <button onClick={() => setAvisoSync("")} style={{ border: "none", background: "transparent", color: C.cerulean, fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 0, marginLeft: 6 }}>Entendido</button></Aviso>}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -206,7 +228,8 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
       </div>
       <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
         <strong>Máximo {formatearTamano(MAX_BYTES_ARCHIVO)} por archivo.</strong> Se guardan en el Drive de la escribanía y los ve todo el registro.
-        Lo que se suba a mano directamente en Drive no aparece acá.
+        Lo que se suba a mano directamente en Drive no aparece acá, y lo que se borre directo en Drive desaparece de acá al abrir el expediente.
+        {" "}<button onClick={() => sincronizar(true)} disabled={sincronizando} style={{ border: "none", background: "transparent", color: C.cerulean, fontWeight: 700, fontSize: 11.5, cursor: sincronizando ? "default" : "pointer", padding: 0 }}>{sincronizando ? "Actualizando…" : "↻ Actualizar"}</button>
         {carpetaId && <> <a href={`https://drive.google.com/drive/folders/${carpetaId}`} target="_blank" rel="noopener noreferrer" style={{ color: C.cerulean, fontWeight: 600 }}>Abrir la carpeta en Drive</a>.</>}
       </div>
 

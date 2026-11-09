@@ -50,6 +50,10 @@ export async function subirArchivoEscribania(file, { expedienteId, tipo = "otro"
 
 export const borrarArchivoEscribania = (archivoId) => llamar("borrar", { archivo_id: archivoId });
 
+// Compara lo que Notarial tiene anotado con lo que HAY en Drive y oculta lo que se borró directo ahí. Devuelve { ocultados }.
+// Si Drive no responde no oculta nada ({ ocultados: 0, disponible: false }).
+export const sincronizarDrive = (expedienteId) => llamar("sincronizar", { expediente_id: expedienteId });
+
 // Identificación y nombre automáticos (después de subir). `miniatura` = base64 de un JPEG chico (o null si no se pudo armar: el
 // servidor deja el archivo "Sin identificar"). Devuelve { archivo, identificado }.
 export const identificarArchivo = (archivoId, miniatura) => llamar("identificar", { archivo_id: archivoId, miniatura });

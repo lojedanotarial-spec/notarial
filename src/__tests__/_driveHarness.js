@@ -88,6 +88,9 @@ export function crearGoogleFalso(extra = {}) {
     descargar: vi.fn(async () => new Response(Buffer.from("contenido!"), { headers: { "content-length": "10" } })),
     papelera: vi.fn(async () => ({ id: "x" })),
     renombrar: vi.fn(async (access, id, nombre) => ({ id, name: nombre })),
+    // Por defecto la carpeta "está vacía" pero cada archivo consultado existe: nada se oculta salvo que el test lo pida.
+    listarCarpeta: vi.fn(async () => new Set()),
+    estadoArchivo: vi.fn(async () => ({ existe: true, papelera: false })),
     revocar: vi.fn(async () => true),
     canjearCodigo: vi.fn(async () => ({ refresh_token: "1//refresh-nuevo", access_token: "acc", id_token: idToken("escribania@gmail.com"), scope: SCOPE_OK })),
     ...extra,

@@ -109,6 +109,30 @@ export function crearGoogle({ clientId, clientSecret, fetch: f = (...a) => globa
       return url;
     },
 
+    // Ids de los archivos que HOY hay en una carpeta (sin los de la papelera). Con drive.file solo ve los que creó la app, que son los nuestros.
+    async listarCarpeta(access, carpetaId) {
+      const ids = new Set();
+      let pagina = "";
+      for (let i = 0; i < 10; i++) {   // hasta 10.000 archivos por expediente
+        const q = `'${escaparConsulta(carpetaId)}' in parents and trashed=false`;
+        const url = `${API}/files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent("nextPageToken,files(id)")}&pageSize=1000${pagina ? `&pageToken=${encodeURIComponent(pagina)}` : ""}`;
+        const j = await jsonOk(await f(url, { headers: auth(access) }));
+        for (const x of j.files || []) ids.add(x.id);
+        if (!j.nextPageToken) return ids;
+        pagina = j.nextPageToken;
+      }
+      return ids;
+    },
+
+    // ¿Existe todavía un archivo? { existe, papelera }. Un 404 es "ya no existe"; cualquier otra falla se propaga (no se asume nada).
+    async estadoArchivo(access, fileId) {
+      const r = await f(`${API}/files/${encodeURIComponent(fileId)}?fields=id,trashed`, { headers: auth(access) });
+      if (r.status === 404) return { existe: false, papelera: false };
+      if (!r.ok) throw await errorDe(r);
+      const j = await r.json();
+      return { existe: true, papelera: !!j.trashed };
+    },
+
     async metadatos(access, fileId) {
       return jsonOk(await f(`${API}/files/${encodeURIComponent(fileId)}?fields=${encodeURIComponent("id,name,size,mimeType,parents,trashed")}`, { headers: auth(access) }));
     },
