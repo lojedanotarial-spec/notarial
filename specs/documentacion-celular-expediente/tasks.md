@@ -1,6 +1,6 @@
 # Tareas: Subir documentación al expediente desde el celular
 
-**Estado:** ✅ aprobado por Lucas el 09/11/26, con un cambio de orden: **primero todo salvo la identificación automática (etapa A); el "agente" que identifica y renombra queda para después (etapa B)**. En ejecución: etapa A (fases 1 a 6 hechas y desplegadas; falta la prueba manual con teléfonos reales, fase 7)
+**Estado:** ✅ aprobado por Lucas el 09/11/26, con un cambio de orden: **primero todo salvo la identificación automática (etapa A); el "agente" que identifica y renombra queda para después (etapa B)**. En ejecución: etapa A (etapas A y B hechas y desplegadas; falta la prueba manual con teléfonos reales, fase 7)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación.
 
@@ -67,7 +67,7 @@ Registro **9876**, cuenta `lojeda.notarial@gmail.com`.
 
 ## Cierre de la etapa A
 
-- [ ] **T8.1 🤖** Documentación: `PROYECTO.md`, `BACKLOG.md` (la feature en producción sin el agente; el agente como etapa B pendiente), memoria del proyecto.
+- [x] **T8.1 (hecho 09/11/26) 🤖** Documentación: `PROYECTO.md`, `BACKLOG.md` (la feature en producción sin el agente; el agente como etapa B pendiente), memoria del proyecto.
 
 ---
 
@@ -80,8 +80,8 @@ Registro **9876**, cuenta `lojeda.notarial@gmail.com`.
 - [x] **TB.4 (hecho 09/11/26) 🤖** Auditoría `identificar` y miniatura de identificación (≤ 1000 px, JPEG) en `driveCliente.js`.
 - [x] **TB.5 (hecho 09/11/26) 🤖** API: llamada al modelo, bloqueo atómico, renombre en Drive y en la base, `celular_identificar` e `identificar`, interruptores `DRIVE_IDENTIFICAR` y `DRIVE_IDENTIFICAR_COMPU`, tokens en la auditoría. *Verif. con la IA simulada: una sola identificación por archivo, error de la IA ⇒ "Sin identificar", solo se guardan nombre y tipo.*
 - [x] **TB.6 (hecho 09/11/26) 🤖** Pantallas: marcas "Identificando…" y "Sin identificar", selector "Tipo" con **Automático**, y la llamada desde el celular al terminar cada subida.
-- [ ] **TB.7 🤖** Variables en Vercel (con `scripts/vercel_env.mjs`), deploy y prueba manual con teléfonos: el nombre aparece solo (`DNI García Juan - anverso.jpg`).
-- [ ] **TB.8 🤖** Con los tokens reales de la auditoría, **costo por foto**. **Decisión de Lucas:** prender o no `DRIVE_IDENTIFICAR_COMPU`.
+- [x] **TB.7 (hecho 09/11/26) 🤖** Variables en Vercel (con `scripts/vercel_env.mjs`), deploy y prueba manual con teléfonos: el nombre aparece solo (`DNI García Juan - anverso.jpg`).
+- [x] **TB.8 (hecho 09/11/26) 🤖** Con los tokens reales de la auditoría, **costo por foto**. **Decisión de Lucas:** prender o no `DRIVE_IDENTIFICAR_COMPU`. **Costo real medido en producción: entre $0,00024 y $0,00030 por foto (≈ $0,30 cada mil). `DRIVE_IDENTIFICAR_COMPU` quedó PRENDIDO (la condición de Lucas, "solo si es barato", se cumple); se apaga poniéndola en 0 en Vercel.**
 
 ## Lo que nunca se hace sin preguntarte
 

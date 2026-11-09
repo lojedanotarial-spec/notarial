@@ -489,7 +489,29 @@ Detecta automáticamente si la imagen es DNI (cualquier formato: libreta vieja, 
 
 ---
 
-## Google Drive Integration
+## Drive de la escribanía (en producción desde 09/11/26)
+
+> Reemplaza al mecanismo viejo de más abajo para los **archivos de los expedientes**. Carga Masiva (barrios y lotes) sigue con el mecanismo viejo (`driveHelper.js`) hasta una feature propia.
+
+**Qué es:** cada registro (`usuarios.registro_numero`) tiene **un único Drive, el de su escribanía**, conectado una sola vez. Todos los usuarios del registro suben, ven, descargan y borran la documentación de los expedientes desde Notarial, entren con email o con Google. Los archivos se ven **solo a través de Notarial**.
+
+**Conexión (solo el administrador):** panel "Drive de escribanías" (botón en *Seleccionar registro*) → genera un enlace de **un solo uso y 24 h** (`/drive/<código>`) que se manda por WhatsApp, mail o copiado a quien tiene el Gmail de la escribanía; esa persona autoriza con Google sin tener cuenta en Notarial ni compartir su contraseña. El permiso es `drive.file` (solo los archivos que crea Notarial, en una carpeta "Notarial/<expediente>"); lo que se suba a mano a Drive **no aparece** en Notarial.
+
+**Cómo funciona:** el refresh token de Google vive **cifrado** (AES-256-GCM, clave `DRIVE_CIFRADO_CLAVE`) en `drive_conexiones` (RLS sin políticas: solo el servidor). Una única función, `api/drive.js` (acciones por `accion`), con la lógica en `api/_drive.js`, `_driveGoogle.js`, `_driveCelular.js`, `_driveIdentificar.js`, `_driveIA.js`. El registro del usuario se deduce **siempre en el servidor**. La subida va **directo del navegador a Google** (sesión reanudable con `Origin`: no pasa por Vercel, que limita cuerpos a 4,5 MB); ver/descargar pasan por el servidor en streaming; tope **25 MB por archivo**. Borrar = papelera de Drive (recuperable). Auditoría en `drive_auditoria` (quién subió, vio, descargó, borró, renombró, identificó). Un error de configuración nuestro (secreto, clave de cifrado) **no** marca la conexión como rota. Detalle: `specs/drive-escribania/`.
+
+**Variables en Vercel:** `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `DRIVE_CIFRADO_CLAVE`, `DRIVE_IDENTIFICAR`, `DRIVE_IDENTIFICAR_COMPU`. Google Cloud: proyecto `lojeda-notarial-credentials` (en producción, externo), cliente "Notarial Drive escribanias", redirect `https://notarial.lat/api/drive-callback`.
+
+**Pendiente de aplicar a mano en Supabase:** `scripts/drive_escribania_politicas.sql` (deja `expediente_archivos` solo lectura para el navegador). Reversión: `scripts/drive_escribania_rollback.sql`.
+
+### Subir documentación desde el celular (en producción desde 09/11/26)
+
+QR de **30 minutos** en la pestaña Archivos del expediente → página pública del celular `/s/<código>` (sin login; el código solo sirve para agregar archivos a ese expediente y quitar lo de esa sesión). Cámara en la página (máxima resolución, sin flash), cámara del teléfono o galería/archivos (incluye PDF); sin elegir tipo, sin tope de cantidad, **calidad original**. Tabla `drive_sesiones_celular`. Los archivos aparecen solos en la compu. Se puede editar nombre y tipo a mano. Detalle: `specs/documentacion-celular-expediente/`.
+
+**Identificación y nombre automáticos:** después de guardar, una **miniatura de 1000 px** (que arma el navegador) va a **Haiku 5.5** (`api/_modelos.js`: `identificacion`), que devuelve un JSON mínimo; con eso el servidor arma el nombre (`DNI García Juan - anverso.jpg`, `Poder - pág 2 de 3.jpg`) y renombra en Drive y en la base. **Solo se guardan el nombre y el tipo**: nada de lo leído (números, domicilios, fechas). Ante cualquier duda queda "Sin identificar". PDFs no se identifican (cuestan varias veces más). Interruptores `DRIVE_IDENTIFICAR` (celular) y `DRIVE_IDENTIFICAR_COMPU` (compu, opción "Automático"): se apagan en Vercel sin tocar código. **Ojo de configuración (medido):** estos modelos piensan antes de responder y eso cuenta contra `max_tokens`; hay que usar `max_tokens: 1000` y `output_config: { effort: "low" }` (con 300 se cortaba el JSON). Medido con 42 imágenes de prueba: 42/42 en Haiku y en Sonnet; **costo real ≈ $0,0003 por foto** (≈ $0,30 cada mil), 14 veces menos que Sonnet. Conjunto de prueba reproducible en `scripts/spikes/identificar/` (imágenes en `fotos_prueba/`, ignorada por git).
+
+---
+
+## Google Drive Integration (mecanismo viejo, sigue en Carga Masiva)
 
 **Scope:** `https://www.googleapis.com/auth/drive.file` (mínimo necesario — solo archivos creados por la app)
 
