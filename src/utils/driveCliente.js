@@ -43,6 +43,18 @@ export function fechaHora(iso) {
   return `${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
+// ── Subir desde el celular ───────────────────────────────────────────────────
+
+const dos = (n) => String(n).padStart(2, "0");
+
+// Nombre de una foto sacada con la cámara de la página (que no trae nombre propio): fecha y hora locales.
+// `n` > 1 para fotos en el mismo segundo (ráfaga), así no chocan. Sin caracteres que Drive o Windows rechacen.
+export function nombreFotoCamara(fecha = new Date(), n = 1) {
+  const f = `${dos(fecha.getDate())}-${dos(fecha.getMonth() + 1)}-${fecha.getFullYear()}`;
+  const h = `${dos(fecha.getHours())}.${dos(fecha.getMinutes())}.${dos(fecha.getSeconds())}`;
+  return `Foto ${f} ${h}${n > 1 ? ` (${n})` : ""}.jpg`;
+}
+
 // ── Panel del administrador ──────────────────────────────────────────────────
 
 // Cómo se muestra el Drive de un registro (lo que devuelve admin_estado). `accion` = el botón que corresponde.
