@@ -54,9 +54,14 @@ export function descifrar(token, claveB64) {
   const k = clave32(claveB64);
   const partes = String(token || "").split(".");
   if (partes.length !== 4 || partes[0] !== "v1") throw new Error("token_invalido");
-  const d = createDecipheriv("aes-256-gcm", k, Buffer.from(partes[1], "base64url"));
-  d.setAuthTag(Buffer.from(partes[2], "base64url"));
-  return Buffer.concat([d.update(Buffer.from(partes[3], "base64url")), d.final()]).toString("utf8");
+  try {
+    const d = createDecipheriv("aes-256-gcm", k, Buffer.from(partes[1], "base64url"));
+    d.setAuthTag(Buffer.from(partes[2], "base64url"));
+    return Buffer.concat([d.update(Buffer.from(partes[3], "base64url")), d.final()]).toString("utf8");
+  } catch {
+    // Dato alterado, clave equivocada o formato roto: siempre el mismo error, sin detalles del cifrado.
+    throw new Error("token_invalido");
+  }
 }
 
 // ── State de OAuth firmado (anti-CSRF) ───────────────────────────────────────

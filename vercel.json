@@ -9,6 +9,9 @@
     "api/captura.js": {
       "maxDuration": 120
     },
+    "api/drive.js": {
+      "maxDuration": 60
+    },
     "api/dnrpa-valuacion.js": {
       "maxDuration": 10
     },
@@ -33,6 +36,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/drive-callback",
+      "dest": "/api/drive?accion=callback"
+    },
     {
       "src": "/",
       "dest": "/landing.html"

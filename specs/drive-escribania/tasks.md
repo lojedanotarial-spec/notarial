@@ -1,6 +1,6 @@
 # Tareas: Drive de la escribanía
 
-**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 3 de 3). En ejecución: Fases 0 a 3 hechas; sigue la Fase 4 (API)
+**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 3 de 3). En ejecución: Fases 0 a 4 hechas; sigue la Fase 5 (pantallas)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅ (aprobado 06/11/26: enlace 24 h, solo el administrador conecta)
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación.
 
@@ -35,10 +35,10 @@ Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local c
 
 ## Fase 4 — API (`api/drive.js`)
 
-- [ ] **T4.1 🤖** Esqueleto: enrutado por `accion`, autenticación con Bearer, deducción del registro en el servidor, verificación de administrador con service key, auditoría. *Verif.: tests de 401 sin token, 403 a no administradores en `admin_*`, y que el registro del body se ignora.*
-- [ ] **T4.2 🤖** Conexión: `admin_enlace`, `enlace_info`, `enlace_iniciar`, `callback` (canje del código, token cifrado, consumo del enlace, redirecciones de éxito/rechazo/vencido), `admin_desconectar` (revocación en Google), `admin_estado` (con cuota y advertencia ≥ 80 %). *Verif.: tests con Google simulado: enlace vencido, ya usado, inexistente, rechazo en el consentimiento, `state` inválido.*
-- [ ] **T4.3 🤖** Archivos: `estado`, `iniciar_subida` (carpetas con guarda contra carrera, sesión reanudable), `confirmar_subida` (verifica padre y tamaño), `ver`/`descargar` (streaming), `borrar` (papelera). *Verif.: tests de otro registro ⇒ 404, archivo borrado ⇒ 404, `invalid_grant` ⇒ conexión rota con mensaje claro, cuota llena ⇒ informa lo no guardado.*
-- [ ] **T4.4 🤖** `vercel.json`: función `api/drive.js` y ruta `/api/drive-callback`. *Verif.: el test que ya guarda los imports `.js` sigue en verde; build local OK.*
+- [x] **T4.1 🤖** (hecho 09/11/26) Esqueleto: enrutado por `accion`, autenticación con Bearer, deducción del registro en el servidor, verificación de administrador con service key, auditoría. *Verif.: tests de 401 sin token, 403 a no administradores en `admin_*`, y que el registro del body se ignora.*
+- [x] **T4.2 🤖** (hecho 09/11/26) Conexión: `admin_enlace`, `enlace_info`, `enlace_iniciar`, `callback` (canje del código, token cifrado, consumo del enlace, redirecciones de éxito/rechazo/vencido), `admin_desconectar` (revocación en Google), `admin_estado` (con cuota y advertencia ≥ 80 %). *Verif.: tests con Google simulado: enlace vencido, ya usado, inexistente, rechazo en el consentimiento, `state` inválido.*
+- [x] **T4.3 🤖** (hecho 09/11/26) Archivos: `estado`, `iniciar_subida` (carpetas con guarda contra carrera, sesión reanudable), `confirmar_subida` (verifica padre y tamaño), `ver`/`descargar` (streaming), `borrar` (papelera). *Verif.: tests de otro registro ⇒ 404, archivo borrado ⇒ 404, `invalid_grant` ⇒ conexión rota con mensaje claro, cuota llena ⇒ informa lo no guardado.*
+- [x] **T4.4 🤖** (hecho 09/11/26) `vercel.json`: función `api/drive.js` y ruta `/api/drive-callback`. *Verif.: el test que ya guarda los imports `.js` sigue en verde; build local OK.*
 
 ## Fase 5 — Pantallas
 

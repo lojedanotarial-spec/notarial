@@ -161,3 +161,16 @@ Cada spike se prueba contra el Drive real de `lojeda.notarial@gmail.com`.
 ## 11. Fuera de este plan
 
 Subir desde el celular (siguiente feature del epic), lectura automática de las fotos, Carga Masiva sobre este Drive, copias de seguridad del contenido de Drive.
+
+## 12. Ajustes hechos al construir la API (09/11/26)
+
+Cambios respecto de lo escrito arriba, todos de implementación (el comportamiento prometido en el spec no cambia):
+
+- **`iniciar_subida` no devuelve un `pendiente`** y **`confirmar_subida` no recibe nada más que el id del archivo**: el servidor le pregunta a Google por el archivo (nombre, tamaño, tipo y carpeta) y no confía en lo que diga el navegador. No hace falta una tabla de subidas pendientes.
+- **Un archivo de otro Drive no se puede registrar:** con el token de este registro, Google contesta 404, así que no hay forma de apuntar una fila a un archivo ajeno.
+- **Un usuario solo opera sobre expedientes de su registro** (el administrador, sobre cualquiera). La política de lectura de `expediente_archivos` que sigue permitiendo al *creador* de un expediente ver filas de otro registro no le sirve para abrir nada: el servidor es más estricto.
+- **El error de configuración (`invalid_client`, clave de cifrado que no coincide) no marca ninguna conexión como rota**, y se muestra igual de claro. Sirve para la rotación del secreto (T7.1).
+- **El enlace sin usar anterior se invalida** al generar uno nuevo para el mismo registro, y solo se puede generar para un registro sin conexión activa.
+- **Auditoría que falla = la operación falla** (ver, descargar, subir, borrar): no hay accesos sin registro.
+- **Solo el administrador ve la cuenta de Google conectada:** el usuario común ve solo el estado (`conectada`, `rota`, `sin espacio`).
+- **Funciones en Vercel: 9 de 12** (`api/drive.js` + la ruta `/api/drive-callback` por `vercel.json`).
