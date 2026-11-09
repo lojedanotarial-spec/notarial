@@ -16,9 +16,9 @@ Se acaba de guardar un archivo en el expediente (desde el celular, o desde la co
    "Identificando…". La subida nunca espera a la identificación.
 2. El sistema mira una copia del archivo y determina de qué documento es: DNI, tarjeta verde,
    poder, formulario 08, u otro tipo de documento.
-3. Le pone un **nombre descriptivo**: el tipo, la persona (apellido) cuando el documento la tiene, y
-   **anverso o reverso**, o el **número de página**, si corresponde. Ejemplos:
-   `DNI García - anverso.jpg`, `DNI García - reverso.jpg`, `Poder - pág 2.jpg`,
+3. Le pone un **nombre descriptivo**: el tipo, la persona (**nombre y apellido**) cuando el documento
+   la tiene, y **anverso o reverso**, o el **número de página**, si corresponde. Ejemplos:
+   `DNI García Juan - anverso.jpg`, `DNI García Juan - reverso.jpg`, `Poder - pág 2.jpg`,
    `Tarjeta verde - anverso.jpg`.
 4. En la lista, el archivo pasa de "Identificando…" a su nombre y su tipo, sin recargar la página.
 5. Si el nombre o el tipo no son los correctos, cualquier usuario del registro los corrige desde la
@@ -39,7 +39,8 @@ nombre y su tipo.
   como tipo "otro", pero el nombre puede describirlo igual (`Partida de nacimiento - anverso.jpg`).
 - **Falla la identificación** (IA no disponible): los archivos igual quedan guardados con su nombre
   original y se pueden renombrar a mano.
-- **Dos documentos de dos personas** (comprador y vendedor): el apellido en el nombre los distingue.
+- **Dos documentos de dos personas** (comprador y vendedor): el nombre y apellido en el archivo los
+  distingue, incluso si comparten apellido.
 - **Privacidad:** de lo leído solo se guarda el nombre y el tipo; ningún dato del documento
   (números, domicilios, fechas) se guarda en ningún lado.
 

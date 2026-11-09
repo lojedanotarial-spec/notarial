@@ -42,7 +42,8 @@ necesitó tener cuenta ni iniciar sesión en el celular, ni clasificar nada.
 - Alguien escanea el QR de un expediente de otro registro: no existe esa posibilidad, el código solo
   sirve para el expediente para el que se generó.
 - Dos celulares usan el mismo QR a la vez: ambos pueden subir al mismo expediente.
-- El QR dura poco (minutos, se renueva con cada foto): si venció, se genera otro desde la compu.
+- El QR dura 30 minutos desde que se genera: si venció, se genera otro desde la compu en un toque. Una
+  subida que ya empezó puede terminar.
 
 ## Estado actual
 

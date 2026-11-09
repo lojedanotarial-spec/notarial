@@ -1,6 +1,6 @@
 # Spec: Subir documentación al expediente desde el celular
 
-**Estado:** 📝 borrador revisado el 09/11/26 con las respuestas de Lucas (fase 1 de 3) — quedan 3 preguntas abiertas. NO pasar a `plan.md` hasta resolverlas y que Lucas apruebe
+**Estado:** ✅ aprobado por Lucas el 09/11/26 (fase 1 de 3). Siguiente: [`plan.md`](plan.md) → `tasks.md`. NO escribir código hasta que `tasks.md` esté aprobado
 **Feature:** [`features/subir-documentacion-celular.md`](../../features/subir-documentacion-celular.md)
 **Epic:** [`epics/documentacion-expedientes-drive.md`](../../epics/documentacion-expedientes-drive.md)
 **Casos de uso:** [UC-1](../../usecases/documentacion-celular-subir.md) · [UC-2](../../usecases/documentacion-celular-fallas.md) · [UC-3](../../usecases/documentacion-celular-deshacer.md) · [UC-4](../../usecases/documentacion-celular-identificar.md)
@@ -35,6 +35,8 @@ proceso: no siempre el tipo está en la lista y obliga a ir foto por foto.
       usar cualquier usuario del registro, entre con email o con Google. *(UC-1)*
 - [ ] El QR sirve solo para **ese expediente**. Quien lo escanea no puede ver, listar ni bajar nada
       del expediente ni del Drive: solo agregar archivos. *(UC-1)*
+- [ ] El QR **vence a los 30 minutos** de generado. Una subida que ya empezó puede terminar; para seguir
+      después, se genera otro QR en un toque. *(UC-1, UC-2)*
 - [ ] Si el registro no tiene Drive conectado o la conexión está caída, el botón explica por qué no
       se puede, con el mismo mensaje de siempre. *(UC-2)*
 - [ ] Mientras la sesión está abierta, los archivos que llegan **aparecen solos** en la lista del
@@ -66,8 +68,9 @@ proceso: no siempre el tipo está en la lista y obliga a ir foto por foto.
 **Identificación y nombre automáticos (después de subir)**
 - [ ] Cada archivo subido se **identifica solo**: se determina de qué documento es (DNI, tarjeta
       verde, poder, formulario 08, u otro) y se le pone un **nombre descriptivo** que incluye, cuando
-      corresponde, **anverso o reverso**, o el **número de página** si el documento lo tiene.
-      Ejemplos: `DNI García - anverso.jpg`, `Poder - pág 2.jpg`. *(UC-4)*
+      corresponde, el **nombre y apellido** de la persona, y **anverso o reverso**, o el **número de
+      página** si el documento lo tiene. Ejemplos: `DNI García Juan - anverso.jpg`,
+      `Poder - pág 2.jpg`. *(UC-4)*
 - [ ] La identificación **nunca demora ni frena la subida**: primero se guarda, después se
       identifica. *(UC-4)*
 - [ ] El archivo original **no se modifica ni se vuelve a subir**: solo cambian su nombre y su tipo.
@@ -77,8 +80,15 @@ proceso: no siempre el tipo está en la lista y obliga a ir foto por foto.
       identificar"**. Nunca se inventa un nombre. *(UC-4)*
 - [ ] **Se puede corregir el nombre y el tipo** de cualquier archivo desde la compu, por cualquier
       usuario del registro. Queda registrado quién y cuándo. *(UC-4)*
-- [ ] De lo leído del documento **solo se guarda el nombre y el tipo resultantes**: ningún otro dato
-      leído (números, domicilios, fechas) se guarda en ningún lado. *(UC-4)*
+- [ ] De lo leído del documento **solo se guarda el nombre y el tipo resultantes** (el nombre puede
+      incluir el de la persona): ningún otro dato leído (números, domicilios, fechas) se guarda en
+      ningún lado. *(UC-4)*
+- [ ] **Costo bajo:** se identifica con una versión reducida de la foto y un modelo liviano, pidiendo
+      una respuesta mínima. El costo real por foto se mide y se le informa a Lucas **antes** de
+      activarlo para todos. *(UC-4)*
+- [ ] Lo mismo se aplica a lo que se sube desde la compu (el selector "Tipo" queda en **"Automático"**
+      por defecto y se puede forzar uno), **solo si el costo medido es bajo**; si no, queda solo para
+      el celular. *(UC-4)*
 
 **Fallas**
 - [ ] Si el QR venció o se cerró la sesión desde la compu, el celular lo dice con claridad, informa
@@ -117,6 +127,9 @@ proceso: no siempre el tipo está en la lista y obliga a ir foto por foto.
 
 | Tema | Decisión |
 |---|---|
+| Vigencia del QR | **30 minutos** desde que se genera (respuesta de Lucas, 09/11/26) |
+| Nombre de la persona en el archivo | **Nombre y apellido**, porque puede haber dos apellidos iguales en un expediente (`DNI García Juan - anverso.jpg`) |
+| Identificar también lo que se sube desde la compu | **Sí, pero solo si es barato en tokens.** Si el costo medido no lo es, queda solo para el celular |
 | Elegir tipo en el celular | **No.** Se sube todo de una y la clasificación es automática, después de subir. Resuelve el caso "el tipo no está en la lista" y el proceso trunco de ir foto por foto |
 | Nombres | Descriptivos, con **anverso/reverso o número de página** si existe. Las fotos de galería ya no conservan su nombre `IMG_xxxx`: se renombran al identificarlas, y si no se pueden identificar se queda el original |
 | Tope de archivos por sesión | **Sin tope** |
@@ -124,7 +137,12 @@ proceso: no siempre el tipo está en la lista y obliga a ir foto por foto.
 | Calidad | Las tres formas de cargar (cámara de la página, cámara del teléfono, galería), cada uno usa la que prefiera |
 | Quitar desde el celular | Solo lo subido en esa sesión, con confirmación, a la papelera de Drive |
 
-## Preguntas abiertas (a resolver antes de pasar a `plan.md`)
+## Preguntas abiertas
+
+Ninguna: las tres que quedaban (vigencia del QR, nombre y apellido, identificación desde la compu) se
+resolvieron el 09/11/26 y están en la tabla de arriba. Lo que sigue se conserva solo como historial.
+
+### Historial de las preguntas
 
 1. **Vigencia del QR.** Dijiste que 10 minutos es demasiado porque son acciones instantáneas.
    Propuesta: el QR vence a los **5 minutos sin actividad** (cada foto subida lo renueva) y con un
