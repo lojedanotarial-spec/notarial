@@ -162,6 +162,21 @@ alter table expediente_archivos
 
 S3 y S4 requieren teléfonos reales: se hacen en la prueba manual, con Lucas.
 
+### Resultado de S2 (09/11/26)
+
+Conjunto de prueba: 42 imágenes (ejemplares oficiales del DNI de Wikimedia Commons, CC BY, y documentos inventados con 4 variantes de mala calidad cada uno: normal, inclinada con sombra, con reflejo y borrosa, de costado y muy comprimida; más 2 imágenes sin documento), con la respuesta correcta conocida. Prompt real de producción, miniatura ≤ 1000 px JPEG q70.
+
+| Modelo | Aciertos | Tokens por foto (entrada + salida) | Precio por millón (entrada / salida) | Costo por foto |
+|---|---|---|---|---|
+| **Haiku 5.5**, effort bajo | **42 / 42** | 1.372 + 221 | $0,10 / $0,50 | **≈ $0,00025** |
+| Sonnet 5.5, effort bajo | 42 / 42 | 1.372 + 85 | $2 / $10 | ≈ $0,0036 (14 veces más) |
+
+- **Hallazgo clave:** ambos modelos **piensan antes de responder y ese razonamiento cuenta contra `max_tokens`**. Con 300 tokens fallaron 19 de 42 (Haiku) y 2 de 42 (Sonnet) por JSON cortado (`stop_reason: max_tokens`), sin ningún error de contenido. Con `max_tokens: 1000` y `output_config: { effort: "low" }` no falla ninguno. **Producción debe usar exactamente eso.**
+- Tipo, lado (anverso/reverso), página y persona (nombre y apellido, incluso del reverso del DNI leyendo la línea de lectura automática): sin un solo error en los dos modelos. Las 2 imágenes sin documento no inventan nada.
+- Con miniatura de 700 px y de 500 px, Haiku también acierta 42/42 (entrada 1.080 y 896 tokens): el tamaño de la miniatura casi no cambia el costo porque el prompt pesa unos 800 tokens. Se deja **1000 px** por margen con fotos reales.
+- **Decisión: Haiku 5.5.** Limitación honesta: las imágenes son de ejemplo y limpias comparadas con fotos reales de mostrador; la validación final es el uso real en el registro 9876.
+
+
 ## 10. Despliegue y reversibilidad
 
 - Migración aditiva (`scripts/drive_celular.sql`); si el sistema de permisos la rechaza al aplicarla, la corre Lucas a mano como la del Drive.

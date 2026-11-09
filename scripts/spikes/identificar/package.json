@@ -1,0 +1,9 @@
+{
+  "name": "identificar-spike",
+  "private": true,
+  "type": "module",
+  "description": "Herramientas de prueba para la identificación automática de documentos (no forma parte de la app). Ver specs/documentacion-celular-expediente/tasks.md TB.0-TB.2",
+  "dependencies": {
+    "sharp": "^0.35.5"
+  }
+}
