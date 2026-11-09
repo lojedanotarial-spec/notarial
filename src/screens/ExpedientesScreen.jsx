@@ -9,7 +9,7 @@ function ConfirmDelete({ nombre, onConfirm, onCancel }) {
       <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "28px 28px 20px", width: 360, boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2332", marginBottom: 8 }}>Eliminar expediente</div>
         <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20, lineHeight: 1.5 }}>
-          ¿Confirmás que querés eliminar <strong style={{ color: "#1A2332" }}>{nombre}</strong>? Esta acción no se puede deshacer.
+          ¿Confirmás que querés eliminar <strong style={{ color: "#1A2332" }}>{nombre}</strong>? Esta acción no se puede deshacer. Los archivos que ya se subieron siguen guardados en el Drive de la escribanía.
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={onCancel} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", fontSize: 13, fontWeight: 600, color: "#1A2332", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancelar</button>
@@ -190,7 +190,6 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
 
   async function eliminar(exp) {
     await supabase.from("expediente_documentos").delete().eq("expediente_id", exp.id);
-    await supabase.from("expediente_archivos").delete().eq("expediente_id", exp.id);
     await supabase.from("expedientes").delete().eq("id", exp.id);
     setExpedientes(prev => prev.filter(x => x.id !== exp.id));
     setConfirmDel(null);

@@ -109,8 +109,11 @@ const archivoPublico = (a) => ({
 
 // ── Acciones del usuario ─────────────────────────────────────────────────────
 
-async function estado(d, perfil) {
-  const c = perfil.registro ? await conexionDe(d, perfil.registro) : null;
+// Estado del Drive del registro del usuario. Con `expediente_id`, el del registro de ESE expediente (el administrador
+// puede mirar expedientes de otros registros y tiene que ver el Drive que corresponde).
+async function estado(d, perfil, body = {}) {
+  const registro = body.expediente_id ? (await expedienteAutorizado(d, perfil, body.expediente_id)).registro : perfil.registro;
+  const c = registro ? await conexionDe(d, registro) : null;
   return { conectado: !!c, operativa: c?.estado === "activa", estado: c ? c.estado : "no_conectado", sin_espacio: !!c?.sin_espacio };
 }
 

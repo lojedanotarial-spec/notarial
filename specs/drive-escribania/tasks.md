@@ -1,6 +1,6 @@
 # Tareas: Drive de la escribanía
 
-**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 3 de 3). En ejecución: Fases 0 a 4 hechas; sigue la Fase 5 (pantallas)
+**Estado:** ✅ aprobado por Lucas el 06/11/26 (fase 3 de 3). En ejecución: Fases 0 a 5 hechas (la 5 solo en local, sin subir); sigue la Fase 6 (deploy y pruebas)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅ (aprobado 06/11/26: enlace 24 h, solo el administrador conecta)
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación.
 
@@ -42,10 +42,10 @@ Script de apoyo en `scripts/spikes/drive_oauth.mjs` (hace el baile OAuth local c
 
 ## Fase 5 — Pantallas
 
-- [ ] **T5.1 🤖** `src/utils/driveApi.js` + tests (subida con progreso, errores traducidos).
-- [ ] **T5.2 🤖** `src/screens/DriveConectar.jsx` + ruta pública `/drive/<codigo>` y `/drive/listo` en `App.jsx` (antes del login). *Verif.: estados vencido, ya usado, rechazado y listo, probados a 360 px.*
-- [ ] **T5.3 🤖** `AdminScreen.jsx`: sección "Drive de las escribanías" (estado, cuenta, espacio, Conectar, que genera el enlace y ofrece tres botones: **WhatsApp** (mensaje redactado), **Mail** (redacción de Gmail con asunto y texto listos; Lucas pone el destinatario) y **Copiar enlace**; sin servicio de envío, Desconectar con confirmación, advertencia al 80 %).
-- [ ] **T5.4 🤖** `ExpedienteDetailScreen.jsx`: sacar el pedido de login con Google y el `delete` explícito de archivos; subida múltiple con resultado por archivo; aviso fijo **"Máximo 25 MB por archivo"**; quién subió y cuándo; ver, descargar, borrar con confirmación; aviso cuando el registro no tiene Drive y cuando la conexión está caída. Sacar también el `delete` explícito en `ExpedientesScreen.jsx`. *Verif.: no queda ninguna escritura del navegador a `expediente_archivos`.*
+- [x] **T5.1 🤖** (hecho 09/11/26: `driveApi.js` + `driveCliente.js` con 21 tests) `src/utils/driveApi.js` + tests (subida con progreso, errores traducidos).
+- [x] **T5.2 🤖** (hecho 09/11/26: los 5 estados verificados a 360 px) `src/screens/DriveConectar.jsx` + ruta pública `/drive/<codigo>` y `/drive/listo` en `App.jsx` (antes del login). *Verif.: estados vencido, ya usado, rechazado y listo, probados a 360 px.*
+- [x] **T5.3 🤖** (hecho 09/11/26: pantalla `DriveAdminScreen` con botón en "Seleccionar registro"; falta verla con sesión real en T6.3) `AdminScreen.jsx`: sección "Drive de las escribanías" (estado, cuenta, espacio, Conectar, que genera el enlace y ofrece tres botones: **WhatsApp** (mensaje redactado), **Mail** (redacción de Gmail con asunto y texto listos; Lucas pone el destinatario) y **Copiar enlace**; sin servicio de envío, Desconectar con confirmación, advertencia al 80 %).
+- [x] **T5.4 🤖** (hecho 09/11/26: `ArchivosEscribania.jsx`; falta verla con sesión real en T6.3) `ExpedienteDetailScreen.jsx`: sacar el pedido de login con Google y el `delete` explícito de archivos; subida múltiple con resultado por archivo; aviso fijo **"Máximo 25 MB por archivo"**; quién subió y cuándo; ver, descargar, borrar con confirmación; aviso cuando el registro no tiene Drive y cuando la conexión está caída. Sacar también el `delete` explícito en `ExpedientesScreen.jsx`. *Verif.: no queda ninguna escritura del navegador a `expediente_archivos`.*
 
 ## Fase 6 — Verificación y deploy
 

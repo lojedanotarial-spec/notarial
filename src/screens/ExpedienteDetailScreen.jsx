@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
-import { subirArchivoDrive, buscarOCrearCarpetaDrive, urlVistaPreviaDrive, esErrorSesionVencida } from "../utils/driveHelper";
-import { IconoDrive, IconoSubirDrive } from "../components/ui/DriveIcons";
+import { IconoDrive } from "../components/ui/DriveIcons";
+import ArchivosEscribania from "../components/ArchivosEscribania";
+import { listarArchivos } from "../utils/driveApi";
 
 const ESTADOS = [
   { key: "abierto",    label: "Abierto",    color: "#3a7ca5" },
@@ -12,21 +13,13 @@ const ESTADOS = [
   { key: "archivado",  label: "Archivado",  color: "rgba(26,35,50,.4)" },
 ];
 
-const TIPOS_ARCHIVO = [
-  { key: "dni",           label: "DNI" },
-  { key: "tarjeta_verde", label: "Tarjeta verde" },
-  { key: "poder",         label: "Poder" },
-  { key: "formulario",    label: "Formulario 08" },
-  { key: "otro",          label: "Otro" },
-];
-
 function ConfirmDelete({ nombre, onConfirm, onCancel }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "28px 28px 20px", width: 360, boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>Eliminar expediente</div>
         <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20, lineHeight: 1.5 }}>
-          ¿Confirmás que querés eliminar <strong style={{ color: C.dark }}>{nombre}</strong>? Esta acción no se puede deshacer.
+          ¿Confirmás que querés eliminar <strong style={{ color: C.dark }}>{nombre}</strong>? Esta acción no se puede deshacer. Los archivos que ya se subieron siguen guardados en el Drive de la escribanía.
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={onCancel} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", fontSize: 13, fontWeight: 600, color: C.dark, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancelar</button>
@@ -48,7 +41,7 @@ function Tag({ children, color = C.cerulean }) {
 }
 
 export function ExpedienteDetailScreen({ onGo, params }) {
-  const { session, registroActivo, miUsuario } = useAuth();
+  const { registroActivo, miUsuario } = useAuth();
   const expedienteId = params?.expedienteId;
 
   const [expediente, setExpediente]   = useState(null);
@@ -56,7 +49,6 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   const [archivos, setArchivos]       = useState([]);
   const [docsDisp, setDocsDisp]       = useState([]);  // docs del registro para vincular
   const [cargando, setCargando]       = useState(true);
-  const [subiendo, setSubiendo]       = useState(false);
   const [editNombre, setEditNombre]   = useState(false);
   const [nombre, setNombre]           = useState("");
   const [notas, setNotas]             = useState("");
@@ -66,10 +58,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   const [filtroTipo, setFiltroTipo]       = useState("");
   const [filtroFecha, setFiltroFecha]     = useState("all");
   const [confirmEliminar, setConfirmEliminar] = useState(false);
-  const fileRef = useRef(null);
   const vincularDocRef = useRef(params?.vincularDocId || null);
-
-  useEffect(() => { if (expedienteId) cargar(); }, [expedienteId]);
 
   // Carga los vínculos expediente_documentos + detalles de documentos sin FK join
   // (el join embebido documentos(*) requiere FK constraint en DB y falla con 400)
@@ -90,17 +79,17 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   }
 
   async function cargar() {
-    setCargando(true);
-    const [{ data: exp }, links, { data: arch }] = await Promise.all([
+    // (`cargando` ya arranca en true: no se vuelve a marcar acá para no pisar la pantalla en cada recarga)
+    const [{ data: exp }, links, arch] = await Promise.all([
       supabase.from("expedientes").select("*").eq("id", expedienteId).single(),
       cargarLinks(expedienteId),
-      supabase.from("expediente_archivos").select("*").eq("expediente_id", expedienteId).order("created_at", { ascending: false }),
+      listarArchivos(expedienteId).catch(() => []),
     ]);
     setExpediente(exp);
     setNombre(exp?.nombre || "");
     setNotas(exp?.notas || "");
     setDocumentos(links);
-    setArchivos(arch || []);
+    setArchivos(arch);
     setCargando(false);
 
     // Auto-vincular si viene de "Crear y vincular" o "Vincular a existente" en el editor
@@ -125,6 +114,9 @@ export function ExpedienteDetailScreen({ onGo, params }) {
     setDocumentos(links);
   }
 
+  // Carga inicial: `cargar` actualiza estado recién al terminar de pedir los datos (patrón de siempre de esta pantalla).
+  useEffect(() => { if (expedienteId) cargar(); }, [expedienteId]); // eslint-disable-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+
   async function cambiarEstado(nuevoEstado) {
     await supabase.from("expedientes").update({ estado: nuevoEstado }).eq("id", expedienteId);
     setExpediente(prev => ({ ...prev, estado: nuevoEstado }));
@@ -139,47 +131,6 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   async function desvincularDoc(edId) {
     await supabase.from("expediente_documentos").delete().eq("id", edId);
     setDocumentos(prev => prev.filter(d => d.id !== edId));
-  }
-
-  async function eliminarArchivo(arch) {
-    await supabase.from("expediente_archivos").delete().eq("id", arch.id);
-    setArchivos(prev => prev.filter(a => a.id !== arch.id));
-  }
-
-  async function subirArchivo(file, tipo = "otro") {
-    if (!session?.provider_token) {
-      alert("Necesitás iniciar sesión con Google para subir archivos a Drive.");
-      return;
-    }
-    setSubiendo(true);
-    try {
-      // Carpeta raíz "Notarial" en el Drive del usuario
-      const carpetaRaizId = await buscarOCrearCarpetaDrive(session, "Notarial");
-
-      // Carpeta del expediente dentro de "Notarial" — se guarda en BD para no recrearla
-      let folderId = expediente?.drive_folder_id;
-      if (!folderId) {
-        folderId = await buscarOCrearCarpetaDrive(session, expediente.nombre, carpetaRaizId);
-        await supabase.from("expedientes").update({ drive_folder_id: folderId }).eq("id", expedienteId);
-        setExpediente(prev => ({ ...prev, drive_folder_id: folderId }));
-      }
-
-      const resultado = await subirArchivoDrive(session, file, file.name, file.type, folderId);
-      await supabase.from("expediente_archivos").insert({
-        expediente_id: expedienteId,
-        drive_file_id: resultado.id,
-        nombre: file.name,
-        tipo,
-        mime_type: file.type,
-      });
-      await cargar();
-    } catch (e) {
-      alert(esErrorSesionVencida(e)
-        ? "Tu sesión de Google venció. Cerrá sesión y volvé a iniciarla con Google, después subí el archivo de nuevo."
-        : "Error subiendo archivo: " + e.message);
-    } finally {
-      setSubiendo(false);
-    }
   }
 
   async function abrirModalVincular() {
@@ -205,7 +156,6 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
   async function eliminarExpediente() {
     await supabase.from("expediente_documentos").delete().eq("expediente_id", expedienteId);
-    await supabase.from("expediente_archivos").delete().eq("expediente_id", expedienteId);
     await supabase.from("expedientes").delete().eq("id", expedienteId);
     onGo?.("expedientes");
   }
@@ -231,11 +181,11 @@ export function ExpedienteDetailScreen({ onGo, params }) {
           style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: stateInfo.color + "22", color: stateInfo.color, fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>
           {ESTADOS.map(e => <option key={e.key} value={e.key}>{e.label}</option>)}
         </select>
-        {expediente.drive_folder_id && (
-          <a href={`https://drive.google.com/drive/folders/${expediente.drive_folder_id}`} target="_blank" rel="noopener noreferrer"
-            title="Abrir la carpeta de Drive en una pestaña nueva"
+        {expediente.drive_carpeta_escribania_id && (
+          <a href={`https://drive.google.com/drive/folders/${expediente.drive_carpeta_escribania_id}`} target="_blank" rel="noopener noreferrer"
+            title="Abrir la carpeta del expediente en el Drive de la escribanía (una pestaña nueva)"
             style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(253,252,250,.75)", fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 11, textDecoration: "none", flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
-            <IconoDrive size={12} /> Ver en Drive
+            <IconoDrive size={12} /> Abrir carpeta en Drive
           </a>
         )}
       </div>
@@ -288,7 +238,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
           {/* Tabs */}
           <div style={{ display: "flex", borderBottom: "1px solid rgba(26,35,50,.08)", background: "#FDFCFA", flexShrink: 0 }}>
-            {[["docs", `Documentos (${documentos.length})`], ["archivos", `Archivos Drive (${archivos.length})`]].map(([k, l]) => (
+            {[["docs", `Documentos (${documentos.length})`], ["archivos", `Archivos (${archivos.length})`]].map(([k, l]) => (
               <button key={k} onClick={() => setTab(k)} style={{
                 padding: "12px 20px", border: "none", background: "transparent",
                 borderBottom: tab === k ? `2px solid ${C.cerulean}` : "2px solid transparent",
@@ -349,71 +299,9 @@ export function ExpedienteDetailScreen({ onGo, params }) {
               </>
             )}
 
-            {/* Tab archivos Drive */}
+            {/* Tab archivos: Drive de la escribanía */}
             {tab === "archivos" && (
-              <>
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                  <input ref={fileRef} type="file" multiple style={{ display: "none" }}
-                    onChange={async e => {
-                      const files = Array.from(e.target.files || []);
-                      for (const f of files) await subirArchivo(f);
-                      e.target.value = "";
-                    }}
-                  />
-                  <button onClick={() => fileRef.current?.click()} disabled={subiendo}
-                    style={{
-                      padding: "7px 16px", borderRadius: 7, border: "none",
-                      background: subiendo ? C.cerulean + "88" : C.cerulean,
-                      color: "#fff", fontSize: 12, fontWeight: 700, cursor: subiendo ? "default" : "pointer",
-                      fontFamily: "'Montserrat',sans-serif",
-                      display: "flex", alignItems: "center", gap: 6,
-                    }}>
-                    {subiendo ? "Subiendo..." : <><IconoSubirDrive size={13} color="#fff" /> Subir a Drive</>}
-                  </button>
-                </div>
-                {!session?.provider_token && (
-                  <div style={{ background: "rgba(201,169,97,.12)", border: "1px solid rgba(201,169,97,.3)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: C.dark, marginBottom: 14 }}>
-                    Para subir archivos a Drive, iniciá sesión con Google.
-                  </div>
-                )}
-                {archivos.length === 0 ? (
-                  <div style={{ textAlign: "center", marginTop: 60, color: C.muted }}>
-                    <div style={{ fontSize: 28, marginBottom: 10 }}>☁️</div>
-                    <div style={{ fontSize: 13 }}>Sin archivos en Drive</div>
-                    <div style={{ fontSize: 12, marginTop: 4 }}>Subí fotos de DNI, tarjeta verde, poderes...</div>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {archivos.map(a => (
-                      <div key={a.id} style={{
-                        background: "#FDFCFA", borderRadius: 9, padding: "10px 14px",
-                        border: "1px solid rgba(26,35,50,.08)", display: "flex",
-                        alignItems: "center", justifyContent: "space-between",
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontSize: 20 }}>{a.mime_type?.startsWith("image/") ? "🖼️" : "📄"}</span>
-                          <div>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: C.dark }}>{a.nombre}</div>
-                            <div style={{ fontSize: 10, color: C.muted }}>
-                              {TIPOS_ARCHIVO.find(t => t.key === a.tipo)?.label || a.tipo} · {new Date(a.created_at).toLocaleDateString("es-AR")}
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <a href={urlVistaPreviaDrive(a.drive_file_id)} target="_blank" rel="noreferrer"
-                            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid " + C.cerulean, color: C.cerulean, fontSize: 11, fontWeight: 700, textDecoration: "none", fontFamily: "'Montserrat',sans-serif" }}>
-                            Ver
-                          </a>
-                          <button onClick={() => eliminarArchivo(a)}
-                            style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: "transparent", color: C.muted, fontSize: 11, cursor: "pointer" }}>
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
+              <ArchivosEscribania expedienteId={expedienteId} archivos={archivos} setArchivos={setArchivos} carpetaId={expediente.drive_carpeta_escribania_id} />
             )}
           </div>
         </div>

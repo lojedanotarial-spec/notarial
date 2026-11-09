@@ -16,9 +16,11 @@ import { ScribaPanel }   from "./components/ScribaPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FeedbackButton } from "./components/FeedbackButton";
 import { LogsScreen }    from "./screens/LogsScreen";
+import { DriveAdminScreen } from "./screens/DriveAdminScreen";
 import { logError }      from "./utils/logger";
 import { useScribaSesion } from "./hooks/useScribaSesion";
 import CapturaMovil from "./screens/CapturaMovil.jsx";
+import DriveConectar from "./screens/DriveConectar.jsx";
 
 
 const globalStyles = [
@@ -161,6 +163,7 @@ function AppRouter() {
       {screen === "presupuesto_notarial" && <PresupuestoNotarial onBack={() => handleGo("herramientas")} />}
       {screen === "calculadora_cuit"     && <CalculadoraCuit     onBack={() => handleGo("herramientas")} />}
       {screen === "logs"                 && <LogsScreen          onBack={() => handleGo("admin")} />}
+      {screen === "drive_admin"          && <DriveAdminScreen    onGo={handleGo} />}
 
       <FeedbackButton screen={screen} />
 
@@ -210,6 +213,16 @@ export default function App() {
       <>
         <style>{globalStyles}</style>
         <CapturaMovil codigo={enCaptura[1]} />
+      </>
+    );
+  }
+  // Página para conectar el Drive de una escribanía (enlace de un solo uso): también va ANTES del login.
+  const enDrive = window.location.pathname.match(/^\/drive\/([A-Za-z0-9_-]+)\/?$/);
+  if (enDrive) {
+    return (
+      <>
+        <style>{globalStyles}</style>
+        <DriveConectar parte={enDrive[1]} />
       </>
     );
   }

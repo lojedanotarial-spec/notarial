@@ -176,6 +176,14 @@ describe("T4.1 · entrada, autenticación y quién es quién", () => {
     expect(JSON.stringify(r.jsonBody)).not.toContain("escribania@gmail.com");
     expect((await llamar({ accion: "estado" }, "tok-otro")).jsonBody).toMatchObject({ conectado: false, estado: "no_conectado" });
   });
+  it("estado con expediente_id: el administrador ve el Drive del registro de ese expediente; un usuario ajeno, 404", async () => {
+    const { llamar, conectar } = entorno();
+    conectar("853");
+    expect((await llamar({ accion: "estado" }, "tok-admin")).jsonBody.estado).toBe("no_conectado"); // su propio registro (9876)
+    expect((await llamar({ accion: "estado", expediente_id: "e853" }, "tok-admin")).jsonBody).toMatchObject({ conectado: true, operativa: true });
+    expect((await llamar({ accion: "estado", expediente_id: "e853" }, "tok-fati2")).jsonBody.operativa).toBe(true);
+    expect((await llamar({ accion: "estado", expediente_id: "e853" }, "tok-otro")).statusCode).toBe(404);
+  });
 });
 
 describe("T4.2 · conexión (enlace, Google, panel del administrador)", () => {

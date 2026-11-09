@@ -52,8 +52,11 @@ export function AdminScreen({ onGo }) {
             <div style={{ fontSize:20, fontWeight:700, color:C.dark, letterSpacing:"-.02em" }}>
               ¿Qué registro querés ver?
             </div>
+            <div style={{ display:"flex", gap:8 }}>
+            {[["drive_admin", "Drive de escribanías"], ["logs", "Ver logs"]].map(([destino, etiqueta]) => (
             <button
-              onClick={() => onGo("logs")}
+              key={destino}
+              onClick={() => onGo(destino)}
               style={{
                 padding:"6px 14px", borderRadius:8,
                 border:"1.5px solid rgba(26,35,50,.15)",
@@ -65,8 +68,10 @@ export function AdminScreen({ onGo }) {
               onMouseEnter={e => { e.currentTarget.style.borderColor="rgba(26,35,50,.4)"; e.currentTarget.style.color="rgba(26,35,50,.85)"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor="rgba(26,35,50,.15)"; e.currentTarget.style.color="rgba(26,35,50,.5)"; }}
             >
-              Ver logs
+              {etiqueta}
             </button>
+            ))}
+            </div>
           </div>
 
           {/* BUSCADOR */}
