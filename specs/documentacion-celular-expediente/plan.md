@@ -1,6 +1,6 @@
 # Plan técnico: Subir documentación al expediente desde el celular
 
-**Estado:** 📝 borrador (fase 2 de 3) — pendiente de aprobación de Lucas. NO escribir código hasta que `tasks.md` esté aprobado
+**Estado:** ✅ aprobado por Lucas el 09/11/26 (fase 2 de 3). Siguiente: [`tasks.md`](tasks.md). NO escribir código hasta que `tasks.md` esté aprobado
 **Spec:** [`spec.md`](spec.md) (aprobado 09/11/26)
 **Fecha:** 09/11/26
 

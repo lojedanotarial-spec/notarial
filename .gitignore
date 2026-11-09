@@ -34,3 +34,6 @@ scripts/raw_response.txt
 # Claves privadas sueltas (ej. descargadas del navegador al crear VMs) -- nunca al repo
 *.key
 *.pem
+
+# Fotos reales de documentos para probar la identificación (datos personales: NUNCA al repo)
+fotos_prueba/
