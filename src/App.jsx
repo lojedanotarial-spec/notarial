@@ -21,6 +21,7 @@ import { logError }      from "./utils/logger";
 import { useScribaSesion } from "./hooks/useScribaSesion";
 import CapturaMovil from "./screens/CapturaMovil.jsx";
 import DriveConectar from "./screens/DriveConectar.jsx";
+import SubirMovil from "./screens/SubirMovil.jsx";
 
 
 const globalStyles = [
@@ -213,6 +214,16 @@ export default function App() {
       <>
         <style>{globalStyles}</style>
         <CapturaMovil codigo={enCaptura[1]} />
+      </>
+    );
+  }
+  // Página del celular para subir documentación a un expediente (QR de 30 minutos): también va ANTES del login.
+  const enSubida = window.location.pathname.match(/^\/s\/([A-Za-z0-9_-]{20,})\/?$/);
+  if (enSubida) {
+    return (
+      <>
+        <style>{globalStyles}</style>
+        <SubirMovil codigo={enSubida[1]} />
       </>
     );
   }

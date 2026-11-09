@@ -7,7 +7,9 @@ import {
   vencimientoLimpieza,
 } from "../../api/_driveCelular.js";
 import { ACCIONES_AUDITORIA, armarAuditoria } from "../../api/_drive.js";
-import { nombreFotoCamara } from "../utils/driveCliente.js";
+import {
+  nombreFotoCamara, siguientePendiente, resumenCola, marcarItem, esErrorDeSesion, textoSesionTerminada, cuentaRegresiva,
+} from "../utils/driveCliente.js";
 
 const T0 = Date.UTC(2026, 10, 9, 15, 0, 0);
 const MIN = 60_000;
@@ -128,5 +130,71 @@ describe("nombre de las fotos de la cámara (mientras no haya identificación au
   });
   it("sin caracteres que Drive o Windows rechacen", () => {
     expect(nombreFotoCamara(f, 2)).not.toMatch(/[\\/:*?"<>|]/);
+  });
+});
+
+describe("cola de subida del celular", () => {
+  const cola = [
+    { id: "a", estado: "ok" }, { id: "b", estado: "subiendo" }, { id: "c", estado: "esperando" },
+    { id: "d", estado: "error" }, { id: "e", estado: "esperando" },
+  ];
+  it("sigue con el primero que está esperando", () => {
+    expect(siguientePendiente(cola).id).toBe("c");
+    expect(siguientePendiente([{ id: "a", estado: "ok" }])).toBe(null);
+    expect(siguientePendiente([])).toBe(null);
+  });
+  it("cuenta lo guardado, lo pendiente (incluye lo que se está subiendo) y lo que falló", () => {
+    expect(resumenCola(cola)).toEqual({ guardadas: 1, pendientes: 3, fallidas: 1 });
+    expect(resumenCola([])).toEqual({ guardadas: 0, pendientes: 0, fallidas: 0 });
+  });
+  it("marca un ítem sin tocar los demás ni mutar la cola original", () => {
+    const nueva = marcarItem(cola, "d", { estado: "esperando", mensaje: "" });
+    expect(nueva.find((x) => x.id === "d").estado).toBe("esperando");
+    expect(cola.find((x) => x.id === "d").estado).toBe("error");
+    expect(nueva.filter((x) => x.estado === "ok")).toHaveLength(1);
+  });
+  it("reconoce cuándo la sesión terminó y cuándo es solo una falla de esa foto", () => {
+    expect(esErrorDeSesion({ status: 410, codigo: "vencida" })).toBe(true);
+    expect(esErrorDeSesion({ status: 410, codigo: "cerrada" })).toBe(true);
+    expect(esErrorDeSesion({ status: 404, codigo: "inexistente" })).toBe(true);
+    expect(esErrorDeSesion({ status: 503, codigo: "rota" })).toBe(false);
+    expect(esErrorDeSesion({ status: 413, codigo: "muy_grande" })).toBe(false);
+    expect(esErrorDeSesion({ status: 404 })).toBe(false); // un 404 de "no encontré esa foto" no es fin de sesión
+    expect(esErrorDeSesion(new Error("Sin conexión"))).toBe(false);
+    expect(esErrorDeSesion(null)).toBe(false);
+  });
+});
+
+describe("mensaje cuando la sesión termina en el medio", () => {
+  it("dice qué pasó, cuánto se guardó y cuánto no, y cómo seguir", () => {
+    const t = textoSesionTerminada("vencida", { guardadas: 3, sinGuardar: 2 });
+    expect(t).toMatch(/El QR venció/);
+    expect(t).toMatch(/Se guardaron 3 archivos/);
+    expect(t).toMatch(/2 fotos quedaron sin guardar/);
+    expect(t).toMatch(/QR nuevo desde la compu/);
+  });
+  it("singulares y casos sin nada guardado o sin nada pendiente", () => {
+    expect(textoSesionTerminada("vencida", { guardadas: 1, sinGuardar: 1 })).toMatch(/Se guardó 1 archivo.*1 foto quedó sin guardar/);
+    expect(textoSesionTerminada("cerrada", { guardadas: 0, sinGuardar: 4 })).toMatch(/^Esta sesión se cerró desde la compu\. 4 fotos quedaron sin guardar/);
+    expect(textoSesionTerminada("cerrada", { guardadas: 2, sinGuardar: 0 })).not.toMatch(/sin guardar/);
+    expect(textoSesionTerminada("inexistente")).toBe("Este código no es válido.");
+  });
+  it("nunca muestra términos técnicos", () => {
+    for (const m of ["vencida", "cerrada", "inexistente", "x"]) expect(textoSesionTerminada(m, { guardadas: 1, sinGuardar: 1 })).not.toMatch(/410|404|token|api|undefined|null/i);
+  });
+});
+
+describe("cuenta regresiva del QR", () => {
+  const exp = new Date(T0 + 30 * MIN).toISOString();
+  it("muestra minutos y segundos", () => {
+    expect(cuentaRegresiva(exp, T0)).toBe("30:00");
+    expect(cuentaRegresiva(exp, T0 + 29 * MIN + 55_000)).toBe("0:05");
+    expect(cuentaRegresiva(exp, T0 + 10 * MIN + 1000)).toBe("19:59");
+    expect(cuentaRegresiva(exp, T0 + 10 * MIN + 1)).toBe("20:00"); // redondea para arriba: nunca muestra de menos
+  });
+  it("no baja de 0:00 y tolera fechas inválidas", () => {
+    expect(cuentaRegresiva(exp, T0 + 31 * MIN)).toBe("0:00");
+    expect(cuentaRegresiva("basura", T0)).toBe("0:00");
+    expect(cuentaRegresiva(null, T0)).toBe("0:00");
   });
 });

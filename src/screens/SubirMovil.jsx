@@ -1,0 +1,272 @@
+// Página del celular para subir documentación a un expediente. Se abre desde el QR (/s/<codigo>), SIN login: el código
+// de la URL es la única autorización y solo sirve para agregar archivos a ESE expediente y quitar lo subido en esa sesión.
+// Las fotos se suben en calidad original, de a una, directo a Google (no pasan por los servidores de Notarial).
+// Spec: specs/documentacion-celular-expediente/.
+import { useEffect, useRef, useState } from "react";
+import { C } from "../constants";
+import { celular, subirDesdeCelular } from "../utils/driveApi";
+import {
+  MAX_BYTES_ARCHIVO, validarArchivoLocal, formatearTamano, nombreFotoCamara, siguientePendiente, resumenCola, marcarItem,
+  esErrorDeSesion, textoSesionTerminada, cuentaRegresiva,
+} from "../utils/driveCliente";
+import { miniaturaDe } from "../utils/capturaArchivo";
+import CamaraArchivo from "../components/CamaraArchivo";
+
+const fuente = "'Montserrat', sans-serif";
+const MENSAJE_DRIVE_CAIDO = "El Drive de la escribanía no está disponible. Avisale a quien administra Notarial.";
+
+const boton = (primario, deshabilitado) => ({
+  width: "100%", padding: "15px 16px", borderRadius: 12, fontFamily: fuente, fontSize: 15, fontWeight: 700, textAlign: "center",
+  border: primario ? "none" : `1px solid ${C.cerulean}`,
+  background: deshabilitado ? "rgba(26,35,50,.15)" : primario ? C.cerulean : "transparent",
+  color: deshabilitado ? C.muted : primario ? "#fff" : C.cerulean,
+  cursor: deshabilitado ? "default" : "pointer", boxSizing: "border-box", display: "block",
+});
+
+function Aviso({ tipo = "info", children }) {
+  const colores = { info: [C.ceruleanLight, C.cerulean], aviso: [C.fawn50, "#8a6d1f"], error: ["#fdf0f0", "#c0392b"] }[tipo];
+  return <div style={{ background: colores[0], color: colores[1], borderRadius: 10, padding: "10px 12px", fontSize: 13, lineHeight: 1.45, margin: "10px 0" }}>{children}</div>;
+}
+
+function Marco({ children }) {
+  return (
+    <div style={{ minHeight: "100vh", background: C.warm, display: "flex", justifyContent: "center", padding: "20px 14px 40px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}>
+      <div style={{ width: "100%", maxWidth: 480 }}>
+        <div style={{ fontFamily: fuente, fontWeight: 800, fontSize: 17, color: C.dark, letterSpacing: "-.02em", marginBottom: 12 }}>Notarial</div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const Tarjeta = ({ children }) => <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 16px" }}>{children}</div>;
+
+function FilaArchivo({ x, onReintentar, onQuitar }) {
+  const porcentaje = Math.round((x.progreso || 0) * 100);
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${C.border}` }}>
+      <div style={{ width: 44, height: 56, borderRadius: 6, overflow: "hidden", background: C.ceruleanLight, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+        {x.vista ? <img src={x.vista} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "📄"}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.nombre}</div>
+        {x.estado === "esperando" && <div style={{ fontSize: 12, color: C.muted }}>En espera{x.tamano ? ` · ${formatearTamano(x.tamano)}` : ""}</div>}
+        {x.estado === "subiendo" && (
+          <>
+            <div style={{ fontSize: 12, color: C.cerulean }}>Subiendo {porcentaje} %</div>
+            <div style={{ height: 4, borderRadius: 3, background: "rgba(26,35,50,.1)", marginTop: 4 }}><div style={{ width: `${porcentaje}%`, height: "100%", background: C.cerulean, borderRadius: 3 }} /></div>
+          </>
+        )}
+        {x.estado === "ok" && <div style={{ fontSize: 12, color: "#27ae60", fontWeight: 600 }}>✓ Guardada</div>}
+        {x.estado === "error" && <div style={{ fontSize: 12, color: "#c0392b", lineHeight: 1.4 }}>{x.mensaje}</div>}
+      </div>
+      {x.estado === "error" && !x.sinReintento && <button onClick={() => onReintentar(x.id)} style={{ border: `1px solid ${C.cerulean}`, background: "transparent", color: C.cerulean, borderRadius: 8, padding: "7px 10px", fontFamily: fuente, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Reintentar</button>}
+      {x.estado === "ok" && x.archivoId && <button onClick={() => onQuitar(x)} aria-label={`Quitar ${x.nombre}`} style={{ border: `1px solid ${C.border}`, background: "transparent", color: C.muted, borderRadius: 8, padding: "7px 10px", fontFamily: fuente, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Quitar</button>}
+    </div>
+  );
+}
+
+export default function SubirMovil({ codigo }) {
+  const [info, setInfo] = useState(null);          // lo que devuelve celular_info
+  const [errorRed, setErrorRed] = useState("");
+  const [cola, setCola] = useState([]);
+  const [terminada, setTerminada] = useState(null); // motivo si la sesión terminó en el medio
+  const [camaraAbierta, setCamaraAbierta] = useState(false);
+  const [finalizado, setFinalizado] = useState(false);
+  const [porQuitar, setPorQuitar] = useState(null);
+  const [quitando, setQuitando] = useState(false);
+  const [errorQuitar, setErrorQuitar] = useState("");
+  const [ahora, setAhora] = useState(() => Date.now());
+  const colaRef = useRef([]);
+  const corriendo = useRef(false);
+  const terminadaRef = useRef(null);
+  const desfase = useRef(0);        // hora del servidor menos hora del celular
+  const ultimoSegundo = useRef({ clave: 0, n: 0 });
+  const inputCamara = useRef(null);
+  const inputGaleria = useRef(null);
+
+  function aplicar(fn) { colaRef.current = fn(colaRef.current); setCola(colaRef.current); }
+
+  // Carga inicial: nombre del expediente, vigencia y lo que ya se subió en esta sesión (si se recargó la página).
+  useEffect(() => {
+    let cancelado = false;
+    (async () => {
+      try {
+        const r = await celular.info(codigo);
+        if (cancelado) return;
+        if (r.ahora) desfase.current = new Date(r.ahora).getTime() - Date.now();
+        aplicar(() => (r.archivos || []).map((a) => ({ id: a.id, archivoId: a.id, nombre: a.nombre, tamano: a.tamano, estado: "ok", progreso: 1, vista: null })));
+        setInfo(r);
+      } catch (e) {
+        if (!cancelado) setErrorRed(e.message);
+      }
+    })();
+    return () => { cancelado = true; };
+  }, [codigo]);
+
+  useEffect(() => {
+    const t = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const resumen = resumenCola(cola);
+  const ahoraServidor = ahora + desfase.current;
+  const vencidaLocal = !!info?.expira_en && new Date(info.expira_en).getTime() <= ahoraServidor;
+  const motivoFin = terminada || (vencidaLocal ? "vencida" : null);
+  const driveCaido = info && info.drive_disponible === false;
+  const puedeAgregar = !!info?.vigente && !motivoFin && !driveCaido;
+
+  // Sube de a un archivo (cuida la memoria del teléfono). Un archivo que falla no frena a los demás; si la sesión termina,
+  // lo que queda se conserva en pantalla y se cuenta como "sin guardar".
+  async function correr() {
+    if (corriendo.current) return;
+    corriendo.current = true;
+    try {
+      for (;;) {
+        if (terminadaRef.current) break;
+        const item = siguientePendiente(colaRef.current);
+        if (!item) break;
+        aplicar((c) => marcarItem(c, item.id, { estado: "subiendo", progreso: 0, mensaje: "" }));
+        try {
+          const archivo = await subirDesdeCelular(codigo, item.file, { onProgreso: (p) => aplicar((c) => marcarItem(c, item.id, { progreso: p })) });
+          aplicar((c) => marcarItem(c, item.id, { estado: "ok", progreso: 1, archivoId: archivo.id, file: null }));
+        } catch (e) {
+          if (esErrorDeSesion(e)) {
+            terminadaRef.current = e.codigo;
+            setTerminada(e.codigo);
+            aplicar((c) => marcarItem(c, item.id, { estado: "esperando" }));
+            break;
+          }
+          aplicar((c) => marcarItem(c, item.id, { estado: "error", mensaje: e.message }));
+        }
+      }
+    } finally {
+      corriendo.current = false;
+    }
+  }
+
+  function encolar(files) {
+    const nuevos = files.map((file, i) => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${i}`;
+      const v = validarArchivoLocal(file);
+      return v.ok
+        ? { id, file, nombre: file.name, tamano: file.size, estado: "esperando", progreso: 0, vista: null }
+        : { id, file: null, nombre: file?.name || "Archivo", tamano: file?.size, estado: "error", progreso: 0, mensaje: v.mensaje, sinReintento: true, vista: null };
+    });
+    aplicar((c) => [...c, ...nuevos]);
+    nuevos.forEach((x) => { if (x.file) miniaturaDe(x.file).then((vista) => { if (vista) aplicar((c) => marcarItem(c, x.id, { vista })); }); });
+    correr();
+  }
+
+  function nombrarFoto() {
+    const f = new Date();
+    const clave = Math.floor(f.getTime() / 1000);
+    ultimoSegundo.current = ultimoSegundo.current.clave === clave ? { clave, n: ultimoSegundo.current.n + 1 } : { clave, n: 1 };
+    return nombreFotoCamara(f, ultimoSegundo.current.n);
+  }
+
+  function alElegir(e, { deCamara = false } = {}) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    // La cámara nativa entrega nombres genéricos ("image.jpg"): se les pone fecha y hora (solo a los JPEG, para no mentir con la extensión).
+    encolar(deCamara ? files.map((f) => (f.type === "image/jpeg" ? new File([f], nombrarFoto(), { type: f.type }) : f)) : files);
+  }
+
+  function reintentar(id) {
+    aplicar((c) => marcarItem(c, id, { estado: "esperando", mensaje: "" }));
+    correr();
+  }
+
+  async function quitar() {
+    setQuitando(true);
+    setErrorQuitar("");
+    try {
+      await celular.quitar(codigo, porQuitar.archivoId);
+      aplicar((c) => c.filter((x) => x.id !== porQuitar.id));
+      setPorQuitar(null);
+    } catch (e) {
+      setErrorQuitar(e.message);
+    } finally {
+      setQuitando(false);
+    }
+  }
+
+  // ── Estados de la página ──────────────────────────────────────────────────
+  if (errorRed) {
+    return <Marco><Tarjeta><div style={{ fontFamily: fuente, fontSize: 17, fontWeight: 800, color: C.dark, marginBottom: 8 }}>No pudimos abrir la página</div><div style={{ fontSize: 14, color: C.faint, lineHeight: 1.5 }}>{errorRed}</div><button onClick={() => window.location.reload()} style={{ ...boton(true), marginTop: 14 }}>Reintentar</button></Tarjeta></Marco>;
+  }
+  if (!info) return <Marco><Tarjeta><div style={{ fontSize: 14, color: C.faint }}>Cargando…</div></Tarjeta></Marco>;
+  if (!info.vigente && cola.length === 0) {
+    return <Marco><Tarjeta><div style={{ fontFamily: fuente, fontSize: 17, fontWeight: 800, color: C.dark, marginBottom: 8 }}>{info.motivo === "cerrada" ? "La sesión terminó" : info.motivo === "vencida" ? "El QR venció" : "Este código no es válido"}</div><div style={{ fontSize: 14, color: C.faint, lineHeight: 1.5 }}>{info.motivo === "inexistente" ? "Pedí un QR nuevo desde la compu." : `${textoSesionTerminada(info.motivo)} Generá un QR nuevo desde la compu.`}</div></Tarjeta></Marco>;
+  }
+
+  if (finalizado && resumen.pendientes === 0) {
+    return (
+      <Marco>
+        <Tarjeta>
+          <div style={{ fontSize: 34, color: "#27ae60" }} aria-hidden="true">✓</div>
+          <div style={{ fontFamily: fuente, fontSize: 18, fontWeight: 800, color: C.dark, margin: "4px 0 8px" }}>Listo</div>
+          <div style={{ fontSize: 14, color: C.faint, lineHeight: 1.5 }}>Se {resumen.guardadas === 1 ? "guardó 1 archivo" : `guardaron ${resumen.guardadas} archivos`} en el expediente <strong>{info.expediente_nombre}</strong>. Ya los podés ver desde la compu.</div>
+          {puedeAgregar && <button onClick={() => setFinalizado(false)} style={{ ...boton(false), marginTop: 16 }}>Subir más</button>}
+        </Tarjeta>
+      </Marco>
+    );
+  }
+
+  const fotosCamara = cola.filter((x) => x.vista || x.estado !== "ok").slice(-4);
+  return (
+    <Marco>
+      <Tarjeta>
+        <div style={{ fontFamily: fuente, fontSize: 18, fontWeight: 800, color: C.dark, lineHeight: 1.3 }}>Subir documentación</div>
+        <div style={{ fontSize: 14, color: C.faint, marginTop: 4 }}>Expediente: <strong style={{ color: C.dark }}>{info.expediente_nombre}</strong></div>
+        {!motivoFin && <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>El QR vence en {cuentaRegresiva(info.expira_en, ahoraServidor)}</div>}
+
+        {driveCaido && <Aviso tipo="error">{MENSAJE_DRIVE_CAIDO}</Aviso>}
+        {motivoFin && <Aviso tipo="aviso">{textoSesionTerminada(motivoFin, { guardadas: resumen.guardadas, sinGuardar: resumen.pendientes + resumen.fallidas })}</Aviso>}
+        {!motivoFin && !driveCaido && <Aviso>Sacá o elegí <strong>todas</strong> las fotos de una, de cualquier documento y en cualquier orden. No hace falta decir qué es cada una. Se guardan en calidad original (hasta {formatearTamano(MAX_BYTES_ARCHIVO)} cada una).</Aviso>}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 6 }}>
+          <button onClick={() => setCamaraAbierta(true)} disabled={!puedeAgregar} style={boton(true, !puedeAgregar)}>Abrir la cámara</button>
+          <button onClick={() => inputCamara.current?.click()} disabled={!puedeAgregar} style={boton(false, !puedeAgregar)}>Usar la cámara del teléfono</button>
+          <button onClick={() => inputGaleria.current?.click()} disabled={!puedeAgregar} style={boton(false, !puedeAgregar)}>Elegir de la galería o archivos</button>
+        </div>
+        <input ref={inputCamara} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={(e) => alElegir(e, { deCamara: true })} />
+        <input ref={inputGaleria} type="file" accept="image/*,application/pdf" multiple style={{ display: "none" }} onChange={(e) => alElegir(e)} />
+      </Tarjeta>
+
+      {cola.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <Tarjeta>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <div style={{ fontFamily: fuente, fontSize: 14, fontWeight: 800, color: C.dark }}>Subidas en esta sesión</div>
+              <div style={{ fontSize: 12, color: C.muted }}>{resumen.guardadas} guardada{resumen.guardadas === 1 ? "" : "s"}{resumen.pendientes > 0 ? ` · ${resumen.pendientes} en curso` : ""}{resumen.fallidas > 0 ? ` · ${resumen.fallidas} con error` : ""}</div>
+            </div>
+            {cola.map((x) => <FilaArchivo key={x.id} x={x} onReintentar={reintentar} onQuitar={(i) => { setErrorQuitar(""); setPorQuitar(i); }} />)}
+            {resumen.guardadas > 0 && resumen.pendientes === 0 && !terminada && (
+              <button onClick={() => setFinalizado(true)} style={{ ...boton(true), marginTop: 14 }}>Listo</button>
+            )}
+          </Tarjeta>
+        </div>
+      )}
+
+      {camaraAbierta && (
+        <CamaraArchivo cantidad={cola.length} recientes={fotosCamara} nombrarFoto={nombrarFoto}
+          onFoto={(file) => encolar([file])} onCerrar={() => setCamaraAbierta(false)} />
+      )}
+
+      {porQuitar && (
+        <div onClick={() => !quitando && setPorQuitar(null)} style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.5)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: "20px 18px", width: "100%", maxWidth: 380 }}>
+            <div style={{ fontFamily: fuente, fontSize: 16, fontWeight: 800, color: C.dark, marginBottom: 6 }}>¿Quitar esta foto?</div>
+            <div style={{ fontSize: 13.5, color: C.faint, lineHeight: 1.5, marginBottom: 14 }}>Se saca del expediente. Queda en la papelera del Drive de la escribanía, donde se puede recuperar.</div>
+            {errorQuitar && <Aviso tipo="error">{errorQuitar}</Aviso>}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setPorQuitar(null)} disabled={quitando} style={{ ...boton(false, quitando), flex: 1 }}>Cancelar</button>
+              <button onClick={quitar} disabled={quitando} style={{ ...boton(true, quitando), flex: 1, background: quitando ? "rgba(26,35,50,.15)" : "#c0392b" }}>{quitando ? "Quitando…" : "Quitar"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Marco>
+  );
+}

@@ -50,6 +50,30 @@ export async function subirArchivoEscribania(file, { expedienteId, tipo = "otro"
 
 export const borrarArchivoEscribania = (archivoId) => llamar("borrar", { archivo_id: archivoId });
 
+// Corregir a mano el nombre y/o el tipo de un archivo. Devuelve { archivo }.
+export const renombrarArchivo = (archivoId, { nombre, tipo }) => llamar("renombrar", { archivo_id: archivoId, nombre, ...(tipo ? { tipo } : {}) });
+
+// ── Subir desde el celular ───────────────────────────────────────────────────
+
+// Desde la compu: abre el QR de un expediente ({ url, expira_en, sesion_id }) y lo cierra.
+export const celularCrear = (expedienteId) => llamar("celular_crear", { expediente_id: expedienteId });
+export const celularCerrar = (sesionId) => llamar("celular_cerrar", { sesion_id: sesionId });
+
+// Desde el celular (sin sesión: el código del QR es la única autorización).
+export const celular = {
+  info: (codigo) => drivePublico("celular_info", { codigo }),
+  quitar: (codigo, archivoId) => drivePublico("celular_quitar", { codigo, archivo_id: archivoId }),
+};
+
+// Sube UN archivo desde el celular: pide la sesión de Google, lo manda directo y lo confirma. Devuelve la fila del archivo.
+// El archivo se sube TAL CUAL (calidad original): no se reduce ni se vuelve a comprimir.
+export async function subirDesdeCelular(codigo, file, { onProgreso } = {}) {
+  const sesion = await drivePublico("celular_iniciar_subida", { codigo, nombre: file.name, mime: file.type, tamano: file.size });
+  const { id } = await subirASesion(sesion.sesion_url, file, sesion.mime, onProgreso);
+  const { archivo } = await drivePublico("celular_confirmar", { codigo, drive_file_id: id });
+  return archivo;
+}
+
 // Trae el archivo por el servidor (con la sesión del usuario) como Blob, para mostrarlo o guardarlo.
 export async function traerArchivo(archivoId, descargar = false) {
   const { data: { session } } = await supabase.auth.getSession();

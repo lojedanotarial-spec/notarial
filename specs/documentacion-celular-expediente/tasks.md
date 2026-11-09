@@ -1,6 +1,6 @@
 # Tareas: Subir documentación al expediente desde el celular
 
-**Estado:** ✅ aprobado por Lucas el 09/11/26, con un cambio de orden: **primero todo salvo la identificación automática (etapa A); el "agente" que identifica y renombra queda para después (etapa B)**. En ejecución: etapa A (fases 1 a 4 hechas; sigue la 5, las pantallas)
+**Estado:** ✅ aprobado por Lucas el 09/11/26, con un cambio de orden: **primero todo salvo la identificación automática (etapa A); el "agente" que identifica y renombra queda para después (etapa B)**. En ejecución: etapa A (fases 1 a 5 y T6.1 hechas; sigue el deploy)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación.
 
@@ -38,14 +38,14 @@ Lucas prefirió no juntar fotos reales ahora. La identificación es un módulo s
 
 ## Fase 5 — Pantallas
 
-- [ ] **T5.1 🤖** `driveCliente.js`: cola de subida de a uno con reintento. *Verif.: tests de lo puro.*
-- [ ] **T5.2 🤖** `CamaraCaptura.jsx`: modo de **máxima resolución** sin tocar el comportamiento de la captura de datos. *Verif.: los tests de captura siguen en verde.*
-- [ ] **T5.3 🤖** `src/screens/SubirMovil.jsx` + ruta pública `/s/<código>` en `App.jsx`. *Verif.: estados vigente, vencida, cerrada, sin conexión, Drive caído, a 360 px.*
-- [ ] **T5.4 🤖** `ArchivosEscribania.jsx`: botón y panel del QR (cuenta regresiva, consulta cada 3 s, cerrar sesión), marca "desde el celular", botón **Editar** (nombre y tipo). *Verif.: no queda ninguna escritura directa del navegador a `expediente_archivos`.*
+- [x] **T5.1 (hecho 09/11/26) 🤖** `driveCliente.js`: cola de subida de a uno con reintento. *Verif.: tests de lo puro.*
+- [x] **T5.2 (hecho 09/11/26) 🤖** Cámara nueva `CamaraArchivo.jsx` de **máxima resolución** (componente aparte, para no tocar `CamaraCaptura.jsx` de la captura de datos). *Verif.: los tests de captura siguen en verde.*
+- [x] **T5.3 (hecho 09/11/26) 🤖** `src/screens/SubirMovil.jsx` + ruta pública `/s/<código>` en `App.jsx`. *Verif.: estados vigente, vencida, cerrada, sin conexión, Drive caído, a 360 px.*
+- [x] **T5.4 (hecho 09/11/26) 🤖** `ArchivosEscribania.jsx`: botón y panel del QR (cuenta regresiva, consulta cada 3 s, cerrar sesión), marca "desde el celular", botón **Editar** (nombre y tipo). *Verif.: no queda ninguna escritura directa del navegador a `expediente_archivos`.*
 
 ## Fase 6 — Verificación y deploy
 
-- [ ] **T6.1 🤖** Tests completos, lint (sin problemas nuevos respecto de la base: hoy 46) y build.
+- [x] **T6.1 (hecho 09/11/26) 🤖** Tests completos, lint (sin problemas nuevos respecto de la base: hoy 46) y build.
 - [ ] **T6.2 🤖** Deploy y verificación por la API de GitHub.
 - [ ] **T6.3 🤖** Verificación en producción de lo que se pueda sin teléfono: rechazos sin sesión, código inexistente, página `/s/…` a 360 px.
 

@@ -1,9 +1,10 @@
 // Pestaña de archivos de un expediente: se guardan en el Drive de la escribanía (uno por registro), no en el de quien
 // sube. Cualquier usuario del registro sube, ve, descarga y borra, entre con email o con Google.
 // Spec: specs/drive-escribania/.
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { C } from "../constants";
-import { borrarArchivoEscribania, driveEstado, guardarBlob, subirArchivoEscribania, traerArchivo } from "../utils/driveApi";
+import SubidaCelular from "./SubidaCelular";
+import { borrarArchivoEscribania, driveEstado, guardarBlob, listarArchivos, renombrarArchivo, subirArchivoEscribania, traerArchivo } from "../utils/driveApi";
 import { MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano } from "../utils/driveCliente";
 
 const fuente = "'Montserrat', sans-serif";
@@ -39,7 +40,17 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
   const [porBorrar, setPorBorrar] = useState(null);
   const [borrando, setBorrando] = useState(false);
   const [errorGeneral, setErrorGeneral] = useState("");
+  const [qrAbierto, setQrAbierto] = useState(false);
+  const [porEditar, setPorEditar] = useState(null);
+  const [edicion, setEdicion] = useState({ nombre: "", tipo: "otro" });
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [errorEdicion, setErrorEdicion] = useState("");
   const fileRef = useRef(null);
+
+  // Mientras el QR está abierto, vuelve a pedir la lista cada pocos segundos para que lo que llega del celular aparezca solo.
+  const refrescar = useCallback(async () => {
+    try { setArchivos(await listarArchivos(expedienteId)); } catch { /* se reintenta en el próximo ciclo */ }
+  }, [expedienteId, setArchivos]);
   const urlVista = useRef(null);
 
   async function leerEstado() {
@@ -101,6 +112,27 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     try { guardarBlob(await traerArchivo(a.id, true), a.nombre); } catch (e) { setErrorGeneral(e.message); }
   }
 
+  function abrirEdicion(a) {
+    setEdicion({ nombre: a.nombre, tipo: a.tipo || "otro" });
+    setErrorEdicion("");
+    setPorEditar(a);
+  }
+
+  // Corregir a mano el nombre y el tipo (cualquier usuario del registro). Si le sacás la extensión, el servidor se la devuelve.
+  async function guardarEdicion() {
+    setGuardandoEdicion(true);
+    setErrorEdicion("");
+    try {
+      const { archivo } = await renombrarArchivo(porEditar.id, edicion);
+      setArchivos((prev) => prev.map((a) => (a.id === porEditar.id ? { ...a, ...archivo } : a)));
+      setPorEditar(null);
+    } catch (e) {
+      setErrorEdicion(e.message);
+    } finally {
+      setGuardandoEdicion(false);
+    }
+  }
+
   async function borrar() {
     setBorrando(true);
     try {
@@ -132,9 +164,12 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
         </div>
         <input ref={fileRef} type="file" multiple style={{ display: "none" }}
           onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ""; subir(files); }} />
-        <button onClick={() => fileRef.current?.click()} disabled={!puedeSubir} style={boton(true, !puedeSubir)}>
-          {subiendo ? "Subiendo…" : "Subir archivos"}
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button onClick={() => setQrAbierto(true)} disabled={sinDrive || caido} style={boton(false, sinDrive || caido)}>Subir desde el celular</button>
+          <button onClick={() => fileRef.current?.click()} disabled={!puedeSubir} style={boton(true, !puedeSubir)}>
+            {subiendo ? "Subiendo…" : "Subir archivos"}
+          </button>
+        </div>
       </div>
       <div style={{ fontSize: 11.5, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
         <strong>Máximo {formatearTamano(MAX_BYTES_ARCHIVO)} por archivo.</strong> Se guardan en el Drive de la escribanía y los ve todo el registro.
@@ -177,13 +212,14 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nombre}</div>
                   <div style={{ fontSize: 10.5, color: C.muted, lineHeight: 1.5 }}>
-                    {etiquetaTipo(a.tipo)}{a.tamano ? ` · ${formatearTamano(a.tamano)}` : ""} · {fechaHora(a.created_at)}{a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ""}
+                    {etiquetaTipo(a.tipo)}{a.tamano ? ` · ${formatearTamano(a.tamano)}` : ""} · {fechaHora(a.created_at)}{a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ""}{a.origen === "celular" ? " · 📱 desde el celular" : ""}
                   </div>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => abrir(a)} style={boton(false)}>{esPrevisualizable(a.mime_type) ? "Ver" : "Descargar"}</button>
                 {esPrevisualizable(a.mime_type) && <button onClick={() => descargar(a)} style={boton(false)}>Descargar</button>}
+                <button onClick={() => abrirEdicion(a)} style={boton(false)}>Editar</button>
                 <button onClick={() => setPorBorrar(a)} title="Borrar" aria-label={`Borrar ${a.nombre}`} style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid rgba(26,35,50,.14)", background: "transparent", color: C.muted, fontSize: 11, cursor: "pointer" }}>✕</button>
               </div>
             </div>
@@ -205,6 +241,30 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
           {vista.url && (vista.archivo.mime_type === "application/pdf"
             ? <iframe title={vista.archivo.nombre} src={vista.url} style={{ width: "100%", height: "72vh", border: "none", borderRadius: 8, background: "#fff" }} />
             : <img alt={vista.archivo.nombre} src={vista.url} style={{ maxWidth: "100%", maxHeight: "72vh", display: "block", margin: "0 auto", borderRadius: 8 }} />)}
+        </Modal>
+      )}
+
+      {qrAbierto && (
+        <SubidaCelular expedienteId={expedienteId} archivos={archivos} alActualizar={refrescar}
+          onCerrar={() => { setQrAbierto(false); refrescar(); }} />
+      )}
+
+      {porEditar && (
+        <Modal onCerrar={() => !guardandoEdicion && setPorEditar(null)}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 10 }}>Editar archivo</div>
+          <label htmlFor="edit-nombre" style={{ fontSize: 12, color: C.muted }}>Nombre</label>
+          <input id="edit-nombre" value={edicion.nombre} onChange={(e) => setEdicion((x) => ({ ...x, nombre: e.target.value }))} maxLength={150}
+            style={{ width: "100%", boxSizing: "border-box", padding: "9px 10px", margin: "4px 0 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: "#fff", fontSize: 13, color: C.dark }} />
+          <label htmlFor="edit-tipo" style={{ fontSize: 12, color: C.muted }}>Tipo de documento</label>
+          <select id="edit-tipo" value={edicion.tipo} onChange={(e) => setEdicion((x) => ({ ...x, tipo: e.target.value }))}
+            style={{ width: "100%", boxSizing: "border-box", padding: "9px 10px", margin: "4px 0 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: "#fff", fontSize: 13, color: C.dark }}>
+            {TIPOS_ARCHIVO.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+          </select>
+          {errorEdicion && <Aviso tipo="error">{errorEdicion}</Aviso>}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button onClick={() => setPorEditar(null)} disabled={guardandoEdicion} style={boton(false, guardandoEdicion)}>Cancelar</button>
+            <button onClick={guardarEdicion} disabled={guardandoEdicion || !edicion.nombre.trim()} style={boton(true, guardandoEdicion || !edicion.nombre.trim())}>{guardandoEdicion ? "Guardando…" : "Guardar"}</button>
+          </div>
         </Modal>
       )}
 

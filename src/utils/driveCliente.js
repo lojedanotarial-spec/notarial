@@ -55,6 +55,40 @@ export function nombreFotoCamara(fecha = new Date(), n = 1) {
   return `Foto ${f} ${h}${n > 1 ? ` (${n})` : ""}.jpg`;
 }
 
+// Cola de subida del celular (de a un archivo por vez: cuida la memoria del teléfono). Cada ítem tiene un `estado`:
+// esperando | subiendo | ok | error. Estas funciones son puras: la pantalla las usa para decidir qué sigue.
+export const siguientePendiente = (cola) => cola.find((x) => x.estado === "esperando") || null;
+
+export function resumenCola(cola) {
+  const cuenta = (e) => cola.filter((x) => x.estado === e).length;
+  return { guardadas: cuenta("ok"), pendientes: cuenta("esperando") + cuenta("subiendo"), fallidas: cuenta("error") };
+}
+
+export const marcarItem = (cola, id, cambios) => cola.map((x) => (x.id === id ? { ...x, ...cambios } : x));
+
+// El servidor contesta 410 (vencida / cerrada) o 404 (código inexistente) cuando la sesión ya no sirve.
+export const esErrorDeSesion = (e) => (e?.status === 410 || e?.status === 404) && ["vencida", "cerrada", "inexistente"].includes(e?.codigo);
+
+// Qué se le dice a quien está en el celular cuando la sesión termina en el medio: lo guardado se conserva, y se cuenta lo
+// que quedó sin guardar. Nada se pierde en silencio.
+export function textoSesionTerminada(motivo, { guardadas = 0, sinGuardar = 0 } = {}) {
+  const causa = motivo === "cerrada" ? "Esta sesión se cerró desde la compu."
+    : motivo === "inexistente" ? "Este código no es válido."
+    : "El QR venció.";
+  const partes = [];
+  if (guardadas > 0) partes.push(`Se ${guardadas === 1 ? "guardó 1 archivo" : `guardaron ${guardadas} archivos`} en el expediente.`);
+  if (sinGuardar > 0) partes.push(`${sinGuardar === 1 ? "1 foto quedó" : `${sinGuardar} fotos quedaron`} sin guardar: generá un QR nuevo desde la compu y volvé a subirla${sinGuardar === 1 ? "" : "s"}.`);
+  return [causa, ...partes].join(" ");
+}
+
+// Cuenta regresiva "MM:SS" hasta que vence el QR.
+export function cuentaRegresiva(expiraEn, ahora = Date.now()) {
+  const ms = new Date(expiraEn).getTime() - ahora;
+  if (!Number.isFinite(ms) || ms <= 0) return "0:00";
+  const s = Math.ceil(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 // ── Panel del administrador ──────────────────────────────────────────────────
 
 // Cómo se muestra el Drive de un registro (lo que devuelve admin_estado). `accion` = el botón que corresponde.
