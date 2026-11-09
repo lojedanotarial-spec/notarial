@@ -19,8 +19,8 @@ documentación depende de pertenecer al registro, no de tener Google conectado.
 
 | Feature | Estado |
 |---|---|
-| [Drive de la escribanía: conexión y archivos del expediente](../features/drive-escribania.md) | 🔵 En curso — spec en revisión |
-| Subir documentación al expediente desde el celular (cámara de máxima calidad, por tipo de documento) | 🟢 Próximo — depende de la anterior; sin feature.md todavía |
+| [Drive de la escribanía: conexión y archivos del expediente](../features/drive-escribania.md) | 🟢 En producción (09/11/26); falta la prueba manual con Google real y aplicar una política de seguridad en la base |
+| [Subir documentación al expediente desde el celular](../features/subir-documentacion-celular.md) (cámara de máxima calidad, por tipo de documento) | 📝 Spec en borrador (09/11/26) |
 | Carga Masiva (barrios y lotes) usando el Drive de la escribanía | 🟡 Después |
 | Extras: unir las fotos de un documento en un PDF, leer y nombrar automáticamente, Scriba ofrece "agregar documentación" | 🟡 Después |
 
