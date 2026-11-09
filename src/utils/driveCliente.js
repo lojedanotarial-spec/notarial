@@ -66,6 +66,41 @@ export function resumenCola(cola) {
 
 export const marcarItem = (cola, id, cambios) => cola.map((x) => (x.id === id ? { ...x, ...cambios } : x));
 
+// Qué le dice la página del celular a quien está subiendo, en lenguaje claro y con UN solo mensaje a la vez (nada de textos chicos
+// sueltos). `conNombre` = el sistema también les va a poner nombre (identificación automática prendida).
+export function panelEstado(cola, { terminada = false, conNombre = false } = {}) {
+  const total = cola.length;
+  if (!total) return null;
+  const r = resumenCola(cola);
+  const porNombrar = cola.filter((x) => x.porIdentificar).length;
+  const pasos = conNombre ? 2 : 1;
+  const plural = (n, s, p) => (n === 1 ? s : p);
+  if (terminada) return { fase: "terminada", paso: null, titulo: "La sesión terminó", detalle: "Mirá el aviso de arriba.", progreso: null, conBoton: false };
+  if (r.pendientes > 0) {
+    const hechas = r.guardadas + r.fallidas;
+    const actual = cola.find((x) => x.estado === "subiendo");
+    return {
+      fase: "subiendo", paso: conNombre ? `Paso 1 de ${pasos}` : null, titulo: "Subiendo las fotos",
+      detalle: `${Math.min(hechas + 1, total)} de ${total}`, progreso: Math.min(1, (hechas + (actual?.progreso ?? 0)) / total), conBoton: false,
+    };
+  }
+  if (porNombrar > 0) {
+    return {
+      fase: "nombrando", paso: `Paso 2 de ${pasos}`, titulo: "Poniéndoles nombre",
+      detalle: `${plural(porNombrar, "Falta", "Faltan")} ${porNombrar} ${plural(porNombrar, "foto", "fotos")}. Ya están guardadas.`, progreso: null, conBoton: false,
+    };
+  }
+  if (r.guardadas > 0) {
+    return {
+      fase: r.fallidas > 0 ? "con_errores" : "listo", paso: null,
+      titulo: `✓ ${r.guardadas} ${plural(r.guardadas, "foto guardada", "fotos guardadas")}`,
+      detalle: r.fallidas > 0 ? `${r.fallidas} ${plural(r.fallidas, "no se pudo subir", "no se pudieron subir")}: tocá "Reintentar" en la lista.` : "Ya están en el expediente.",
+      progreso: 1, conBoton: r.fallidas === 0,
+    };
+  }
+  return { fase: "error", paso: null, titulo: "No se pudo subir", detalle: "Mirá el error en la lista y tocá \"Reintentar\".", progreso: null, conBoton: false };
+}
+
 // El servidor contesta 410 (vencida / cerrada) o 404 (código inexistente) cuando la sesión ya no sirve.
 export const esErrorDeSesion = (e) => (e?.status === 410 || e?.status === 404) && ["vencida", "cerrada", "inexistente"].includes(e?.codigo);
 

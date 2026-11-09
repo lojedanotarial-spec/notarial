@@ -7,7 +7,7 @@ import { C } from "../constants";
 import { celular, subirDesdeCelular } from "../utils/driveApi";
 import {
   MAX_BYTES_ARCHIVO, validarArchivoLocal, formatearTamano, nombreFotoCamara, siguientePendiente, resumenCola, marcarItem,
-  esErrorDeSesion, textoSesionTerminada, cuentaRegresiva,
+  esErrorDeSesion, textoSesionTerminada, cuentaRegresiva, panelEstado,
 } from "../utils/driveCliente";
 import { miniaturaDe, miniaturaParaIdentificar } from "../utils/capturaArchivo";
 import CamaraArchivo from "../components/CamaraArchivo";
@@ -28,13 +28,38 @@ function Aviso({ tipo = "info", children }) {
   return <div style={{ background: colores[0], color: colores[1], borderRadius: 10, padding: "10px 12px", fontSize: 13, lineHeight: 1.45, margin: "10px 0" }}>{children}</div>;
 }
 
-function Marco({ children }) {
+// OJO: la hoja de estilos global de la app fija html/body/#root en alto 100% con overflow oculto (es una app de paneles fijos), así
+// que esta página tiene que ser SU PROPIO contenedor con scroll. Con "minHeight" lo que pasaba del alto de la pantalla quedaba
+// inalcanzable (le pasó a Lucas al subir 4 fotos). `pie` = barra fija de abajo, siempre visible.
+function Marco({ children, pie }) {
   return (
-    <div style={{ minHeight: "100vh", background: C.warm, display: "flex", justifyContent: "center", padding: "20px 14px 40px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}>
-      <div style={{ width: "100%", maxWidth: 480 }}>
+    <div style={{ position: "fixed", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", background: C.warm, fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ width: "100%", maxWidth: 480, margin: "0 auto", padding: `20px 14px ${pie ? 190 : 40}px`, boxSizing: "border-box" }}>
         <div style={{ fontFamily: fuente, fontWeight: 800, fontSize: 17, color: C.dark, letterSpacing: "-.02em", marginBottom: 12 }}>Notarial</div>
         {children}
       </div>
+      {pie}
+    </div>
+  );
+}
+
+// Barra fija de abajo: el paso actual en grande, una barra de avance y, cuando terminó todo, el botón "Listo".
+function PanelEstado({ panel, onListo }) {
+  const color = panel.fase === "listo" ? "#27ae60" : ["con_errores", "error", "terminada"].includes(panel.fase) ? "#c0392b" : C.cerulean;
+  return (
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: `1px solid ${C.border}`, boxShadow: "0 -4px 18px rgba(26,35,50,.12)", padding: "12px 14px calc(12px + env(safe-area-inset-bottom))", zIndex: 50 }}>
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        {panel.paso && <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, letterSpacing: ".04em", textTransform: "uppercase" }}>{panel.paso}</div>}
+        <div style={{ fontFamily: fuente, fontSize: 17, fontWeight: 800, color, marginTop: 2 }}>{panel.titulo}</div>
+        <div style={{ fontSize: 14, color: C.faint, marginTop: 2, lineHeight: 1.4 }}>{panel.detalle}</div>
+        <div style={{ height: 6, borderRadius: 3, background: "rgba(26,35,50,.1)", marginTop: 10, overflow: "hidden", position: "relative" }}>
+          {panel.progreso == null
+            ? <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "40%", background: color, borderRadius: 3, animation: "subirmovil-ir 1.2s ease-in-out infinite" }} />
+            : <div style={{ width: `${Math.round(panel.progreso * 100)}%`, height: "100%", background: color, borderRadius: 3, transition: "width .25s" }} />}
+        </div>
+        {panel.conBoton && <button onClick={onListo} style={{ ...boton(true), marginTop: 12 }}>Listo</button>}
+      </div>
+      <style>{"@keyframes subirmovil-ir { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }"}</style>
     </div>
   );
 }
@@ -50,15 +75,15 @@ function FilaArchivo({ x, onReintentar, onQuitar }) {
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.nombre}</div>
-        {x.estado === "esperando" && <div style={{ fontSize: 12, color: C.muted }}>En espera{x.tamano ? ` · ${formatearTamano(x.tamano)}` : ""}</div>}
+        {x.estado === "esperando" && <div style={{ fontSize: 13, color: C.muted }}>En espera{x.tamano ? ` · ${formatearTamano(x.tamano)}` : ""}</div>}
         {x.estado === "subiendo" && (
           <>
-            <div style={{ fontSize: 12, color: C.cerulean }}>Subiendo {porcentaje} %</div>
+            <div style={{ fontSize: 13, color: C.cerulean, fontWeight: 600 }}>Subiendo {porcentaje} %</div>
             <div style={{ height: 4, borderRadius: 3, background: "rgba(26,35,50,.1)", marginTop: 4 }}><div style={{ width: `${porcentaje}%`, height: "100%", background: C.cerulean, borderRadius: 3 }} /></div>
           </>
         )}
-        {x.estado === "ok" && <div style={{ fontSize: 12, color: "#27ae60", fontWeight: 600 }}>✓ Guardada{x.identificando ? <span style={{ color: C.muted, fontWeight: 400 }}> · identificando…</span> : x.porIdentificar ? <span style={{ color: C.muted, fontWeight: 400 }}> · falta ponerle nombre</span> : ""}</div>}
-        {x.estado === "error" && <div style={{ fontSize: 12, color: "#c0392b", lineHeight: 1.4 }}>{x.mensaje}</div>}
+        {x.estado === "ok" && <div style={{ fontSize: 13, color: x.identificando ? C.cerulean : "#27ae60", fontWeight: 600 }}>{x.identificando ? "Poniéndole nombre…" : x.porIdentificar ? "✓ Guardada · espera su nombre" : "✓ Guardada"}</div>}
+        {x.estado === "error" && <div style={{ fontSize: 13, color: "#c0392b", lineHeight: 1.4 }}>{x.mensaje}</div>}
       </div>
       {x.estado === "error" && !x.sinReintento && <button onClick={() => onReintentar(x.id)} style={{ border: `1px solid ${C.cerulean}`, background: "transparent", color: C.cerulean, borderRadius: 8, padding: "7px 10px", fontFamily: fuente, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Reintentar</button>}
       {x.estado === "ok" && x.archivoId && <button onClick={() => onQuitar(x)} aria-label={`Quitar ${x.nombre}`} style={{ border: `1px solid ${C.border}`, background: "transparent", color: C.muted, borderRadius: 8, padding: "7px 10px", fontFamily: fuente, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Quitar</button>}
@@ -243,9 +268,9 @@ export default function SubirMovil({ codigo }) {
   }
 
   const fotosCamara = cola.filter((x) => x.vista || x.estado !== "ok").slice(-4);
-  const porIdentificar = cola.filter((x) => x.porIdentificar).length;
+  const panel = camaraAbierta ? null : panelEstado(cola, { terminada: !!terminada, conNombre: !!info.identificar });
   return (
-    <Marco>
+    <Marco pie={panel ? <PanelEstado panel={panel} onListo={() => setFinalizado(true)} /> : null}>
       <Tarjeta>
         <div style={{ fontFamily: fuente, fontSize: 18, fontWeight: 800, color: C.dark, lineHeight: 1.3 }}>Subir documentación</div>
         <div style={{ fontSize: 14, color: C.faint, marginTop: 4 }}>Expediente: <strong style={{ color: C.dark }}>{info.expediente_nombre}</strong></div>
@@ -269,13 +294,9 @@ export default function SubirMovil({ codigo }) {
           <Tarjeta>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
               <div style={{ fontFamily: fuente, fontSize: 14, fontWeight: 800, color: C.dark }}>Subidas en esta sesión</div>
-              <div style={{ fontSize: 12, color: C.muted }}>{resumen.guardadas} guardada{resumen.guardadas === 1 ? "" : "s"}{resumen.pendientes > 0 ? ` · ${resumen.pendientes} en curso` : ""}{resumen.fallidas > 0 ? ` · ${resumen.fallidas} con error` : ""}</div>
+              <div style={{ fontSize: 13, color: C.muted }}>{cola.length} {cola.length === 1 ? "foto" : "fotos"}</div>
             </div>
             {cola.map((x) => <FilaArchivo key={x.id} x={x} onReintentar={reintentar} onQuitar={(i) => { setErrorQuitar(""); setPorQuitar(i); }} />)}
-            {porIdentificar > 0 && resumen.pendientes === 0 && !camaraAbierta && <Aviso>Ya se subieron todas. Ahora se les pone nombre: {porIdentificar === 1 ? "falta 1" : `faltan ${porIdentificar}`}…</Aviso>}
-            {resumen.guardadas > 0 && resumen.pendientes === 0 && !terminada && porIdentificar === 0 && (
-              <button onClick={() => setFinalizado(true)} style={{ ...boton(true), marginTop: 14 }}>Listo</button>
-            )}
           </Tarjeta>
         </div>
       )}

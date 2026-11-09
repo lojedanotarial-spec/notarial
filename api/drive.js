@@ -398,7 +398,7 @@ async function celularInfo(d, _perfil, body) {
   const { data: archivos } = await d.sb.from("expediente_archivos").select("*").eq("sesion_id", sesion.id).eq("almacen", "escribania").is("borrado_en", null);
   const c = await conexionDe(d, sesion.registro_numero);
   // `ahora` = la hora del servidor: el celular calcula la cuenta regresiva con ella, así un reloj mal puesto no lo confunde.
-  return { ...resumenSesionParaCelular(sesion, exp, archivos || [], d.ahora()), drive_disponible: c?.estado === "activa", ahora: new Date(d.ahora()).toISOString() };
+  return { ...resumenSesionParaCelular(sesion, exp, archivos || [], d.ahora()), drive_disponible: c?.estado === "activa", ahora: new Date(d.ahora()).toISOString(), identificar: !!d.config?.identificar };
 }
 
 async function celularIniciarSubida(d, _perfil, body) {

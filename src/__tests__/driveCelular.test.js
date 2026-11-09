@@ -9,7 +9,7 @@ import {
 import { ACCIONES_AUDITORIA, armarAuditoria } from "../../api/_drive.js";
 import {
   nombreFotoCamara, siguientePendiente, resumenCola, marcarItem, esErrorDeSesion, textoSesionTerminada, cuentaRegresiva,
-  marcaIdentificacion, hayIdentificacionEnCurso, ESPERA_IDENTIFICACION_MS,
+  marcaIdentificacion, hayIdentificacionEnCurso, ESPERA_IDENTIFICACION_MS, panelEstado,
 } from "../utils/driveCliente.js";
 
 const T0 = Date.UTC(2026, 10, 9, 15, 0, 0);
@@ -224,5 +224,46 @@ describe("marca de identificación en la lista", () => {
     expect(hayIdentificacionEnCurso([a("ok"), a("pendiente")], ahora)).toBe(true);
     expect(hayIdentificacionEnCurso([a("ok"), a("sin_identificar"), a("pendiente", 10 * MIN)], ahora)).toBe(false);
     expect(hayIdentificacionEnCurso([], ahora)).toBe(false);
+  });
+});
+
+describe("panel de estado de la página del celular (un solo mensaje, claro)", () => {
+  const it_ = (estado, extra = {}) => ({ id: Math.random().toString(36), estado, progreso: estado === "ok" ? 1 : 0, ...extra });
+  it("sin fotos no muestra nada", () => {
+    expect(panelEstado([])).toBe(null);
+  });
+  it("subiendo: dice en qué foto va, de cuántas, y la barra avanza con el progreso de la foto actual", () => {
+    const cola = [it_("ok"), it_("subiendo", { progreso: 0.5 }), it_("esperando"), it_("esperando")];
+    expect(panelEstado(cola, { conNombre: true })).toMatchObject({ fase: "subiendo", paso: "Paso 1 de 2", titulo: "Subiendo las fotos", detalle: "2 de 4", conBoton: false });
+    expect(panelEstado(cola, { conNombre: true }).progreso).toBeCloseTo(1.5 / 4);
+  });
+  it("sin identificación automática no habla de pasos", () => {
+    expect(panelEstado([it_("subiendo")], { conNombre: false }).paso).toBe(null);
+  });
+  it("cuando terminan las subidas y falta ponerles nombre: paso 2, sin botón, ya están guardadas", () => {
+    const p = panelEstado([it_("ok", { porIdentificar: true }), it_("ok", { porIdentificar: true }), it_("ok")], { conNombre: true });
+    expect(p).toMatchObject({ fase: "nombrando", paso: "Paso 2 de 2", titulo: "Poniéndoles nombre", conBoton: false, progreso: null });
+    expect(p.detalle).toBe("Faltan 2 fotos. Ya están guardadas.");
+    expect(panelEstado([it_("ok", { porIdentificar: true })], { conNombre: true }).detalle).toBe("Falta 1 foto. Ya están guardadas.");
+  });
+  it("todo listo: cuántas se guardaron y el botón Listo", () => {
+    expect(panelEstado([it_("ok"), it_("ok"), it_("ok"), it_("ok")])).toMatchObject({ fase: "listo", titulo: "✓ 4 fotos guardadas", detalle: "Ya están en el expediente.", conBoton: true, progreso: 1 });
+    expect(panelEstado([it_("ok")]).titulo).toBe("✓ 1 foto guardada");
+  });
+  it("con errores: no ofrece 'Listo' y manda a reintentar en la lista", () => {
+    const p = panelEstado([it_("ok"), it_("ok"), it_("error")]);
+    expect(p).toMatchObject({ fase: "con_errores", conBoton: false });
+    expect(p.detalle).toMatch(/1 no se pudo subir.*Reintentar/);
+    expect(panelEstado([it_("ok"), it_("error"), it_("error")]).detalle).toMatch(/2 no se pudieron subir/);
+  });
+  it("si no se pudo subir ninguna, lo dice", () => {
+    expect(panelEstado([it_("error")])).toMatchObject({ fase: "error", conBoton: false });
+  });
+  it("sesión terminada: sin botón, remite al aviso", () => {
+    expect(panelEstado([it_("ok"), it_("esperando")], { terminada: true })).toMatchObject({ fase: "terminada", conBoton: false });
+  });
+  it("nunca muestra términos técnicos", () => {
+    const todos = [panelEstado([it_("subiendo")], { conNombre: true }), panelEstado([it_("ok", { porIdentificar: true })], { conNombre: true }), panelEstado([it_("ok")]), panelEstado([it_("error")]), panelEstado([it_("ok"), it_("error")])];
+    for (const p of todos) expect(`${p.titulo} ${p.detalle}`).not.toMatch(/identific|miniatura|api|token|410|404|undefined|null/i);
   });
 });

@@ -11,8 +11,9 @@ const fuente = "'Montserrat', sans-serif";
 
 function Marco({ children }) {
   return (
-    <div style={{ minHeight: "100vh", background: C.warm, display: "flex", justifyContent: "center", padding: "32px 16px", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" }}>
-      <div style={{ width: "100%", maxWidth: 480 }}>
+    // La app fija html/body en alto 100% sin scroll: esta página es su propio contenedor con scroll (si no, en un celular chico se corta).
+    <div style={{ position: "fixed", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", background: C.warm, fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ width: "100%", maxWidth: 480, margin: "0 auto", padding: "32px 16px 48px", boxSizing: "border-box" }}>
         <div style={{ fontFamily: fuente, fontWeight: 800, fontSize: 18, color: C.dark, letterSpacing: "-.02em", marginBottom: 18 }}>Notarial</div>
         <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 14, padding: "24px 22px" }}>{children}</div>
       </div>
