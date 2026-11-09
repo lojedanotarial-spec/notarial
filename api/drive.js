@@ -287,7 +287,7 @@ async function sincronizar(d, perfil, body) {
     presentes = await d.google.listarCarpeta(access, exp.drive_carpeta_escribania_id);
   } catch { return { ocultados: 0, disponible: false }; }
 
-  let ocultados = 0;
+  const ids = [];
   for (const fila of filas.filter((x) => !presentes.has(x.drive_file_id)).slice(0, MAX_VERIFICACIONES)) {
     let estado;
     try { estado = await d.google.estadoArchivo(access, fila.drive_file_id); } catch { continue; }
@@ -295,9 +295,9 @@ async function sincronizar(d, perfil, body) {
     await d.sb.from("expediente_archivos").update({ borrado_en: new Date(d.ahora()).toISOString() }).eq("id", fila.id).is("borrado_en", null);
     await auditar(d, { registro, usuarioId: perfil.id, accion: "borrado_en_drive", expedienteId: exp.id, archivoId: fila.id,
       detalle: { nombre: fila.nombre, motivo: estado.existe ? "papelera" : "eliminado" } });
-    ocultados++;
+    ids.push(fila.id);
   }
-  return { ocultados };
+  return { ocultados: ids.length, ids };
 }
 
 // ── Identificación y nombre automáticos (UC-4) ───────────────────────────────

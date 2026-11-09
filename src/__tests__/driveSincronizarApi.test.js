@@ -31,7 +31,8 @@ describe("sincronizar: lo que se borró directo en Drive se oculta", () => {
     } });
     const r = await sync(e, "tok-fati2");
     expect(r.statusCode).toBe(200);
-    expect(r.jsonBody).toEqual({ ocultados: 2 });
+    expect(r.jsonBody.ocultados).toBe(2);
+    expect([...r.jsonBody.ids].sort()).toEqual(["a1", "a3"]);   // la pantalla saca estas de la lista sin volver a consultar
     expect(visibles(e)).toEqual(["a2"]);
     const h = e.tablas.drive_auditoria.filter((a) => a.accion === "borrado_en_drive");
     expect(h).toHaveLength(2);

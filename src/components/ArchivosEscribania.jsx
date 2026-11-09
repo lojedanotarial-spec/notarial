@@ -69,6 +69,9 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     try {
       const r = await sincronizarDrive(expedienteId);
       if (r?.ocultados > 0) {
+        // Se sacan de la lista ya mismo (sin esperar otra consulta) y después se vuelve a pedir para quedar al día.
+        const ocultos = new Set(r.ids || []);
+        if (ocultos.size) setArchivos((prev) => prev.filter((a) => !ocultos.has(a.id)));
         await refrescar();
         setAvisoSync(`Se ${r.ocultados === 1 ? "ocultó 1 archivo que se borró" : `ocultaron ${r.ocultados} archivos que se borraron`} directo en Drive.`);
       } else if (manual) {
@@ -142,6 +145,16 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     if (paraIdentificar.length) await identificarTanda(paraIdentificar);
   }
 
+  // Si al tocar un archivo el servidor dice que ya no está (lo borraron en Drive, o lo quitó otra persona), no se muestra un error técnico:
+  // se limpia la lista con lo que haya en Drive y se avisa en lenguaje claro.
+  const esArchivoPerdido = (m) => /No encontré ese archivo|ya no está en el Drive/i.test(String(m));
+  async function archivoPerdido() {
+    setErrorGeneral("");
+    await sincronizar(true);
+    await refrescar();
+    setAvisoSync("Ese archivo ya no estaba (se borró en Drive o lo quitó otra persona). Actualicé la lista.");
+  }
+
   async function abrir(a) {
     if (!esPrevisualizable(a.mime_type)) return descargar(a);
     setVista({ archivo: a, url: null, cargando: true, error: "" });
@@ -151,6 +164,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
       urlVista.current = url;
       setVista({ archivo: a, url, cargando: false, error: "" });
     } catch (e) {
+      if (esArchivoPerdido(e.message)) { setVista(null); await archivoPerdido(); return; }
       setVista({ archivo: a, url: null, cargando: false, error: e.message });
     }
   }
@@ -162,7 +176,9 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
 
   async function descargar(a) {
     setErrorGeneral("");
-    try { guardarBlob(await traerArchivo(a.id, true), a.nombre); } catch (e) { setErrorGeneral(e.message); }
+    try { guardarBlob(await traerArchivo(a.id, true), a.nombre); } catch (e) {
+      if (esArchivoPerdido(e.message)) await archivoPerdido(); else setErrorGeneral(e.message);
+    }
   }
 
   function abrirEdicion(a) {
@@ -180,7 +196,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
       setArchivos((prev) => prev.map((a) => (a.id === porEditar.id ? { ...a, ...archivo } : a)));
       setPorEditar(null);
     } catch (e) {
-      setErrorEdicion(e.message);
+      if (esArchivoPerdido(e.message)) { setPorEditar(null); await archivoPerdido(); } else setErrorEdicion(e.message);
     } finally {
       setGuardandoEdicion(false);
     }
@@ -193,8 +209,8 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
       setArchivos((prev) => prev.filter((a) => a.id !== porBorrar.id));
       setPorBorrar(null);
     } catch (e) {
-      setErrorGeneral(e.message);
       setPorBorrar(null);
+      if (esArchivoPerdido(e.message)) await archivoPerdido(); else setErrorGeneral(e.message);
     } finally {
       setBorrando(false);
     }
