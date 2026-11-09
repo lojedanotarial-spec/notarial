@@ -120,6 +120,13 @@ export function crearGoogle({ clientId, clientSecret, fetch: f = (...a) => globa
       return r;
     },
 
+    // Cambia el nombre de un archivo (los que creó la app se pueden renombrar con el permiso drive.file).
+    async renombrar(access, fileId, nombre) {
+      return jsonOk(await f(`${API}/files/${encodeURIComponent(fileId)}?fields=id,name`, {
+        method: "PATCH", headers: auth(access, { "content-type": "application/json" }), body: JSON.stringify({ name: nombre }),
+      }));
+    },
+
     // Borrar = papelera de Drive (recuperable), nunca borrado definitivo.
     async papelera(access, fileId) {
       return jsonOk(await f(`${API}/files/${encodeURIComponent(fileId)}?fields=id`, {

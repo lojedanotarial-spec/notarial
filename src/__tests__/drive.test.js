@@ -9,7 +9,7 @@ import {
   validarArchivo, nombreCarpetaExpediente, esPrevisualizable,
   clasificarErrorGoogle, mensajeParaUsuario,
   estadoCuota, armarAuditoria, armarUrlAutorizacion, urlDeRetorno,
-  resumenConexion, esAdmin, registroDelUsuario,
+  resumenConexion, esAdmin, registroDelUsuario, nombreParaRenombrar, tipoValido,
 } from "../../api/_drive.js";
 
 const MB = 1024 * 1024;
@@ -146,6 +146,30 @@ describe("validación de archivos", () => {
   it("solo se previsualizan imágenes y PDF; el resto se descarga (evita ejecutar HTML subido)", () => {
     for (const m of ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]) expect(esPrevisualizable(m)).toBe(true);
     for (const m of ["text/html", "image/svg+xml", "application/javascript", "application/octet-stream", "", undefined]) expect(esPrevisualizable(m)).toBe(false);
+  });
+});
+
+describe("renombrar a mano", () => {
+  it("conserva la extensión si la persona se la sacó", () => {
+    expect(nombreParaRenombrar("DNI García Juan - anverso", "IMG_4821.jpg")).toBe("DNI García Juan - anverso.jpg");
+    expect(nombreParaRenombrar("Poder", "escaneo.pdf")).toBe("Poder.pdf");
+  });
+  it("no duplica la extensión ni pisa la que puso la persona", () => {
+    expect(nombreParaRenombrar("Poder.pdf", "x.pdf")).toBe("Poder.pdf");
+    expect(nombreParaRenombrar("Poder.png", "x.jpg")).toBe("Poder.png");
+  });
+  it("limpia como al subir y rechaza un nombre vacío", () => {
+    expect(nombreParaRenombrar("../../etc/passwd", "a.jpg")).toBe("passwd.jpg");
+    expect(nombreParaRenombrar("a\u0000b\nc", "a.jpg")).toBe("abc.jpg");
+    expect(nombreParaRenombrar("   ", "a.jpg")).toBe(null);
+    expect(nombreParaRenombrar("", "a.jpg")).toBe(null);
+    expect(nombreParaRenombrar(undefined, "a.jpg")).toBe(null);
+    expect(nombreParaRenombrar("x".repeat(400), "a.jpg").length).toBeLessThanOrEqual(150);
+  });
+  it("el tipo tiene que ser uno de la lista", () => {
+    expect(tipoValido("dni")).toBe("dni");
+    expect(tipoValido("hackear")).toBe(null);
+    expect(tipoValido(undefined)).toBe(null);
   });
 });
 

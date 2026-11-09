@@ -1,6 +1,6 @@
 # Tareas: Subir documentación al expediente desde el celular
 
-**Estado:** ✅ aprobado por Lucas el 09/11/26, con un cambio de orden: **primero todo salvo la identificación automática (etapa A); el "agente" que identifica y renombra queda para después (etapa B)**. En ejecución: etapa A (fases 1 a 3 hechas; sigue la 4, la API)
+**Estado:** ✅ aprobado por Lucas el 09/11/26, con un cambio de orden: **primero todo salvo la identificación automática (etapa A); el "agente" que identifica y renombra queda para después (etapa B)**. En ejecución: etapa A (fases 1 a 4 hechas; sigue la 5, las pantallas)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación.
 
@@ -31,10 +31,10 @@ Lucas prefirió no juntar fotos reales ahora. La identificación es un módulo s
 
 ## Fase 4 — API
 
-- [ ] **T4.1 🤖** **Refactor sin cambio de comportamiento:** partir `iniciarSubida` y `confirmarSubida` en funciones de núcleo reutilizables. *Verif.: los 59 tests de `driveApi.test.js` pasan sin modificarlos.*
-- [ ] **T4.2 🤖** Acciones de la compu: `celular_crear`, `celular_cerrar`, `renombrar`. *Verif. con Google simulado: solo expedientes del propio registro, Drive caído ⇒ mensaje claro, cerrar corta de inmediato, el renombre cambia el nombre en Drive y en la base.*
-- [ ] **T4.3 🤖** Acciones del celular: `celular_info`, `celular_iniciar_subida`, `celular_confirmar` (con gracia), `celular_quitar`. *Verif.: sesión vencida/cerrada/ajena ⇒ rechazo; no se puede quitar un archivo de otra sesión ni de otro expediente; confirmación idempotente; el celular nunca recibe archivos que no sean de su sesión.*
-- [ ] **T4.4 🤖** Limpieza oportunista de sesiones viejas al crear una. *Verif.: test.*
+- [x] **T4.1 (hecho 09/11/26) 🤖** **Refactor sin cambio de comportamiento:** partir `iniciarSubida` y `confirmarSubida` en funciones de núcleo reutilizables. *Verif.: los 59 tests de `driveApi.test.js` pasan sin modificarlos.*
+- [x] **T4.2 (hecho 09/11/26) 🤖** Acciones de la compu: `celular_crear`, `celular_cerrar`, `renombrar`. *Verif. con Google simulado: solo expedientes del propio registro, Drive caído ⇒ mensaje claro, cerrar corta de inmediato, el renombre cambia el nombre en Drive y en la base.*
+- [x] **T4.3 (hecho 09/11/26) 🤖** Acciones del celular: `celular_info`, `celular_iniciar_subida`, `celular_confirmar` (con gracia), `celular_quitar`. *Verif.: sesión vencida/cerrada/ajena ⇒ rechazo; no se puede quitar un archivo de otra sesión ni de otro expediente; confirmación idempotente; el celular nunca recibe archivos que no sean de su sesión.*
+- [x] **T4.4 (hecho 09/11/26) 🤖** Limpieza oportunista de sesiones viejas al crear una. *Verif.: test.*
 
 ## Fase 5 — Pantallas
 

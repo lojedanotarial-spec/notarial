@@ -1,150 +1,11 @@
 // Drive de la escribanía: la API (api/drive.js) con una base y un Google de mentira.
 // Spec: specs/drive-escribania/. Cubre las tareas T4.1, T4.2 y T4.3.
 import { describe, it, expect, vi } from "vitest";
-import { randomBytes, randomUUID } from "node:crypto";
-import { Writable } from "node:stream";
-import { crearHandler } from "../../api/drive.js";
+import { randomBytes } from "node:crypto";
 import { GoogleError, crearGoogle, emailDeIdToken } from "../../api/_driveGoogle.js";
 import { cifrar, descifrar, firmarState, hashCodigo } from "../../api/_drive.js";
+import { CLAVE, T0, MB, SCOPE_OK, idToken, entorno } from "./_driveHarness.js";
 
-const CLAVE = randomBytes(32).toString("base64");
-const T0 = Date.UTC(2026, 10, 9, 15, 0, 0);
-const MB = 1024 * 1024;
-const SCOPE_OK = "openid email https://www.googleapis.com/auth/drive.file";
-const TOKENS = { "tok-admin": "u-admin", "tok-fati": "u-fati", "tok-otro": "u-otro", "tok-fati2": "u-fati2" };
-
-// ── Base de datos de mentira (lo mínimo de supabase-js que usa la API) ───────
-
-function crearSb(tablas, { unicos = {} } = {}) {
-  const clon = (x) => structuredClone(x);
-  return {
-    tablas,
-    from(nombre) {
-      const q = { op: "select", filtros: [], limite: null, payload: null, devolver: false, opciones: {} };
-      const filas = () => (tablas[nombre] ||= []);
-      const coincide = (f) => q.filtros.every((fn) => fn(f));
-      const ejecutar = () => {
-        if (q.op === "select") {
-          let r = filas().filter(coincide).map(clon);
-          if (q.limite != null) r = r.slice(0, q.limite);
-          return { data: r, error: null };
-        }
-        if (q.op === "insert") {
-          const nueva = { id: randomUUID(), created_at: new Date(T0).toISOString(), ...clon(q.payload) };
-          if (unicos[nombre]?.(filas(), nueva)) return { data: null, error: { code: "23505", message: "duplicado" } };
-          filas().push(nueva);
-          return { data: [clon(nueva)], error: null };
-        }
-        if (q.op === "update") {
-          const ok = filas().filter(coincide);
-          ok.forEach((f) => Object.assign(f, clon(q.payload)));
-          return { data: ok.map(clon), error: null };
-        }
-        if (q.op === "delete") {
-          const quedan = filas().filter((f) => !coincide(f));
-          const borradas = filas().length - quedan.length;
-          tablas[nombre] = quedan;
-          return { data: new Array(borradas).fill({}), error: null };
-        }
-        if (q.op === "upsert") {
-          const col = q.opciones.onConflict;
-          const previa = filas().find((f) => f[col] === q.payload[col]);
-          if (previa) Object.assign(previa, clon(q.payload)); else filas().push(clon(q.payload));
-          return { data: [clon(q.payload)], error: null };
-        }
-        throw new Error("op no soportada");
-      };
-      const api = {
-        select() { if (q.op === "select") q.op = "select"; q.devolver = true; return api; },
-        insert(p) { q.op = "insert"; q.payload = p; return api; },
-        update(p) { q.op = "update"; q.payload = p; return api; },
-        delete() { q.op = "delete"; return api; },
-        upsert(p, o) { q.op = "upsert"; q.payload = p; q.opciones = o || {}; return api; },
-        eq(c, v) { q.filtros.push((f) => f[c] === v); return api; },
-        is(c, v) { q.filtros.push((f) => (v === null ? f[c] == null : f[c] === v)); return api; },
-        lt(c, v) { q.filtros.push((f) => f[c] != null && String(f[c]) < String(v)); return api; },
-        limit(n) { q.limite = n; return api; },
-        maybeSingle() { const r = ejecutar(); return Promise.resolve({ data: r.data?.[0] ?? null, error: r.error }); },
-        single() { const r = ejecutar(); const f = r.data?.[0]; return Promise.resolve(f ? { data: f, error: null } : { data: null, error: r.error || { message: "sin filas" } }); },
-        then(ok, mal) { return Promise.resolve(ejecutar()).then(ok, mal); },
-      };
-      return api;
-    },
-  };
-}
-
-// ── Google de mentira ────────────────────────────────────────────────────────
-
-const idToken = (email) => `h.${Buffer.from(JSON.stringify({ email, email_verified: true })).toString("base64url")}.s`;
-
-function crearGoogleFalso(extra = {}) {
-  let n = 0;
-  return {
-    renovar: vi.fn(async () => "acceso-1"),
-    cuenta: vi.fn(async () => ({ email: "escribania@gmail.com", usada: 100, total: 1000 })),
-    buscarCarpeta: vi.fn(async () => null),
-    crearCarpeta: vi.fn(async () => `carpeta-${++n}`),
-    abrirSesionSubida: vi.fn(async () => "https://upload.google/sesion-1"),
-    metadatos: vi.fn(async (a, id) => ({ id, name: "dni.jpg", size: "3000", mimeType: "image/jpeg", parents: ["carpeta-exp"], trashed: false })),
-    descargar: vi.fn(async () => new Response(Buffer.from("contenido!"), { headers: { "content-length": "10" } })),
-    papelera: vi.fn(async () => ({ id: "x" })),
-    revocar: vi.fn(async () => true),
-    canjearCodigo: vi.fn(async () => ({ refresh_token: "1//refresh-nuevo", access_token: "acc", id_token: idToken("escribania@gmail.com"), scope: SCOPE_OK })),
-    ...extra,
-  };
-}
-
-// ── Respuesta de mentira ─────────────────────────────────────────────────────
-
-class ResFalsa extends Writable {
-  constructor() { super(); this.statusCode = 200; this.headers = {}; this.partes = []; this.jsonBody = undefined; }
-  setHeader(k, v) { this.headers[k.toLowerCase()] = v; }
-  status(n) { this.statusCode = n; return this; }
-  json(o) { this.jsonBody = o; this.end(); return this; }
-  _write(c, e, cb) { this.partes.push(Buffer.from(c)); cb(); }
-  get texto() { return Buffer.concat(this.partes).toString("utf8"); }
-}
-
-function entorno({ tablas: extraTablas = {}, google = {}, unicos } = {}) {
-  const tablas = {
-    usuarios: [
-      { id: "u-admin", registro_numero: "9876", is_admin: true, email: "lucas@x.com", registros_id: null },
-      { id: "u-fati", registro_numero: "853", is_admin: false, email: "fati@x.com", registros_id: "r1" },
-      { id: "u-fati2", registro_numero: "853", is_admin: false, email: "otra@x.com", registros_id: null },
-      { id: "u-otro", registro_numero: "111", is_admin: false, email: "otro@x.com", registros_id: null },
-    ],
-    registros: [{ id: "r1", nombre: "Fátima", apellido: "Taha" }],
-    expedientes: [
-      { id: "e853", nombre: "Compraventa García", registro_id: "853", drive_carpeta_escribania_id: null },
-      { id: "e853b", nombre: "Poder", registro_id: "853", drive_carpeta_escribania_id: "carpeta-exp" },
-      { id: "e111", nombre: "Ajeno", registro_id: "111", drive_carpeta_escribania_id: null },
-    ],
-    expediente_archivos: [], drive_conexiones: [], drive_enlaces: [], drive_auditoria: [],
-    ...extraTablas,
-  };
-  const sb = crearSb(tablas, { unicos: { expediente_archivos: (fs, n) => n.almacen === "escribania" && fs.some((f) => f.almacen === "escribania" && f.drive_file_id === n.drive_file_id), ...unicos } });
-  const g = crearGoogleFalso(google);
-  const reloj = { t: T0 };
-  const deps = { sb, google: g, clientId: "cid", clave: CLAVE, ahora: () => reloj.t, usuarioDeToken: async (t) => (TOKENS[t] ? { id: TOKENS[t], email: `${TOKENS[t]}@x.com` } : null) };
-  const handler = crearHandler(() => deps);
-  const llamar = async (cuerpo, token, metodo = "POST") => {
-    const res = new ResFalsa();
-    const req = { method: metodo, body: cuerpo, headers: token ? { authorization: `Bearer ${token}` } : {}, query: metodo === "GET" ? cuerpo : {} };
-    await handler(req, res);
-    await new Promise((r) => (res.writableEnded ? r() : res.once("finish", r)));
-    // Nada de lo que sale al navegador puede contener el token de Google, cifrado o no.
-    const todo = JSON.stringify(res.jsonBody ?? "") + res.texto;
-    expect(todo).not.toMatch(/refresh|v1\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}/);
-    return res;
-  };
-  const conectar = (registro = "853", extra = {}) => tablas.drive_conexiones.push({
-    registro_numero: registro, google_email: "escribania@gmail.com", refresh_token_cifrado: cifrar("1//refresh-guardado", CLAVE),
-    estado: "activa", motivo: null, sin_espacio: false, carpeta_raiz_id: "raiz-1", cuota_usada: 100, cuota_total: 1000,
-    conectada_en: new Date(T0).toISOString(), conectada_por: "u-admin", ...extra,
-  });
-  const auditoria = () => tablas.drive_auditoria.map((a) => a.accion);
-  return { tablas, sb, google: g, llamar, conectar, auditoria, reloj, deps };
-}
 
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -665,6 +526,16 @@ describe("cliente de Google (_driveGoogle.js)", () => {
     await crearGoogle({ fetch: f }).papelera("acc", "k");
     expect(f.mock.calls[0][1].method).toBe("PATCH");
     expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ trashed: true });
+  });
+  it("renombrar usa PATCH con el nombre nuevo (con tildes) sobre el archivo indicado", async () => {
+    const f = vi.fn(async () => respuesta({ id: "k", name: "DNI García Juan - anverso.jpg" }));
+    const r = await crearGoogle({ fetch: f }).renombrar("acc", "k", "DNI García Juan - anverso.jpg");
+    expect(r.name).toBe("DNI García Juan - anverso.jpg");
+    expect(f.mock.calls[0][0]).toContain("/files/k");
+    expect(f.mock.calls[0][1].method).toBe("PATCH");
+    expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ name: "DNI García Juan - anverso.jpg" });
+    const mal = crearGoogle({ fetch: async () => respuesta({ error: { code: 404 } }, { status: 404 }) });
+    expect(await mal.renombrar("a", "k", "x").catch((x) => x)).toMatchObject({ status: 404 });
   });
   it("revocar tolera que el permiso ya no estuviera vigente", async () => {
     expect(await crearGoogle({ fetch: async () => respuesta({}, { status: 400 }) }).revocar("t")).toBe(true);

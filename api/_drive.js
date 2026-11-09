@@ -130,6 +130,19 @@ export function validarArchivo({ nombre, mime, tamano, tipo } = {}) {
   };
 }
 
+// Nombre nuevo que escribe una persona al corregir un archivo: se limpia igual que al subir y conserva la
+// extensión del archivo si la persona se la sacó (un .jpg sin extensión deja de abrirse bien).
+export function nombreParaRenombrar(nuevo, actual) {
+  let n = nombreLimpio(nuevo);
+  if (n === "archivo" && !String(nuevo ?? "").trim()) return null; // vacío: no es un nombre
+  const ext = (s) => { const m = /\.[A-Za-z0-9]{1,8}$/.exec(s); return m ? m[0] : ""; };
+  const extActual = ext(String(actual ?? ""));
+  if (extActual && !ext(n)) n = n.slice(0, 150 - extActual.length) + extActual;
+  return n;
+}
+
+export const tipoValido = (tipo) => (TIPOS_ARCHIVO.includes(tipo) ? tipo : null);
+
 // Solo imágenes y PDF se muestran dentro de Notarial; todo lo demás se descarga (un HTML subido no se ejecuta acá).
 export const esPrevisualizable = (mime) => PREVISUALIZABLES.has(mimeLimpio(mime));
 

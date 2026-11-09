@@ -18,8 +18,11 @@ import {
   MAX_BYTES_ARCHIVO, STATE_VENCE_MS, generarCodigo, hashCodigo, calcularVencimientoEnlace, motivoEnlaceInvalido,
   cifrar, descifrar, firmarState, verificarState, validarArchivo, nombreCarpetaExpediente, esPrevisualizable,
   clasificarErrorGoogle, mensajeParaUsuario, armarAuditoria, armarUrlAutorizacion, urlDeRetorno, resumenConexion,
-  esAdmin, registroDelUsuario,
+  esAdmin, registroDelUsuario, nombreParaRenombrar, tipoValido,
 } from "./_drive.js";
+import {
+  calcularVencimientoSesion, motivoSesionInvalida, urlSesion, puedeQuitar, resumenSesionParaCelular, vencimientoLimpieza,
+} from "./_driveCelular.js";
 
 export const BASE = "https://notarial.lat";
 export const REDIRECT_URI = `${BASE}/api/drive-callback`;
@@ -105,6 +108,7 @@ async function archivoAutorizado(d, perfil, archivoId) {
 const archivoPublico = (a) => ({
   id: a.id, expediente_id: a.expediente_id, nombre: a.nombre, tipo: a.tipo, mime_type: a.mime_type,
   tamano: a.tamano, created_at: a.created_at, subido_por_nombre: a.subido_por_nombre,
+  origen: a.origen ?? "compu", identificacion: a.identificacion ?? null,
 });
 
 // ── Acciones del usuario ─────────────────────────────────────────────────────
@@ -142,7 +146,12 @@ async function asegurarCarpetaExpediente(d, access, exp, raizId) {
 async function iniciarSubida(d, perfil, body) {
   const v = validarArchivo({ nombre: body.nombre, mime: body.mime, tamano: body.tamano, tipo: body.tipo });
   if (!v.ok) throw new ErrorHttp(v.codigo === "muy_grande" ? 413 : 400, v.mensaje, v.codigo);
-  const { exp, registro } = await expedienteAutorizado(d, perfil, body.expediente_id);
+  return prepararSubida(d, await expedienteAutorizado(d, perfil, body.expediente_id), v);
+}
+
+// Núcleo de "empezar a subir", compartido por la compu (usuario con sesión) y el celular (código de sesión): quien
+// llama ya resolvió y autorizó el expediente y su registro, y validó el archivo.
+async function prepararSubida(d, { exp, registro }, v) {
   const { access, conexion } = await accesoDe(d, registro);
   for (let intento = 0; ; intento++) {
     try {
@@ -165,9 +174,14 @@ async function iniciarSubida(d, perfil, body) {
 }
 
 async function confirmarSubida(d, perfil, body) {
-  const { exp, registro } = await expedienteAutorizado(d, perfil, body.expediente_id);
+  const ctx = await expedienteAutorizado(d, perfil, body.expediente_id);
+  return registrarSubida(d, ctx, { fileId: String(body.drive_file_id || ""), tipo: body.tipo, quien: { id: perfil.id, nombre: perfil.nombre } });
+}
+
+// Núcleo de "confirmar lo subido", compartido por la compu y el celular. `quien` = a quién se le atribuye (en el celular,
+// el usuario que generó el QR). El servidor le pregunta a Google por el archivo y no confía en lo que diga el navegador.
+async function registrarSubida(d, { exp, registro }, { fileId, tipo, quien, origen = "compu", sesionId = null }) {
   const { access } = await accesoDe(d, registro);
-  const fileId = String(body.drive_file_id || "");
   if (!fileId) throw new ErrorHttp(400, "Falta el archivo.");
   let meta;
   try { meta = await d.google.metadatos(access, fileId); } catch (e) {
@@ -183,10 +197,11 @@ async function confirmarSubida(d, perfil, body) {
     await d.google.papelera(access, fileId).catch(() => {});
     throw new ErrorHttp(413, "El archivo supera el máximo de 25 MB.", "muy_grande");
   }
-  const v = validarArchivo({ nombre: meta.name, mime: meta.mimeType, tamano, tipo: body.tipo });
+  const v = validarArchivo({ nombre: meta.name, mime: meta.mimeType, tamano, tipo });
   const fila = {
     expediente_id: exp.id, drive_file_id: fileId, nombre: v.nombre, tipo: v.tipo, mime_type: v.mime, tamano: v.tamano,
-    almacen: "escribania", subido_por: perfil.id, subido_por_nombre: perfil.nombre,
+    almacen: "escribania", subido_por: quien.id, subido_por_nombre: quien.nombre,
+    origen, sesion_id: sesionId, nombre_original: v.nombre,
   };
   const { data: nueva, error } = await d.sb.from("expediente_archivos").insert(fila).select().single();
   let guardada = nueva;
@@ -196,7 +211,7 @@ async function confirmarSubida(d, perfil, body) {
     const { data: previa } = await d.sb.from("expediente_archivos").select("*").eq("drive_file_id", fileId).eq("almacen", "escribania").maybeSingle();
     guardada = previa;
   } else {
-    await auditar(d, { registro, usuarioId: perfil.id, accion: "subir", expedienteId: exp.id, archivoId: nueva.id, detalle: { nombre: v.nombre, tamano: v.tamano } });
+    await auditar(d, { registro, usuarioId: quien.id, accion: "subir", expedienteId: exp.id, archivoId: nueva.id, detalle: { nombre: v.nombre, tamano: v.tamano, ...(origen === "celular" ? { via: "celular" } : {}) } });
   }
   // Mejor esfuerzo: dejar al día el espacio y limpiar la marca de "sin espacio" si volvió a funcionar.
   try {
@@ -236,6 +251,124 @@ async function borrar(d, perfil, body) {
   }
   await d.sb.from("expediente_archivos").update({ borrado_en: new Date(d.ahora()).toISOString(), borrado_por: perfil.id }).eq("id", arch.id);
   await auditar(d, { registro, usuarioId: perfil.id, accion: "borrar", expedienteId: exp.id, archivoId: arch.id, detalle: { nombre: arch.nombre } });
+  return { ok: true };
+}
+
+// ── Subir desde el celular: acciones de la compu ─────────────────────────────
+
+async function celularCrear(d, perfil, body) {
+  const { exp, registro } = await expedienteAutorizado(d, perfil, body.expediente_id);
+  const c = await conexionDe(d, registro);
+  if (!c) throw new ErrorHttp(409, mensajeParaUsuario("no_conectado"), "no_conectado");
+  if (c.estado !== "activa") throw new ErrorHttp(503, mensajeParaUsuario("rota"), "rota");
+  // Limpieza oportunista (los dos cupos de cron están usados): sesiones de más de 7 días.
+  await d.sb.from("drive_sesiones_celular").delete().lt("creada_en", vencimientoLimpieza(d.ahora()));
+  const codigo = generarCodigo();
+  const expira_en = calcularVencimientoSesion(d.ahora());
+  const { data: sesion, error } = await d.sb.from("drive_sesiones_celular").insert({
+    codigo_hash: hashCodigo(codigo), expediente_id: exp.id, registro_numero: registro,
+    usuario_id: perfil.id, usuario_nombre: perfil.nombre, creada_en: new Date(d.ahora()).toISOString(), expira_en,
+  }).select("id").single();
+  if (error) throw new Error(`insert sesion: ${error.message}`);
+  await auditar(d, { registro, usuarioId: perfil.id, accion: "celular_abrir", expedienteId: exp.id, detalle: { sesion: sesion.id } });
+  return { url: urlSesion(BASE, codigo), expira_en, sesion_id: sesion.id };
+}
+
+async function celularCerrar(d, perfil, body) {
+  const { data: s } = await d.sb.from("drive_sesiones_celular").select("*").eq("id", String(body.sesion_id || "")).maybeSingle();
+  if (!s || (!perfil.admin && s.registro_numero !== perfil.registro)) throw new ErrorHttp(404, "No encontré esa sesión.");
+  if (!s.cerrada_en) {
+    await d.sb.from("drive_sesiones_celular").update({ cerrada_en: new Date(d.ahora()).toISOString() }).eq("id", s.id);
+    await auditar(d, { registro: s.registro_numero, usuarioId: perfil.id, accion: "celular_cerrar", expedienteId: s.expediente_id, detalle: { sesion: s.id } });
+  }
+  return { ok: true };
+}
+
+// Corregir a mano el nombre y/o el tipo de un archivo (cualquier usuario del registro). Cambia el nombre también en Drive.
+async function renombrar(d, perfil, body) {
+  const { arch, exp, registro } = await archivoAutorizado(d, perfil, body.archivo_id);
+  const nombre = nombreParaRenombrar(body.nombre, arch.nombre);
+  if (!nombre) throw new ErrorHttp(400, "Escribí un nombre para el archivo.");
+  const tipo = body.tipo === undefined ? arch.tipo : tipoValido(body.tipo);
+  if (!tipo) throw new ErrorHttp(400, "El tipo de documento no es válido.");
+  if (nombre === arch.nombre && tipo === arch.tipo) return { archivo: archivoPublico(arch) };
+  const { access } = await accesoDe(d, registro);
+  if (nombre !== arch.nombre) {
+    try { await d.google.renombrar(access, arch.drive_file_id, nombre); } catch (e) { throw await fallaGoogle(d, registro, e); }
+  }
+  const cambios = { nombre, tipo, identificacion: "manual", nombre_original: arch.nombre_original ?? arch.nombre };
+  const { error } = await d.sb.from("expediente_archivos").update(cambios).eq("id", arch.id);
+  if (error) throw new Error(`update archivo: ${error.message}`);
+  await auditar(d, { registro, usuarioId: perfil.id, accion: "renombrar", expedienteId: exp.id, archivoId: arch.id, detalle: { de: arch.nombre, a: nombre, tipo } });
+  return { archivo: archivoPublico({ ...arch, ...cambios }) };
+}
+
+// ── Subir desde el celular: acciones del celular (solo el código del QR, sin login) ──
+// Con el código solo se puede agregar archivos a ESE expediente, quitar lo subido en ESA sesión y ver los nombres de
+// lo subido en esa sesión. Nada más: no se lista, ve ni baja nada del expediente ni del Drive.
+
+const MENSAJES_SESION = {
+  inexistente: "Este código no es válido. Pedí un QR nuevo desde la compu.",
+  vencida: "El QR venció. Generá uno nuevo desde la compu.",
+  cerrada: "Esta sesión se cerró desde la compu. Generá un QR nuevo si querés seguir.",
+};
+
+async function buscarSesion(d, codigo) {
+  if (typeof codigo !== "string" || codigo.length < 20) return null;
+  const { data } = await d.sb.from("drive_sesiones_celular").select("*").eq("codigo_hash", hashCodigo(codigo)).maybeSingle();
+  return data || null;
+}
+
+async function exigirSesion(d, codigo, opciones) {
+  const sesion = await buscarSesion(d, codigo);
+  const motivo = motivoSesionInvalida(sesion, d.ahora(), opciones);
+  if (motivo) throw new ErrorHttp(motivo === "inexistente" ? 404 : 410, MENSAJES_SESION[motivo], motivo);
+  return sesion;
+}
+
+async function expedienteDeSesion(d, sesion) {
+  const { data: exp } = await d.sb.from("expedientes").select("id,nombre,registro_id,drive_carpeta_escribania_id").eq("id", sesion.expediente_id).maybeSingle();
+  const registro = String(exp?.registro_id ?? "").trim();
+  if (!exp || registro !== sesion.registro_numero) throw new ErrorHttp(404, MENSAJES_SESION.inexistente, "inexistente");
+  return { exp, registro };
+}
+
+async function celularInfo(d, _perfil, body) {
+  const sesion = await buscarSesion(d, body.codigo);
+  if (!sesion) return resumenSesionParaCelular(null, null, [], d.ahora());
+  const { data: exp } = await d.sb.from("expedientes").select("nombre").eq("id", sesion.expediente_id).maybeSingle();
+  const { data: archivos } = await d.sb.from("expediente_archivos").select("*").eq("sesion_id", sesion.id).eq("almacen", "escribania").is("borrado_en", null);
+  const c = await conexionDe(d, sesion.registro_numero);
+  return { ...resumenSesionParaCelular(sesion, exp, archivos || [], d.ahora()), drive_disponible: c?.estado === "activa" };
+}
+
+async function celularIniciarSubida(d, _perfil, body) {
+  const sesion = await exigirSesion(d, body.codigo);
+  const v = validarArchivo({ nombre: body.nombre, mime: body.mime, tamano: body.tamano, tipo: "otro" });
+  if (!v.ok) throw new ErrorHttp(v.codigo === "muy_grande" ? 413 : 400, v.mensaje, v.codigo);
+  const r = await prepararSubida(d, await expedienteDeSesion(d, sesion), v);
+  return { sesion_url: r.sesion_url, nombre: r.nombre, mime: r.mime };
+}
+
+async function celularConfirmar(d, _perfil, body) {
+  // Con gracia: una subida ya empezada se puede confirmar hasta 5 min después de vencida, pero no si se cerró.
+  const sesion = await exigirSesion(d, body.codigo, { paraConfirmar: true });
+  return registrarSubida(d, await expedienteDeSesion(d, sesion), {
+    fileId: String(body.drive_file_id || ""), tipo: "otro", quien: { id: sesion.usuario_id, nombre: sesion.usuario_nombre }, origen: "celular", sesionId: sesion.id,
+  });
+}
+
+async function celularQuitar(d, _perfil, body) {
+  const sesion = await exigirSesion(d, body.codigo);
+  const { exp, registro } = await expedienteDeSesion(d, sesion);
+  const { data: arch } = await d.sb.from("expediente_archivos").select("*").eq("id", String(body.archivo_id || "")).maybeSingle();
+  if (!puedeQuitar(arch, sesion)) throw new ErrorHttp(404, "No encontré esa foto.");
+  const { access } = await accesoDe(d, registro);
+  try { await d.google.papelera(access, arch.drive_file_id); } catch (e) {
+    if (e?.status !== 404) throw await fallaGoogle(d, registro, e);
+  }
+  await d.sb.from("expediente_archivos").update({ borrado_en: new Date(d.ahora()).toISOString(), borrado_por: sesion.usuario_id }).eq("id", arch.id);
+  await auditar(d, { registro, usuarioId: sesion.usuario_id, accion: "borrar", expedienteId: exp.id, archivoId: arch.id, detalle: { nombre: arch.nombre, via: "celular" } });
   return { ok: true };
 }
 
@@ -382,8 +515,11 @@ async function callback(d, req, res) {
 
 // ── Entrada ──────────────────────────────────────────────────────────────────
 
-const PUBLICAS = { enlace_info: (d, p, b) => enlaceInfo(d, b), enlace_iniciar: (d, p, b) => enlaceIniciar(d, b) };
-const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar };
+const PUBLICAS = {
+  enlace_info: (d, p, b) => enlaceInfo(d, b), enlace_iniciar: (d, p, b) => enlaceIniciar(d, b),
+  celular_info: celularInfo, celular_iniciar_subida: celularIniciarSubida, celular_confirmar: celularConfirmar, celular_quitar: celularQuitar,
+};
+const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar };
 const DE_ADMIN = { admin_estado: adminEstado, admin_enlace: adminEnlace, admin_desconectar: adminDesconectar };
 
 export function depsReales() {
