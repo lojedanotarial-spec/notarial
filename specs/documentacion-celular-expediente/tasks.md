@@ -83,6 +83,8 @@ Registro **9876**, cuenta `lojeda.notarial@gmail.com`.
 - [x] **TB.7 (hecho 09/11/26) 🤖** Variables en Vercel (con `scripts/vercel_env.mjs`), deploy y prueba manual con teléfonos: el nombre aparece solo (`DNI García Juan - anverso.jpg`).
 - [x] **TB.8 (hecho 09/11/26) 🤖** Con los tokens reales de la auditoría, **costo por foto**. **Decisión de Lucas:** prender o no `DRIVE_IDENTIFICAR_COMPU`. **Costo real medido en producción: entre $0,00024 y $0,00030 por foto (≈ $0,30 cada mil). `DRIVE_IDENTIFICAR_COMPU` quedó PRENDIDO (la condición de Lucas, "solo si es barato", se cumple); se apaga poniéndola en 0 en Vercel.**
 
+- [x] **TB.9 (hecho 09/11/26, a partir de la prueba real de Lucas con su DNI y su licencia)** Identificación **en lote** con emparejamiento de caras (`api/_driveLote.js`), orden "primero subir todo, después identificar", prompt y reglas que evitan nombrar con el de un funcionario, y rediseño de la página del celular (scroll propio, panel de estado fijo). Casos reales guardados en `fotos_prueba/reales/`. Pendiente a futuro: emparejar contra lo subido en otra tanda, identificar PDFs, identificar de nuevo.
+
 ## Lo que nunca se hace sin preguntarte
 
 Restringir la feature a ciertos usuarios en producción, prender la identificación para la compu sin haber visto el costo real, ni enviar fotos reales a la IA fuera de las pruebas acordadas.
