@@ -5,6 +5,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { Writable } from "node:stream";
 import { crearHandler } from "../../api/drive.js";
 import { cifrar } from "../../api/_drive.js";
+import { crearAlmacenFalso } from "./_almacenFalso.js";
 
 export const CLAVE = randomBytes(32).toString("base64");
 export const T0 = Date.UTC(2026, 10, 9, 15, 0, 0);
@@ -111,7 +112,7 @@ export class ResFalsa extends Writable {
 // Lo que "dice" el modelo de mentira por defecto: un DNI de una persona inventada.
 export const RESPUESTA_IA = { tipo: "dni", descripcion: "", apellido: "García", nombre: "Juan", lado: "anverso", pagina: null, paginas_total: null, legible: true, confianza: "alta" };
 
-export function entorno({ tablas: extraTablas = {}, google = {}, unicos, config = {}, ia: iaExtra = {} } = {}) {
+export function entorno({ tablas: extraTablas = {}, google = {}, unicos, config = {}, ia: iaExtra = {}, propio = false, almacenOpts } = {}) {
   const tablas = {
     usuarios: [
       { id: "u-admin", registro_numero: "9876", is_admin: true, email: "lucas@x.com", registros_id: null },
@@ -128,7 +129,7 @@ export function entorno({ tablas: extraTablas = {}, google = {}, unicos, config 
     expediente_archivos: [], drive_conexiones: [], drive_enlaces: [], drive_auditoria: [], drive_sesiones_celular: [],
     ...extraTablas,
   };
-  const sb = crearSb(tablas, { unicos: { expediente_archivos: (fs, n) => n.almacen === "escribania" && fs.some((f) => f.almacen === "escribania" && f.drive_file_id === n.drive_file_id), ...unicos } });
+  const sb = crearSb(tablas, { unicos: { expediente_archivos: (fs, n) => (n.almacen === "escribania" && fs.some((f) => f.almacen === "escribania" && f.drive_file_id === n.drive_file_id)) || (n.almacen === "propio" && fs.some((f) => f.id === n.id)), ...unicos } });
   const g = crearGoogleFalso(google);
   const reloj = { t: T0 };
   const ia = {
@@ -141,8 +142,9 @@ export function entorno({ tablas: extraTablas = {}, google = {}, unicos, config 
     })),
     ...iaExtra,
   };
+  const almacen = propio ? crearAlmacenFalso(almacenOpts) : null;   // `propio: true` = el servidor tiene el almacén de R2 configurado
   const deps = {
-    sb, google: g, clientId: "cid", clave: CLAVE, ahora: () => reloj.t, ia,
+    sb, google: g, almacen, clientId: "cid", clave: CLAVE, ahora: () => reloj.t, ia,
     config: { identificar: false, identificarCompu: false, ...config },   // por defecto la identificación está apagada, como en producción sin variables
     usuarioDeToken: async (t) => (TOKENS[t] ? { id: TOKENS[t], email: `${TOKENS[t]}@x.com` } : null),
   };
@@ -163,5 +165,5 @@ export function entorno({ tablas: extraTablas = {}, google = {}, unicos, config 
     conectada_en: new Date(T0).toISOString(), conectada_por: "u-admin", ...extra,
   });
   const auditoria = () => tablas.drive_auditoria.map((a) => a.accion);
-  return { tablas, sb, google: g, ia, llamar, conectar, auditoria, reloj, deps };
+  return { tablas, sb, google: g, almacen, ia, llamar, conectar, auditoria, reloj, deps };
 }

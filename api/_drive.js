@@ -19,7 +19,7 @@ export const PURGA_ARCHIVOS_MS = 30 * 24 * 60 * 60 * 1000;
 export const limitePurgaArchivos = (ahora = Date.now()) => new Date(ahora - PURGA_ARCHIVOS_MS).toISOString();
 export const TIPOS_ARCHIVO = ["dni", "tarjeta_verde", "poder", "formulario", "otro"];
 export const SCOPES_GOOGLE = ["https://www.googleapis.com/auth/drive.file", "openid", "email"];
-export const ACCIONES_AUDITORIA = ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "celular_abrir", "celular_cerrar", "renombrar", "identificar", "borrado_en_drive"];
+export const ACCIONES_AUDITORIA = ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "celular_abrir", "celular_cerrar", "renombrar", "identificar", "borrado_en_drive", "restaurar", "purgar"];
 const PREVISUALIZABLES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
 
 // ── Enlaces de conexión ──────────────────────────────────────────────────────
@@ -201,7 +201,7 @@ export function estadoCuota(c) {
 
 // ── Auditoría ────────────────────────────────────────────────────────────────
 
-export function armarAuditoria({ registro, usuarioId = null, accion, expedienteId = null, archivoId = null, detalle = null } = {}) {
+export function armarAuditoria({ registro, usuarioId = null, accion, expedienteId = null, loteId = null, archivoId = null, detalle = null } = {}) {
   if (!ACCIONES_AUDITORIA.includes(accion)) throw new Error("accion_invalida");
   const reg = String(registro ?? "").trim();
   if (!reg) throw new Error("registro_requerido");
@@ -210,7 +210,9 @@ export function armarAuditoria({ registro, usuarioId = null, accion, expedienteI
     const txt = JSON.stringify(d);
     if (txt.length > 1000) d = { truncado: true, texto: txt.slice(0, 900) };
   }
-  return { registro_numero: reg, usuario_id: usuarioId, accion, expediente_id: expedienteId, archivo_id: archivoId, detalle: d ?? null };
+  const fila = { registro_numero: reg, usuario_id: usuarioId, accion, expediente_id: expedienteId, archivo_id: archivoId, detalle: d ?? null };
+  if (loteId != null) fila.lote_id = loteId; // solo si hay lote: así las filas de expedientes no cambian de forma
+  return fila;
 }
 
 // ── Autorización con Google ──────────────────────────────────────────────────

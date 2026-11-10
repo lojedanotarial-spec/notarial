@@ -1,0 +1,114 @@
+# Spec: Personas del expediente
+
+**Estado:** 📝 borrador v2 (09/11/26), esperando aprobación de Lucas (fase 1 de 3). NO escribir `plan.md` ni código hasta que se apruebe
+**Feature:** [`features/personas-expediente.md`](../../features/personas-expediente.md)
+**Epic:** [`epics/documentacion-expedientes-drive.md`](../../epics/documentacion-expedientes-drive.md)
+**Casos de uso:** [UC-1](../../usecases/personas-expediente-ficha.md) · [UC-2](../../usecases/personas-expediente-archivos.md) · [UC-3](../../usecases/personas-expediente-traer-a-parte.md) · [UC-4](../../usecases/personas-expediente-ver-en-editor.md)
+**Depende de:** [`specs/drive-escribania/`](../drive-escribania/spec.md) y [`specs/documentacion-celular-expediente/`](../documentacion-celular-expediente/spec.md)
+**Origen:** pedido de Lucas del 09/11/26, tras la primera prueba con la cuenta de Fátima. Dirección elegida por Lucas: la persona es **una sola ficha permanente del registro**, se completa en un modal a partir de las fotos, se guarda en la base y después se ofrece como sugerencia al armar las partes.
+
+## Problema
+
+1. La primera pregunta de la escribana es "¿soltero o casado?", y eso no figura en el DNI. Hoy no hay
+   dónde anotarlo en el expediente, salvo un único campo de notas general.
+2. Los archivos que se suben a un expediente y los documentos que se arman en él **no tienen ninguna
+   conexión**. Después de subir el DNI, al crear el documento hay que subirlo o escanearlo de nuevo, y
+   desde el documento no se pueden ver los archivos del expediente.
+3. Cada vez que la misma persona aparece en otro trámite, sus datos se vuelven a cargar.
+
+## Comportamiento actual (verificado leyendo el código, no supuesto)
+
+- El expediente tiene dos pestañas, **Documentos** y **Archivos**, sin relación entre ellas.
+- El expediente tiene un solo campo de **notas** de texto libre, sin estructura ni dueño.
+- Los archivos tienen nombre, tipo y quién los subió; **no** tienen persona asociada.
+- Existe una **libreta de personas del registro**: al guardar un documento, cada parte se guarda en ella
+  (documento, domicilio, estado civil, etc.), y al armar una parte se puede buscar por DNI o apellido.
+  No está conectada a los expedientes ni a los archivos, y nada impide que la misma persona quede
+  repetida.
+- El editor de partes tiene botones para escanear un documento del dispositivo, del celular (QR) o de
+  una carpeta de Drive de un lote de barrio. **Ninguno** lee los archivos de un expediente.
+- Nuevo documento desde un expediente ya lo vincula automáticamente a ese expediente.
+
+## Comportamiento deseado (criterios de aceptación)
+
+**La persona es una ficha permanente del registro** *(UC-1)*
+- [ ] Cada persona existe **una sola vez** en el registro y se reutiliza en todos sus trámites. Si se
+      intenta crear una con un DNI que ya existe, el sistema avisa y ofrece usar la existente.
+- [ ] El expediente tiene una pestaña **Personas** con quienes intervienen en él. Se agrega una persona
+      **existente** (buscándola por DNI o apellido) o **nueva**; se puede quitar del expediente sin
+      borrar la ficha.
+- [ ] Todos los usuarios del registro ven las mismas fichas; los de otros registros, nunca.
+
+**Completar el perfil en un modal** *(UC-1)*
+- [ ] Desde la ficha hay un modal **Completar perfil** que reúne: los datos de la persona (los mismos
+      que hoy tiene una parte: nombre, documento, CUIT, fecha de nacimiento, domicilio, etc.), **estado
+      civil** (soltero/a, casado/a, divorciado/a, viudo/a, unión convivencial) y un **comentario libre**.
+- [ ] Si la persona tiene archivos de identidad, el modal ofrece **Leer del DNI**: el sistema lee las
+      fotos y **precarga** los datos. Nada se guarda hasta que el usuario revisa y toca **Guardar**.
+      La lectura **solo ocurre cuando el usuario la pide**, nunca en segundo plano.
+- [ ] Lo que escribe el usuario manda: la lectura nunca pisa un dato que ya se cargó sin avisar.
+- [ ] La ficha muestra **cuándo se actualizó por última vez**, para que quien arma un documento sepa
+      qué tan vigente es el estado civil.
+- [ ] Cuando después de subir fotos (desde la compu o el celular) el sistema reconoce a alguien que no
+      está en el expediente, **propone** agregarlo y abrir su perfil. **Nunca se crea ni se completa
+      nada sin confirmación.**
+- [ ] Todo cambio de una ficha, de sus archivos o de su pertenencia a un expediente queda en el
+      historial del expediente.
+
+**Archivos y personas** *(UC-2)*
+- [ ] Cada archivo pertenece a **una persona o a ninguna**. En la pestaña **Archivos** se ve de quién
+      es (o "Sin asignar") y se puede cambiar.
+- [ ] La ficha de cada persona lista sus archivos, que se pueden abrir y bajar como siempre.
+- [ ] Cuando el nombre automático de un archivo coincide con una persona, se **propone** asignarlo.
+- [ ] Reasignar un archivo no lo mueve, no lo copia y no cambia el Drive.
+- [ ] Quitar a una persona de un expediente deja sus archivos en el expediente, sin asignar.
+
+**Sugerencias al armar las partes** *(UC-3)*
+- [ ] En el editor de partes de un documento vinculado a un expediente con personas, al elegir cada
+      parte (1, 2, 3…) aparecen **las personas del expediente como sugerencias**, arriba de la
+      búsqueda general de la libreta.
+- [ ] Elegir una sugerencia completa la parte con los datos de la ficha **sin volver a leer ningún
+      archivo**, con la concordancia de género que ya usa el editor.
+- [ ] El comentario de la ficha y su fecha de actualización se muestran como recordatorio junto a la
+      parte.
+- [ ] Si la parte ya tenía datos, se avisa antes de reemplazarlos.
+- [ ] El **rol** (comprador, vendedor, etc.) lo define el documento, no la ficha.
+- [ ] El documento guarda **su propia copia** de los datos de cada parte: cambiar una ficha después no
+      altera documentos ya armados.
+- [ ] Una misma persona no puede ser dos partes del mismo documento (se avisa).
+
+**Ver archivos mientras se edita** *(UC-4)*
+- [ ] En el editor de un documento vinculado a un expediente hay un botón **Archivos del expediente**
+      que abre un panel con la lista agrupada por persona (y "Sin asignar").
+- [ ] Desde el panel se puede abrir o bajar un archivo. No modifica el documento.
+- [ ] Si el documento no está en un expediente, el botón no aparece. Si el Drive no está disponible, se
+      explica por qué, sin mensajes técnicos.
+
+**Seguridad y privacidad**
+- [ ] Fichas, pertenencia a expedientes y asociaciones con archivos respetan la misma regla que los
+      archivos: solo las ve el registro dueño.
+- [ ] Borrar un expediente borra su historial y la pertenencia de las personas a él, pero **no borra la
+      ficha**, que es del registro. Borrar una ficha pide confirmación y la saca de todos los expedientes.
+- [ ] La lectura automática de los archivos en segundo plano (la que solo les pone nombre) sigue
+      guardando únicamente el nombre y el tipo. Los datos completos solo se guardan cuando una persona
+      los revisó y los confirmó.
+
+## Fuera de alcance (primera versión)
+
+- Archivos que correspondan a **más de una persona** (un poder, una partida de matrimonio): quedan sin
+  asignar y se aclara en el comentario.
+- Cónyuge, régimen patrimonial o nupcias como datos propios o vinculados: van en el comentario por ahora.
+- Que Scriba lea las fichas.
+- Completar la parte sin que el usuario elija a la persona.
+- Fusionar fichas repetidas que ya existan en la libreta actual.
+- Asociar el archivo a una persona desde la pantalla del celular al subir.
+
+## Preguntas abiertas para Lucas
+
+1. **¿Dónde se completa el perfil?** Asumí que en la **compu**, después de que las fotos llegan desde
+   el celular. ¿O querés poder completarlo también desde el celular, justo después de sacar la foto?
+2. **Casado/a:** ¿alcanza con el comentario libre para el cónyuge, o querés que en la próxima versión
+   la ficha se vincule con la ficha del cónyuge?
+3. **Orden de las pestañas:** ¿**Personas** va primera al abrir el expediente o tercera?
+4. **Fichas repetidas que ya existen:** hoy la libreta puede tener a la misma persona dos veces
+   (hay 11 fichas). ¿Las revisamos a mano cuando salgan, o querés una pantalla de "posibles repetidos"?

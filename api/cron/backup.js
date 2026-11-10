@@ -21,6 +21,7 @@ import { gzipSync } from "node:zlib";
 import { SUPABASE_URL } from "../_supabaseConfig.js";
 import { avisar } from "../_telegram.js";
 import { clienteServicio, purgarVencidas } from "../_capturaPurga.js";
+import { purgarArchivosSiHayAlmacen } from "../_almacenPurga.js";
 
 const BUCKETS_STORAGE = ["oo-docs", "documentos"];
 // Tablas que NO se copian: guardan datos personales leídos de documentos hasta que se entregan (después se
@@ -140,6 +141,11 @@ export default async function handler(req, res) {
   // principal es horaria (Worker de Cloudflare); esta corrida diaria cubre si ese Worker llegara a fallar.
   try { resumen.capturas_purgadas = await purgarVencidas(clienteServicio()); }
   catch (e) { resumen.errores.push(`purga de capturas: ${e.message}`); }
+
+  // 0b) Lo mismo para los archivos propios (papelera de 30 días y expedientes/lotes borrados).
+  const purgaArchivos = await purgarArchivosSiHayAlmacen(clienteServicio());
+  resumen.archivos_purgados = purgaArchivos;
+  if (purgaArchivos.error) resumen.errores.push(`purga de archivos: ${purgaArchivos.error}`);
 
   // 1) Tablas
   try {

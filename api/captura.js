@@ -10,6 +10,7 @@
 import { tokenDeRequest, usuarioDeToken } from "./_auth.js";
 import { extraerDocumento } from "./vision.js";
 import { BUCKET, clienteServicio, destruirCaptura, purgarVencidas } from "./_capturaPurga.js";
+import { purgarArchivosSiHayAlmacen } from "./_almacenPurga.js";
 import {
   MODOS, MAX_FOTOS, MAX_BYTES_FOTO, EXTENSIONES, generarCodigo, hashCodigo, calcularVencimientos,
   renovarExpiracion, codigoVigente, armarEtiqueta, esperadasPara, fusionarVehiculosPorGrupo,
@@ -223,7 +224,9 @@ export default async function handler(req, res) {
     const sb = clienteServicio();
     if (accion === "purgar") {
       if (!tokenDeServidor(req)) return res.status(401).json({ error: "No autorizado" });
-      return res.status(200).json({ purgadas: await purgarVencidas(sb, 100) });
+      const purgadas = await purgarVencidas(sb, 100);
+      // Mismo disparador horario: también elimina los archivos propios que cumplieron sus 30 días de papelera.
+      return res.status(200).json({ purgadas, archivos: await purgarArchivosSiHayAlmacen(sb) });
     }
     if (DE_USUARIO[accion]) {
       const usuario = await usuarioDeToken(tokenDeRequest(req));

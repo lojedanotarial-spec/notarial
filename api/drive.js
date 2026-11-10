@@ -9,16 +9,18 @@
 //
 // El token de Google vive cifrado en `drive_conexiones`, que no tiene políticas RLS: solo esta función la toca, con la
 // service key. El registro del usuario se deduce SIEMPRE en el servidor; el cliente nunca lo elige.
+import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { tokenDeRequest, usuarioDeToken } from "./_auth.js";
+import { claveTemporal, claveDefinitiva, perteneceAlRegistro, configAlmacen, crearAlmacen } from "./_almacen.js";
 import { clienteServicio } from "./_capturaPurga.js";
 import { crearGoogle, emailDeIdToken } from "./_driveGoogle.js";
 import {
   MAX_BYTES_ARCHIVO, STATE_VENCE_MS, generarCodigo, hashCodigo, calcularVencimientoEnlace, motivoEnlaceInvalido,
   cifrar, descifrar, firmarState, verificarState, validarArchivo, nombreCarpetaExpediente, esPrevisualizable,
   clasificarErrorGoogle, mensajeParaUsuario, armarAuditoria, armarUrlAutorizacion, urlDeRetorno, resumenConexion,
-  esAdmin, registroDelUsuario, nombreParaRenombrar, tipoValido, limitePurgaArchivos,
+  esAdmin, registroDelUsuario, nombreParaRenombrar, tipoValido, limitePurgaArchivos, PURGA_ARCHIVOS_MS,
 } from "./_drive.js";
 import {
   calcularVencimientoSesion, motivoSesionInvalida, urlSesion, puedeQuitar, resumenSesionParaCelular, vencimientoLimpieza,
@@ -101,11 +103,87 @@ async function expedienteAutorizado(d, perfil, expedienteId) {
   return { exp, registro };
 }
 
-async function archivoAutorizado(d, perfil, archivoId) {
+// `borrados: true` también devuelve un archivo en la papelera (solo para restaurar).
+async function archivoAutorizado(d, perfil, archivoId, { borrados = false } = {}) {
   const { data: arch } = await d.sb.from("expediente_archivos").select("*").eq("id", String(archivoId || "")).maybeSingle();
-  if (!arch || arch.almacen !== "escribania" || arch.borrado_en) throw new ErrorHttp(404, "No encontré ese archivo.");
+  if (!arch || !["escribania", "propio"].includes(arch.almacen) || (arch.borrado_en && !borrados)) throw new ErrorHttp(404, "No encontré ese archivo.");
   const { exp, registro } = await expedienteAutorizado(d, perfil, arch.expediente_id);
+  // Defensa extra: una fila con una clave de otro registro (base corrompida o manipulada) nunca se entrega.
+  if (arch.almacen === "propio" && !perteneceAlRegistro(arch.clave, registro)) throw new ErrorHttp(404, "No encontré ese archivo.");
   return { arch, exp, registro };
+}
+
+// ── Almacén propio (R2) ──────────────────────────────────────────────────────
+// Se pide con `almacen: "propio"` en el cuerpo (la pantalla nueva). Sin eso se sigue por Google, para los archivos viejos
+// y para que una pantalla vieja no se rompa durante el cambio. Spec: specs/almacenamiento-propio/.
+
+const TICKET_VENCE_MS = 30 * 60 * 1000;
+const pideAlmacenPropio = (body) => body?.almacen === "propio";
+
+function exigirAlmacen(d) {
+  if (!d.almacen) throw new ErrorHttp(503, "El almacenamiento de archivos no está disponible. Avisale a quien administra Notarial.", "almacen_no_disponible");
+  return d.almacen;
+}
+
+// El "ticket" ata lo que se declaró al empezar a subir (quién, dónde, qué nombre y cuánto pesa) con una firma del servidor:
+// al confirmar no se confía en nada que mande el navegador.
+async function prepararSubidaPropia(d, { exp, registro }, v) {
+  const almacen = exigirAlmacen(d);
+  const id = randomUUID();
+  const url = await almacen.firmarSubida(claveTemporal(id));
+  const ticket = firmarState({ id, r: registro, e: exp.id, n: v.nombre, m: v.mime, t: v.tipo, z: v.tamano, exp: d.ahora() + TICKET_VENCE_MS }, d.clave);
+  return { almacen: "propio", url_subida: url, archivo_id: id, ticket, nombre: v.nombre, tipo: v.tipo, mime: v.mime };
+}
+
+// Núcleo de "confirmar lo subido" del almacén propio, compartido por la compu y el celular.
+async function registrarSubidaPropia(d, { exp, registro }, { ticket, quien, origen = "compu", sesionId = null, identificar = false }) {
+  const almacen = exigirAlmacen(d);
+  const p = verificarState(ticket, d.clave, d.ahora());
+  if (!p || p.r !== registro || p.e !== exp.id || typeof p.id !== "string") {
+    throw new ErrorHttp(400, "La subida venció o no es válida. Probá de nuevo.", "ticket_invalido");
+  }
+  // Ya registrado (confirmación repetida): se devuelve el mismo, sin duplicar.
+  const { data: previa } = await d.sb.from("expediente_archivos").select("*").eq("id", p.id).maybeSingle();
+  if (previa) return { archivo: archivoPublico(previa) };
+
+  const tmp = claveTemporal(p.id);
+  const info = await almacen.consultar(tmp);
+  if (!info) throw new ErrorHttp(400, "No llegó el archivo. Probá de nuevo.", "no_llego");
+  if (info.tamano > MAX_BYTES_ARCHIVO) {
+    await almacen.borrar(tmp).catch(() => {});
+    throw new ErrorHttp(413, "El archivo supera el máximo de 25 MB.", "muy_grande");
+  }
+  if (info.tamano !== p.z) {
+    await almacen.borrar(tmp).catch(() => {});
+    throw new ErrorHttp(400, "La subida no se completó. Probá de nuevo.", "incompleta");
+  }
+  const v = validarArchivo({ nombre: p.n, mime: p.m, tamano: info.tamano, tipo: p.t });
+  const clave = claveDefinitiva({ registro, expedienteId: exp.id, archivoId: p.id });
+  await almacen.copiar(tmp, clave);
+  const fila = {
+    id: p.id, expediente_id: exp.id, clave, drive_file_id: null, nombre: v.nombre, tipo: v.tipo, mime_type: v.mime, tamano: v.tamano,
+    almacen: "propio", subido_por: quien.id, subido_por_nombre: quien.nombre, origen, sesion_id: sesionId, nombre_original: v.nombre,
+    identificacion: (origen === "celular" ? !!d.config?.identificar : !!d.config?.identificarCompu && identificar)
+      ? (/^image\//.test(v.mime) ? "pendiente" : "sin_identificar") : null,
+  };
+  const { data: nueva, error } = await d.sb.from("expediente_archivos").insert(fila).select().single();
+  if (error) {
+    if (error.code === "23505") {   // otra confirmación ganó la carrera
+      const { data: ganada } = await d.sb.from("expediente_archivos").select("*").eq("id", p.id).maybeSingle();
+      if (ganada) return { archivo: archivoPublico(ganada) };
+    }
+    await almacen.borrar(clave).catch(() => {});   // sin fila no puede quedar un objeto huérfano
+    throw new Error(`insert archivo: ${error.message}`);
+  }
+  await almacen.borrar(tmp).catch(() => {});   // si no se pudo, la regla de ciclo de vida del bucket lo borra a las 24 h
+  await auditar(d, { registro, usuarioId: quien.id, accion: "subir", expedienteId: exp.id, archivoId: nueva.id, detalle: { nombre: v.nombre, tamano: v.tamano, ...(origen === "celular" ? { via: "celular" } : {}) } });
+  return { archivo: archivoPublico(nueva) };
+}
+
+// Ocultar un archivo: recuperable 30 días (la purga elimina el objeto al vencer). Sirve a la compu y al celular.
+async function ocultarArchivo(d, { arch, exp, registro, quienId, via = null }) {
+  await d.sb.from("expediente_archivos").update({ borrado_en: new Date(d.ahora()).toISOString(), borrado_por: quienId }).eq("id", arch.id);
+  await auditar(d, { registro, usuarioId: quienId, accion: "borrar", expedienteId: exp.id, archivoId: arch.id, detalle: { nombre: arch.nombre, ...(via ? { via } : {}) } });
 }
 
 const archivoPublico = (a) => ({
@@ -124,6 +202,7 @@ async function estado(d, perfil, body = {}) {
   return {
     conectado: !!c, operativa: c?.estado === "activa", estado: c ? c.estado : "no_conectado", sin_espacio: !!c?.sin_espacio,
     identificar_compu: !!d.config?.identificarCompu, // la pantalla ofrece "Automático" solo si el servidor lo tiene prendido
+    propio: !!d.almacen, // el almacén propio está disponible: no hace falta ningún Drive conectado
   };
 }
 
@@ -152,7 +231,8 @@ async function asegurarCarpetaExpediente(d, access, exp, raizId) {
 async function iniciarSubida(d, perfil, body) {
   const v = validarArchivo({ nombre: body.nombre, mime: body.mime, tamano: body.tamano, tipo: body.tipo });
   if (!v.ok) throw new ErrorHttp(v.codigo === "muy_grande" ? 413 : 400, v.mensaje, v.codigo);
-  return prepararSubida(d, await expedienteAutorizado(d, perfil, body.expediente_id), v);
+  const ctx = await expedienteAutorizado(d, perfil, body.expediente_id);
+  return pideAlmacenPropio(body) ? prepararSubidaPropia(d, ctx, v) : prepararSubida(d, ctx, v);
 }
 
 // Núcleo de "empezar a subir", compartido por la compu (usuario con sesión) y el celular (código de sesión): quien
@@ -181,6 +261,9 @@ async function prepararSubida(d, { exp, registro }, v) {
 
 async function confirmarSubida(d, perfil, body) {
   const ctx = await expedienteAutorizado(d, perfil, body.expediente_id);
+  if (pideAlmacenPropio(body)) {
+    return registrarSubidaPropia(d, ctx, { ticket: body.ticket, quien: { id: perfil.id, nombre: perfil.nombre }, identificar: body.identificar === true });
+  }
   return registrarSubida(d, ctx, { fileId: String(body.drive_file_id || ""), tipo: body.tipo, quien: { id: perfil.id, nombre: perfil.nombre }, identificar: body.identificar === true });
 }
 
@@ -235,9 +318,14 @@ const nombreAscii = (n) => String(n).replace(/[^\x20-\x7e]/g, "_").replace(/["\\
 
 async function entregar(d, perfil, body, res, descargar) {
   const { arch, exp, registro } = await archivoAutorizado(d, perfil, body.archivo_id);
-  const { access } = await accesoDe(d, registro);
   let r;
-  try { r = await d.google.descargar(access, arch.drive_file_id); } catch (e) { throw await fallaGoogle(d, registro, e); }
+  if (arch.almacen === "propio") {
+    r = await exigirAlmacen(d).leer(arch.clave);
+    if (!r) throw new ErrorHttp(404, "Ese archivo ya no está disponible.", "no_encontrado");
+  } else {
+    const { access } = await accesoDe(d, registro);
+    try { r = await d.google.descargar(access, arch.drive_file_id); } catch (e) { throw await fallaGoogle(d, registro, e); }
+  }
   await auditar(d, { registro, usuarioId: perfil.id, accion: descargar ? "descargar" : "ver", expedienteId: exp.id, archivoId: arch.id, detalle: { nombre: arch.nombre } });
   const enLinea = !descargar && esPrevisualizable(arch.mime_type);
   res.statusCode = 200;
@@ -254,6 +342,10 @@ async function entregar(d, perfil, body, res, descargar) {
 
 async function borrar(d, perfil, body) {
   const { arch, exp, registro } = await archivoAutorizado(d, perfil, body.archivo_id);
+  if (arch.almacen === "propio") {
+    await ocultarArchivo(d, { arch, exp, registro, quienId: perfil.id });
+    return { ok: true };
+  }
   const { access } = await accesoDe(d, registro);
   try { await d.google.papelera(access, arch.drive_file_id); } catch (e) {
     // Si ya no estaba en Drive, igual se saca de la lista.
@@ -262,6 +354,29 @@ async function borrar(d, perfil, body) {
   await d.sb.from("expediente_archivos").update({ borrado_en: new Date(d.ahora()).toISOString(), borrado_por: perfil.id }).eq("id", arch.id);
   await auditar(d, { registro, usuarioId: perfil.id, accion: "borrar", expedienteId: exp.id, archivoId: arch.id, detalle: { nombre: arch.nombre } });
   return { ok: true };
+}
+
+// Solo el administrador de Notarial: devuelve un archivo de la papelera mientras no hayan pasado los 30 días.
+async function restaurar(d, perfil, body) {
+  exigirAdmin(perfil);
+  const { arch, exp, registro } = await archivoAutorizado(d, perfil, body.archivo_id, { borrados: true });
+  if (arch.almacen !== "propio" || !arch.borrado_en) throw new ErrorHttp(404, "No encontré ese archivo en la papelera.");
+  if (d.ahora() - new Date(arch.borrado_en).getTime() > PURGA_ARCHIVOS_MS || !(await exigirAlmacen(d).consultar(arch.clave))) {
+    throw new ErrorHttp(410, "Ese archivo ya no se puede recuperar: pasaron más de 30 días.", "vencido");
+  }
+  const { error } = await d.sb.from("expediente_archivos").update({ borrado_en: null, borrado_por: null }).eq("id", arch.id);
+  if (error) throw new Error(`restaurar archivo: ${error.message}`);
+  await auditar(d, { registro, usuarioId: perfil.id, accion: "restaurar", expedienteId: exp.id, archivoId: arch.id, detalle: { nombre: arch.nombre } });
+  return { archivo: archivoPublico({ ...arch, borrado_en: null }) };
+}
+
+// Solo el administrador: lo que está en la papelera de un expediente, con los días que le quedan.
+async function listarBorrados(d, perfil, body) {
+  exigirAdmin(perfil);
+  const { exp } = await expedienteAutorizado(d, perfil, body.expediente_id);
+  const { data } = await d.sb.from("expediente_archivos").select("*").eq("expediente_id", exp.id).eq("almacen", "propio");
+  const dias = (a) => Math.max(0, Math.ceil((PURGA_ARCHIVOS_MS - (d.ahora() - new Date(a.borrado_en).getTime())) / (24 * 3600 * 1000)));
+  return { archivos: (data || []).filter((a) => a.borrado_en).map((a) => ({ ...archivoPublico(a), borrado_en: a.borrado_en, dias_restantes: dias(a) })) };
 }
 
 // ── Sincronizar con Drive ────────────────────────────────────────────────────
@@ -316,13 +431,15 @@ async function aplicarIdentificacion(d, { arch, exp, registro, ident, quien, uso
   const { data: vigente } = await d.sb.from("expediente_archivos").select("borrado_en").eq("id", arch.id).maybeSingle();
   if (!vigente || vigente.borrado_en) return { archivo: archivoPublico({ ...arch, identificacion: "sin_identificar" }), identificado: false };
 
-  const { data: otros } = await d.sb.from("expediente_archivos").select("id,nombre").eq("expediente_id", exp.id).eq("almacen", "escribania").is("borrado_en", null);
+  const { data: otros } = await d.sb.from("expediente_archivos").select("id,nombre").eq("expediente_id", exp.id).is("borrado_en", null);
   const existentes = [...(otros || []).filter((x) => x.id !== arch.id).map((x) => x.nombre), ...usados];
   const nombre = evitarDuplicado(armarNombreArchivo(ident, extensionDe(arch.nombre, arch.mime_type)), existentes);
-  try {
-    const { access } = await accesoDe(d, registro);
-    await d.google.renombrar(access, arch.drive_file_id, nombre);
-  } catch { return marcarSinIdentificar(d, arch); }
+  if (arch.almacen !== "propio") {   // en el almacén propio el nombre vive solo en la base (la clave no lo lleva)
+    try {
+      const { access } = await accesoDe(d, registro);
+      await d.google.renombrar(access, arch.drive_file_id, nombre);
+    } catch { return marcarSinIdentificar(d, arch); }
+  }
 
   const cambios = { nombre, tipo: ident.tipo, identificacion: "ok", nombre_original: arch.nombre_original ?? arch.nombre };
   const { error } = await d.sb.from("expediente_archivos").update(cambios).eq("id", arch.id);
@@ -418,9 +535,12 @@ async function identificarLoteCompu(d, perfil, body) {
 
 async function celularCrear(d, perfil, body) {
   const { exp, registro } = await expedienteAutorizado(d, perfil, body.expediente_id);
-  const c = await conexionDe(d, registro);
-  if (!c) throw new ErrorHttp(409, mensajeParaUsuario("no_conectado"), "no_conectado");
-  if (c.estado !== "activa") throw new ErrorHttp(503, mensajeParaUsuario("rota"), "rota");
+  if (pideAlmacenPropio(body)) exigirAlmacen(d);   // el almacén propio no necesita ningún Drive conectado
+  else {
+    const c = await conexionDe(d, registro);
+    if (!c) throw new ErrorHttp(409, mensajeParaUsuario("no_conectado"), "no_conectado");
+    if (c.estado !== "activa") throw new ErrorHttp(503, mensajeParaUsuario("rota"), "rota");
+  }
   // Limpieza oportunista (los dos cupos de cron están usados): sesiones de más de 7 días.
   await d.sb.from("drive_sesiones_celular").delete().lt("creada_en", vencimientoLimpieza(d.ahora()));
   const codigo = generarCodigo();
@@ -452,8 +572,8 @@ async function renombrar(d, perfil, body) {
   const tipo = body.tipo === undefined ? arch.tipo : tipoValido(body.tipo);
   if (!tipo) throw new ErrorHttp(400, "El tipo de documento no es válido.");
   if (nombre === arch.nombre && tipo === arch.tipo) return { archivo: archivoPublico(arch) };
-  const { access } = await accesoDe(d, registro);
-  if (nombre !== arch.nombre) {
+  if (arch.almacen !== "propio" && nombre !== arch.nombre) {
+    const { access } = await accesoDe(d, registro);
     try { await d.google.renombrar(access, arch.drive_file_id, nombre); } catch (e) { throw await fallaGoogle(d, registro, e); }
   }
   const cambios = { nombre, tipo, identificacion: "manual", nombre_original: arch.nombre_original ?? arch.nombre };
@@ -497,23 +617,33 @@ async function celularInfo(d, _perfil, body) {
   const sesion = await buscarSesion(d, body.codigo);
   if (!sesion) return resumenSesionParaCelular(null, null, [], d.ahora());
   const { data: exp } = await d.sb.from("expedientes").select("nombre").eq("id", sesion.expediente_id).maybeSingle();
-  const { data: archivos } = await d.sb.from("expediente_archivos").select("*").eq("sesion_id", sesion.id).eq("almacen", "escribania").is("borrado_en", null);
+  const { data: archivos } = await d.sb.from("expediente_archivos").select("*").eq("sesion_id", sesion.id).is("borrado_en", null);
   const c = await conexionDe(d, sesion.registro_numero);
   // `ahora` = la hora del servidor: el celular calcula la cuenta regresiva con ella, así un reloj mal puesto no lo confunde.
-  return { ...resumenSesionParaCelular(sesion, exp, archivos || [], d.ahora()), drive_disponible: c?.estado === "activa", ahora: new Date(d.ahora()).toISOString(), identificar: !!d.config?.identificar };
+  return { ...resumenSesionParaCelular(sesion, exp, archivos || [], d.ahora()), drive_disponible: c?.estado === "activa", propio: !!d.almacen, ahora: new Date(d.ahora()).toISOString(), identificar: !!d.config?.identificar };
 }
 
 async function celularIniciarSubida(d, _perfil, body) {
   const sesion = await exigirSesion(d, body.codigo);
   const v = validarArchivo({ nombre: body.nombre, mime: body.mime, tamano: body.tamano, tipo: "otro" });
   if (!v.ok) throw new ErrorHttp(v.codigo === "muy_grande" ? 413 : 400, v.mensaje, v.codigo);
-  const r = await prepararSubida(d, await expedienteDeSesion(d, sesion), v);
+  const ctx = await expedienteDeSesion(d, sesion);
+  if (pideAlmacenPropio(body)) {
+    const r = await prepararSubidaPropia(d, ctx, v);
+    return { almacen: "propio", url_subida: r.url_subida, archivo_id: r.archivo_id, ticket: r.ticket, nombre: r.nombre, mime: r.mime };
+  }
+  const r = await prepararSubida(d, ctx, v);
   return { sesion_url: r.sesion_url, nombre: r.nombre, mime: r.mime };
 }
 
 async function celularConfirmar(d, _perfil, body) {
   // Con gracia: una subida ya empezada se puede confirmar hasta 5 min después de vencida, pero no si se cerró.
   const sesion = await exigirSesion(d, body.codigo, { paraConfirmar: true });
+  if (pideAlmacenPropio(body)) {
+    return registrarSubidaPropia(d, await expedienteDeSesion(d, sesion), {
+      ticket: body.ticket, quien: { id: sesion.usuario_id, nombre: sesion.usuario_nombre }, origen: "celular", sesionId: sesion.id,
+    });
+  }
   return registrarSubida(d, await expedienteDeSesion(d, sesion), {
     fileId: String(body.drive_file_id || ""), tipo: "otro", quien: { id: sesion.usuario_id, nombre: sesion.usuario_nombre }, origen: "celular", sesionId: sesion.id,
   });
@@ -547,6 +677,10 @@ async function celularQuitar(d, _perfil, body) {
   const { exp, registro } = await expedienteDeSesion(d, sesion);
   const { data: arch } = await d.sb.from("expediente_archivos").select("*").eq("id", String(body.archivo_id || "")).maybeSingle();
   if (!puedeQuitar(arch, sesion)) throw new ErrorHttp(404, "No encontré esa foto.");
+  if (arch.almacen === "propio") {
+    await ocultarArchivo(d, { arch, exp, registro, quienId: sesion.usuario_id, via: "celular" });
+    return { ok: true };
+  }
   const { access } = await accesoDe(d, registro);
   try { await d.google.papelera(access, arch.drive_file_id); } catch (e) {
     if (e?.status !== 404) throw await fallaGoogle(d, registro, e);
@@ -704,12 +838,13 @@ const PUBLICAS = {
   celular_info: celularInfo, celular_iniciar_subida: celularIniciarSubida, celular_confirmar: celularConfirmar, celular_quitar: celularQuitar,
   celular_identificar: celularIdentificar, celular_identificar_lote: celularIdentificarLote,
 };
-const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar, identificar_lote: identificarLoteCompu, sincronizar };
+const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, restaurar, listar_borrados: listarBorrados, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar, identificar_lote: identificarLoteCompu, sincronizar };
 const DE_ADMIN = { admin_estado: adminEstado, admin_enlace: adminEnlace, admin_desconectar: adminDesconectar };
 
 export function depsReales() {
   return {
     sb: clienteServicio(),
+    almacen: configAlmacen() ? crearAlmacen() : null,   // R2 propio; si faltan las variables, la API sigue con Google
     google: crearGoogle({ clientId: process.env.GOOGLE_DRIVE_CLIENT_ID, clientSecret: process.env.GOOGLE_DRIVE_CLIENT_SECRET }),
     clientId: process.env.GOOGLE_DRIVE_CLIENT_ID,
     clave: process.env.DRIVE_CIFRADO_CLAVE,

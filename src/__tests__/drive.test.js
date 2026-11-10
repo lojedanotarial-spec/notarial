@@ -245,8 +245,12 @@ describe("auditoría", () => {
     expect(() => armarAuditoria({ accion: "ver" })).toThrow();
   });
   it("cubre lo que pide el spec", () => {
-    for (const a of ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota"])
+    for (const a of ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "restaurar", "purgar"])
       expect(() => armarAuditoria({ registro: "853", accion: a })).not.toThrow();
+  });
+  it("guarda el lote cuando la acción es sobre un lote, y no agrega la columna si no", () => {
+    expect(armarAuditoria({ registro: "853", accion: "subir", loteId: "l1", archivoId: "a1" })).toMatchObject({ lote_id: "l1", expediente_id: null });
+    expect("lote_id" in armarAuditoria({ registro: "853", accion: "subir", expedienteId: "e1" })).toBe(false);
   });
 });
 
