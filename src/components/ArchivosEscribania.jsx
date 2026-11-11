@@ -11,7 +11,7 @@ import {
 } from "../utils/driveApi";
 import {
   LIMITE_ZIP_BYTES, MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano, hayIdentificacionEnCurso,
-  marcaIdentificacion, nombreZip, partir, textoPapelera, totalBytes,
+  marcaIdentificacion, nombreZip, partir, progresoPorPasos, textoPapelera, totalBytes,
 } from "../utils/driveCliente";
 import { CANCELADO, armarZip } from "../utils/descargarTodo";
 import { miniaturaParaIdentificar } from "../utils/capturaArchivo";
@@ -122,7 +122,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
       marcar(item.id, { estado: "subiendo" });
       try {
         const automatico = tipoActual === "automatico";
-        const nuevo = await subirArchivoEscribania(item.archivo, { expedienteId, tipo: automatico ? "otro" : tipoActual, automatico, onProgreso: (p) => marcar(item.id, { progreso: p }) });
+        const nuevo = await subirArchivoEscribania(item.archivo, { expedienteId, tipo: automatico ? "otro" : tipoActual, automatico, onProgreso: progresoPorPasos((p) => marcar(item.id, { progreso: p })) });
         setArchivos((prev) => [nuevo, ...prev.filter((a) => a.id !== nuevo.id)]);
         if (nuevo.identificacion === "pendiente") paraIdentificar.push({ file: item.archivo, id: nuevo.id });
         marcar(item.id, { estado: "ok", progreso: 1 });

@@ -67,7 +67,9 @@ export async function miniaturaParaIdentificar(file, lado = LADO_IDENTIFICAR) {
 export async function miniaturaDe(file, lado = 140) {
   try {
     if (!file?.type?.startsWith("image/") || typeof createImageBitmap !== "function") return null;
-    const bmp = await createImageBitmap(file);
+    // Se decodifica YA reducida (no la foto entera de 12 MP): en un teléfono modesto es la diferencia entre fluido y trabado.
+    let bmp;
+    try { bmp = await createImageBitmap(file, { resizeWidth: lado, resizeQuality: "low" }); } catch { bmp = await createImageBitmap(file); }
     const e = lado / Math.max(bmp.width, bmp.height);
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(bmp.width * Math.min(1, e)));

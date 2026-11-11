@@ -216,6 +216,29 @@ export function subirASesion(sesionUrl, file, mime, onProgreso, XHR = globalThis
   });
 }
 
+// ── Cámara de la página: foto a máxima calidad sin trabar la pantalla ────────
+
+// Opciones para `ImageCapture.takePhoto`: la foto sale a la mayor resolución del sensor (no la del video de vista previa) y sin
+// flash. `caps` = lo que devuelve `getPhotoCapabilities()`.
+export function opcionesFotoMaxima(caps) {
+  const o = { fillLightMode: "off" };
+  const w = caps?.imageWidth?.max, h = caps?.imageHeight?.max;
+  if (w > 0 && h > 0) { o.imageWidth = w; o.imageHeight = h; }
+  return o;
+}
+
+// El progreso de una subida llega decenas de veces por segundo y cada aviso redibuja la pantalla del celular: se deja pasar
+// uno por cada 5 % (y siempre el 100 %). Así la cámara y la lista no se traban mientras se sube.
+export function progresoPorPasos(alCambiar, pasos = 20) {
+  let ultimo = -1;
+  return (p) => {
+    const k = Math.floor(Math.max(0, Math.min(1, p)) * pasos);
+    if (k === ultimo) return;
+    ultimo = k;
+    alCambiar(p);
+  };
+}
+
 // ── Subida directa al almacén propio (R2) ────────────────────────────────────
 
 export const MENSAJE_SUBIDA_RECHAZADA = "No se pudo guardar el archivo. Probá de nuevo.";

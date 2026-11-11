@@ -7,7 +7,7 @@ import { C } from "../constants";
 import { celular, subirDesdeCelular } from "../utils/driveApi";
 import {
   MAX_BYTES_ARCHIVO, validarArchivoLocal, formatearTamano, nombreFotoCamara, siguientePendiente, resumenCola, marcarItem,
-  esErrorDeSesion, textoSesionTerminada, cuentaRegresiva, panelEstado, FOTOS_POR_LOTE,
+  esErrorDeSesion, textoSesionTerminada, cuentaRegresiva, panelEstado, FOTOS_POR_LOTE, progresoPorPasos,
 } from "../utils/driveCliente";
 import { miniaturaDe, miniaturaParaIdentificar } from "../utils/capturaArchivo";
 import CamaraArchivo from "../components/CamaraArchivo";
@@ -184,7 +184,7 @@ export default function SubirMovil({ codigo }) {
         if (!item) break;
         aplicar((c) => marcarItem(c, item.id, { estado: "subiendo", progreso: 0, mensaje: "" }));
         try {
-          const archivo = await subirDesdeCelular(codigo, item.file, { onProgreso: (p) => aplicar((c) => marcarItem(c, item.id, { progreso: p })) });
+          const archivo = await subirDesdeCelular(codigo, item.file, { onProgreso: progresoPorPasos((p) => aplicar((c) => marcarItem(c, item.id, { progreso: p }))) });
           const porIdentificar = archivo.identificacion === "pendiente";
           // El archivo se conserva en memoria solo hasta identificarlo (después se suelta).
           aplicar((c) => marcarItem(c, item.id, { estado: "ok", progreso: 1, archivoId: archivo.id, file: porIdentificar ? item.file : null, porIdentificar }));
@@ -272,7 +272,7 @@ export default function SubirMovil({ codigo }) {
     );
   }
 
-  const fotosCamara = cola.filter((x) => x.vista || x.estado !== "ok").slice(-4);
+  const fotosCamara = cola.filter((x) => x.vista || x.estado !== "ok").slice(-12);
   const panel = camaraAbierta ? null : panelEstado(cola, { terminada: !!terminada, conNombre: !!info.identificar });
   return (
     <Marco pie={panel ? <PanelEstado panel={panel} onListo={() => setFinalizado(true)} /> : null}>

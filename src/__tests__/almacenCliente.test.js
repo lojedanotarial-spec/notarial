@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from "vitest";
 import JSZip from "jszip";
 import {
-  MENSAJE_CORTE, subirAUrlFirmada, MENSAJE_SUBIDA_RECHAZADA, LIMITE_ZIP_BYTES, totalBytes, nombresParaZip, nombreZip, textoPapelera, textoArchivos,
+  MENSAJE_CORTE, subirAUrlFirmada, MENSAJE_SUBIDA_RECHAZADA, LIMITE_ZIP_BYTES, totalBytes, nombresParaZip, nombreZip, textoPapelera, textoArchivos, opcionesFotoMaxima, progresoPorPasos,
 } from "../utils/driveCliente.js";
 import { armarZip, CANCELADO } from "../utils/descargarTodo.js";
 
@@ -108,6 +108,30 @@ describe("armarZip (con JSZip de verdad)", () => {
     const { blob, incluidos } = await armarZip([], { traer: async () => new Blob([]), JSZip });
     expect(incluidos).toBe(0);
     expect(blob.size).toBeGreaterThan(0);
+  });
+});
+
+describe("cámara de la página", () => {
+  it("pide la foto a la mayor resolución del sensor y sin flash", () => {
+    expect(opcionesFotoMaxima({ imageWidth: { max: 4000 }, imageHeight: { max: 3000 } })).toEqual({ fillLightMode: "off", imageWidth: 4000, imageHeight: 3000 });
+  });
+  it("si el equipo no informa resolución, igual pide sin flash", () => {
+    for (const caps of [undefined, null, {}, { imageWidth: { max: 0 } }, { imageWidth: { max: 4000 } }]) expect(opcionesFotoMaxima(caps)).toEqual({ fillLightMode: "off" });
+  });
+  it("el progreso se avisa una vez por cada 5 % y siempre llega al 100 %", () => {
+    const visto = [];
+    const p = progresoPorPasos((x) => visto.push(x));
+    for (let i = 0; i <= 1000; i++) p(i / 1000);
+    expect(visto.length).toBeLessThanOrEqual(21);
+    expect(visto[0]).toBe(0);
+    expect(visto.at(-1)).toBe(1);
+    expect(visto).toEqual([...visto].sort((a, b) => a - b));
+  });
+  it("valores raros no rompen el progreso", () => {
+    const visto = [];
+    const p = progresoPorPasos((x) => visto.push(x));
+    p(-3); p(7); p(NaN);
+    expect(visto.length).toBeGreaterThan(0);
   });
 });
 
