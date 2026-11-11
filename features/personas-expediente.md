@@ -1,9 +1,9 @@
 # Feature: Personas del expediente
 
 **Epic:** [Documentación de expedientes en el Drive de la escribanía](../epics/documentacion-expedientes-drive.md)
-**Estado:** 📝 Spec en borrador (09/11/26) — esperando aprobación de Lucas
+**Estado:** 📝 Spec aprobada (11/11/26); plan y tareas esperando aprobación de Lucas
 **Spec:** [`specs/personas-expediente/`](../specs/personas-expediente/)
-**Depende de:** [Drive de la escribanía](drive-escribania.md) y [Subir documentación desde el celular](subir-documentacion-celular.md) (ambas en producción)
+**Depende de:** [Almacenamiento propio](../specs/almacenamiento-propio/spec.md) (reemplaza a Drive) y [Subir documentación desde el celular](subir-documentacion-celular.md) (ambas en producción)
 
 ## Qué entrega
 

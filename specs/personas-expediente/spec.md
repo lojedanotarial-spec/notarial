@@ -1,10 +1,10 @@
 # Spec: Personas del expediente
 
-**Estado:** 📝 borrador v2 (09/11/26), esperando aprobación de Lucas (fase 1 de 3). NO escribir `plan.md` ni código hasta que se apruebe
+**Estado:** ✅ aprobada por Lucas el 11/11/26 (fase 1 de 3), con sus respuestas a las preguntas abiertas (ver el final). Siguiente: [`plan.md`](plan.md)
 **Feature:** [`features/personas-expediente.md`](../../features/personas-expediente.md)
 **Epic:** [`epics/documentacion-expedientes-drive.md`](../../epics/documentacion-expedientes-drive.md)
 **Casos de uso:** [UC-1](../../usecases/personas-expediente-ficha.md) · [UC-2](../../usecases/personas-expediente-archivos.md) · [UC-3](../../usecases/personas-expediente-traer-a-parte.md) · [UC-4](../../usecases/personas-expediente-ver-en-editor.md)
-**Depende de:** [`specs/drive-escribania/`](../drive-escribania/spec.md) y [`specs/documentacion-celular-expediente/`](../documentacion-celular-expediente/spec.md)
+**Depende de:** [`specs/almacenamiento-propio/`](../almacenamiento-propio/spec.md) (los archivos viven en el almacén propio de Notarial, ya no en Drive; reemplaza a `drive-escribania`) y [`specs/documentacion-celular-expediente/`](../documentacion-celular-expediente/spec.md)
 **Origen:** pedido de Lucas del 09/11/26, tras la primera prueba con la cuenta de Fátima. Dirección elegida por Lucas: la persona es **una sola ficha permanente del registro**, se completa en un modal a partir de las fotos, se guarda en la base y después se ofrece como sugerencia al armar las partes.
 
 ## Problema
@@ -60,7 +60,7 @@
       es (o "Sin asignar") y se puede cambiar.
 - [ ] La ficha de cada persona lista sus archivos, que se pueden abrir y bajar como siempre.
 - [ ] Cuando el nombre automático de un archivo coincide con una persona, se **propone** asignarlo.
-- [ ] Reasignar un archivo no lo mueve, no lo copia y no cambia el Drive.
+- [ ] Reasignar un archivo no lo mueve, no lo copia ni cambia el archivo guardado.
 - [ ] Quitar a una persona de un expediente deja sus archivos en el expediente, sin asignar.
 
 **Sugerencias al armar las partes** *(UC-3)*
@@ -81,7 +81,7 @@
 - [ ] En el editor de un documento vinculado a un expediente hay un botón **Archivos del expediente**
       que abre un panel con la lista agrupada por persona (y "Sin asignar").
 - [ ] Desde el panel se puede abrir o bajar un archivo. No modifica el documento.
-- [ ] Si el documento no está en un expediente, el botón no aparece. Si el Drive no está disponible, se
+- [ ] Si el documento no está en un expediente, el botón no aparece. Si los archivos no se pueden cargar, se
       explica por qué, sin mensajes técnicos.
 
 **Seguridad y privacidad**
@@ -103,12 +103,9 @@
 - Fusionar fichas repetidas que ya existan en la libreta actual.
 - Asociar el archivo a una persona desde la pantalla del celular al subir.
 
-## Preguntas abiertas para Lucas
+## Decisiones de Lucas (11/11/26)
 
-1. **¿Dónde se completa el perfil?** Asumí que en la **compu**, después de que las fotos llegan desde
-   el celular. ¿O querés poder completarlo también desde el celular, justo después de sacar la foto?
-2. **Casado/a:** ¿alcanza con el comentario libre para el cónyuge, o querés que en la próxima versión
-   la ficha se vincule con la ficha del cónyuge?
-3. **Orden de las pestañas:** ¿**Personas** va primera al abrir el expediente o tercera?
-4. **Fichas repetidas que ya existen:** hoy la libreta puede tener a la misma persona dos veces
-   (hay 11 fichas). ¿Las revisamos a mano cuando salgan, o querés una pantalla de "posibles repetidos"?
+1. **Dónde se completa el perfil:** en la compu, después de que las fotos llegan desde el celular (asumido: Lucas no objetó; completarlo desde el celular queda para una versión posterior).
+2. **Estado civil:** un **desplegable** con los estados civiles (soltero/a, casado/a, divorciado/a, viudo/a, unión convivencial) y un **campo de notas**. Si hace falta algo más (el cónyuge, el régimen), va en las notas; no se vincula con la ficha del cónyuge por ahora.
+3. **Pestaña Personas:** aprobada, **primera** y abierta al entrar al expediente ("ok, a ver cómo queda").
+4. **Fichas repetidas:** las fotos se guardan **por expediente** y las personas **en la base**, una sola vez por registro. Si al crear o completar una persona ya existe otra con el mismo documento, el sistema **avisa y ofrece actualizar la existente** (ya figuraba en la primera sección). Las repetidas que ya existen hoy (11 fichas) no se revisan en bloque: se avisa cuando una de ellas aparece. No hay pantalla de "posibles repetidos".
