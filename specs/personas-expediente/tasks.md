@@ -46,12 +46,13 @@
 - [ ] **T4.2 🤖** Botón **Leer del DNI** en el modal: usa los archivos de la persona, panel de proceso con paso y avance, resultado revisable y **nada se guarda hasta Guardar**. *Verif.: probado con fotos reales en producción; con lectura fallida se puede completar a mano.*
 - [ ] **T4.3 🤖** Tests, lint, build y deploy. *Verif.: todo verde.*
 
-## Fase 5 — En el editor del documento
+## Fase 5 — Documento vinculado al expediente y personas en el editor
 
-- [ ] **T5.1 🤖** El editor averigua el expediente del documento y se lo pasa a `PartesEditor`. Tests de la función que decide si hay expediente. *Verif.: tests en verde; un documento sin expediente funciona como hoy.*
-- [ ] **T5.2 🤖** Sugerencias **Personas del expediente** arriba de la búsqueda de la libreta; al elegir una completa la parte (género, nacionalidad, CUIT), muestra notas y "actualizada hace…", avisa antes de reemplazar datos, y avisa si la misma persona ya es otra parte. *Verif.: tests de la lógica y prueba en producción con un documento de un expediente con 2 personas.*
-- [ ] **T5.3 🤖** Extraer el visor de archivos a un componente compartido y agregar el botón **Archivos del expediente** con el panel agrupado por persona. *Verif.: la pestaña Archivos sigue igual (probada) y el panel abre y baja archivos.*
-- [ ] **T5.4 🤖** Tests, lint, build y deploy. *Verif.: todo verde.*
+- [ ] **T5.1 🤖** Arreglar el vínculo al crear desde el expediente: la selección recibe el expediente y se lo pasa al editor, que vincula en el primer guardado (sin duplicar si ya existe). Tests de la decisión de vincular. *Verif.: tests en verde; en producción, "+ Nuevo documento" desde un expediente deja el documento en su lista.*
+- [ ] **T5.2 🤖** Campo opcional **Expediente** en la selección (lista del registro con búsqueda, ya elegido si se llegó desde uno) y indicador **Expediente: …** en el editor con **Cambiar / Quitar / Vincular** sin salir del documento. Reutiliza la lógica de `ModalAgregarExpediente`. *Verif.: probado en producción creando un documento por cada camino (desde el expediente, con el campo, y vinculando después); "Agregar a expediente" de hoy sigue funcionando.*
+- [ ] **T5.3 🤖** Franja **Personas del expediente** arriba de las partes y sugerencias en la búsqueda de cada parte: tocar una completa la parte (género, nacionalidad, CUIT), muestra notas y "actualizada hace…", avisa antes de reemplazar datos y avisa si la misma persona ya es otra parte. Si se vincula con el documento ya abierto, la franja aparece al instante. Tests de la lógica. *Verif.: prueba en producción con un documento de un expediente con 2 personas; un documento sin expediente funciona como hoy.*
+- [ ] **T5.4 🤖** Extraer el visor de archivos a un componente compartido y agregar el botón **Archivos del expediente** con el panel agrupado por persona. *Verif.: la pestaña Archivos sigue igual (probada) y el panel abre y baja archivos.*
+- [ ] **T5.5 🤖** Tests, lint, build y deploy. *Verif.: todo verde.*
 
 ## Fase 6 — Prueba de punta a punta, documentación y cierre
 
@@ -70,6 +71,7 @@
 | Proponer personas detectadas, nunca crear solo | T1.3, T3.1, T3.3 |
 | Historial de cada cambio | T1.1–T1.2, T6.1 |
 | Archivos de una persona; asignar; sin asignar | T3.2–T3.3 |
-| Sugerencias al armar las partes; copia propia en el documento | T5.1–T5.2 |
-| Ver archivos mientras se edita | T5.3 |
+| Documento vinculado a su expediente (desde el expediente, al crear, o después) | T5.1–T5.2 |
+| Sugerencias al armar las partes, a la vista; copia propia en el documento | T5.3 |
+| Ver archivos mientras se edita | T5.4 |
 | Solo el registro dueño; borrar expediente/ficha | T0.1, T0.3, T1.2, T6.1 |

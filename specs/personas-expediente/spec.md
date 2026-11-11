@@ -27,7 +27,7 @@
   repetida.
 - El editor de partes tiene botones para escanear un documento del dispositivo, del celular (QR) o de
   una carpeta de Drive de un lote de barrio. **Ninguno** lee los archivos de un expediente.
-- Nuevo documento desde un expediente ya lo vincula automáticamente a ese expediente.
+- **Un documento NO queda vinculado a su expediente al crearlo, ni siquiera desde el expediente** (verificado el 11/11/26 leyendo el código): el botón "+ Nuevo documento" del expediente le pasa el expediente a la pantalla de selección, y esa pantalla lo descarta. El vínculo solo se arma a mano, con "Agregar a expediente" dentro del editor, que además te lleva a la pantalla del expediente.
 
 ## Comportamiento deseado (criterios de aceptación)
 
@@ -63,7 +63,14 @@
 - [ ] Reasignar un archivo no lo mueve, no lo copia ni cambia el archivo guardado.
 - [ ] Quitar a una persona de un expediente deja sus archivos en el expediente, sin asignar.
 
+**Vincular el documento con su expediente** *(nuevo, pedido de Lucas el 11/11/26)*
+- [ ] Al crear un documento **desde un expediente**, queda vinculado a él desde el primer guardado, sin pasos extra.
+- [ ] Al crear un documento **desde cualquier otro lado**, hay un campo opcional **Expediente** para elegir uno del registro (con búsqueda) o dejarlo sin vincular.
+- [ ] Dentro del editor se ve **a qué expediente pertenece** el documento, y se puede cambiar, quitar o vincular después, sin salir del documento.
+- [ ] Apenas el documento está vinculado, el editor sabe dónde buscar la documentación: las personas y los archivos de ese expediente.
+
 **Sugerencias al armar las partes** *(UC-3)*
+- [ ] Con el documento vinculado a un expediente que tiene personas, las personas aparecen **ya a la vista arriba del editor de partes**, sin tener que abrir nada: tocar una la usa como parte.
 - [ ] En el editor de partes de un documento vinculado a un expediente con personas, al elegir cada
       parte (1, 2, 3…) aparecen **las personas del expediente como sugerencias**, arriba de la
       búsqueda general de la libreta.

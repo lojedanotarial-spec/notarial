@@ -13,7 +13,8 @@
 | 3 | De quién es cada archivo | Columna `persona_id` en `expediente_archivos` (una persona o ninguna). Al borrar la ficha, los archivos quedan "Sin asignar" | Tabla intermedia: permitiría un archivo para varias personas, pero la spec lo deja fuera |
 | 4 | "Leer del DNI" | En el **navegador**, con el mismo lector que ya usa el editor (se mueve a un módulo compartido), sobre los archivos de esa persona. Solo al tocar el botón. Nada se guarda hasta **Guardar** | Que el servidor lea en segundo plano y guarde: rompe el criterio "nunca en segundo plano" |
 | 5 | Cómo se proponen las personas detectadas | Hoy el nombre leído solo queda dentro del nombre del archivo ("DNI Pérez Juan anverso"); compararlo así es frágil. Se guardan **apellido y nombre** en 2 columnas nuevas, solo cuando la lectura estaba segura (ya es la regla) | Parsear el nombre del archivo: se rompe con cualquier renombre manual |
-| 6 | Cómo sabe el editor de qué expediente es el documento | Por el vínculo que ya existe (`expediente_documentos`). No cambia cómo se vinculan | Pasarlo por la URL: se pierde al recargar |
+| 6 | Cómo se vincula un documento con su expediente | Se **arregla y se completa el vínculo**: (a) creado desde el expediente, queda vinculado en el primer guardado (hoy la pantalla de selección descarta el expediente y no se vincula nada); (b) creado desde otro lado, un campo opcional **Expediente** en la selección; (c) dentro del editor, un indicador del expediente con **Cambiar / Quitar**, sin salir del documento. Se sigue usando la tabla que ya existe (`expediente_documentos`) | Vincular solo al volver al expediente (como hoy): se pierde si nadie vuelve, y mientras se edita el editor no sabe dónde buscar |
+| 6b | Dónde se ven las personas en el editor | Una **franja arriba de las partes** con las personas del expediente, siempre a la vista; tocar una la usa en la parte abierta (o crea la próxima). Además aparecen en la búsqueda de cada parte | Solo dentro de la búsqueda de cada parte: obliga a abrir cada parte para descubrirlas |
 | 7 | Estado civil | La **misma lista del editor** (con concordancia de género: soltero/a, casado/a…) para que lo elegido llegue igual al documento. Notas en una columna nueva | Una lista nueva: dos listas que mantener y que pueden diferir |
 | 8 | Duplicados | Por DNI ya lo impide la base (índice único por registro + DNI). El servidor lo detecta **antes** y devuelve la ficha existente: "Ya existe… ¿Actualizarla con estos datos?". Sin DNI, avisa si hay otra con el mismo apellido y nombre | Dejar que la base falle: el usuario vería un error técnico |
 
@@ -52,7 +53,9 @@ Acciones nuevas en `api/drive.js` (sigue siendo la misma función; la lógica va
 | `ModalPersona` (nuevo) | **Completar perfil**: datos, estado civil (desplegable), notas, archivos de la persona y **Leer del DNI** |
 | `AgregarPersona` (nuevo) | Buscar en la libreta (DNI o apellido) o crear nueva; avisa si ya existe |
 | `ArchivosEscribania` | Cada archivo muestra de quién es ("Sin asignar" si no tiene) y **Asignar a…**; también para varios seleccionados; propuesta cuando el nombre coincide |
-| `PartesEditor` | Con documento en un expediente: **Personas del expediente** como sugerencias arriba de la búsqueda de la libreta. Reutiliza la función que ya completa una parte desde la libreta, con su concordancia de género y su aviso antes de reemplazar datos |
+| `PartesEditor` | Con documento en un expediente: franja **Personas del expediente** arriba de las partes, y también como sugerencias arriba de la búsqueda de la libreta de cada parte. Reutiliza la función que ya completa una parte desde la libreta, con su concordancia de género y su aviso antes de reemplazar datos |
+| `SelectorScreen` | Campo opcional **Expediente** (lista del registro con búsqueda; ya elegido si se llegó desde un expediente). El expediente viaja al editor |
+| `EditorScreen` | Al primer guardado vincula el documento con el expediente elegido; indicador **Expediente: …** en el encabezado con Cambiar / Quitar / Vincular (la lógica de `ModalAgregarExpediente` se reutiliza pero sin sacarte del documento) |
 | Editor del documento | Botón **Archivos del expediente** que abre un panel lateral con la lista agrupada por persona; reutiliza el visor de archivos de la pestaña Archivos (se extrae a un componente compartido) |
 | Lector de documentos | `escanearDocumento` y sus ayudas salen de `PartesEditor.jsx` a un módulo propio; el comportamiento del botón "Escanear" actual no cambia |
 
@@ -83,7 +86,7 @@ Acciones nuevas en `api/drive.js` (sigue siendo la misma función; la lógica va
 
 ## Orden de trabajo
 
-1. Datos y base (SQL con reversión) y el lector compartido.
+1. Datos y base (SQL con reversión) y el lector compartido. *(El arreglo del vínculo documento-expediente es independiente y se puede adelantar.)*
 2. Servidor con tests.
 3. Pestaña Personas y modal (sin la lectura).
 4. Archivos de cada persona y propuestas.
