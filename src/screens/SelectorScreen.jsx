@@ -61,7 +61,8 @@ function FilaDoc({ doc, onOpen, last }) {
   );
 }
 
-export function SelectorScreen({ onGo }) {
+export function SelectorScreen({ onGo, params = {} }) {
+  const expedienteId = params?.expedienteId || null; // si se llegó desde un expediente, el documento nuevo queda vinculado a él
   const { usuario, registroActivo } = useAuth();
   const [selected,   setSelected]   = useState(null);       // template row completo
   const [familia,    setFamilia]    = useState("");
@@ -307,7 +308,7 @@ export function SelectorScreen({ onGo }) {
       <div style={{ position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)" }}>
         <button
           disabled={!selected}
-          onClick={() => selected && onGo("editor", { templateId: selected.id, templateSlug: selected.slug || selected.nombre })}
+          onClick={() => selected && onGo("editor", { templateId: selected.id, templateSlug: selected.slug || selected.nombre, ...(expedienteId ? { expedienteId } : {}) })}
           onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
           onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
           style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 24px",

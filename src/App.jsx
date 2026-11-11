@@ -153,7 +153,7 @@ function AppRouter() {
   return (
     <>
       {screen === "home"     && <HomeScreen     onGo={handleGo} />}
-      {screen === "selector" && <SelectorScreen onGo={handleGo} />}
+      {screen === "selector" && <SelectorScreen onGo={handleGo} params={params} />}
       {screen === "editor"   && <EditorScreen   key={editorNonceRef.current} onGo={handleGo} params={params} onScribaContexto={setScribaContexto} />}
       {screen === "bulk"         && <BulkScreen        onGo={handleGo} />}
       {screen === "admin"        && <AdminScreen       onGo={handleGo} />}

@@ -252,7 +252,7 @@ export function useScribaSesion(contexto) {
         contexto: contexto || null,
         registroId: registroId || null,
         documentos_adjuntos: archivosActuales.map(a => ({ data: a.data, mediaType: a.mediaType, nombre: a.nombre })),
-        ...(capturaHabilitada ? { captura_celular: true } : {}),   // lanzamiento gradual: hoy solo admin
+        ...(capturaHabilitada ? { captura_celular: true } : {}),   // abierta a todos desde el 06/11/26
         ...(capturaDatosRef.current ? { datos_captura: capturaDatosRef.current } : {}),
       });
       const mensajesFinales = [...nuevosMensajes, { role: "assistant", content: data.respuesta, accion: data.accion || null }];

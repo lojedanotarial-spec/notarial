@@ -22,6 +22,7 @@ import { buildDocxGenerico } from "../utils/buildDocxGenerico";
 import { buildVars, ensamblarClausulas } from "../utils/templateVars";
 import { OnlyOfficeEditor }     from "../components/OnlyOfficeEditor";
 import { supabase } from "../supabase";
+import { vincularDocumentoAExpediente } from "../utils/expedienteVinculo";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 
 import { escribanoDesdeMiembro } from "../utils/escribano";
@@ -615,6 +616,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   });
 
   const currentDocId = params?.docId || autoDocId;
+
+  // Documento creado desde un expediente: queda vinculado apenas tiene su primer guardado (idempotente, no duplica).
+  useEffect(() => {
+    if (params?.expedienteId && currentDocId) vincularDocumentoAExpediente(supabase, params.expedienteId, currentDocId);
+  }, [params?.expedienteId, currentDocId]);
 
   const [expedienteDocId, setExpedienteDocId] = useState(params?.docId || null);
 
