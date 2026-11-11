@@ -8,9 +8,12 @@
 // completa del sensor y la comprime el propio teléfono. Antes se dibujaba cada fotograma de 12 MP en un canvas y se comprimía en
 // la pantalla: un tirón de más de un segundo por foto. Donde no existe ImageCapture (iPhone) se usa el camino de antes.
 import { memo, useEffect, useRef, useState } from "react";
+import { C } from "../constants";
 import { fotogramaAFile } from "../utils/capturaArchivo";
 import { opcionesFotoMaxima } from "../utils/driveCliente";
 
+// Colores propios de la pantalla de la cámara (fondo negro, como cualquier app de cámara): no son parte de la paleta clara del producto.
+const CAM = { barra: "#0d1119", vacia: "#222", apagado: "#555", error: "#e57373", sombra: "#000" }; // design-lint-ignore
 const fuente = "'Montserrat', sans-serif";
 const PREVIA = { width: { ideal: 1280 }, height: { ideal: 960 } };
 const MAXIMA = { width: { ideal: 4096 }, height: { ideal: 3072 } };
@@ -144,19 +147,19 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
         {estado === "error" && (
           <div role="alert" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", gap: 16 }}>
             <div style={{ fontSize: 14, lineHeight: 1.5 }}>{error}</div>
-            <button onClick={onCerrar} style={{ ...estiloBoton, padding: "12px 22px", borderRadius: 12, background: "#fff", color: "#1a2332", fontSize: 14, fontWeight: 700 }}>Volver</button>
+            <button onClick={onCerrar} style={{ ...estiloBoton, padding: "12px 22px", borderRadius: 12, background: "#fff", color: C.dark, fontSize: 14, fontWeight: 700 }}>Volver</button>
           </div>
         )}
         {aviso && <div role="alert" style={{ position: "absolute", left: 14, right: 14, bottom: 14, background: "rgba(192,57,43,.95)", borderRadius: 12, padding: "10px 12px", fontSize: 13, lineHeight: 1.4 }}>{aviso}</div>}
-        {estado === "lista" && !aviso && <div style={{ position: "absolute", left: 14, right: 14, bottom: 12, fontSize: 13, textAlign: "center", textShadow: "0 1px 3px #000", opacity: destello ? 1 : 0.92 }}>Que el documento ocupe casi toda la imagen y sin reflejos.</div>}
+        {estado === "lista" && !aviso && <div style={{ position: "absolute", left: 14, right: 14, bottom: 12, fontSize: 13, textAlign: "center", textShadow: `0 1px 3px ${CAM.sombra}`, opacity: destello ? 1 : 0.92 }}>Que el documento ocupe casi toda la imagen y sin reflejos.</div>}
       </div>
 
-      <div style={{ background: "#0d1119", padding: "10px 16px calc(14px + env(safe-area-inset-bottom))" }}>
+      <div style={{ background: CAM.barra, padding: "10px 16px calc(14px + env(safe-area-inset-bottom))" }}>
         {recientes.length > 0 && (
           <div ref={tiraRef} role="list" aria-label="Fotos sacadas" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 10, WebkitOverflowScrolling: "touch" }}>
             {recientes.map((f, i) => (
               <div key={f.id} role="listitem" aria-label={`Foto ${i + 1}${f.estado === "error" ? ", no se pudo subir" : ""}`}
-                style={{ width: 44, height: 56, borderRadius: 8, overflow: "hidden", background: "#222", border: `2px solid ${f.estado === "error" ? "#e57373" : f.estado === "ok" ? "#6fb0d6" : "rgba(255,255,255,.4)"}`, flexShrink: 0 }}>
+                style={{ width: 44, height: 56, borderRadius: 8, overflow: "hidden", background: CAM.vacia, border: `2px solid ${f.estado === "error" ? CAM.error : f.estado === "ok" ? C.ceruleanOnDark : "rgba(255,255,255,.4)"}`, flexShrink: 0 }}>
                 {f.vista && <img src={f.vista} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
               </div>
             ))}
@@ -165,9 +168,9 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12 }}>
           <div aria-live="polite" style={{ fontSize: 14, fontWeight: 700 }}>{cantidad} {cantidad === 1 ? "foto" : "fotos"}</div>
           <button onClick={disparar} disabled={estado !== "lista"} aria-label="Sacar foto"
-            style={{ ...estiloBoton, width: 72, height: 72, borderRadius: 9999, background: estado === "lista" ? "#fff" : "#555", border: "5px solid rgba(255,255,255,.45)", backgroundClip: "padding-box", transform: destello ? "scale(.92)" : "scale(1)", transition: "transform .1s" }} />
+            style={{ ...estiloBoton, width: 72, height: 72, borderRadius: 9999, background: estado === "lista" ? "#fff" : CAM.apagado, border: "5px solid rgba(255,255,255,.45)", backgroundClip: "padding-box", transform: destello ? "scale(.92)" : "scale(1)", transition: "transform .1s" }} />
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button onClick={onCerrar} style={{ ...estiloBoton, minHeight: 44, padding: "9px 18px", borderRadius: 12, background: "#fff", color: "#1a2332", fontSize: 14, fontWeight: 700 }}>Listo</button>
+            <button onClick={onCerrar} style={{ ...estiloBoton, minHeight: 44, padding: "9px 18px", borderRadius: 12, background: "#fff", color: C.dark, fontSize: 14, fontWeight: 700 }}>Listo</button>
           </div>
         </div>
       </div>

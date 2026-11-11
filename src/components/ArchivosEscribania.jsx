@@ -17,22 +17,22 @@ import { CANCELADO, armarZip } from "../utils/descargarTodo";
 import { miniaturaParaIdentificar } from "../utils/capturaArchivo";
 
 const fuente = "'Montserrat', sans-serif";
-const OK = "#2e7d32";      // éxito (D7)
-const ERROR = "#c0392b";
-const AVISO_TEXTO = "#7a5f18";
+const OK = C.success;
+const ERROR = C.danger;
+const AVISO_TEXTO = C.warnText;
 
 const boton = (primario, deshabilitado) => ({
   padding: "7px 16px", borderRadius: 8, fontFamily: fuente, fontSize: 12, fontWeight: 700,
   border: primario ? "none" : `1px solid ${C.cerulean}`,
   background: deshabilitado ? "rgba(26,35,50,.12)" : primario ? C.cerulean : "transparent",
-  color: deshabilitado ? C.faint : primario ? "#fff" : "#2f6a8f",
+  color: deshabilitado ? C.faint : primario ? "#fff" : C.ceruleanText,
   cursor: deshabilitado ? "default" : "pointer",
 });
 const casilla = { width: 18, height: 18, margin: 0, accentColor: C.cerulean, cursor: "pointer", flexShrink: 0 };
-const botonTexto = { border: "none", background: "transparent", color: "#2f6a8f", fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 0 };
+const botonTexto = { border: "none", background: "transparent", color: C.ceruleanText, fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 0 };
 
 function Aviso({ tipo = "aviso", children }) {
-  const [fondo, borde, texto] = tipo === "error" ? ["#fdf0f0", "rgba(192,57,43,.3)", ERROR] : tipo === "ok" ? ["#e8f5e9", "rgba(46,125,50,.3)", OK] : ["rgba(201,169,97,.12)", "rgba(201,169,97,.3)", AVISO_TEXTO];
+  const [fondo, borde, texto] = tipo === "error" ? [C.dangerBg, "rgba(192,57,43,.3)", ERROR] : tipo === "ok" ? [C.successBg, "rgba(46,125,50,.3)", OK] : ["rgba(201,169,97,.12)", "rgba(201,169,97,.3)", AVISO_TEXTO];
   return <div role={tipo === "error" ? "alert" : "status"} style={{ background: fondo, border: `1px solid ${borde}`, color: texto, borderRadius: 8, padding: "10px 14px", fontSize: 12, lineHeight: 1.5, marginBottom: 12 }}>{children}</div>;
 }
 
@@ -400,7 +400,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {a.nombre}
-                      {m && m.clave !== "ok" && <span style={{ marginLeft: 8, padding: "1px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: m.tono === "aviso" ? AVISO_TEXTO : "#2f6a8f", background: m.tono === "aviso" ? "rgba(201,169,97,.18)" : C.ceruleanLight }}>{m.texto}</span>}
+                      {m && m.clave !== "ok" && <span style={{ marginLeft: 8, padding: "1px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: m.tono === "aviso" ? AVISO_TEXTO : C.ceruleanText, background: m.tono === "aviso" ? "rgba(201,169,97,.18)" : C.ceruleanLight }}>{m.texto}</span>}
                     </div>
                     <div style={{ fontSize: 11, color: C.faint, lineHeight: 1.5 }}>
                       {etiquetaTipo(a.tipo)}{a.tamano ? ` · ${formatearTamano(a.tamano)}` : ""} · {fechaHora(a.created_at)}{a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ""}{a.origen === "celular" ? " · desde el celular" : ""}{a.identificacion === "ok" ? " · nombre automático" : ""}

@@ -12,6 +12,14 @@ export const C = {
   borderStrong:  "rgba(26,35,50,.22)",
   muted:         "rgba(26,35,50,.5)",
   faint:         "rgba(26,35,50,.65)",
+  // Semánticos y de texto (decisión D7 del skill notarial-design; contrastes ≥ 4.5:1 en references/accesibilidad.md)
+  ceruleanText:   "#2f6a8f",   // cerúleo como TEXTO sobre fondo claro
+  ceruleanOnDark: "#6fb0d6",   // cerúleo sobre fondo oscuro
+  warnText:       "#7a5f18",   // texto de aviso sobre fawn50
+  danger:         "#c0392b",
+  dangerBg:       "#fdf0f0",
+  success:        "#2e7d32",
+  successBg:      "#e8f5e9",
 };
 
 // ── A4 ────────────────────────────────────────────────────────────────────────
