@@ -1,6 +1,6 @@
 # Tareas: Almacenamiento propio de Notarial (R2)
 
-**Estado:** ✅ aprobado de hecho por Lucas el 10/11/26 (pidió avanzar: "corré vos el sql"). En ejecución: Fases 0 a 3 hechas y desplegadas; Fase 4: código listo, falta deploy y prueba T4.6
+**Estado:** ✅ aprobado de hecho por Lucas el 10/11/26 (pidió avanzar: "corré vos el sql"). En ejecución: Fases 0 a 3 hechas y desplegadas; Fase 4: desplegada y probada en producción; falta lo de T4.6 que es de Lucas (celular real, entrar por email)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅ (aprobado 10/11/26)
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación. Los tests se escriben antes que el código.
 
@@ -60,15 +60,15 @@ Las acciones y el formato de respuesta se mantienen para no tocar casi nada del 
 - [x] **T4.2 🤖** (hecho 11/11/26; la verificación visual a 360 px y 1366x768 se hace en producción en T4.6) `ArchivosEscribania.jsx`: sin estados de conexión ni la palabra "Drive" (título "Archivos del expediente"); botón **Descargar todo**; para el administrador, ver archivos borrados y **Restaurar**; aviso fijo "Máximo 25 MB por archivo". *Verif.: los estados vistos a 360 px.*
 - [x] **T4.3 🤖** (hecho 11/11/26 en código; capturas a 360x640 en T4.6) `SubirMovil.jsx` y `SubidaCelular.jsx`: la subida usa el flujo nuevo. Probar con listas largas en 360x640 (la trampa del scroll global). *Verif.: capturas a 360x640 con muchas fotos.*
 - [x] **T4.4 🤖** (hecho 11/11/26: componente compartido `ConfirmarEliminarExpediente`; se quitó el botón "Abrir carpeta en Drive") Al borrar un expediente, la pantalla avisa cuántos archivos tiene y que se eliminarán a los 30 días (`ExpedientesScreen.jsx` / `ExpedienteDetailScreen.jsx`). *Verif.: aviso visible; la fila de `archivos_a_purgar` se crea (ya probado en T1.4).*
-- [ ] **T4.5 🤖** Tests, lint, build y deploy a producción. *Verif.: todo verde, deploy verificado.*
-- [ ] **T4.6 🤖+👤 Prueba de punta a punta en producción** con tus fotos de prueba, registro **9876** (y el 853 como "otro registro"):
-  - [ ] Subir varios archivos juntos, uno de ~20 MB y uno de más de 25 MB (se rechaza con mensaje claro). Un fallido no frena a los demás.
-  - [ ] Subir por el QR desde el celular (👤), identificación automática y nombres.
-  - [ ] Ver, bajar, renombrar, borrar, restaurar (admin).
-  - [ ] **Descargar todo**: el comprimido trae los archivos con los nombres actuales.
+- [x] **T4.5 🤖** (hecho 11/11/26, commits 54507ac y 363647f; 724 tests; lint sin errores nuevos) Tests, lint, build y deploy a producción. *Verif.: todo verde, deploy verificado.*
+- [~] **T4.6 🤖+👤 Prueba de punta a punta en producción** (11/11/26: hecho por mí lo marcado con ✅; falta lo de 👤) con tus fotos de prueba, registro **9876** (y el 853 como "otro registro"):
+  - [x] ✅ Subir varios archivos juntos (2 desde la compu, 6 desde la página del celular) y rechazo de más de 25 MB con mensaje claro. Subida con tamaño distinto al declarado: rechazada al confirmar. Falta solo uno de ~20 MB real.
+  - [~] ✅ El flujo del QR anda contra R2 real (abrir página, subir 6 fotos, quitar; el scroll y el panel fijo andan). 👤 Falta que Lucas lo pruebe con su celular real (cámara y CORS en iPhone/Android).
+  - [x] ✅ Ver, bajar, borrar y restaurar (admin) probados en producción. Renombrar cubierto por tests (falta mirarlo en pantalla).
+  - [x] ✅ **Descargar todo**: comprimido de 813 KB con los dos archivos y sus nombres.
   - [ ] Entrar **por email** (no por Google): todo funciona sin pedir nada.
   - [ ] Usuario del registro **853**: no ve ni abre archivos del 9876 (ni con la dirección).
-  - [ ] Borrar un expediente con archivos: aviso, y las claves quedan en `archivos_a_purgar`.
+  - [~] ✅ El aviso al eliminar muestra la cuenta de archivos (con 0: "No tiene archivos."). Falta probarlo con un expediente con archivos (👤 o yo con un expediente nuevo).
   - [ ] El historial muestra cada acción.
 
 ## Fase 5 — Lotes y barrios, login sin Drive
