@@ -239,6 +239,24 @@ export function progresoPorPasos(alCambiar, pasos = 20) {
   };
 }
 
+// ── Selección de varios archivos (descargar o borrar juntos) ─────────────────
+
+export const textoSeleccion = (n) => `${n} ${n === 1 ? "seleccionado" : "seleccionados"}`;
+
+// Ids de todos los archivos entre dos (inclusive), en el orden de la lista: para elegir un tramo con Mayús + clic.
+export function rangoEntre(lista, idA, idB) {
+  const a = lista.findIndex((x) => x.id === idA);
+  const b = lista.findIndex((x) => x.id === idB);
+  if (a < 0 || b < 0) return b < 0 ? [] : [idB];
+  const [desde, hasta] = a <= b ? [a, b] : [b, a];
+  return lista.slice(desde, hasta + 1).map((x) => x.id);
+}
+
+// Nombres para nombrar lo que se va a borrar sin llenar la pantalla: los primeros y "y N más".
+export function nombresParaAviso(archivos, max = 5) {
+  return { nombres: archivos.slice(0, max).map((a) => a.nombre), resto: Math.max(0, archivos.length - max) };
+}
+
 // ── Subida directa al almacén propio (R2) ────────────────────────────────────
 
 export const MENSAJE_SUBIDA_RECHAZADA = "No se pudo guardar el archivo. Probá de nuevo.";

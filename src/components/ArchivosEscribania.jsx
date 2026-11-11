@@ -11,7 +11,7 @@ import {
 } from "../utils/driveApi";
 import {
   LIMITE_ZIP_BYTES, MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano, hayIdentificacionEnCurso,
-  marcaIdentificacion, nombreZip, partir, progresoPorPasos, textoPapelera, totalBytes,
+  marcaIdentificacion, nombreZip, nombresParaAviso, partir, progresoPorPasos, rangoEntre, textoPapelera, textoSeleccion, totalBytes,
 } from "../utils/driveCliente";
 import { CANCELADO, armarZip } from "../utils/descargarTodo";
 import { miniaturaParaIdentificar } from "../utils/capturaArchivo";
@@ -28,6 +28,7 @@ const boton = (primario, deshabilitado) => ({
   color: deshabilitado ? C.faint : primario ? "#fff" : "#2f6a8f",
   cursor: deshabilitado ? "default" : "pointer",
 });
+const casilla = { width: 18, height: 18, margin: 0, accentColor: C.cerulean, cursor: "pointer", flexShrink: 0 };
 const botonTexto = { border: "none", background: "transparent", color: "#2f6a8f", fontWeight: 700, fontSize: 12, cursor: "pointer", padding: 0 };
 
 function Aviso({ tipo = "aviso", children }) {
@@ -68,6 +69,11 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
   const [errorEdicion, setErrorEdicion] = useState("");
   const [descarga, setDescarga] = useState(null); // null | { fase: "confirmar" | "armando" | "listo" | "error", ... }
   const [papelera, setPapelera] = useState({ abierta: false, cargando: false, lista: [], error: "", restaurando: null });
+  const [seleccion, setSeleccion] = useState(() => new Set());   // ids de los archivos elegidos con las casillas
+  const [porBorrarVarios, setPorBorrarVarios] = useState(null); // lista de archivos a borrar juntos
+  const [borradoVarios, setBorradoVarios] = useState(null);     // { hechos, total } mientras se borra
+  const ultimoElegido = useRef(null);
+  const casillaTodos = useRef(null);
   const fileRef = useRef(null);
   const cancelarZip = useRef(false);
   const urlVista = useRef(null);
@@ -206,24 +212,77 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     }
   }
 
-  // ── Descargar todo ─────────────────────────────────────────────────────────
+  // ── Selección de varios archivos ───────────────────────────────────────────
+  // Lo elegido se calcula contra la lista de ahora: si alguien borra o quita un archivo, sale solo de la selección.
+  const elegidos = archivos.filter((a) => seleccion.has(a.id));
+  const todosElegidos = archivos.length > 0 && elegidos.length === archivos.length;
+  useEffect(() => {
+    if (casillaTodos.current) casillaTodos.current.indeterminate = elegidos.length > 0 && elegidos.length < archivos.length;
+  }, [elegidos.length, archivos.length]);
+
+  // Mayús + clic elige el tramo entre el último y este (como en el correo).
+  function elegir(a, conMayus) {
+    setSeleccion((prev) => {
+      const sig = new Set(prev);
+      if (conMayus && ultimoElegido.current && ultimoElegido.current !== a.id) {
+        const marcar = !prev.has(a.id);
+        for (const id of rangoEntre(archivos, ultimoElegido.current, a.id)) { if (marcar) sig.add(id); else sig.delete(id); }
+      } else if (sig.has(a.id)) sig.delete(a.id);
+      else sig.add(a.id);
+      return sig;
+    });
+    ultimoElegido.current = a.id;
+  }
+  const elegirTodos = () => setSeleccion(todosElegidos ? new Set() : new Set(archivos.map((a) => a.id)));
+  const limpiarSeleccion = () => { setSeleccion(new Set()); ultimoElegido.current = null; };
+
+  // Borrar juntos: de a uno, así un fallo no frena a los demás y se cuenta lo que quedó sin borrar.
+  async function borrarVarios() {
+    const lista = porBorrarVarios;
+    const borrados = new Set();
+    const fallidos = [];
+    setBorradoVarios({ hechos: 0, total: lista.length });
+    for (const [i, a] of lista.entries()) {
+      try { await borrarArchivoEscribania(a.id); borrados.add(a.id); } catch (e) {
+        if (esArchivoPerdido(e.message)) borrados.add(a.id); else fallidos.push(a.nombre);   // ya no estaba: da lo mismo
+      }
+      setBorradoVarios({ hechos: i + 1, total: lista.length });
+    }
+    setArchivos((prev) => prev.filter((a) => !borrados.has(a.id)));
+    setSeleccion((prev) => new Set([...prev].filter((id) => !borrados.has(id))));
+    setPorBorrarVarios(null);
+    setBorradoVarios(null);
+    if (papelera.abierta) cargarPapelera();
+    if (fallidos.length) setErrorGeneral(`No se pudo borrar: ${fallidos.join(", ")}. Probá de nuevo.`);
+    else setAviso(`Se ${borrados.size === 1 ? "borró 1 archivo" : `borraron ${borrados.size} archivos`}. Quedan 30 días en la papelera.`);
+  }
+
+  // ── Descargar todo (o solo lo elegido) ─────────────────────────────────────
+  // Con un solo archivo elegido se baja ese archivo; con más, un comprimido (.zip).
+  function pedirDescarga(lista, todos) {
+    if (lista.length === 1) { descargar(lista[0]); return; }
+    setDescarga({ fase: "confirmar", lista, todos });
+  }
+  const listaZip = descarga?.lista || archivos;
   const pesoTotal = totalBytes(archivos);
-  const muyPesado = pesoTotal > LIMITE_ZIP_BYTES;
+  const pesoZip = totalBytes(listaZip);
+  const muyPesado = pesoZip > LIMITE_ZIP_BYTES;
 
   async function bajarTodo() {
+    const { lista, todos } = descarga;
     cancelarZip.current = false;
-    setDescarga({ fase: "armando", progreso: { hechos: 0, total: archivos.length, actual: "" } });
+    setDescarga({ fase: "armando", lista, todos, progreso: { hechos: 0, total: lista.length, actual: "" } });
     try {
       const { default: JSZip } = await import("jszip");   // se carga recién acá: casi nadie usa esta función
-      const { blob, fallidos, incluidos } = await armarZip(archivos, {
+      const { blob, fallidos, incluidos } = await armarZip(lista, {
         JSZip, traer: (a) => traerArchivo(a.id, true), debeParar: () => cancelarZip.current,
         onProgreso: (p) => setDescarga((d) => (d?.fase === "armando" ? { ...d, progreso: p } : d)),
       });
       if (!incluidos) throw new Error("No pude bajar ningún archivo. Probá de nuevo en un rato.");
-      guardarBlob(blob, nombreZip(nombreExpediente));
-      setDescarga({ fase: "listo", fallidos, incluidos });
+      guardarBlob(blob, nombreZip(todos ? nombreExpediente : `${nombreExpediente || "Expediente"} (${lista.length} archivos)`));
+      setDescarga({ fase: "listo", lista, todos, fallidos, incluidos });
     } catch (e) {
-      setDescarga(e.message === CANCELADO ? null : { fase: "error", mensaje: e.message });
+      setDescarga(e.message === CANCELADO ? null : { fase: "error", lista, todos, mensaje: e.message });
     }
   }
 
@@ -256,6 +315,9 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
 
   const progresoZip = descarga?.fase === "armando" ? descarga.progreso : null;
   const nombresListos = archivos.length;
+  const nombresZip = listaZip.length;
+  const avisoBorrado = porBorrarVarios ? nombresParaAviso(porBorrarVarios) : null;
+  const hayDelDriveViejo = !!porBorrarVarios?.some((a) => a.almacen === "escribania");
 
   return (
     <>
@@ -312,15 +374,29 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
         </div>
       ) : (
         <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-            <div style={{ fontSize: 12, color: C.faint }}>{nombresListos} {nombresListos === 1 ? "archivo" : "archivos"}{pesoTotal > 0 ? ` · ${formatearTamano(pesoTotal)}` : ""}</div>
-            <button onClick={() => setDescarga({ fase: "confirmar" })} style={boton(false)}>Descargar todo</button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8, minHeight: 34 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: C.faint, cursor: "pointer" }}>
+              <input ref={casillaTodos} type="checkbox" checked={todosElegidos} onChange={elegirTodos} aria-label="Seleccionar todos los archivos" style={casilla} />
+              {elegidos.length > 0
+                ? <strong style={{ color: C.dark, fontSize: 13 }}>{textoSeleccion(elegidos.length)}</strong>
+                : <span>{nombresListos} {nombresListos === 1 ? "archivo" : "archivos"}{pesoTotal > 0 ? ` · ${formatearTamano(pesoTotal)}` : ""}</span>}
+            </label>
+            {elegidos.length > 0 ? (
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <button onClick={() => pedirDescarga(elegidos, false)} style={boton(false)}>Descargar</button>
+                <button onClick={() => setPorBorrarVarios(elegidos)} style={{ ...boton(false), borderColor: "rgba(192,57,43,.45)", color: ERROR }}>Borrar</button>
+                <button onClick={limpiarSeleccion} style={botonTexto}>Quitar selección</button>
+              </div>
+            ) : (
+              <button onClick={() => pedirDescarga(archivos, true)} style={boton(false)}>Descargar todo</button>
+            )}
           </div>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
             {archivos.map((a) => {
               const m = marcaIdentificacion(a);
               return (
-                <li key={a.id} style={{ background: "#FDFCFA", borderRadius: 8, padding: "10px 14px", border: "1px solid rgba(26,35,50,.08)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                <li key={a.id} style={{ background: seleccion.has(a.id) ? C.ceruleanLight : "#FDFCFA", borderRadius: 8, padding: "10px 14px", border: seleccion.has(a.id) ? `1px solid ${C.cerulean}` : "1px solid rgba(26,35,50,.08)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                  <input type="checkbox" checked={seleccion.has(a.id)} onChange={() => {}} onClick={(e) => elegir(a, e.shiftKey)} aria-label={`Seleccionar ${a.nombre}`} style={casilla} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {a.nombre}
@@ -435,14 +511,33 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
         </Modal>
       )}
 
+      {porBorrarVarios && (
+        <Modal titulo="Borrar archivos" onCerrar={() => setPorBorrarVarios(null)} bloqueado={!!borradoVarios} cierraAlTocarFondo>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>Borrar {porBorrarVarios.length} archivos</div>
+          <div style={{ fontSize: 13, color: C.faint, lineHeight: 1.5, marginBottom: 10 }}>
+            Desaparecen de la lista para todo el registro y quedan <strong>30 días en la papelera</strong>. Pasado ese plazo se eliminan para siempre. En esos 30 días, el administrador de Notarial puede recuperarlos.
+            {hayDelDriveViejo && <> Los que estaban en el Drive anterior quedan en la papelera de Drive.</>}
+          </div>
+          <ul style={{ margin: "0 0 16px", paddingLeft: 18, fontSize: 12, color: C.dark, lineHeight: 1.6 }}>
+            {avisoBorrado.nombres.map((n, i) => <li key={i} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n}</li>)}
+            {avisoBorrado.resto > 0 && <li style={{ listStyle: "none", marginLeft: -18, color: C.faint }}>y {avisoBorrado.resto} más</li>}
+          </ul>
+          {borradoVarios && <div role="status" style={{ fontSize: 12, color: C.faint, marginBottom: 10 }}>Borrando {Math.min(borradoVarios.hechos + 1, borradoVarios.total)} de {borradoVarios.total}…</div>}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button autoFocus onClick={() => setPorBorrarVarios(null)} disabled={!!borradoVarios} style={boton(false, !!borradoVarios)}>Cancelar</button>
+            <button onClick={borrarVarios} disabled={!!borradoVarios} style={{ ...boton(true, !!borradoVarios), background: borradoVarios ? "rgba(26,35,50,.12)" : ERROR }}>{borradoVarios ? "Borrando…" : `Borrar ${porBorrarVarios.length} archivos`}</button>
+          </div>
+        </Modal>
+      )}
+
       {descarga && (
-        <Modal titulo="Descargar todo" onCerrar={() => setDescarga(null)} bloqueado={descarga.fase === "armando"}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>Descargar todo</div>
+        <Modal titulo={descarga.todos ? "Descargar todo" : "Descargar seleccionados"} onCerrar={() => setDescarga(null)} bloqueado={descarga.fase === "armando"}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>{descarga.todos ? "Descargar todo" : "Descargar seleccionados"}</div>
           {descarga.fase === "confirmar" && (
             <>
               <div style={{ fontSize: 13, color: C.faint, lineHeight: 1.5, marginBottom: 12 }}>
-                Se baja un solo archivo comprimido (.zip) con los <strong style={{ color: C.dark }}>{nombresListos} {nombresListos === 1 ? "archivo" : "archivos"}</strong> del expediente
-                {pesoTotal > 0 ? <> (<strong style={{ color: C.dark }}>{formatearTamano(pesoTotal)}</strong>)</> : null}, con los nombres que tienen ahora.
+                Se baja un solo archivo comprimido (.zip) con los <strong style={{ color: C.dark }}>{nombresZip} {nombresZip === 1 ? "archivo" : "archivos"}</strong>{descarga.todos ? " del expediente" : " que elegiste"}
+                {pesoZip > 0 ? <> (<strong style={{ color: C.dark }}>{formatearTamano(pesoZip)}</strong>)</> : null}, con los nombres que tienen ahora.
               </div>
               {muyPesado && <Aviso>Pesa más de {formatearTamano(LIMITE_ZIP_BYTES)}: armarlo puede tardar mucho o fallar en esta computadora. Si pasa, bajá los archivos de a uno.</Aviso>}
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -454,7 +549,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
           {descarga.fase === "armando" && (
             <>
               <div aria-live="polite" style={{ fontSize: 13, color: C.dark, fontWeight: 600 }}>
-                {progresoZip?.armando ? "Armando el archivo comprimido…" : `Preparando ${Math.min((progresoZip?.hechos ?? 0) + 1, progresoZip?.total || 1)} de ${progresoZip?.total || nombresListos}`}
+                {progresoZip?.armando ? "Armando el archivo comprimido…" : `Preparando ${Math.min((progresoZip?.hechos ?? 0) + 1, progresoZip?.total || 1)} de ${progresoZip?.total || nombresZip}`}
               </div>
               {progresoZip?.actual && <div style={{ fontSize: 12, color: C.faint, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{progresoZip.actual}</div>}
               <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresoZip?.total ? Math.round((progresoZip.hechos / progresoZip.total) * 100) : 0}

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from "vitest";
 import JSZip from "jszip";
 import {
-  MENSAJE_CORTE, subirAUrlFirmada, MENSAJE_SUBIDA_RECHAZADA, LIMITE_ZIP_BYTES, totalBytes, nombresParaZip, nombreZip, textoPapelera, textoArchivos, opcionesFotoMaxima, progresoPorPasos,
+  MENSAJE_CORTE, subirAUrlFirmada, MENSAJE_SUBIDA_RECHAZADA, LIMITE_ZIP_BYTES, totalBytes, nombresParaZip, nombreZip, textoPapelera, textoArchivos, opcionesFotoMaxima, progresoPorPasos, textoSeleccion, rangoEntre, nombresParaAviso,
 } from "../utils/driveCliente.js";
 import { armarZip, CANCELADO } from "../utils/descargarTodo.js";
 
@@ -108,6 +108,27 @@ describe("armarZip (con JSZip de verdad)", () => {
     const { blob, incluidos } = await armarZip([], { traer: async () => new Blob([]), JSZip });
     expect(incluidos).toBe(0);
     expect(blob.size).toBeGreaterThan(0);
+  });
+});
+
+describe("selección de varios archivos", () => {
+  const lista = ["a", "b", "c", "d", "e"].map((id) => ({ id, nombre: `${id}.jpg` }));
+  it("cuenta lo seleccionado en singular y plural", () => {
+    expect(textoSeleccion(1)).toBe("1 seleccionado");
+    expect(textoSeleccion(3)).toBe("3 seleccionados");
+  });
+  it("Mayús + clic elige el tramo entre dos archivos, en cualquier sentido", () => {
+    expect(rangoEntre(lista, "b", "d")).toEqual(["b", "c", "d"]);
+    expect(rangoEntre(lista, "d", "b")).toEqual(["b", "c", "d"]);
+    expect(rangoEntre(lista, "c", "c")).toEqual(["c"]);
+  });
+  it("si uno de los dos ya no está en la lista, no inventa un tramo", () => {
+    expect(rangoEntre(lista, "zzz", "c")).toEqual(["c"]);
+    expect(rangoEntre(lista, "c", "zzz")).toEqual([]);
+  });
+  it("nombra los primeros y cuenta el resto", () => {
+    expect(nombresParaAviso(lista, 3)).toEqual({ nombres: ["a.jpg", "b.jpg", "c.jpg"], resto: 2 });
+    expect(nombresParaAviso(lista.slice(0, 2), 3)).toEqual({ nombres: ["a.jpg", "b.jpg"], resto: 0 });
   });
 });
 
