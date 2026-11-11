@@ -11,7 +11,7 @@ import {
 } from "../utils/driveApi";
 import {
   LIMITE_ZIP_BYTES, MAX_BYTES_ARCHIVO, TIPOS_ARCHIVO, esPrevisualizable, etiquetaTipo, fechaHora, formatearTamano, hayIdentificacionEnCurso,
-  marcaIdentificacion, nombreZip, nombresParaAviso, partir, progresoPorPasos, rangoEntre, textoPapelera, textoSeleccion, totalBytes,
+  marcaIdentificacion, nombreConExtension, nombreZip, partirNombre, nombresParaAviso, partir, progresoPorPasos, rangoEntre, textoPapelera, textoSeleccion, totalBytes,
 } from "../utils/driveCliente";
 import { CANCELADO, armarZip } from "../utils/descargarTodo";
 import { miniaturaParaIdentificar } from "../utils/capturaArchivo";
@@ -177,7 +177,8 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
   }
 
   function abrirEdicion(a) {
-    setEdicion({ nombre: a.nombre, tipo: a.tipo || "otro" });
+    const { base, ext } = partirNombre(a.nombre);
+    setEdicion({ nombre: base, ext, tipo: a.tipo || "otro" });
     setErrorEdicion("");
     setPorEditar(a);
   }
@@ -187,7 +188,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
     setGuardandoEdicion(true);
     setErrorEdicion("");
     try {
-      const { archivo } = await renombrarArchivo(porEditar.id, edicion);
+      const { archivo } = await renombrarArchivo(porEditar.id, { nombre: nombreConExtension(edicion.nombre, edicion.ext), tipo: edicion.tipo });
       setArchivos((prev) => prev.map((a) => (a.id === porEditar.id ? { ...a, ...archivo } : a)));
       setPorEditar(null);
     } catch (e) {
@@ -473,17 +474,21 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
         <Modal titulo="Editar archivo" onCerrar={() => setPorEditar(null)} bloqueado={guardandoEdicion}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 10 }}>Editar archivo</div>
           <label htmlFor="edit-nombre" style={{ fontSize: 12, color: C.faint }}>Nombre</label>
-          <input id="edit-nombre" value={edicion.nombre} onChange={(e) => setEdicion((x) => ({ ...x, nombre: e.target.value }))} maxLength={150}
-            style={{ width: "100%", boxSizing: "border-box", padding: "9px 10px", margin: "4px 0 12px", borderRadius: 8, border: `1px solid ${C.borderStrong}`, background: "#fff", fontSize: 13, color: C.dark }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0 12px" }}>
+            <input id="edit-nombre" value={edicion.nombre} onChange={(e) => setEdicion((x) => ({ ...x, nombre: e.target.value }))} maxLength={150}
+              aria-describedby={edicion.ext ? "edit-ext" : undefined}
+              style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "9px 10px", borderRadius: 8, border: `1px solid ${C.borderStrong}`, background: "#fff", fontSize: 13, color: C.dark }} />
+            {edicion.ext && <span id="edit-ext" title="La extensión no se cambia" style={{ fontSize: 13, color: C.faint, flexShrink: 0 }}>{edicion.ext}</span>}
+          </div>
           <label htmlFor="edit-tipo" style={{ fontSize: 12, color: C.faint }}>Tipo de documento</label>
           <select id="edit-tipo" value={edicion.tipo} onChange={(e) => setEdicion((x) => ({ ...x, tipo: e.target.value }))}
             style={{ width: "100%", boxSizing: "border-box", padding: "9px 10px", margin: "4px 0 14px", borderRadius: 8, border: `1px solid ${C.borderStrong}`, background: "#fff", fontSize: 13, color: C.dark }}>
             {TIPOS_ARCHIVO.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
           </select>
-          {porEditar.nombre_original && porEditar.nombre_original !== edicion.nombre && (
+          {porEditar.nombre_original && porEditar.nombre_original !== nombreConExtension(edicion.nombre, edicion.ext) && (
             <div style={{ fontSize: 12, color: C.faint, margin: "-6px 0 12px", lineHeight: 1.5 }}>
               Nombre original: <strong style={{ color: C.dark }}>{porEditar.nombre_original}</strong>{" "}
-              <button onClick={() => setEdicion((x) => ({ ...x, nombre: porEditar.nombre_original }))} style={botonTexto}>Volver al original</button>
+              <button onClick={() => setEdicion((x) => ({ ...x, nombre: partirNombre(porEditar.nombre_original).base, ext: partirNombre(porEditar.nombre_original).ext }))} style={botonTexto}>Volver al original</button>
             </div>
           )}
           {errorEdicion && <Aviso tipo="error">{errorEdicion}</Aviso>}

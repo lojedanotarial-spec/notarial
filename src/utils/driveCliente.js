@@ -317,3 +317,16 @@ export function textoArchivos(cantidad) {
   const tiene = cantidad === 1 ? "Tiene 1 archivo" : `Tiene ${cantidad} archivos`;
   return `${tiene}: ${cantidad === 1 ? "deja" : "dejan"} de verse ya y se ${cantidad === 1 ? "elimina" : "eliminan"} del almacenamiento a los 30 días.`;
 }
+
+// Editar el nombre de un archivo: la extensión no se muestra ni se edita (queda fija al lado del campo), así nadie la rompe sin querer.
+export function partirNombre(nombre) {
+  const n = String(nombre ?? "");
+  const m = /\.[A-Za-z0-9]{1,5}$/.exec(n);
+  return m && m.index > 0 ? { base: n.slice(0, m.index), ext: m[0] } : { base: n, ext: "" };
+}
+// Nombre completo a guardar: lo escrito + la extensión original (sin repetirla si la persona la escribió igual).
+export function nombreConExtension(base, ext) {
+  const b = String(base ?? "").trim();
+  if (!ext || b.toLowerCase().endsWith(ext.toLowerCase())) return b;
+  return b + ext;
+}

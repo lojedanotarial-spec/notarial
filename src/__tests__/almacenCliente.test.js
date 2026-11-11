@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from "vitest";
 import JSZip from "jszip";
 import {
-  MENSAJE_CORTE, subirAUrlFirmada, MENSAJE_SUBIDA_RECHAZADA, LIMITE_ZIP_BYTES, totalBytes, nombresParaZip, nombreZip, textoPapelera, textoArchivos, opcionesFotoMaxima, progresoPorPasos, textoSeleccion, rangoEntre, nombresParaAviso,
+  MENSAJE_CORTE, subirAUrlFirmada, MENSAJE_SUBIDA_RECHAZADA, LIMITE_ZIP_BYTES, totalBytes, nombresParaZip, nombreZip, textoPapelera, textoArchivos, opcionesFotoMaxima, progresoPorPasos, textoSeleccion, rangoEntre, nombresParaAviso, partirNombre, nombreConExtension,
 } from "../utils/driveCliente.js";
 import { armarZip, CANCELADO } from "../utils/descargarTodo.js";
 
@@ -163,5 +163,20 @@ describe("aviso al eliminar un expediente", () => {
     expect(textoArchivos(1)).toBe("Tiene 1 archivo: deja de verse ya y se elimina del almacenamiento a los 30 días.");
     expect(textoArchivos(12)).toBe("Tiene 12 archivos: dejan de verse ya y se eliminan del almacenamiento a los 30 días.");
     expect(textoArchivos(null)).toMatch(/30 días/);
+  });
+});
+
+describe("editar el nombre sin la extensión", () => {
+  it("separa la extensión del nombre", () => {
+    expect(partirNombre("denuncia fiscal.pdf")).toEqual({ base: "denuncia fiscal", ext: ".pdf" });
+    expect(partirNombre("DNI frente.JPG")).toEqual({ base: "DNI frente", ext: ".JPG" });
+    expect(partirNombre("sin extension")).toEqual({ base: "sin extension", ext: "" });
+    expect(partirNombre(".gitignore")).toEqual({ base: ".gitignore", ext: "" });
+    expect(partirNombre(undefined)).toEqual({ base: "", ext: "" });
+  });
+  it("vuelve a juntar el nombre sin repetir la extensión", () => {
+    expect(nombreConExtension("Denuncia fiscal ", ".pdf")).toBe("Denuncia fiscal.pdf");
+    expect(nombreConExtension("Denuncia.PDF", ".pdf")).toBe("Denuncia.PDF");
+    expect(nombreConExtension("Sin ext", "")).toBe("Sin ext");
   });
 });
