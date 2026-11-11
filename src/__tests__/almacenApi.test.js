@@ -82,7 +82,7 @@ describe("confirmar_subida (almacén propio)", () => {
       id, expediente_id: "e853b", clave: final, almacen: "propio", nombre: "dni.jpg", tipo: "dni", mime_type: "image/jpeg",
       tamano: CONTENIDO.length, subido_por: "u-fati", origen: "compu",
     })]);
-    expect(c.jsonBody.archivo).toMatchObject({ id, nombre: "dni.jpg", tamano: CONTENIDO.length });
+    expect(c.jsonBody.archivo).toMatchObject({ id, nombre: "dni.jpg", tamano: CONTENIDO.length, almacen: "propio" });   // la pantalla lo necesita para el texto de "Borrar"
     expect(JSON.stringify(c.jsonBody)).not.toContain("853/exp");   // la clave interna no sale al navegador
     expect(e.auditoria()).toEqual(["subir"]);
     expect(e.google.metadatos).not.toHaveBeenCalled();

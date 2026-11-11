@@ -189,7 +189,7 @@ async function ocultarArchivo(d, { arch, exp, registro, quienId, via = null }) {
 const archivoPublico = (a) => ({
   id: a.id, expediente_id: a.expediente_id, nombre: a.nombre, tipo: a.tipo, mime_type: a.mime_type,
   tamano: a.tamano, created_at: a.created_at, subido_por_nombre: a.subido_por_nombre,
-  origen: a.origen ?? "compu", identificacion: a.identificacion ?? null,
+  origen: a.origen ?? "compu", identificacion: a.identificacion ?? null, almacen: a.almacen ?? null,
 });
 
 // ── Acciones del usuario ─────────────────────────────────────────────────────

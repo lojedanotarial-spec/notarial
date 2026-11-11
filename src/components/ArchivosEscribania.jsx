@@ -422,7 +422,7 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
         <Modal titulo="Borrar archivo" onCerrar={() => setPorBorrar(null)} bloqueado={borrando} cierraAlTocarFondo>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>Borrar archivo</div>
           <div style={{ fontSize: 13, color: C.faint, lineHeight: 1.5, marginBottom: 18 }}>
-            {porBorrar.almacen === "propio" ? (
+            {porBorrar.almacen !== "escribania" ? (
               <>¿Borrar <strong style={{ color: C.dark }}>{porBorrar.nombre}</strong>? Desaparece de la lista para todo el registro y queda <strong>30 días en la papelera</strong>. Pasado ese plazo se elimina para siempre. En esos 30 días, el administrador de Notarial puede recuperarlo.</>
             ) : (
               <>¿Borrar <strong style={{ color: C.dark }}>{porBorrar.nombre}</strong>? Desaparece de la lista para todo el registro, pero queda en la <strong>papelera del Drive anterior</strong>, donde se puede recuperar.</>
