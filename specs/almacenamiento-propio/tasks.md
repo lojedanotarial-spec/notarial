@@ -1,6 +1,6 @@
 # Tareas: Almacenamiento propio de Notarial (R2)
 
-**Estado:** ✅ aprobado de hecho por Lucas el 10/11/26 (pidió avanzar: "corré vos el sql"). En ejecución: Fases 0, 1 y 2 hechas; sigue la Fase 3 (servidor de expedientes)
+**Estado:** ✅ aprobado de hecho por Lucas el 10/11/26 (pidió avanzar: "corré vos el sql"). En ejecución: Fases 0 a 3 hechas y desplegadas; sigue la Fase 4 (pantallas de expedientes)
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅ (aprobado 10/11/26)
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación. Los tests se escriben antes que el código.
 
@@ -52,7 +52,7 @@ Las acciones y el formato de respuesta se mantienen para no tocar casi nada del 
 - [x] **T3.2 🤖** (hecho 10/11/26: el almacén propio es opt-in con `almacen:"propio"` en el pedido, así la pantalla vieja y los archivos de Drive siguen igual hasta la Fase 4; se agregaron `restaurar` y `listar_borrados`, solo administrador) Implementar las acciones del T3.1 sobre el almacén, manteniendo `almacen='escribania'` (Drive) funcionando en paralelo para los archivos viejos hasta la Fase 6. *Verif.: tests en verde, incluidos los viejos.*
 - [x] **T3.3 🤖** (hecho 10/11/26: acciones `restaurar`/`purgar` y `lote_id` en el historial; los mensajes del almacén propio no mencionan Drive. Los mensajes viejos se van con el código de Google en la Fase 6) `api/_drive.js`: ajustes de reglas puras (mensajes en castellano sin términos técnicos, tamaño, nombres). *Verif.: tests en verde.*
 - [x] **T3.4 🤖** (hecho 10/11/26: 710 tests en verde, lint y build sin errores) Tests completos, lint (sin errores nuevos respecto de la base) y build. *Verif.: todo verde.*
-- [ ] **T3.5 🤖** Deploy a producción (todavía sin que las pantallas usen el almacén nuevo, salvo que el cliente lo pida). Verificar el deploy por la API de GitHub/Vercel y que las rutas viejas responden igual. *Verif.: producción sana, sin errores nuevos.*
+- [x] **T3.5 🤖** (hecho 10/11/26, commit ba08103, estado "success" en GitHub/Vercel. La prueba real contra R2 desde producción queda para T4.6 con la pantalla nueva: el navegador de pruebas perdió la sesión) Deploy a producción (todavía sin que las pantallas usen el almacén nuevo, salvo que el cliente lo pida). Verificar el deploy por la API de GitHub/Vercel y que las rutas viejas responden igual. *Verif.: producción sana, sin errores nuevos.*
 
 ## Fase 4 — Pantallas de expedientes
 
