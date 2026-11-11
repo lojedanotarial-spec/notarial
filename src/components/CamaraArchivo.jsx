@@ -47,6 +47,7 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
   const [aviso, setAviso] = useState("");
   const [destello, setDestello] = useState(false);
   const [resolucion, setResolucion] = useState("");
+  const [estandar, setEstandar] = useState(false); // la cámara de la página no llega a calidad original (típico del iPhone)
   const ocupada = useRef(false);
 
   useEffect(() => {
@@ -78,6 +79,8 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
           } else {
             const s = track.getSettings?.() || {};
             if (s.width && s.height) setResolucion(`${s.width}×${s.height}`);
+            // El iPhone entrega al navegador un video de menor resolución que la cámara del teléfono: no se promete "calidad original".
+            if (Math.max(s.width || 0, s.height || 0) < MINIMO_ORIGINAL) setEstandar(true);
           }
         } catch { /* no es crítico */ }
         const v = videoRef.current;
@@ -141,7 +144,8 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
         <video ref={videoRef} playsInline muted autoPlay style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", background: "#000" }} />
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "12px 14px", background: "linear-gradient(rgba(0,0,0,.65), transparent)" }}>
           <div style={{ fontSize: 14, fontWeight: 700 }}>Sacá todas las fotos que quieras</div>
-          <div style={{ fontSize: 12, opacity: 0.9, marginTop: 3 }}>Sin flash · calidad original{resolucion ? ` (${resolucion})` : ""}</div>
+          <div style={{ fontSize: 12, opacity: 0.9, marginTop: 3 }}>Sin flash · calidad {estandar ? "estándar" : "original"}{resolucion ? ` (${resolucion})` : ""}</div>
+          {estandar && <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>Para la calidad completa del teléfono, tocá Listo y usá «Usar la cámara del teléfono».</div>}
         </div>
         {estado === "iniciando" && <div role="status" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>Abriendo la cámara…</div>}
         {estado === "error" && (
