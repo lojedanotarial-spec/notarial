@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
-import { IconoDrive } from "../components/ui/DriveIcons";
+import ConfirmarEliminarExpediente from "../components/ConfirmarEliminarExpediente";
 import ArchivosEscribania from "../components/ArchivosEscribania";
 import { listarArchivos } from "../utils/driveApi";
 
@@ -12,23 +12,6 @@ const ESTADOS = [
   { key: "completado", label: "Completado", color: "#27ae60" },
   { key: "archivado",  label: "Archivado",  color: "rgba(26,35,50,.4)" },
 ];
-
-function ConfirmDelete({ nombre, onConfirm, onCancel }) {
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "28px 28px 20px", width: 360, boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: C.dark, marginBottom: 8 }}>Eliminar expediente</div>
-        <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20, lineHeight: 1.5 }}>
-          ¿Confirmás que querés eliminar <strong style={{ color: C.dark }}>{nombre}</strong>? Esta acción no se puede deshacer. Los archivos que ya se subieron siguen guardados en el Drive de la escribanía.
-        </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={onCancel} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", fontSize: 13, fontWeight: 600, color: C.dark, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancelar</button>
-          <button onClick={onConfirm} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #e07070", background: "#fdf0f0", fontSize: 13, fontWeight: 700, color: "#c0392b", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Eliminar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function Tag({ children, color = C.cerulean }) {
   return (
@@ -181,13 +164,6 @@ export function ExpedienteDetailScreen({ onGo, params }) {
           style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: stateInfo.color + "22", color: stateInfo.color, fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>
           {ESTADOS.map(e => <option key={e.key} value={e.key}>{e.label}</option>)}
         </select>
-        {expediente.drive_carpeta_escribania_id && (
-          <a href={`https://drive.google.com/drive/folders/${expediente.drive_carpeta_escribania_id}`} target="_blank" rel="noopener noreferrer"
-            title="Abrir la carpeta del expediente en el Drive de la escribanía (una pestaña nueva)"
-            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,.2)", background: "transparent", color: "rgba(253,252,250,.75)", fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 11, textDecoration: "none", flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
-            <IconoDrive size={12} /> Abrir carpeta en Drive
-          </a>
-        )}
       </div>
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -299,17 +275,18 @@ export function ExpedienteDetailScreen({ onGo, params }) {
               </>
             )}
 
-            {/* Tab archivos: Drive de la escribanía */}
+            {/* Tab archivos: almacenamiento propio de Notarial */}
             {tab === "archivos" && (
-              <ArchivosEscribania expedienteId={expedienteId} archivos={archivos} setArchivos={setArchivos} carpetaId={expediente.drive_carpeta_escribania_id} />
+              <ArchivosEscribania expedienteId={expedienteId} archivos={archivos} setArchivos={setArchivos} nombreExpediente={expediente.nombre} />
             )}
           </div>
         </div>
       </div>
 
       {confirmEliminar && (
-        <ConfirmDelete
+        <ConfirmarEliminarExpediente
           nombre={expediente.nombre}
+          cantidadArchivos={archivos.length}
           onConfirm={eliminarExpediente}
           onCancel={() => setConfirmEliminar(false)}
         />

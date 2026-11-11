@@ -215,3 +215,64 @@ export function subirASesion(sesionUrl, file, mime, onProgreso, XHR = globalThis
     x.send(file);
   });
 }
+
+// ── Subida directa al almacén propio (R2) ────────────────────────────────────
+
+export const MENSAJE_SUBIDA_RECHAZADA = "No se pudo guardar el archivo. Probá de nuevo.";
+
+// PUT del archivo a la dirección firmada que dio el servidor. El almacén contesta sin cuerpo: alcanza con que el estado sea 2xx
+// (lo que se guardó lo verifica el servidor al confirmar). `XHR` se inyecta en las pruebas.
+export function subirAUrlFirmada(url, file, mime, onProgreso, XHR = globalThis.XMLHttpRequest) {
+  return new Promise((resolve, reject) => {
+    const x = new XHR();
+    x.open("PUT", url);
+    x.setRequestHeader("Content-Type", mime || "application/octet-stream");
+    if (x.upload) x.upload.onprogress = (e) => { if (e.lengthComputable) onProgreso?.(e.loaded / e.total); };
+    x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(new Error(MENSAJE_SUBIDA_RECHAZADA)));
+    x.onerror = x.ontimeout = x.onabort = () => reject(new Error(MENSAJE_CORTE));
+    x.send(file);
+  });
+}
+
+// ── Descargar todo (un comprimido con los archivos vigentes del expediente) ──
+
+export const LIMITE_ZIP_BYTES = 300 * 1024 * 1024; // el comprimido se arma en el navegador: más allá de esto puede fallar
+
+export const totalBytes = (archivos) => archivos.reduce((s, a) => s + (Number(a.tamano) > 0 ? Number(a.tamano) : 0), 0);
+
+// Nombre de cada archivo dentro del comprimido: sin caracteres que Windows o Mac rechazan y sin repetidos
+// ("DNI.jpg", "DNI (2).jpg"). Devuelve [{ archivo, nombre }] en el mismo orden.
+export function nombresParaZip(archivos) {
+  const usados = new Set();
+  return archivos.map((archivo) => {
+    let base = Array.from(String(archivo.nombre ?? "")).filter((ch) => ch.charCodeAt(0) > 31).join("").replace(/[\\/:*?"<>|]/g, "_").trim();
+    if (!base || /^\.+$/.test(base)) base = "archivo";
+    const punto = base.lastIndexOf(".");
+    const [raiz, ext] = punto > 0 && base.length - punto <= 11 ? [base.slice(0, punto), base.slice(punto)] : [base, ""];
+    let nombre = base;
+    for (let n = 2; usados.has(nombre.toLowerCase()); n++) nombre = `${raiz} (${n})${ext}`;
+    usados.add(nombre.toLowerCase());
+    return { archivo, nombre };
+  });
+}
+
+export function nombreZip(nombreExpediente) {
+  const limpio = Array.from(String(nombreExpediente ?? "")).filter((ch) => ch.charCodeAt(0) > 31).join("").replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, " ").trim().slice(0, 80).trim();
+  return `${limpio || "Expediente"}.zip`;
+}
+
+// Días que le quedan a un archivo borrado antes de eliminarse para siempre.
+export function textoPapelera(dias) {
+  if (!(dias > 0)) return "Se elimina hoy";
+  return dias === 1 ? "Se elimina mañana" : `Se elimina en ${dias} días`;
+}
+
+// Lo que se le dice a quien va a eliminar un expediente sobre sus archivos. `cantidad`: undefined = se está contando ·
+// null = no se pudo contar · número = cuántos tiene.
+export function textoArchivos(cantidad) {
+  if (cantidad === undefined) return "Estamos revisando si tiene archivos…";
+  if (cantidad === null) return "Si tiene archivos, dejan de verse ya y se eliminan del almacenamiento a los 30 días.";
+  if (cantidad === 0) return "No tiene archivos.";
+  const tiene = cantidad === 1 ? "Tiene 1 archivo" : `Tiene ${cantidad} archivos`;
+  return `${tiene}: ${cantidad === 1 ? "deja" : "dejan"} de verse ya y se ${cantidad === 1 ? "elimina" : "eliminan"} del almacenamiento a los 30 días.`;
+}

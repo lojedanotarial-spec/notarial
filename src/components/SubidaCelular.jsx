@@ -84,7 +84,7 @@ export default function SubidaCelular({ expedienteId, archivos, alActualizar, on
             </div>
           </>
         ) : !sesion || !svg ? (
-          <div style={{ padding: "40px 0", fontSize: 13, color: C.muted }}>Generando el QR…</div>
+          <div role="status" style={{ padding: "40px 0", fontSize: 13, color: C.faint }}>Generando el QR…</div>
         ) : (
           <>
             <div style={{ fontSize: 12.5, color: C.faint, lineHeight: 1.5, marginBottom: 8 }}>Escaneá el QR con la cámara del celular. Sacá o elegí todas las fotos de una: se guardan en este expediente, en calidad original.</div>

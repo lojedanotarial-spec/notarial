@@ -1,6 +1,6 @@
 # Tareas: Almacenamiento propio de Notarial (R2)
 
-**Estado:** ✅ aprobado de hecho por Lucas el 10/11/26 (pidió avanzar: "corré vos el sql"). En ejecución: Fases 0 a 3 hechas y desplegadas; sigue la Fase 4 (pantallas de expedientes)
+**Estado:** ✅ aprobado de hecho por Lucas el 10/11/26 (pidió avanzar: "corré vos el sql"). En ejecución: Fases 0 a 3 hechas y desplegadas; Fase 4: código listo, falta deploy y prueba T4.6
 **Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅ (aprobado 10/11/26)
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación. Los tests se escriben antes que el código.
 
@@ -56,10 +56,10 @@ Las acciones y el formato de respuesta se mantienen para no tocar casi nada del 
 
 ## Fase 4 — Pantallas de expedientes
 
-- [ ] **T4.1 🤖** `src/utils/driveApi.js` y `driveCliente.js` + tests: la subida hace el `PUT` directo a la dirección firmada (sin esperar respuesta de Google) con barra de progreso; errores traducidos; "Descargar todo" arma el comprimido en el navegador (jszip), con nombres actuales, y avisa si el total pasa de ~300 MB. *Verif.: tests en verde.*
-- [ ] **T4.2 🤖** `ArchivosEscribania.jsx`: sin estados de conexión ni la palabra "Drive" (título "Archivos del expediente"); botón **Descargar todo**; para el administrador, ver archivos borrados y **Restaurar**; aviso fijo "Máximo 25 MB por archivo". *Verif.: los estados vistos a 360 px.*
-- [ ] **T4.3 🤖** `SubirMovil.jsx` y `SubidaCelular.jsx`: la subida usa el flujo nuevo. Probar con listas largas en 360x640 (la trampa del scroll global). *Verif.: capturas a 360x640 con muchas fotos.*
-- [ ] **T4.4 🤖** Al borrar un expediente, la pantalla avisa cuántos archivos tiene y que se eliminarán a los 30 días (`ExpedientesScreen.jsx` / `ExpedienteDetailScreen.jsx`). *Verif.: aviso visible; la fila de `archivos_a_purgar` se crea (ya probado en T1.4).*
+- [x] **T4.1 🤖** (hecho 11/11/26: `almacenCliente.test.js`, 14 tests; ZIP con JSZip real, cancelable, carga diferida) `src/utils/driveApi.js` y `driveCliente.js` + tests: la subida hace el `PUT` directo a la dirección firmada (sin esperar respuesta de Google) con barra de progreso; errores traducidos; "Descargar todo" arma el comprimido en el navegador (jszip), con nombres actuales, y avisa si el total pasa de ~300 MB. *Verif.: tests en verde.*
+- [x] **T4.2 🤖** (hecho 11/11/26; la verificación visual a 360 px y 1366x768 se hace en producción en T4.6) `ArchivosEscribania.jsx`: sin estados de conexión ni la palabra "Drive" (título "Archivos del expediente"); botón **Descargar todo**; para el administrador, ver archivos borrados y **Restaurar**; aviso fijo "Máximo 25 MB por archivo". *Verif.: los estados vistos a 360 px.*
+- [x] **T4.3 🤖** (hecho 11/11/26 en código; capturas a 360x640 en T4.6) `SubirMovil.jsx` y `SubidaCelular.jsx`: la subida usa el flujo nuevo. Probar con listas largas en 360x640 (la trampa del scroll global). *Verif.: capturas a 360x640 con muchas fotos.*
+- [x] **T4.4 🤖** (hecho 11/11/26: componente compartido `ConfirmarEliminarExpediente`; se quitó el botón "Abrir carpeta en Drive") Al borrar un expediente, la pantalla avisa cuántos archivos tiene y que se eliminarán a los 30 días (`ExpedientesScreen.jsx` / `ExpedienteDetailScreen.jsx`). *Verif.: aviso visible; la fila de `archivos_a_purgar` se crea (ya probado en T1.4).*
 - [ ] **T4.5 🤖** Tests, lint, build y deploy a producción. *Verif.: todo verde, deploy verificado.*
 - [ ] **T4.6 🤖+👤 Prueba de punta a punta en producción** con tus fotos de prueba, registro **9876** (y el 853 como "otro registro"):
   - [ ] Subir varios archivos juntos, uno de ~20 MB y uno de más de 25 MB (se rechaza con mensaje claro). Un fallido no frena a los demás.

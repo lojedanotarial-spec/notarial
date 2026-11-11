@@ -1,7 +1,8 @@
-// Drive de la escribanía, lado del navegador: llamadas al servidor (/api/drive). Spec: specs/drive-escribania/.
+// Archivos de la escribanía, lado del navegador: llamadas al servidor (/api/drive). Se guardan en el almacén propio de Notarial
+// (specs/almacenamiento-propio/); lo que quedó en el Drive anterior se sigue viendo hasta que se retire (Fase 6).
 import { supabase } from "../supabase";
 import { apiPost } from "./apiFetch";
-import { subirASesion, validarArchivoLocal } from "./driveCliente";
+import { subirAUrlFirmada, validarArchivoLocal } from "./driveCliente";
 
 const llamar = (accion, datos = {}) => apiPost("/api/drive", { accion, ...datos });
 
@@ -32,23 +33,34 @@ export async function drivePublico(accion, datos = {}) {
 // escribanía y que no esté borrado.
 export async function listarArchivos(expedienteId) {
   const { data, error } = await supabase.from("expediente_archivos").select("*")
-    .eq("expediente_id", expedienteId).eq("almacen", "escribania").is("borrado_en", null)
+    .eq("expediente_id", expedienteId).in("almacen", ["escribania", "propio"]).is("borrado_en", null)
     .order("created_at", { ascending: false });
   if (error) throw new Error("No pude cargar los archivos.");
   return data || [];
 }
 
-// Sube un archivo: pide la sesión al servidor, lo manda directo a Google y lo registra. Devuelve la fila del archivo.
+// Cuántos archivos vigentes tiene un expediente (para avisar antes de eliminarlo). null si no se pudo contar.
+export async function contarArchivos(expedienteId) {
+  const { count, error } = await supabase.from("expediente_archivos").select("id", { count: "exact", head: true })
+    .eq("expediente_id", expedienteId).in("almacen", ["escribania", "propio"]).is("borrado_en", null);
+  return error ? null : (count ?? 0);
+}
+
+// Sube un archivo: pide la dirección firmada al servidor, lo manda directo al almacén y lo confirma. Devuelve la fila del archivo.
 export async function subirArchivoEscribania(file, { expedienteId, tipo = "otro", automatico = false, onProgreso } = {}) {
   const v = validarArchivoLocal(file);
   if (!v.ok) throw new Error(v.mensaje);
-  const sesion = await llamar("iniciar_subida", { expediente_id: expedienteId, nombre: file.name, mime: file.type, tamano: file.size, tipo });
-  const { id } = await subirASesion(sesion.sesion_url, file, sesion.mime, onProgreso);
-  const { archivo } = await llamar("confirmar_subida", { expediente_id: expedienteId, drive_file_id: id, tipo: sesion.tipo, ...(automatico ? { identificar: true } : {}) });
+  const sesion = await llamar("iniciar_subida", { almacen: "propio", expediente_id: expedienteId, nombre: file.name, mime: file.type, tamano: file.size, tipo });
+  await subirAUrlFirmada(sesion.url_subida, file, sesion.mime, onProgreso);
+  const { archivo } = await llamar("confirmar_subida", { almacen: "propio", expediente_id: expedienteId, ticket: sesion.ticket, tipo: sesion.tipo, ...(automatico ? { identificar: true } : {}) });
   return archivo;
 }
 
 export const borrarArchivoEscribania = (archivoId) => llamar("borrar", { archivo_id: archivoId });
+
+// Solo el administrador de Notarial: lo que está en la papelera de un expediente ({ archivos: [{ ..., dias_restantes }] }) y devolverlo a la lista.
+export const listarBorrados = (expedienteId) => llamar("listar_borrados", { expediente_id: expedienteId });
+export const restaurarArchivo = (archivoId) => llamar("restaurar", { archivo_id: archivoId });
 
 // Compara lo que Notarial tiene anotado con lo que HAY en Drive y oculta lo que se borró directo ahí. Devuelve { ocultados }.
 // Si Drive no responde no oculta nada ({ ocultados: 0, disponible: false }).
@@ -68,7 +80,7 @@ export const renombrarArchivo = (archivoId, { nombre, tipo }) => llamar("renombr
 // ── Subir desde el celular ───────────────────────────────────────────────────
 
 // Desde la compu: abre el QR de un expediente ({ url, expira_en, sesion_id }) y lo cierra.
-export const celularCrear = (expedienteId) => llamar("celular_crear", { expediente_id: expedienteId });
+export const celularCrear = (expedienteId) => llamar("celular_crear", { almacen: "propio", expediente_id: expedienteId });
 export const celularCerrar = (sesionId) => llamar("celular_cerrar", { sesion_id: sesionId });
 
 // Desde el celular (sin sesión: el código del QR es la única autorización).
@@ -79,12 +91,12 @@ export const celular = {
   identificarLote: (codigo, items) => drivePublico("celular_identificar_lote", { codigo, archivos: items }),
 };
 
-// Sube UN archivo desde el celular: pide la sesión de Google, lo manda directo y lo confirma. Devuelve la fila del archivo.
+// Sube UN archivo desde el celular: pide la dirección firmada, lo manda directo al almacén y lo confirma. Devuelve la fila del archivo.
 // El archivo se sube TAL CUAL (calidad original): no se reduce ni se vuelve a comprimir.
 export async function subirDesdeCelular(codigo, file, { onProgreso } = {}) {
-  const sesion = await drivePublico("celular_iniciar_subida", { codigo, nombre: file.name, mime: file.type, tamano: file.size });
-  const { id } = await subirASesion(sesion.sesion_url, file, sesion.mime, onProgreso);
-  const { archivo } = await drivePublico("celular_confirmar", { codigo, drive_file_id: id });
+  const sesion = await drivePublico("celular_iniciar_subida", { almacen: "propio", codigo, nombre: file.name, mime: file.type, tamano: file.size });
+  await subirAUrlFirmada(sesion.url_subida, file, sesion.mime, onProgreso);
+  const { archivo } = await drivePublico("celular_confirmar", { almacen: "propio", codigo, ticket: sesion.ticket });
   return archivo;
 }
 

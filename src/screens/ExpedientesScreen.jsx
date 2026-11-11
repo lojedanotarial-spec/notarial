@@ -2,23 +2,8 @@ import { useState, useEffect } from "react";
 import { C } from "../constants";
 import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
-
-function ConfirmDelete({ nombre, onConfirm, onCancel }) {
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#FDFCFA", borderRadius: 12, padding: "28px 28px 20px", width: 360, boxShadow: "0 8px 32px rgba(26,35,50,.18)" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2332", marginBottom: 8 }}>Eliminar expediente</div>
-        <div style={{ fontSize: 13, color: "rgba(26,35,50,.6)", marginBottom: 20, lineHeight: 1.5 }}>
-          ¿Confirmás que querés eliminar <strong style={{ color: "#1A2332" }}>{nombre}</strong>? Esta acción no se puede deshacer. Los archivos que ya se subieron siguen guardados en el Drive de la escribanía.
-        </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button onClick={onCancel} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid rgba(26,35,50,.14)", background: "transparent", fontSize: 13, fontWeight: 600, color: "#1A2332", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Cancelar</button>
-          <button onClick={onConfirm} style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #e07070", background: "#fdf0f0", fontSize: 13, fontWeight: 700, color: "#c0392b", cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Eliminar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import ConfirmarEliminarExpediente from "../components/ConfirmarEliminarExpediente";
+import { contarArchivos } from "../utils/driveApi";
 
 const TrashIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c0392b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -174,6 +159,7 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [query, setQuery] = useState("");
   const [confirmDel, setConfirmDel] = useState(null);
+  const [archivosDelConfirmado, setArchivosDelConfirmado] = useState(undefined);
 
   useEffect(() => {
     cargar();
@@ -282,7 +268,7 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
                   key={exp.id}
                   exp={exp}
                   onOpen={id => onGo?.("expediente", { expedienteId: id })}
-                  onDelete={exp => setConfirmDel(exp)}
+                  onDelete={exp => { setArchivosDelConfirmado(undefined); setConfirmDel(exp); contarArchivos(exp.id).then(n => setArchivosDelConfirmado(n)); }}
                 />
               ))}
             </div>
@@ -300,8 +286,9 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
       )}
 
       {confirmDel && (
-        <ConfirmDelete
+        <ConfirmarEliminarExpediente
           nombre={confirmDel.nombre}
+          cantidadArchivos={archivosDelConfirmado}
           onConfirm={() => eliminar(confirmDel)}
           onCancel={() => setConfirmDel(null)}
         />

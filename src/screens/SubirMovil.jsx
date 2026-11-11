@@ -1,6 +1,6 @@
 // Página del celular para subir documentación a un expediente. Se abre desde el QR (/s/<codigo>), SIN login: el código
 // de la URL es la única autorización y solo sirve para agregar archivos a ESE expediente y quitar lo subido en esa sesión.
-// Las fotos se suben en calidad original, de a una, directo a Google (no pasan por los servidores de Notarial).
+// Las fotos se suben en calidad original, de a una, directo al almacenamiento privado de Notarial.
 // Spec: specs/documentacion-celular-expediente/.
 import { useEffect, useRef, useState } from "react";
 import { C } from "../constants";
@@ -13,7 +13,7 @@ import { miniaturaDe, miniaturaParaIdentificar } from "../utils/capturaArchivo";
 import CamaraArchivo from "../components/CamaraArchivo";
 
 const fuente = "'Montserrat', sans-serif";
-const MENSAJE_DRIVE_CAIDO = "El Drive de la escribanía no está disponible. Avisale a quien administra Notarial.";
+const MENSAJE_ALMACEN_CAIDO = "El guardado de archivos no está disponible en este momento. Avisale a quien administra Notarial.";
 
 const boton = (primario, deshabilitado) => ({
   width: "100%", padding: "15px 16px", borderRadius: 12, fontFamily: fuente, fontSize: 15, fontWeight: 700, textAlign: "center",
@@ -140,7 +140,7 @@ export default function SubirMovil({ codigo }) {
   const ahoraServidor = ahora + desfase.current;
   const vencidaLocal = !!info?.expira_en && new Date(info.expira_en).getTime() <= ahoraServidor;
   const motivoFin = terminada || (vencidaLocal ? "vencida" : null);
-  const driveCaido = info && info.drive_disponible === false;
+  const driveCaido = !!info && !info.propio && info.drive_disponible === false;   // con el almacén propio no hay nada que conectar
   const puedeAgregar = !!info?.vigente && !motivoFin && !driveCaido;
 
   // PRIMERO se sube TODO; recién después, con la última subida terminada y la cámara cerrada, el sistema reconoce cada documento
@@ -281,7 +281,7 @@ export default function SubirMovil({ codigo }) {
         <div style={{ fontSize: 14, color: C.faint, marginTop: 4 }}>Expediente: <strong style={{ color: C.dark }}>{info.expediente_nombre}</strong></div>
         {!motivoFin && <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>El QR vence en {cuentaRegresiva(info.expira_en, ahoraServidor)}</div>}
 
-        {driveCaido && <Aviso tipo="error">{MENSAJE_DRIVE_CAIDO}</Aviso>}
+        {driveCaido && <Aviso tipo="error">{MENSAJE_ALMACEN_CAIDO}</Aviso>}
         {motivoFin && <Aviso tipo="aviso">{textoSesionTerminada(motivoFin, { guardadas: resumen.guardadas, sinGuardar: resumen.pendientes + resumen.fallidas })}</Aviso>}
         {!motivoFin && !driveCaido && <Aviso>Sacá o elegí <strong>todas</strong> las fotos de una, de cualquier documento y en cualquier orden. No hace falta decir qué es cada una. Se guardan en calidad original (hasta {formatearTamano(MAX_BYTES_ARCHIVO)} cada una).</Aviso>}
 
@@ -315,7 +315,7 @@ export default function SubirMovil({ codigo }) {
         <div onClick={() => !quitando && setPorQuitar(null)} style={{ position: "fixed", inset: 0, background: "rgba(26,35,50,.5)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: "20px 18px", width: "100%", maxWidth: 380 }}>
             <div style={{ fontFamily: fuente, fontSize: 16, fontWeight: 800, color: C.dark, marginBottom: 6 }}>¿Quitar esta foto?</div>
-            <div style={{ fontSize: 13.5, color: C.faint, lineHeight: 1.5, marginBottom: 14 }}>Se saca del expediente. Queda en la papelera del Drive de la escribanía, donde se puede recuperar.</div>
+            <div style={{ fontSize: 13.5, color: C.faint, lineHeight: 1.5, marginBottom: 14 }}>Se saca del expediente. Queda 30 días en la papelera y después se elimina para siempre.</div>
             {errorQuitar && <Aviso tipo="error">{errorQuitar}</Aviso>}
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setPorQuitar(null)} disabled={quitando} style={{ ...boton(false, quitando), flex: 1 }}>Cancelar</button>
