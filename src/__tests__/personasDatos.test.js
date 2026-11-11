@@ -15,6 +15,16 @@ describe("fila de persona a guardar", () => {
   });
 });
 
+describe("datos de domicilio de la parte", () => {
+  it("barrio, manzana, casa, provincia y país también se guardan en la ficha (antes se perdían)", () => {
+    const f = armarFilaPersona({ apellido: "PÉREZ", nroDoc: "1", calle: "San Martín", barrio: "Los Olivos", manzana: "B", casa: "12", provincia: "Mendoza", pais: "Argentina" }, "9876");
+    expect(f).toMatchObject({ calle: "San Martín", barrio: "Los Olivos", manzana: "B", casa: "12", provincia: "Mendoza", pais: "Argentina" });
+  });
+  it("sin esos datos quedan vacíos, no undefined", () => {
+    expect(armarFilaPersona({ apellido: "X" }, "9876")).toMatchObject({ barrio: "", manzana: "", casa: "", provincia: "", pais: "" });
+  });
+});
+
 describe("estados civiles", () => {
   it("concuerdan con el género y por defecto van en masculino (como el editor)", () => {
     expect(estadosCivilesPara("F")).toBe(ESTADOS_CIVILES_F);

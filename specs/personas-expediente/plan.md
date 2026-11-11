@@ -1,6 +1,6 @@
 # Plan: Personas del expediente
 
-**Estado:** 📝 borrador (11/11/26, fase 2 de 3), esperando aprobación de Lucas. Siguiente: [`tasks.md`](tasks.md). NO escribir código hasta que `tasks.md` esté aprobado
+**Estado:** ✅ aprobado por Lucas el 11/11/26 ("si dale, ejecuta"). En ejecución: ver [`tasks.md`](tasks.md)
 **Spec:** [`spec.md`](spec.md) ✅ (aprobada 11/11/26, con las decisiones de Lucas)
 **Depende de:** [`specs/almacenamiento-propio/`](../almacenamiento-propio/spec.md) (archivos en R2, ya en producción)
 
@@ -24,7 +24,7 @@
 
 | Cambio | Detalle |
 |---|---|
-| `personas.notas` | texto libre (nuevo) |
+| `personas.notas` y domicilio | `notas` (texto libre) y `barrio`, `manzana`, `casa`, `provincia`, `pais`: el formulario de partes ya maneja estos datos pero la tabla no tenía dónde guardarlos (se perdían al guardar la persona en la libreta). El modal **Completar perfil** muestra **todos** los datos de una parte (menos el rol y el vínculo, que son del documento) |
 | `expediente_personas` | `id`, `expediente_id` (borra en cascada), `persona_id` (borra en cascada), `agregada_por`, `created_at`; único por (expediente, persona); misma regla de acceso que `expediente_archivos` (solo el registro dueño) |
 | `expediente_archivos.persona_id` | puede ser nulo; si se borra la ficha queda nulo |
 | `expediente_archivos.ident_apellido`, `ident_nombre` | texto, solo con lectura segura |

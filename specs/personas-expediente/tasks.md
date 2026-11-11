@@ -1,7 +1,7 @@
 # Tareas: Personas del expediente
 
-**Estado:** 📝 borrador (11/11/26, fase 3 de 3), esperando aprobación de Lucas. Hasta entonces no se escribe código
-**Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) 📝
+**Estado:** ✅ aprobado por Lucas el 11/11/26 ("si dale, ejecuta"). En ejecución
+**Spec:** [`spec.md`](spec.md) ✅ · **Plan:** [`plan.md`](plan.md) ✅
 **Responsable:** 🤖 = Claude · 👤 = Lucas. Cada tarea cierra con su verificación. Los tests se escriben antes que el código.
 
 ## Qué te toca a vos (resumen)
@@ -12,11 +12,11 @@
 
 ## Fase 0 — Base de datos y lector compartido
 
-- [ ] **T0.1 🤖** `scripts/personas_expediente.sql` y `_rollback.sql`: `personas.notas`, tabla `expediente_personas` (con su regla de acceso por registro), `expediente_archivos.persona_id`, `ident_apellido`, `ident_nombre`, índices. Solo aditivo. *Verif.: el script se relee contra el esquema real sin errores de nombres; la reversión deja todo como estaba.*
+- [x] **T0.1 🤖** (hecho 11/11/26, commit 8b42d70 y siguiente; se sumaron barrio, manzana, casa, provincia y país a `personas`, que el formulario de partes manejaba sin guardar) `scripts/personas_expediente.sql` y `_rollback.sql`: `personas.notas`, tabla `expediente_personas` (con su regla de acceso por registro), `expediente_archivos.persona_id`, `ident_apellido`, `ident_nombre`, índices. Solo aditivo. *Verif.: el script se relee contra el esquema real sin errores de nombres; la reversión deja todo como estaba.*
 - [ ] **T0.2 👤** Correr el SQL en el SQL Editor. *Verif.: "Success".*
 - [ ] **T0.3 🤖** Verificar contra la base real: tablas y columnas nuevas, reglas de acceso (una persona de un registro no se ve desde otro) y que borrar un expediente borra la pertenencia pero no la ficha. Revisar si las tablas nuevas entran en el backup. *Verif.: consultas de comprobación, sin datos de prueba dejados.*
-- [ ] **T0.4 🤖** Mover `escanearDocumento` (y PDF, merge) de `PartesEditor.jsx` a `src/utils/escanearDocumento.js` y exportar la lista de estados civiles. Tests del merge antes de mover. *Verif.: tests en verde; el botón "Escanear" del editor se comporta igual.*
-- [ ] **T0.5 🤖** Corregir `guardarPartesEnCRM`: DNI vacío se guarda sin valor, no `""`. Test con dos personas sin DNI. *Verif.: tests en verde.*
+- [x] **T0.4 🤖** (hecho 11/11/26, commit fbf31a1) Mover `escanearDocumento` (y PDF, merge) de `PartesEditor.jsx` a `src/utils/escanearDocumento.js` y exportar la lista de estados civiles. Tests del merge antes de mover. *Verif.: tests en verde; el botón "Escanear" del editor se comporta igual.*
+- [x] **T0.5 🤖** (hecho 11/11/26, commit fbf31a1; también se guardan barrio, manzana, casa, provincia y país) Corregir `guardarPartesEnCRM`: DNI vacío se guarda sin valor, no `""`. Test con dos personas sin DNI. *Verif.: tests en verde.*
 
 ## Fase 1 — Servidor
 
@@ -48,7 +48,7 @@
 
 ## Fase 5 — Documento vinculado al expediente y personas en el editor
 
-- [ ] **T5.1 🤖** Arreglar el vínculo al crear desde el expediente: la selección recibe el expediente y se lo pasa al editor, que vincula en el primer guardado (sin duplicar si ya existe). Tests de la decisión de vincular. *Verif.: tests en verde; en producción, "+ Nuevo documento" desde un expediente deja el documento en su lista.*
+- [x] **T5.1 🤖** (hecho 11/11/26, commit fbf31a1; la prueba en producción queda para T5.2) Arreglar el vínculo al crear desde el expediente: la selección recibe el expediente y se lo pasa al editor, que vincula en el primer guardado (sin duplicar si ya existe). Tests de la decisión de vincular. *Verif.: tests en verde; en producción, "+ Nuevo documento" desde un expediente deja el documento en su lista.*
 - [ ] **T5.2 🤖** Campo opcional **Expediente** en la selección (lista del registro con búsqueda, ya elegido si se llegó desde uno) y indicador **Expediente: …** en el editor con **Cambiar / Quitar / Vincular** sin salir del documento. Reutiliza la lógica de `ModalAgregarExpediente`. *Verif.: probado en producción creando un documento por cada camino (desde el expediente, con el campo, y vinculando después); "Agregar a expediente" de hoy sigue funcionando.*
 - [ ] **T5.3 🤖** Franja **Personas del expediente** arriba de las partes y sugerencias en la búsqueda de cada parte: tocar una completa la parte (género, nacionalidad, CUIT), muestra notas y "actualizada hace…", avisa antes de reemplazar datos y avisa si la misma persona ya es otra parte. Si se vincula con el documento ya abierto, la franja aparece al instante. Tests de la lógica. *Verif.: prueba en producción con un documento de un expediente con 2 personas; un documento sin expediente funciona como hoy.*
 - [ ] **T5.4 🤖** Extraer el visor de archivos a un componente compartido y agregar el botón **Archivos del expediente** con el panel agrupado por persona. *Verif.: la pestaña Archivos sigue igual (probada) y el panel abre y baja archivos.*

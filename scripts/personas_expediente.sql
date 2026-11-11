@@ -5,9 +5,16 @@
 
 begin;
 
--- 1) personas: notas libres (por ejemplo "casada con Pérez Juan, en primeras nupcias")
+-- 1) personas: notas libres (por ejemplo "casada con Pérez Juan, en primeras nupcias") y los datos de domicilio que el
+--    formulario de partes ya maneja pero la tabla no tenía (barrio, manzana, casa/lote, provincia, país): hoy se pierden al
+--    guardar la persona en la libreta.
 alter table public.personas
-  add column if not exists notas text;
+  add column if not exists notas text,
+  add column if not exists barrio text,
+  add column if not exists manzana text,
+  add column if not exists casa text,
+  add column if not exists provincia text,
+  add column if not exists pais text;
 
 -- 2) Qué personas intervienen en cada expediente.
 --    Borrar el expediente borra la pertenencia, NO la ficha. Borrar la ficha la saca de todos los expedientes.

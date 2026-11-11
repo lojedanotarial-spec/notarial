@@ -25,8 +25,13 @@ export function armarFilaPersona(p, registroNumero, ahora = new Date().toISOStri
     numero:           p.numero        || "",
     piso:             p.piso          || "",
     dpto:             p.dpto          || "",
+    barrio:           p.barrio        || "",
+    manzana:          p.manzana       || "",
+    casa:             p.casa          || "",
     localidad:        p.localidad     || "",
     departamento:     p.departamento  || "",
+    provincia:        p.provincia     || "",
+    pais:             p.pais          || "",
     representaciones: p.representaciones || [],
     updated_at:       ahora,
   };
