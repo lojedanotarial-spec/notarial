@@ -18,7 +18,7 @@
 | 7 | Estado civil | La **misma lista del editor** (con concordancia de género: soltero/a, casado/a…) para que lo elegido llegue igual al documento. Notas en una columna nueva | Una lista nueva: dos listas que mantener y que pueden diferir |
 | 8 | Duplicados | Por DNI ya lo impide la base (índice único por registro + DNI). El servidor lo detecta **antes** y devuelve la ficha existente: "Ya existe… ¿Actualizarla con estos datos?". Sin DNI, avisa si hay otra con el mismo apellido y nombre | Dejar que la base falle: el usuario vería un error técnico |
 
-**Un problema que ya existe y se corrige de paso:** al guardar un documento, `guardarPartesEnCRM` guarda un DNI vacío como `""`, y el índice único hace que una segunda persona sin DNI falle **en silencio** (no se guarda y nadie se entera). Se corrige guardando el vacío como "sin valor", que el índice permite repetir. No toca las 11 fichas existentes.
+**Un problema que ya existe y se corrige de paso:** al guardar un documento, `guardarPartesEnCRM` guarda un DNI vacío como `""`, y el índice único hace que una segunda persona sin DNI falle **en silencio** (no se guarda y nadie se entera). Se corrige guardando el vacío como "sin valor", que el índice permite repetir. No toca las fichas existentes (hoy son 93, de 2 registros; una tiene el DNI vacío).
 
 ## Datos (solo aditivo; el SQL lo corrés vos en el SQL Editor, con reversión)
 

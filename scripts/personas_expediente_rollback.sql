@@ -2,6 +2,8 @@
 -- ATENCIÓN: borra la tabla expediente_personas (quién interviene en cada expediente), las notas y los datos de barrio, manzana, casa, provincia y país de las fichas
 -- y la asignación de archivos a personas. Las fichas (personas) y los archivos NO se borran.
 
+-- (El paso 4 del script, pasar a minúscula el estado civil, NO se revierte: no pierde información.)
+
 begin;
 
 drop index if exists public.expediente_archivos_persona_idx;

@@ -192,6 +192,7 @@ export function useScribaSesion(contexto) {
     );
     if (matchEC) {
       datos.estado_civil = matchEC[1].toLowerCase().replace(/a$/, "o");
+      if (datos.estado_civil === "conviviente") datos.estado_civil = "unión convivencial"; // el valor de la lista de estados civiles
       actualizado = true;
       confirmaciones.push(`estado civil **${datos.estado_civil}**`);
     }

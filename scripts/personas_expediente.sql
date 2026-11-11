@@ -1,7 +1,7 @@
 -- Personas del expediente — Fase 0: cambios ADITIVOS en la base.
 -- Spec: specs/personas-expediente/ (tasks.md T0.1). Reversión: personas_expediente_rollback.sql
 -- Es idempotente: se puede correr dos veces sin romper nada.
--- No toca las filas existentes ni las políticas actuales.
+-- Cambia una sola fila existente: el paso 4 (estado civil "Soltero" pasa a "soltero"). No toca las políticas actuales.
 
 begin;
 
@@ -50,5 +50,10 @@ alter table public.expediente_archivos
   add column if not exists ident_nombre text;
 create index if not exists expediente_archivos_persona_idx
   on public.expediente_archivos (persona_id) where persona_id is not null;
+
+-- 4) Estado civil: la lista del editor y de las fichas es en minúscula (soltero, casada…). Hoy hay 1 ficha escrita "Soltero";
+--    se unifica para que el desplegable la reconozca. Es lo único que este script cambia de filas existentes.
+update public.personas set estado_civil = lower(estado_civil)
+where estado_civil is not null and estado_civil <> lower(estado_civil);
 
 commit;

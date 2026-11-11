@@ -1,6 +1,6 @@
 // Datos de personas y lector de documentos compartido.
 import { describe, it, expect } from "vitest";
-import { armarFilaPersona, estadosCivilesPara, ESTADOS_CIVILES_F, ESTADOS_CIVILES_M } from "../utils/personasDatos.js";
+import { armarFilaPersona, estadosCivilesPara, concordarEstadoCivil, ESTADOS_CIVILES_F, ESTADOS_CIVILES_M, UNION_CONVIVENCIAL } from "../utils/personasDatos.js";
 import { mergePersonas } from "../utils/escanearDocumento.js";
 
 describe("fila de persona a guardar", () => {
@@ -32,6 +32,26 @@ describe("estados civiles", () => {
     expect(estadosCivilesPara("")).toBe(ESTADOS_CIVILES_M);
     expect(ESTADOS_CIVILES_F).toContain("casada");
     expect(ESTADOS_CIVILES_M).toContain("casado");
+  });
+  it("incluyen separado de hecho y unión convivencial (igual para ambos géneros)", () => {
+    for (const lista of [ESTADOS_CIVILES_F, ESTADOS_CIVILES_M]) {
+      expect(lista).toContain("separado de hecho".replace("separado", lista === ESTADOS_CIVILES_F ? "separada" : "separado"));
+      expect(lista).toContain(UNION_CONVIVENCIAL);
+      expect(lista).toHaveLength(6);
+    }
+    expect(UNION_CONVIVENCIAL).toBe("unión convivencial");
+  });
+  it("las dos listas tienen el mismo orden, para poder pasar de una a otra", () => {
+    expect(ESTADOS_CIVILES_F).toHaveLength(ESTADOS_CIVILES_M.length);
+  });
+  it("al cambiar el género cambia la concordancia y respeta lo desconocido", () => {
+    expect(concordarEstadoCivil("casado", "F")).toBe("casada");
+    expect(concordarEstadoCivil("viuda", "M")).toBe("viudo");
+    expect(concordarEstadoCivil("separado de hecho", "F")).toBe("separada de hecho");
+    expect(concordarEstadoCivil(UNION_CONVIVENCIAL, "F")).toBe(UNION_CONVIVENCIAL);
+    expect(concordarEstadoCivil("conviviente", "F")).toBe("conviviente");
+    expect(concordarEstadoCivil("", "F")).toBe("");
+    expect(concordarEstadoCivil("casado", "")).toBe("casado");
   });
 });
 

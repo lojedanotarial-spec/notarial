@@ -42,7 +42,7 @@
 **Completar el perfil en un modal** *(UC-1)*
 - [ ] Desde la ficha hay un modal **Completar perfil** que reúne: los datos de la persona (los mismos
       que hoy tiene una parte: nombre, documento, CUIT, fecha de nacimiento, domicilio, etc.), **estado
-      civil** (soltero/a, casado/a, divorciado/a, viudo/a, unión convivencial) y un **comentario libre**.
+      civil** (soltero/a, casado/a, divorciado/a, viudo/a, separado/a de hecho y unión convivencial: la misma lista que el editor de partes, con la concordancia de género) y un **comentario libre**.
 - [ ] Si la persona tiene archivos de identidad, el modal ofrece **Leer del DNI**: el sistema lee las
       fotos y **precarga** los datos. Nada se guarda hasta que el usuario revisa y toca **Guardar**.
       La lectura **solo ocurre cuando el usuario la pide**, nunca en segundo plano.
@@ -113,6 +113,6 @@
 ## Decisiones de Lucas (11/11/26)
 
 1. **Dónde se completa el perfil:** en la compu, después de que las fotos llegan desde el celular (asumido: Lucas no objetó; completarlo desde el celular queda para una versión posterior).
-2. **Estado civil:** un **desplegable** con los estados civiles (soltero/a, casado/a, divorciado/a, viudo/a, unión convivencial) y un **campo de notas**. Si hace falta algo más (el cónyuge, el régimen), va en las notas; no se vincula con la ficha del cónyuge por ahora.
+2. **Estado civil:** un **desplegable** con los estados civiles (soltero/a, casado/a, divorciado/a, viudo/a, separado/a de hecho y unión convivencial) y un **campo de notas**. Si hace falta algo más (el cónyuge, el régimen), va en las notas; no se vincula con la ficha del cónyuge por ahora.
 3. **Pestaña Personas:** aprobada, **primera** y abierta al entrar al expediente ("ok, a ver cómo queda").
-4. **Fichas repetidas:** las fotos se guardan **por expediente** y las personas **en la base**, una sola vez por registro. Si al crear o completar una persona ya existe otra con el mismo documento, el sistema **avisa y ofrece actualizar la existente** (ya figuraba en la primera sección). Las repetidas que ya existen hoy (11 fichas) no se revisan en bloque: se avisa cuando una de ellas aparece. No hay pantalla de "posibles repetidos".
+4. **Fichas repetidas:** las fotos se guardan **por expediente** y las personas **en la base**, una sola vez por registro. Si al crear o completar una persona ya existe otra con el mismo documento, el sistema **avisa y ofrece actualizar la existente** (ya figuraba en la primera sección). Las repetidas que ya existen hoy (hoy hay 93 fichas y 4 nombres repetidos, verificado en la base el 11/11/26) no se revisan en bloque: se avisa cuando una de ellas aparece. No hay pantalla de "posibles repetidos".
