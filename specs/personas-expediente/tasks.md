@@ -23,7 +23,7 @@
 - [x] **T1.1 🤖** (hecho 12/11/26, `api/_personas.js`, 21 tests) Tests primero y luego `api/_personas.js`: normalizar apellido/nombre para comparar (sin tildes ni mayúsculas), detectar duplicados (por DNI y por nombre), armar el detalle del historial **sin valores personales**. *Verif.: tests en verde.*
 - [x] **T1.2 🤖** (hecho 12/11/26, 32 tests en `personasApi.test.js`, incluida la prueba entre registros y con el administrador) Acciones `persona_guardar`, `persona_agregar`, `persona_quitar`, `persona_borrar`, `archivo_asignar` en `api/drive.js`, con autorización por registro, historial y respuesta `{ duplicada }`. Tests con el arnés de pruebas existente, incluida la prueba de **un registro intentando tocar fichas o archivos de otro**. *Verif.: tests en verde.*
 - [x] **T1.3 🤖** (hecho 12/11/26, 4 tests; también se devuelven en la lista de archivos) Guardar `ident_apellido` e `ident_nombre` al identificar (solo confianza alta). *Verif.: test: con confianza baja no se guarda nada.*
-- [ ] **T1.4 🤖** Tests, lint, build y deploy a producción. Verificar el deploy. *Verif.: producción sana, rutas viejas responden igual.*
+- [x] **T1.4 🤖** (hecho 12/11/26, commit 70c103f; 806 tests, deploy en success, las acciones nuevas responden 401 sin sesión y las viejas siguen igual) Tests, lint, build y deploy a producción. Verificar el deploy. *Verif.: producción sana, rutas viejas responden igual.*
 
 ## Fase 2 — Pestaña Personas y modal
 
