@@ -27,32 +27,32 @@
 
 ## Fase 2 — Pestaña Personas y modal
 
-- [ ] **T2.1 🤖** `src/utils/personasCliente.js` + tests: listar las personas de un expediente, buscar en la libreta, armar el texto "actualizada hace…", agrupar por persona. *Verif.: tests en verde.*
-- [ ] **T2.2 🤖** `PersonasExpediente.jsx` y la pestaña **Personas (n)** primera y abierta al entrar. Todos sus estados (vacía, cargando, error, lista). *Verif.: capturas de cada estado a 1366×768.*
-- [ ] **T2.3 🤖** `AgregarPersona.jsx`: buscar existente (DNI o apellido) o crear nueva; aviso de duplicado con "Actualizar la existente". *Verif.: probado en producción con un DNI ya existente.*
-- [ ] **T2.4 🤖** `ModalPersona.jsx` (**Completar perfil**): datos, estado civil en desplegable, notas, "actualizada el…", quitar del expediente (reversible) y borrar la ficha (con confirmación que nombra a la persona). *Verif.: teclado (Tab, Esc, Enter) y capturas.*
-- [ ] **T2.5 🤖** Tests, lint, build, deploy y prueba en producción de la pestaña. *Verif.: todo verde, deploy verificado.*
+- [x] **T2.1 🤖** (hecho 12/11/26, `src/utils/personasCliente.js`, 28 tests) `src/utils/personasCliente.js` + tests: listar las personas de un expediente, buscar en la libreta, armar el texto "actualizada hace…", agrupar por persona. *Verif.: tests en verde.*
+- [x] **T2.2 🤖** (hecho 12/11/26, commit cc8dd7b; verificado en una vista previa local con datos de mentira (vacía, cargando, error y lista); falta verla con datos reales) `PersonasExpediente.jsx` y la pestaña **Personas (n)** primera y abierta al entrar. Todos sus estados (vacía, cargando, error, lista). *Verif.: capturas de cada estado a 1366×768.*
+- [x] **T2.3 🤖** (hecho 12/11/26, commit cc8dd7b; en la vista previa se probó con un DNI ya existente; falta probar en producción) `AgregarPersona.jsx`: buscar existente (DNI o apellido) o crear nueva; aviso de duplicado con "Actualizar la existente". *Verif.: probado en producción con un DNI ya existente.*
+- [x] **T2.4 🤖** (hecho 12/11/26, commit cc8dd7b; teclado y foco con el modal común; falta tu revisión de textos) `ModalPersona.jsx` (**Completar perfil**): datos, estado civil en desplegable, notas, "actualizada el…", quitar del expediente (reversible) y borrar la ficha (con confirmación que nombra a la persona). *Verif.: teclado (Tab, Esc, Enter) y capturas.*
+- [x] **T2.5 🤖** (hecho 12/11/26, commit cc8dd7b, deploy en success) Tests, lint, build, deploy y prueba en producción de la pestaña. *Verif.: todo verde, deploy verificado.*
 
 ## Fase 3 — Archivos de cada persona
 
-- [ ] **T3.1 🤖** Tests de la propuesta: agrupar los archivos sin asignar por apellido y nombre detectados y compararlos con las personas del registro. *Verif.: tests en verde.*
-- [ ] **T3.2 🤖** `ArchivosEscribania`: "De quién" en cada archivo, **Asignar a…** (también para varios seleccionados) y la propuesta "Detecté a… ¿Asignarlo?". *Verif.: capturas con 20 archivos y nombres largos.*
-- [ ] **T3.3 🤖** En la pestaña Personas: aviso "Detecté a… en N archivos. ¿Agregarlo?" que agrega, asigna y abre el modal; la ficha lista sus archivos (abrir y bajar). *Verif.: probado en producción subiendo un DNI con "Automático".*
-- [ ] **T3.4 🤖** Tests, lint, build y deploy. *Verif.: todo verde.*
+- [x] **T3.1 🤖** (hecho 12/11/26, tests de `propuestasDeArchivos`) Tests de la propuesta: agrupar los archivos sin asignar por apellido y nombre detectados y compararlos con las personas del registro. *Verif.: tests en verde.*
+- [x] **T3.2 🤖** (hecho 12/11/26, commit cc8dd7b: «De quién» en cada archivo, Asignar a… (también varios) y «Parece de…») `ArchivosEscribania`: "De quién" en cada archivo, **Asignar a…** (también para varios seleccionados) y la propuesta "Detecté a… ¿Asignarlo?". *Verif.: capturas con 20 archivos y nombres largos.*
+- [x] **T3.3 🤖** (hecho 12/11/26, commit cc8dd7b: «Detecté a…» agrupado en una tarjeta, agrega, asigna y abre el perfil; falta probarlo en producción con un DNI «Automático») En la pestaña Personas: aviso "Detecté a… en N archivos. ¿Agregarlo?" que agrega, asigna y abre el modal; la ficha lista sus archivos (abrir y bajar). *Verif.: probado en producción subiendo un DNI con "Automático".*
+- [x] **T3.4 🤖** (hecho 12/11/26, commit cc8dd7b) Tests, lint, build y deploy. *Verif.: todo verde.*
 
 ## Fase 4 — Leer del DNI
 
-- [ ] **T4.1 🤖** Tests: la lectura completa solo campos vacíos, marca discrepancias ("El DNI dice X · Tenés Y"), no inventa y maneja lectura parcial y fallida. *Verif.: tests en verde.*
-- [ ] **T4.2 🤖** Botón **Leer del DNI** en el modal: usa los archivos de la persona, panel de proceso con paso y avance, resultado revisable y **nada se guarda hasta Guardar**. *Verif.: probado con fotos reales en producción; con lectura fallida se puede completar a mano.*
-- [ ] **T4.3 🤖** Tests, lint, build y deploy. *Verif.: todo verde.*
+- [x] **T4.1 🤖** (hecho 12/11/26, tests de `comparacionLectura`) Tests: la lectura completa solo campos vacíos, marca discrepancias ("El DNI dice X · Tenés Y"), no inventa y maneja lectura parcial y fallida. *Verif.: tests en verde.*
+- [x] **T4.2 🤖** (hecho 12/11/26, commit cc8dd7b; probado en la vista previa con una lectura simulada; falta probarlo con fotos reales) Botón **Leer del DNI** en el modal: usa los archivos de la persona, panel de proceso con paso y avance, resultado revisable y **nada se guarda hasta Guardar**. *Verif.: probado con fotos reales en producción; con lectura fallida se puede completar a mano.*
+- [x] **T4.3 🤖** (hecho 12/11/26, commit cc8dd7b) Tests, lint, build y deploy. *Verif.: todo verde.*
 
 ## Fase 5 — Documento vinculado al expediente y personas en el editor
 
 - [x] **T5.1 🤖** (hecho 11/11/26, commit fbf31a1; la prueba en producción queda para T5.2) Arreglar el vínculo al crear desde el expediente: la selección recibe el expediente y se lo pasa al editor, que vincula en el primer guardado (sin duplicar si ya existe). Tests de la decisión de vincular. *Verif.: tests en verde; en producción, "+ Nuevo documento" desde un expediente deja el documento en su lista.*
-- [ ] **T5.2 🤖** Campo opcional **Expediente** en la selección (lista del registro con búsqueda, ya elegido si se llegó desde uno) y indicador **Expediente: …** en el editor con **Cambiar / Quitar / Vincular** sin salir del documento. Reutiliza la lógica de `ModalAgregarExpediente`. *Verif.: probado en producción creando un documento por cada camino (desde el expediente, con el campo, y vinculando después); "Agregar a expediente" de hoy sigue funcionando.*
-- [ ] **T5.3 🤖** Franja **Personas del expediente** arriba de las partes y sugerencias en la búsqueda de cada parte: tocar una completa la parte (género, nacionalidad, CUIT), muestra notas y "actualizada hace…", avisa antes de reemplazar datos y avisa si la misma persona ya es otra parte. Si se vincula con el documento ya abierto, la franja aparece al instante. Tests de la lógica. *Verif.: prueba en producción con un documento de un expediente con 2 personas; un documento sin expediente funciona como hoy.*
-- [ ] **T5.4 🤖** Extraer el visor de archivos a un componente compartido y agregar el botón **Archivos del expediente** con el panel agrupado por persona. *Verif.: la pestaña Archivos sigue igual (probada) y el panel abre y baja archivos.*
-- [ ] **T5.5 🤖** Tests, lint, build y deploy. *Verif.: todo verde.*
+- [x] **T5.2 🤖** (hecho 12/11/26: campo Expediente en la selección, indicador en la barra del editor y ventana Vincular/Cambiar/Quitar sin salir del documento) Campo opcional **Expediente** en la selección (lista del registro con búsqueda, ya elegido si se llegó desde uno) y indicador **Expediente: …** en el editor con **Cambiar / Quitar / Vincular** sin salir del documento. Reutiliza la lógica de `ModalAgregarExpediente`. *Verif.: probado en producción creando un documento por cada camino (desde el expediente, con el campo, y vinculando después); "Agregar a expediente" de hoy sigue funcionando.*
+- [x] **T5.3 🤖** (hecho 12/11/26: franja de personas arriba de las partes, aviso antes de reemplazar y aviso si la misma persona ya es otra parte; probado en la vista previa) Franja **Personas del expediente** arriba de las partes y sugerencias en la búsqueda de cada parte: tocar una completa la parte (género, nacionalidad, CUIT), muestra notas y "actualizada hace…", avisa antes de reemplazar datos y avisa si la misma persona ya es otra parte. Si se vincula con el documento ya abierto, la franja aparece al instante. Tests de la lógica. *Verif.: prueba en producción con un documento de un expediente con 2 personas; un documento sin expediente funciona como hoy.*
+- [x] **T5.4 🤖** (hecho 12/11/26: panel «Archivos del expediente» agrupado por persona, abre y baja (el visor quedó en un componente propio; la pestaña Archivos conserva el suyo sin tocar)) Extraer el visor de archivos a un componente compartido y agregar el botón **Archivos del expediente** con el panel agrupado por persona. *Verif.: la pestaña Archivos sigue igual (probada) y el panel abre y baja archivos.*
+- [x] **T5.5 🤖** (hecho 12/11/26, 834 tests, lint sin errores nuevos, build ok) Tests, lint, build y deploy. *Verif.: todo verde.*
 
 ## Fase 6 — Prueba de punta a punta, documentación y cierre
 

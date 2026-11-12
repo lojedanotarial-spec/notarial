@@ -16,6 +16,9 @@ import { ModalFormulario, fmtNumFormulario } from "../components/modals/ModalFor
 import { ModalEscribano, ModalInstrumento, ModalProtocolo, ModalFecha } from "../components/modals/ModalOtros";
 import { ModalFormato, ESTILOS_DEFAULT } from "../components/modals/ModalFormato";
 import { ModalAgregarExpediente } from "../components/modals/ModalAgregarExpediente";
+import ModalExpedienteDocumento from "../components/personas/ModalExpedienteDocumento";
+import PanelArchivosExpediente from "../components/personas/PanelArchivosExpediente";
+import { listarPersonasDelExpediente } from "../utils/personasCliente";
 import { ModalDescripcionInmueble } from "../components/modals/ModalDescripcionInmueble";
 import { buildDocxBlanco } from "../utils/buildDocx";
 import { buildDocxGenerico } from "../utils/buildDocxGenerico";
@@ -624,6 +627,38 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
 
   const [expedienteDocId, setExpedienteDocId] = useState(params?.docId || null);
 
+  // Expediente del documento: alimenta el indicador de la barra, la franja de personas arriba de las partes y el panel de archivos.
+  const [expDoc, setExpDoc] = useState(params?.expedienteId ? { id: params.expedienteId, nombre: "" } : null);
+  const [personasExp, setPersonasExp] = useState({ estado: "ok", lista: [] });
+  const [panelArchivos, setPanelArchivos] = useState(false);
+  const expId = expDoc?.id || null;
+
+  // Si la base ya tiene el documento vinculado a un expediente, ese manda.
+  useEffect(() => {
+    if (!currentDocId) return undefined;
+    let vivo = true;
+    supabase.from("expediente_documentos").select("expediente_id").eq("documento_id", currentDocId).limit(1).maybeSingle()
+      .then(({ data }) => { if (vivo && data?.expediente_id) setExpDoc((prev) => (prev?.id === data.expediente_id ? prev : { id: data.expediente_id, nombre: "" })); });
+    return () => { vivo = false; };
+  }, [currentDocId]);
+
+  // Nombre y personas del expediente (apenas hay expediente, también si se vincula con el documento ya abierto).
+  useEffect(() => {
+    if (!expId) return undefined;
+    let vivo = true;
+    (async () => {
+      setPersonasExp((p) => ({ ...p, estado: "cargando" }));
+      const [{ data: e }, personas] = await Promise.all([
+        supabase.from("expedientes").select("nombre").eq("id", expId).maybeSingle(),
+        listarPersonasDelExpediente(expId).catch(() => null),
+      ]);
+      if (!vivo) return;
+      setExpDoc((prev) => (prev?.id === expId && !prev.nombre && e?.nombre ? { ...prev, nombre: e.nombre } : prev));
+      setPersonasExp(personas ? { estado: "ok", lista: personas } : { estado: "error", lista: [] });
+    })();
+    return () => { vivo = false; };
+  }, [expId]);
+
   async function handleAbrirExpediente() {
     let id = currentDocId;
     if (!id) id = await guardarAhora();
@@ -670,6 +705,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
         onGo={handleGo}
         onFormato={() => setModal("formato")}
         onExpediente={handleAbrirExpediente}
+        expedienteNombre={expDoc ? (expDoc.nombre || "…") : null}
+        onArchivosExpediente={expDoc ? () => setPanelArchivos(true) : null}
       />
 
       {/* BODY */}
@@ -970,8 +1007,20 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       )}
       {modal === "vehiculos"   && <ModalVehiculos vehiculos={vehiculos} onApply={v => { generateAfterRef.current = true; setVehiculos(v); }} onClose={() => setModal(null)}/>}
       {modal === "formulario"  && <ModalFormulario formulario={formulario} onApply={v => { setFormulario(v); generateAfterRef.current = true; }} onClose={() => setModal(null)}/>}
-      {modal === "expediente"  && <ModalAgregarExpediente docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} userId={usuario?.id} nombreSugerido={nombreExpediente} onClose={() => setModal(null)} onGo={onGo} />}
-      {modal === "partes"      && <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={templateSlug !== "cert_firma"} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}/>}
+      {modal === "expediente"  && (
+        <ModalExpedienteDocumento docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} actual={expDoc}
+          onCambiado={setExpDoc} onCrearNuevo={() => setModal("expedienteNuevo")}
+          onIrAlExpediente={() => handleGo("expediente", { expedienteId: expDoc.id })} onClose={() => setModal(null)} />
+      )}
+      {modal === "expedienteNuevo" && <ModalAgregarExpediente docId={expedienteDocId} registroId={miUsuario?.registro || registroActivo} userId={usuario?.id} nombreSugerido={nombreExpediente} onClose={() => setModal(null)} onGo={onGo} />}
+      {modal === "partes"      && (
+        <ModalPartes partes={partes} onApply={applyAndGen(setPartes)} onClose={() => setModal(null)} showRol={templateSlug !== "cert_firma"} rolesContextuales={ROLES_CONTEXTUALES[templateSlug]}
+          personasExpediente={expDoc ? personasExp.lista : null} nombreExpediente={expDoc?.nombre || ""} estadoPersonas={personasExp.estado}
+          onVerArchivos={expDoc ? () => setPanelArchivos(true) : undefined} />
+      )}
+      {panelArchivos && expDoc && (
+        <PanelArchivosExpediente expedienteId={expDoc.id} nombreExpediente={expDoc.nombre} personas={personasExp.lista} onCerrar={() => setPanelArchivos(false)} />
+      )}
       {modal === "descripcionInmueble" && (
         <ModalDescripcionInmueble
           datos={inmuebleEstructurado}

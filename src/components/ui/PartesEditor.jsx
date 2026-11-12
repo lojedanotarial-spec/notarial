@@ -64,6 +64,7 @@ function titleCaseDomicilio(str) {
 }
 import { aplicarTildesNombre } from "../../utils/tildesNombres";
 import { armarFilaPersona, estadosCivilesPara, calcularCUIT } from "../../utils/personasDatos";
+import FranjaPersonas from "../personas/FranjaPersonas";
 import { escanearDocumento, mergePersonas } from "../../utils/escanearDocumento";
 
 function ScanBtn({ onDatos, tipo = "documento", style }) {
@@ -263,6 +264,24 @@ function ConfirmQuitarParte({ nombre, onConfirm, onCancel }) {
                            cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>
             Quitar
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmUsarPersona({ nombreParte, nombrePersona, onReemplazar, onNueva, onCancel }) {
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(26,35,50,.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div role="dialog" aria-modal="true" aria-label="Usar persona del expediente" style={{ background:C.porcelain, borderRadius:12, padding:"24px 24px 18px", width:380, boxShadow:"0 8px 32px rgba(26,35,50,.18)" }}>
+        <div style={{ fontSize:15, fontWeight:700, color:C.dark, marginBottom:8 }}>Usar a {nombrePersona}</div>
+        <div style={{ fontSize:13, color:"rgba(26,35,50,.6)", marginBottom:20, lineHeight:1.5 }}>
+          La parte abierta ya tiene datos{nombreParte ? <> de <strong style={{ color:C.dark }}>{nombreParte}</strong></> : ""}. ¿Querés reemplazarlos con los de la ficha o agregar a {nombrePersona} como una parte nueva?
+        </div>
+        <div style={{ display:"flex", gap:8, justifyContent:"flex-end", flexWrap:"wrap" }}>
+          <button autoFocus onClick={onCancel} style={{ padding:"7px 16px", borderRadius:7, border:"1px solid rgba(26,35,50,.14)", background:"transparent", fontSize:13, fontWeight:600, color:C.dark, cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>Cancelar</button>
+          <button onClick={onReemplazar} style={{ padding:"7px 16px", borderRadius:7, border:"1px solid #e07070", background:"#fdf0f0", fontSize:13, fontWeight:700, color:"#c0392b", cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>Reemplazar los datos</button>
+          <button onClick={onNueva} style={{ padding:"7px 16px", borderRadius:7, border:"none", background:C.cerulean, fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer", fontFamily:"'Inter', sans-serif" }}>Agregar como parte nueva</button>
         </div>
       </div>
     </div>
@@ -471,7 +490,53 @@ function FormRepresentacion({ repr, onChange, onQuitar }) {
   );
 }
 
-export function PartesEditor({ partes, onChange, showRol = true, rolesContextuales, loteId }) {
+// Los campos de una parte a partir de una ficha de persona (libreta o expediente). Pura: no toca el estado.
+// Concuerda la nacionalidad con el género y calcula el CUIT si falta.
+function camposDeParteDesdePersona(persona, parteActual = {}) {
+  const genero    = persona.genero   || parteActual.genero || "";
+  const nroDocRaw = String(persona.nro_doc || "").replace(/\D/g, "");
+
+  // Concordancia de nacionalidad según género
+  const NAC_MASC = { argentina:"argentino", uruguaya:"uruguayo", chilena:"chileno",
+    boliviana:"boliviano", peruana:"peruano", paraguaya:"paraguayo",
+    "brasileña":"brasileño", venezolana:"venezolano", colombiana:"colombiano" };
+  const nacRaw = (persona.nacionalidad || "").toLowerCase().trim();
+  const nac = genero === "M" ? (NAC_MASC[nacRaw] || persona.nacionalidad || "") : (persona.nacionalidad || "");
+
+  // Calcular CUIT si hay DNI y género
+  let cuit = persona.cuit || "";
+  if (!cuit && nroDocRaw.length >= 7) {
+    const c = calcularCUIT(nroDocRaw, genero);
+    if (c) cuit = `${c.prefijo}-${nroDocRaw}-${c.verificador}`;
+  }
+
+  return {
+    apellido:         (persona.apellido || "").toUpperCase(),
+    nombre:           aplicarTildesNombre((persona.nombre || "").toUpperCase()),
+    genero,
+    nacionalidad:     nac,
+    tipoDoc:          persona.tipo_doc      || "DNI",
+    nroDoc:           nroDocRaw,
+    cuit,
+    fechaNac:         persona.fecha_nac     || "",
+    estadoCivil:      persona.estado_civil  || "",
+    calle:            titleCaseDomicilio(persona.calle)     || "",
+    numero:           persona.numero                        || "",
+    piso:             persona.piso                          || "",
+    dpto:             persona.dpto                          || "",
+    barrio:           titleCaseDomicilio(persona.barrio)    || "",
+    manzana:          persona.manzana                       || "",
+    casa:             persona.casa                          || "",
+    localidad:        titleCaseDomicilio(persona.localidad) || "",
+    provincia:        titleCaseDomicilio(persona.provincia) || inferirProvincia(persona.localidad, persona.departamento),
+    pais:             titleCaseDomicilio(persona.pais)      || "",
+    departamento:     persona.departamento  || "Ciudad",
+    representaciones: persona.representaciones || [],
+    _personaId:       persona.id,
+  };
+}
+
+export function PartesEditor({ partes, onChange, showRol = true, rolesContextuales, loteId, personasExpediente = null, nombreExpediente = "", estadoPersonas = "ok", onVerArchivos }) {
   const { usuario, registroActivo } = useAuth();
   const registroNumero = usuario?.registro_numero || registroActivo;
   const [openId, setOpenId] = useState(partes[0]?.id ?? null);
@@ -479,6 +544,8 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
   const [hoverQuitar, setHoverQuitar] = useState(null);
   const [confirmEscaneo, setConfirmEscaneo] = useState(null); // { persona } pendiente de confirmar
   const [sobrantes, setSobrantes] = useState([]);              // personas extra detectadas por la captura del celular
+  const [confirmPersona, setConfirmPersona] = useState(null);  // { persona } del expediente pendiente de confirmar (la parte ya tenía datos)
+  const [avisoPersona, setAvisoPersona] = useState(null);      // texto: la persona ya es otra parte del documento
 
   const upd = (id, fields) => onChange(partes.map(p => p.id === id ? { ...p, ...fields } : p));
 
@@ -500,47 +567,29 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
   function cargarDesdeCRM(persona) {
     if (!openId) return;
     const parteActual = partes.find(x => x.id === openId) || {};
-    const genero    = persona.genero   || parteActual.genero || "";
-    const nroDocRaw = String(persona.nro_doc || "").replace(/\D/g, "");
+    upd(openId, camposDeParteDesdePersona(persona, parteActual));
+  }
 
-    // Concordancia de nacionalidad según género
-    const NAC_MASC = { argentina:"argentino", uruguaya:"uruguayo", chilena:"chileno",
-      boliviana:"boliviano", peruana:"peruano", paraguaya:"paraguayo",
-      "brasileña":"brasileño", venezolana:"venezolano", colombiana:"colombiano" };
-    const nacRaw = (persona.nacionalidad || "").toLowerCase().trim();
-    const nac = genero === "M" ? (NAC_MASC[nacRaw] || persona.nacionalidad || "") : (persona.nacionalidad || "");
-
-    // Calcular CUIT si hay DNI y género
-    let cuit = persona.cuit || "";
-    if (!cuit && nroDocRaw.length >= 7) {
-      const c = calcularCUIT(nroDocRaw, genero);
-      if (c) cuit = `${c.prefijo}-${nroDocRaw}-${c.verificador}`;
+  // Una persona del expediente (franja de arriba): completa la parte abierta. Si esa parte ya tiene datos escritos se pregunta antes
+  // de reemplazarlos; si la misma persona ya es otra parte del documento, se avisa.
+  function usarPersonaDelExpediente(persona) {
+    setAvisoPersona(null);
+    const otra = partes.findIndex(x => x._personaId === persona.id && x.id !== openId);
+    if (otra >= 0) {
+      setAvisoPersona(`${[persona.nombre, persona.apellido].filter(Boolean).join(" ")} ya es la parte ${otra + 1} de este documento. Una misma persona no puede ser dos partes.`);
+      return;
     }
+    const actual = partes.find(x => x.id === openId);
+    if (!actual) { agregarComoParteNueva(persona); return; }
+    if (actual._personaId !== persona.id && tieneDatosPropios(actual)) setConfirmPersona({ persona });
+    else cargarDesdeCRM(persona);
+  }
 
-    upd(openId, {
-      apellido:         (persona.apellido || "").toUpperCase(),
-      nombre:           aplicarTildesNombre((persona.nombre || "").toUpperCase()),
-      genero,
-      nacionalidad:     nac,
-      tipoDoc:          persona.tipo_doc      || "DNI",
-      nroDoc:           nroDocRaw,
-      cuit,
-      fechaNac:         persona.fecha_nac     || "",
-      estadoCivil:      persona.estado_civil  || "",
-      calle:            titleCaseDomicilio(persona.calle)     || "",
-      numero:           persona.numero                        || "",
-      piso:             persona.piso                          || "",
-      dpto:             persona.dpto                          || "",
-      barrio:           titleCaseDomicilio(persona.barrio)    || "",
-      manzana:          persona.manzana                       || "",
-      casa:             persona.casa                          || "",
-      localidad:        titleCaseDomicilio(persona.localidad) || "",
-      provincia:        titleCaseDomicilio(persona.provincia) || inferirProvincia(persona.localidad, persona.departamento),
-      pais:             titleCaseDomicilio(persona.pais)      || "",
-      departamento:     persona.departamento  || "Ciudad",
-      representaciones: persona.representaciones || [],
-      _personaId:       persona.id,
-    });
+  function agregarComoParteNueva(persona) {
+    const n = PARTE_VACIA();
+    const nueva = { ...n, ...camposDeParteDesdePersona(persona, n) };
+    onChange([...partes, nueva]);
+    setOpenId(nueva.id);
   }
 
   // El escaneo gana si tiene valor; el formulario es solo fallback
@@ -609,6 +658,16 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
 
   return (
     <>
+      {personasExpediente && (
+        <FranjaPersonas nombreExpediente={nombreExpediente} personas={personasExpediente} partes={partes} estado={estadoPersonas}
+          onUsar={usarPersonaDelExpediente} onVerArchivos={onVerArchivos} />
+      )}
+      {avisoPersona && (
+        <div role="alert" style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, background:C.fawn50, border:"1px solid rgba(201,169,97,.4)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:C.dark }}>
+          <span>{avisoPersona}</span>
+          <button type="button" onClick={() => setAvisoPersona(null)} style={{ border:"none", background:"transparent", color:C.cerulean, fontWeight:700, fontSize:12, cursor:"pointer" }}>Entendido</button>
+        </div>
+      )}
       <div style={{ display:"flex", gap:12, minHeight:420 }}>
         {/* COLUMNA IZQUIERDA */}
         <div style={{ width:175, flexShrink:0, display:"flex", flexDirection:"column", gap:7 }}>
@@ -973,6 +1032,16 @@ export function PartesEditor({ partes, onChange, showRol = true, rolesContextual
           nombre={confirmQuitar.apellido || confirmQuitar.nombre}
           onConfirm={() => quitar(confirmQuitar.id)}
           onCancel={() => setConfirmQuitar(null)}
+        />
+      )}
+
+      {confirmPersona && (
+        <ConfirmUsarPersona
+          nombreParte={p?.apellido || p?.nombre}
+          nombrePersona={[confirmPersona.persona.nombre, confirmPersona.persona.apellido].filter(Boolean).join(" ")}
+          onReemplazar={() => { cargarDesdeCRM(confirmPersona.persona); setConfirmPersona(null); }}
+          onNueva={() => { agregarComoParteNueva(confirmPersona.persona); setConfirmPersona(null); }}
+          onCancel={() => setConfirmPersona(null)}
         />
       )}
 

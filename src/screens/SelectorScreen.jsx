@@ -62,8 +62,11 @@ function FilaDoc({ doc, onOpen, last }) {
 }
 
 export function SelectorScreen({ onGo, params = {} }) {
-  const expedienteId = params?.expedienteId || null; // si se llegó desde un expediente, el documento nuevo queda vinculado a él
   const { usuario, registroActivo } = useAuth();
+  // Expediente del documento nuevo (opcional): ya elegido si se llegó desde un expediente. Queda vinculado desde el primer guardado.
+  const [expedienteId, setExpedienteId] = useState(params?.expedienteId || "");
+  const [expedientes, setExpedientes] = useState({ estado: "cargando", lista: [] });
+  const [buscarExp, setBuscarExp] = useState("");
   const [selected,   setSelected]   = useState(null);       // template row completo
   const [familia,    setFamilia]    = useState("");
   const [query,      setQuery]      = useState("");
@@ -73,6 +76,14 @@ export function SelectorScreen({ onGo, params = {} }) {
   const [templates,  setTemplates]  = useState([]);
   const [cargando,   setCargando]   = useState(false);
   const [cargandoTpl,setCargandoTpl]= useState(true);
+
+  // Expedientes del registro, para el campo opcional "Expediente".
+  useEffect(() => {
+    if (!usuario) return;
+    let q = supabase.from("expedientes").select("id, nombre").order("created_at", { ascending: false }).limit(300);
+    if (registroActivo) q = q.eq("registro_id", registroActivo);
+    q.then(({ data, error }) => setExpedientes(error ? { estado: "error", lista: [] } : { estado: "ok", lista: data || [] }));
+  }, [usuario, registroActivo]);
 
   // Cargar templates globales — espera a que haya sesión
   useEffect(() => {
@@ -237,6 +248,28 @@ export function SelectorScreen({ onGo, params = {} }) {
                 </select>
               </Fg>
             </div>
+          </div>
+
+          {/* Expediente (opcional) */}
+          <div style={{ background:C.porcelain, borderRadius:12, border:"1px solid rgba(26,35,50,.08)", padding:18 }}>
+            <div style={{ fontSize:11, fontWeight:600, letterSpacing:".07em", textTransform:"uppercase",
+                          color:"rgba(26,35,50,1)", marginBottom:4 }}>
+              Expediente <span style={{ fontWeight:400, textTransform:"none", letterSpacing:0, color:"rgba(26,35,50,.65)" }}>(opcional)</span>
+            </div>
+            <div style={{ fontSize:12, color:"rgba(26,35,50,.65)", lineHeight:1.5, marginBottom:10 }}>
+              Si lo elegís, el documento queda vinculado al expediente y arriba de las partes vas a ver las personas que ya cargaste ahí.
+            </div>
+            {expedientes.estado === "error" && <div role="alert" style={{ fontSize:12, color:C.danger, marginBottom:8 }}>No pude cargar tus expedientes. Podés crear el documento igual y vincularlo después.</div>}
+            {expedientes.lista.length > 8 && (
+              <input type="search" value={buscarExp} onChange={e => setBuscarExp(e.target.value)} aria-label="Buscar un expediente" placeholder="Buscar un expediente…"
+                style={{ ...inp, marginBottom:8 }} />
+            )}
+            <select style={inp} aria-label="Expediente del documento" value={expedienteId} onChange={e => setExpedienteId(e.target.value)}>
+              <option value="">Sin expediente</option>
+              {expedientes.lista
+                .filter(e => e.id === expedienteId || !buscarExp.trim() || (e.nombre || "").toLowerCase().includes(buscarExp.trim().toLowerCase()))
+                .map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+            </select>
           </div>
 
           {/* Documentos recientes */}

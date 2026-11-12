@@ -210,7 +210,7 @@ export function NavBar({
   indicadorGuardado, onGuardar,
   showVarHighlight, onToggleVarHighlight,
   onFormato,
-  onExpediente,
+  onExpediente, expedienteNombre, onArchivosExpediente,
   driveUrl,
   onGo, onVolver,
 }) {
@@ -335,7 +335,20 @@ export function NavBar({
                 fontFamily: "'Inter', sans-serif", cursor: "pointer", flexShrink: 0,
                 display: "flex", alignItems: "center", gap: 5,
               }}>
-                📁 Expediente
+                <span style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {expedienteNombre ? `📁 Expediente: ${expedienteNombre}` : "📁 Vincular a un expediente"}
+                </span>
+              </button>
+            )}
+
+            {onArchivosExpediente && (
+              <button onClick={onArchivosExpediente} style={{
+                border: "1px solid rgba(201,169,97,.4)", borderRadius: 6,
+                background: "transparent", color: "#c9a961",
+                fontSize: 12, fontWeight: 600, padding: "5px 12px",
+                fontFamily: "'Inter', sans-serif", cursor: "pointer", flexShrink: 0,
+              }}>
+                Archivos del expediente
               </button>
             )}
 

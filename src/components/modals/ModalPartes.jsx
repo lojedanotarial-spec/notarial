@@ -4,7 +4,7 @@ import { Btn } from "../ui/Btn";
 import { PartesEditor, guardarPartesEnCRM } from "../ui/PartesEditor";
 import { useAuth } from "../../context/AuthContext";
 
-export function ModalPartes({ partes, onApply, onClose, showRol = true, rolesContextuales, loteId }) {
+export function ModalPartes({ partes, onApply, onClose, showRol = true, rolesContextuales, loteId, personasExpediente = null, nombreExpediente = "", estadoPersonas = "ok", onVerArchivos }) {
   const { usuario, registroActivo } = useAuth();
   const [draft, setDraft] = useState(partes.map(p => ({ ...p })));
 
@@ -24,7 +24,8 @@ export function ModalPartes({ partes, onApply, onClose, showRol = true, rolesCon
           <Btn primary onClick={handleGuardar}>Guardar</Btn>
         </>
       }>
-      <PartesEditor partes={draft} onChange={setDraft} showRol={showRol} rolesContextuales={rolesContextuales} loteId={loteId} />
+      <PartesEditor partes={draft} onChange={setDraft} showRol={showRol} rolesContextuales={rolesContextuales} loteId={loteId}
+        personasExpediente={personasExpediente} nombreExpediente={nombreExpediente} estadoPersonas={estadoPersonas} onVerArchivos={onVerArchivos} />
     </Modal>
   );
 }
