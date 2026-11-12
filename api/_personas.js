@@ -3,28 +3,14 @@
 //
 // Regla de oro: la ficha es de UN registro. El registro lo deduce siempre el servidor; el cliente nunca lo elige.
 // El historial (drive_auditoria) guarda QUÉ campos cambiaron, jamás sus valores: nombres, documentos y domicilios no van a los registros.
-import { ESTADOS_CIVILES_F, ESTADOS_CIVILES_M, concordarEstadoCivil } from "../src/utils/personasDatos.js";
+import { ESTADOS_CIVILES_F, ESTADOS_CIVILES_M, concordarEstadoCivil, normalizarTexto, normalizarDni, CAMPOS_FICHA } from "../src/utils/personasDatos.js";
 
-// Columnas de `personas` que el usuario puede escribir. Quedan afuera id, registro_id, created_at, updated_at y representaciones
-// (esas las maneja el servidor o el editor de partes).
-export const CAMPOS_FICHA = [
-  "apellido", "nombre", "genero", "nacionalidad", "tipo_doc", "nro_doc", "cuit", "fecha_nac", "estado_civil",
-  "calle", "numero", "piso", "dpto", "barrio", "manzana", "casa", "localidad", "departamento", "provincia", "pais", "notas",
-];
+export { CAMPOS_FICHA };
 const MAX_CAMPO = 200;
 const MAX_NOTAS = 2000;
 
-// Para comparar nombres: sin tildes, sin mayúsculas, sin signos y con espacios simples ("Pérez  Gómez" = "perez gomez").
-export function normalizarTexto(valor) {
-  return String(valor ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-}
-
-// El documento se guarda sin puntos ni espacios; vacío = sin valor (null), que el índice único del registro permite repetir.
-export function normalizarDni(valor) {
-  const s = String(valor ?? "").replace(/[\s.-]/g, "").toUpperCase();
-  return s || null;
-}
+// normalizarTexto y normalizarDni viven en el módulo compartido (también los usa el navegador).
+export { normalizarTexto, normalizarDni };
 
 const estadoCivilValido = (v) => ESTADOS_CIVILES_F.includes(v) || ESTADOS_CIVILES_M.includes(v);
 

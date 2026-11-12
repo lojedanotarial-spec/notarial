@@ -15,6 +15,7 @@ import {
 } from "../utils/driveCliente";
 import { CANCELADO, armarZip } from "../utils/descargarTodo";
 import { miniaturaParaIdentificar } from "../utils/capturaArchivo";
+import { asignarArchivos, clavePersona, nombreCompleto } from "../utils/personasCliente";
 
 const fuente = "'Montserrat', sans-serif";
 const OK = C.success;
@@ -50,7 +51,7 @@ function Modal({ children, titulo, ancho = 420, onCerrar, bloqueado = false, cie
   );
 }
 
-export default function ArchivosEscribania({ expedienteId, archivos, setArchivos, nombreExpediente }) {
+export default function ArchivosEscribania({ expedienteId, archivos, setArchivos, nombreExpediente, personas = [] }) {
   const { miUsuario } = useAuth();
   const esAdmin = !!miUsuario?.is_admin;
   const [estado, setEstado] = useState(null);
@@ -212,6 +213,29 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
       setBorrando(false);
     }
   }
+
+  // ── De quién es cada archivo (personas del expediente) ─────────────────────
+  // Un archivo es de una persona o de ninguna. Asignar no mueve, no copia ni cambia el archivo: solo anota de quién es.
+  const personaPorId = new Map(personas.map((p) => [p.id, p]));
+  const personaPorNombre = new Map(personas.map((p) => [clavePersona(p.apellido, p.nombre), p]));
+  const sugerida = (a) => (a.persona_id ? null : personaPorNombre.get(clavePersona(a.ident_apellido, a.ident_nombre)) || null);
+
+  async function asignar(lista, persona) {
+    const ids = lista.map((a) => a.id);
+    setErrorGeneral("");
+    try {
+      await asignarArchivos(ids, persona?.id ?? null);
+      setArchivos((prev) => prev.map((a) => (ids.includes(a.id) ? { ...a, persona_id: persona?.id ?? null } : a)));
+      setAviso(persona ? `Listo: ${ids.length === 1 ? "1 archivo asignado" : `${ids.length} archivos asignados`} a ${nombreCompleto(persona)}.` : `Listo: ${ids.length === 1 ? "1 archivo quedó" : `${ids.length} archivos quedaron`} sin asignar.`);
+    } catch (e) {
+      if (esArchivoPerdido(e.message)) await archivoPerdido(); else setErrorGeneral(e.message);
+    }
+  }
+  const alElegirPersona = (lista) => (e) => {
+    const v = e.target.value;
+    e.target.value = "";
+    if (v) asignar(lista, v === "ninguna" ? null : personaPorId.get(v));
+  };
 
   // ── Selección de varios archivos ───────────────────────────────────────────
   // Lo elegido se calcula contra la lista de ahora: si alguien borra o quita un archivo, sale solo de la selección.
@@ -384,6 +408,14 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
             </label>
             {elegidos.length > 0 ? (
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                {personas.length > 0 && (
+                  <select aria-label="Asignar los archivos elegidos a una persona" defaultValue="" onChange={alElegirPersona(elegidos)}
+                    style={{ padding: "7px 10px", borderRadius: 8, border: `1px solid ${C.cerulean}`, background: "#fff", fontFamily: fuente, fontSize: 12, fontWeight: 700, color: C.ceruleanText }}>
+                    <option value="" disabled>Asignar a…</option>
+                    {personas.map((p) => <option key={p.id} value={p.id}>{nombreCompleto(p)}</option>)}
+                    <option value="ninguna">Sin asignar</option>
+                  </select>
+                )}
                 <button onClick={() => pedirDescarga(elegidos, false)} style={boton(false)}>Descargar</button>
                 <button onClick={() => setPorBorrarVarios(elegidos)} style={{ ...boton(false), borderColor: "rgba(192,57,43,.45)", color: ERROR }}>Borrar</button>
                 <button onClick={limpiarSeleccion} style={botonTexto}>Quitar selección</button>
@@ -405,9 +437,23 @@ export default function ArchivosEscribania({ expedienteId, archivos, setArchivos
                     </div>
                     <div style={{ fontSize: 11, color: C.faint, lineHeight: 1.5 }}>
                       {etiquetaTipo(a.tipo)}{a.tamano ? ` · ${formatearTamano(a.tamano)}` : ""} · {fechaHora(a.created_at)}{a.subido_por_nombre ? ` · subido por ${a.subido_por_nombre}` : ""}{a.origen === "celular" ? " · desde el celular" : ""}{a.identificacion === "ok" ? " · nombre automático" : ""}
+                      {personas.length > 0 && <> · <strong style={{ color: a.persona_id ? C.dark : C.faint }}>{a.persona_id && personaPorId.get(a.persona_id) ? `De ${nombreCompleto(personaPorId.get(a.persona_id))}` : "Sin asignar"}</strong></>}
                     </div>
+                    {sugerida(a) && (
+                      <div style={{ fontSize: 12, color: C.ceruleanText, marginTop: 2 }}>
+                        Parece de {nombreCompleto(sugerida(a))}. <button onClick={() => asignar([a], sugerida(a))} style={botonTexto}>Asignarle este archivo</button>
+                      </div>
+                    )}
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                    {personas.length > 0 && (
+                      <select aria-label={`De quién es ${a.nombre}`} value={a.persona_id && personaPorId.has(a.persona_id) ? a.persona_id : ""} onChange={alElegirPersona([a])}
+                        style={{ padding: "6px 8px", borderRadius: 8, border: `1px solid ${C.borderStrong}`, background: "#fff", fontFamily: fuente, fontSize: 12, color: C.dark, maxWidth: 170 }}>
+                        <option value="" disabled>Asignar a…</option>
+                        {personas.map((p) => <option key={p.id} value={p.id}>{nombreCompleto(p)}</option>)}
+                        <option value="ninguna">Sin asignar</option>
+                      </select>
+                    )}
                     <button onClick={() => abrir(a)} style={boton(false)}>{esPrevisualizable(a.mime_type) ? "Ver" : "Descargar"}</button>
                     {esPrevisualizable(a.mime_type) && <button onClick={() => descargar(a)} style={boton(false)}>Descargar</button>}
                     <button onClick={() => abrirEdicion(a)} style={boton(false)}>Editar</button>

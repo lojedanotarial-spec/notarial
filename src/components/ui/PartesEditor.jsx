@@ -63,7 +63,7 @@ function titleCaseDomicilio(str) {
   }).join(' ');
 }
 import { aplicarTildesNombre } from "../../utils/tildesNombres";
-import { armarFilaPersona, estadosCivilesPara } from "../../utils/personasDatos";
+import { armarFilaPersona, estadosCivilesPara, calcularCUIT } from "../../utils/personasDatos";
 import { escanearDocumento, mergePersonas } from "../../utils/escanearDocumento";
 
 function ScanBtn({ onDatos, tipo = "documento", style }) {
@@ -219,27 +219,6 @@ import { Btn } from "./Btn";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../context/AuthContext";
 import { descargarArchivoDrive, esErrorSesionVencida } from "../../utils/driveHelper";
-
-function calcularCUIT(dni, genero) {
-  const dniStr = String(dni || "").replace(/\D/g, "").padStart(8, "0");
-  if (dniStr.length !== 8) return null;
-  const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-  const calcVer = (pre) => {
-    const num = String(pre) + dniStr;
-    const suma = num.split("").reduce((acc, d, i) => acc + parseInt(d) * mult[i], 0);
-    return 11 - (suma % 11);
-  };
-  const preBase = genero === "M" ? 20 : 27;
-  let ver = calcVer(preBase);
-  let pre = preBase;
-  if (ver === 11) { ver = 0; }
-  else if (ver === 10) {
-    pre = genero === "M" ? 23 : 24;
-    ver = calcVer(pre);
-    if (ver === 11) ver = 0;
-  }
-  return { prefijo: String(pre), verificador: String(ver) };
-}
 
 const REPR_TIPOS = [
   { key: "pj_representante", label: "Representante de persona jurídica" },

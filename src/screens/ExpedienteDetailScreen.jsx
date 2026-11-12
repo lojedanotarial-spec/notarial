@@ -4,7 +4,9 @@ import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import ConfirmarEliminarExpediente from "../components/ConfirmarEliminarExpediente";
 import ArchivosEscribania from "../components/ArchivosEscribania";
+import PersonasExpediente from "../components/personas/PersonasExpediente";
 import { listarArchivos } from "../utils/driveApi";
+import { listarLibreta, listarPersonasDelExpediente } from "../utils/personasCliente";
 
 const ESTADOS = [
   { key: "abierto",    label: "Abierto",    color: "#3a7ca5" },
@@ -35,7 +37,10 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   const [editNombre, setEditNombre]   = useState(false);
   const [nombre, setNombre]           = useState("");
   const [notas, setNotas]             = useState("");
-  const [tab, setTab]                 = useState("docs"); // docs | archivos
+  const [tab, setTab]                 = useState("personas"); // personas | docs | archivos (se abre en Personas)
+  const [personas, setPersonas]       = useState([]);
+  const [estadoPersonas, setEstadoPersonas] = useState({ fase: "cargando", mensaje: "" });
+  const [libreta, setLibreta]         = useState({ estado: "cargando", lista: [], mensaje: "" });
   const [modalVincular, setModalVincular] = useState(false);
   const [queryVincular, setQueryVincular] = useState("");
   const [filtroTipo, setFiltroTipo]       = useState("");
@@ -61,6 +66,22 @@ export function ExpedienteDetailScreen({ onGo, params }) {
     }));
   }
 
+  // Personas del expediente y libreta del registro: se cargan aparte para que un error acá no tape el resto de la pantalla.
+  async function cargarPersonas(expId = expedienteId) {
+    try {
+      setPersonas(await listarPersonasDelExpediente(expId));
+      setEstadoPersonas({ fase: "ok", mensaje: "" });
+    } catch (e) { setEstadoPersonas({ fase: "error", mensaje: e.message }); }
+  }
+  async function cargarLibreta(registro) {
+    try { setLibreta({ estado: "ok", lista: await listarLibreta(registro), mensaje: "" }); }
+    catch (e) { setLibreta((l) => ({ ...l, estado: "error", mensaje: e.message })); }
+  }
+  async function recargarPersonasYArchivos() {
+    const [arch] = await Promise.all([listarArchivos(expedienteId).catch(() => null), cargarPersonas(), cargarLibreta(expediente?.registro_id)]);
+    if (arch) setArchivos(arch);
+  }
+
   async function cargar() {
     // (`cargando` ya arranca en true: no se vuelve a marcar acá para no pisar la pantalla en cada recarga)
     const [{ data: exp }, links, arch] = await Promise.all([
@@ -74,6 +95,8 @@ export function ExpedienteDetailScreen({ onGo, params }) {
     setDocumentos(links);
     setArchivos(arch);
     setCargando(false);
+    cargarPersonas(expedienteId);
+    cargarLibreta(exp?.registro_id);
 
     // Auto-vincular si viene de "Crear y vincular" o "Vincular a existente" en el editor
     if (vincularDocRef.current) {
@@ -214,7 +237,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
           {/* Tabs */}
           <div style={{ display: "flex", borderBottom: "1px solid rgba(26,35,50,.08)", background: "#FDFCFA", flexShrink: 0 }}>
-            {[["docs", `Documentos (${documentos.length})`], ["archivos", `Archivos (${archivos.length})`]].map(([k, l]) => (
+            {[["personas", estadoPersonas.fase === "ok" ? `Personas (${personas.length})` : "Personas"], ["docs", `Documentos (${documentos.length})`], ["archivos", `Archivos (${archivos.length})`]].map(([k, l]) => (
               <button key={k} onClick={() => setTab(k)} style={{
                 padding: "12px 20px", border: "none", background: "transparent",
                 borderBottom: tab === k ? `2px solid ${C.cerulean}` : "2px solid transparent",
@@ -225,6 +248,14 @@ export function ExpedienteDetailScreen({ onGo, params }) {
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
+
+            {/* Tab personas: quiénes intervienen, con su estado civil y sus archivos */}
+            {tab === "personas" && (
+              <PersonasExpediente expediente={expediente} personas={personas} estado={estadoPersonas} libreta={libreta} archivos={archivos}
+                onRecargar={recargarPersonasYArchivos} onReintentar={() => { setEstadoPersonas({ fase: "cargando", mensaje: "" }); cargarPersonas(); }}
+                onReintentarLibreta={() => { setLibreta((l) => ({ ...l, estado: "cargando" })); cargarLibreta(expediente?.registro_id); }}
+                onIrAArchivos={() => setTab("archivos")} />
+            )}
 
             {/* Tab documentos */}
             {tab === "docs" && (
@@ -277,7 +308,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
             {/* Tab archivos: almacenamiento propio de Notarial */}
             {tab === "archivos" && (
-              <ArchivosEscribania expedienteId={expedienteId} archivos={archivos} setArchivos={setArchivos} nombreExpediente={expediente.nombre} />
+              <ArchivosEscribania expedienteId={expedienteId} archivos={archivos} setArchivos={setArchivos} nombreExpediente={expediente.nombre} personas={personas} />
             )}
           </div>
         </div>
