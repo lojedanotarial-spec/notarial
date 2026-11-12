@@ -2,20 +2,21 @@
 // nacimiento, domicilio), el estado civil (desplegable, misma lista que el editor) y notas libres. Los datos se guardan en la tabla
 // `personas` de Supabase (a través del servidor, que avisa los duplicados y deja el historial).
 // "Leer del DNI" solo ocurre cuando se toca el botón y NADA se guarda hasta tocar Guardar. Spec: specs/personas-expediente/.
-import { useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { C } from "../../constants";
 import { fmtDni } from "../../utils/formato";
 import { estadosCivilesPara, concordarEstadoCivil } from "../../utils/personasDatos";
-import { traerArchivo } from "../../utils/driveApi";
+import { listarArchivos, subirArchivoEscribania, traerArchivo } from "../../utils/driveApi";
 import { esPrevisualizable, etiquetaTipo } from "../../utils/driveCliente";
 import { escanearDocumento, mergePersonas } from "../../utils/escanearDocumento";
 import {
-  ETIQUETAS_CAMPO, borrarPersona, comparacionLectura, cuitCalculado, datosDeFicha, guardarPersona, nombreCompleto, resumenPersona,
+  ETIQUETAS_CAMPO, asignarArchivos, borrarPersona, comparacionLectura, cuitCalculado, datosDeFicha, guardarPersona, nombreCompleto, resumenPersona,
   textoActualizada, vacioFicha, validarFicha,
 } from "../../utils/personasCliente";
 import { Aviso, Modal } from "./comunes";
 import { boton, botonPeligro, botonTexto, campo, fuente } from "./estilos";
 import VisorArchivo from "./VisorArchivo";
+import SubidaCelular from "../SubidaCelular";
 
 const MAX_FOTOS_LECTURA = 4;
 
@@ -63,9 +64,29 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
   const [borrando, setBorrando] = useState(false);
   const [visor, setVisor] = useState(null);
   const cancelarLectura = useRef(false);
+  const inputFotos = useRef(null);
 
-  const cambiado = JSON.stringify(datosDeFicha(form)) !== JSON.stringify(datosDeFicha(original));
-  const ocupado = guardando || borrando || lectura.fase === "leyendo";
+  // Fotos que se suben desde esta ventana (compu o celular): quedan en el expediente "sin asignar" y se le asignan a la persona al
+  // guardar. `baseline` = lo que ya había en el expediente al abrir, para reconocer lo nuevo (también lo que llega del celular).
+  const [lista, setLista] = useState(null);
+  const [baseline, setBaseline] = useState(null);
+  const [cola, setCola] = useState([]);          // subidas de la compu en curso: { id, nombre, estado, progreso, mensaje }
+  const [qrAbierto, setQrAbierto] = useState(false);
+  const refrescar = useCallback(async () => {
+    try { setLista(await listarArchivos(expedienteId)); } catch { /* se reintenta en el próximo ciclo */ }
+  }, [expedienteId]);
+  useEffect(() => {
+    let vivo = true;
+    listarArchivos(expedienteId)
+      .then((a) => { if (vivo) { setBaseline(new Set(a.map((x) => x.id))); setLista(a); } })
+      .catch(() => { if (vivo) { setBaseline(new Set()); setLista([]); } });
+    return () => { vivo = false; };
+  }, [expedienteId]);
+  const pendientes = baseline && lista ? lista.filter((a) => !baseline.has(a.id) && !a.persona_id) : [];
+  const subiendo = cola.some((x) => x.estado === "subiendo" || x.estado === "esperando");
+
+  const cambiado = JSON.stringify(datosDeFicha(form)) !== JSON.stringify(datosDeFicha(original)) || pendientes.length > 0;
+  const ocupado = guardando || borrando || lectura.fase === "leyendo" || subiendo;
   const estadosCiviles = estadosCivilesPara(form.genero);
 
   function cambiar(c, valor) {
@@ -108,7 +129,11 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
     try {
       const r = await guardarPersona({ personaId: persona?.id, expedienteId, datos: datosDeFicha(form), actualizarExistente });
       if (r.duplicada) { setDuplicada(r.duplicada); return; }
-      onGuardada(r.persona, { agregada: !!r.agregada, existente: actualizarExistente });
+      let fallaAsignar = false;
+      if (pendientes.length) {
+        try { await asignarArchivos(pendientes.map((a) => a.id), r.persona.id); } catch { fallaAsignar = true; }
+      }
+      onGuardada(r.persona, { agregada: !!r.agregada, existente: actualizarExistente, fotos: pendientes.length, fallaAsignar });
       onCerrar();
     } catch (err) {
       setErrorGeneral(err.message);
@@ -132,8 +157,28 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
     }
   }
 
+  // ── Fotos del documento ────────────────────────────────────────────────────
+  async function subirDeLaCompu(files) {
+    if (!files.length) return;
+    setErrorGeneral("");
+    const nuevos = files.map((f, i) => ({ id: `${Date.now()}-${i}`, archivo: f, nombre: f.name, estado: "esperando", progreso: 0, mensaje: "" }));
+    setCola((c) => [...c, ...nuevos]);
+    for (const item of nuevos) {
+      const marcar = (cambios) => setCola((c) => c.map((x) => (x.id === item.id ? { ...x, ...cambios } : x)));
+      marcar({ estado: "subiendo" });
+      try {
+        const fila = await subirArchivoEscribania(item.archivo, { expedienteId, tipo: "dni", onProgreso: (p) => marcar({ progreso: p }) });
+        setLista((l) => [fila, ...(l || []).filter((a) => a.id !== fila.id)]);
+        marcar({ estado: "ok", progreso: 1 });
+        setTimeout(() => setCola((c) => c.filter((x) => x.id !== item.id)), 3000);
+      } catch (e) {
+        marcar({ estado: "error", mensaje: e.message });
+      }
+    }
+  }
+
   // ── Leer del DNI ───────────────────────────────────────────────────────────
-  const fotos = archivos.filter((a) => esPrevisualizable(a.mime_type)).sort((a, b) => (b.tipo === "dni") - (a.tipo === "dni")).slice(0, MAX_FOTOS_LECTURA);
+  const fotos = [...archivos, ...pendientes.filter((p) => !archivos.some((a) => a.id === p.id))].filter((a) => esPrevisualizable(a.mime_type)).sort((a, b) => (b.tipo === "dni") - (a.tipo === "dni")).slice(0, MAX_FOTOS_LECTURA);
 
   async function leerDelDni() {
     cancelarLectura.current = false;
@@ -168,14 +213,14 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
 
   return (
     <>
-      <Modal titulo={titulo} ancho={780} onCerrar={pedirCerrar} bloqueado={ocupado || !!visor}>
+      <Modal titulo={titulo} ancho={780} onCerrar={pedirCerrar} bloqueado={ocupado || !!visor || qrAbierto}>
         <div style={{ padding: "2px 22px 0", fontSize: 12, color: C.faint, lineHeight: 1.5 }}>
           {persona ? <><strong style={{ color: C.dark }}>{nombreCompleto(persona)}</strong>{cuando ? ` · ${cuando}` : ""}</> : "Se guarda en tu libreta y queda disponible para los próximos trámites."}
         </div>
 
         <div style={{ padding: "14px 22px", overflow: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 18 }}>
           {/* Leer del DNI */}
-          {persona && (
+          {(
             <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", background: "#fff" }}>
               {lectura.fase === "leyendo" ? (
                 <div aria-live="polite">
@@ -191,13 +236,36 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
                   </div>
                 </div>
               ) : (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <div style={{ fontSize: 12, color: C.faint, lineHeight: 1.5, flex: 1, minWidth: 220 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.dark, fontFamily: fuente }}>Fotos del documento</div>
+                  <div style={{ fontSize: 12, color: C.faint, lineHeight: 1.5, margin: "2px 0 10px" }}>
                     {fotos.length > 0
                       ? <>Podés completar los datos leyendo {fotos.length === 1 ? "la foto" : `las ${fotos.length} fotos`} de esta persona. Solo se llenan los campos vacíos y vos revisás todo antes de guardar.</>
-                      : <>Para leer el DNI, asignale a esta persona la foto desde la pestaña <strong>Archivos</strong> del expediente.</>}
+                      : <>Subí la foto del DNI (frente y dorso) desde la computadora o el celular y después leé los datos. Si preferís, completalos a mano.</>}
                   </div>
-                  {fotos.length > 0 && <button onClick={leerDelDni} disabled={ocupado} style={boton(false, ocupado)}>{lectura.fase === "reposo" ? "Leer del DNI" : "Leer de nuevo"}</button>}
+                  <input ref={inputFotos} type="file" multiple accept="image/*,application/pdf" style={{ display: "none" }} aria-label="Elegir fotos del documento"
+                    onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ""; subirDeLaCompu(files); }} />
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button onClick={() => inputFotos.current?.click()} disabled={ocupado || !baseline} style={boton(false, ocupado || !baseline)}>{subiendo ? "Subiendo…" : "Subir desde la compu"}</button>
+                    <button onClick={() => setQrAbierto(true)} disabled={ocupado || !baseline} style={boton(false, ocupado || !baseline)}>Subir desde el celular</button>
+                    {fotos.length > 0 && <button onClick={leerDelDni} disabled={ocupado} style={boton(true, ocupado)}>{lectura.fase === "reposo" ? "Leer del DNI" : "Leer de nuevo"}</button>}
+                  </div>
+                  {cola.length > 0 && (
+                    <ul aria-live="polite" style={{ listStyle: "none", margin: "10px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                      {cola.map((x) => (
+                        <li key={x.id} style={{ fontSize: 12, color: x.estado === "error" ? C.danger : C.faint, display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.nombre}</span>
+                          <span style={{ flexShrink: 0 }}>
+                            {x.estado === "esperando" && "En espera"}
+                            {x.estado === "subiendo" && `Subiendo ${Math.round(x.progreso * 100)} %`}
+                            {x.estado === "ok" && "Subida"}
+                            {x.estado === "error" && <>{x.mensaje} <button onClick={() => setCola((c) => c.filter((y) => y.id !== x.id))} style={botonTexto}>Quitar</button></>}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {pendientes.length > 0 && <div style={{ fontSize: 12, color: C.faint, marginTop: 8 }}>{pendientes.length === 1 ? "1 foto subida" : `${pendientes.length} fotos subidas`}: se {pendientes.length === 1 ? "le asigna" : "le asignan"} a la persona al guardar.</div>}
                 </div>
               )}
               {lectura.fase === "listo" && (
@@ -281,18 +349,18 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
             <Campo id={id("pais")} etiqueta="País">{texto("pais")}</Campo>
           </Seccion>
 
-          {persona && (
+          {(persona || pendientes.length > 0) && (
             <fieldset style={{ border: "none", margin: 0, padding: 0 }}>
               <legend style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: C.faint, fontFamily: fuente, padding: 0, marginBottom: 8 }}>Archivos de esta persona</legend>
-              {archivos.length === 0 ? (
-                <div style={{ fontSize: 12, color: C.faint, lineHeight: 1.5 }}>Todavía no tiene archivos. Asignalos desde la pestaña Archivos del expediente.</div>
+              {archivos.length + pendientes.length === 0 ? (
+                <div style={{ fontSize: 12, color: C.faint, lineHeight: 1.5 }}>Todavía no tiene archivos. Subí fotos acá arriba o asignalas desde la pestaña Archivos del expediente.</div>
               ) : (
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {archivos.map((a) => (
+                  {[...archivos, ...pendientes.filter((p) => !archivos.some((a) => a.id === p.id))].map((a) => (
                     <li key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, background: "#fff", border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 12px" }}>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 12.5, fontWeight: 600, color: C.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nombre}</div>
-                        <div style={{ fontSize: 11, color: C.faint }}>{etiquetaTipo(a.tipo)}</div>
+                        <div style={{ fontSize: 11, color: C.faint }}>{etiquetaTipo(a.tipo)}{pendientes.some((p) => p.id === a.id) ? " · se asigna al guardar" : ""}</div>
                       </div>
                       <button onClick={() => setVisor(a)} aria-label={`Ver ${a.nombre}`} style={boton(false)}>Ver</button>
                     </li>
@@ -320,7 +388,7 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
 
           {confirmarCerrar && (
             <Aviso tipo="aviso">
-              Tenés cambios sin guardar. Si cerrás ahora se pierden.
+              Tenés cambios sin guardar. Si cerrás ahora se pierden{pendientes.length > 0 ? "; las fotos que subiste quedan en la pestaña Archivos, sin asignar" : ""}.
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
                 <button autoFocus onClick={() => setConfirmarCerrar(false)} style={boton(true)}>Seguir editando</button>
                 <button onClick={onCerrar} style={{ ...boton(false), borderColor: "rgba(192,57,43,.45)", color: C.danger }}>Descartar cambios</button>
@@ -352,6 +420,7 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
         </div>
       </Modal>
       {visor && <VisorArchivo archivo={visor} onCerrar={() => setVisor(null)} />}
+      {qrAbierto && <SubidaCelular expedienteId={expedienteId} archivos={lista || []} alActualizar={refrescar} onCerrar={() => { setQrAbierto(false); refrescar(); }} />}
     </>
   );
 }

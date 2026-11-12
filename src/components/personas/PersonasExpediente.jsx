@@ -190,8 +190,9 @@ export default function PersonasExpediente({ expediente, personas, estado, libre
         <ModalPersona key={perfil.personaId || "nueva"} persona={personaAbierta} inicial={perfil.inicial} expedienteId={expediente.id}
           archivos={personaAbierta ? porPersona.get(personaAbierta.id) || [] : []}
           onCerrar={() => setPerfil(null)}
-          onGuardada={async (guardada, { agregada, existente }) => {
+          onGuardada={async (guardada, { agregada, existente, fotos = 0, fallaAsignar = false }) => {
             await onRecargar();
+            if (fallaAsignar) { setAviso({ tipo: "aviso", texto: `Guardé a ${nombreCompleto(guardada)}, pero no pude asignarle ${fotos === 1 ? "la foto" : "las fotos"}. Asignalas desde la pestaña Archivos.` }); return; }
             setAviso({ tipo: "ok", texto: existente ? `Actualicé la ficha de ${nombreCompleto(guardada)}.` : agregada ? `Guardé a ${nombreCompleto(guardada)} y la agregué al expediente.` : `Guardé los cambios de ${nombreCompleto(guardada)}.` });
           }}
           onBorrada={async () => { await onRecargar(); setAviso({ tipo: "ok", texto: "Borraste la ficha. Sus archivos quedaron sin asignar." }); }} />
