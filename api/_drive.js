@@ -19,7 +19,8 @@ export const PURGA_ARCHIVOS_MS = 30 * 24 * 60 * 60 * 1000;
 export const limitePurgaArchivos = (ahora = Date.now()) => new Date(ahora - PURGA_ARCHIVOS_MS).toISOString();
 export const TIPOS_ARCHIVO = ["dni", "tarjeta_verde", "poder", "formulario", "otro"];
 export const SCOPES_GOOGLE = ["https://www.googleapis.com/auth/drive.file", "openid", "email"];
-export const ACCIONES_AUDITORIA = ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "celular_abrir", "celular_cerrar", "renombrar", "identificar", "borrado_en_drive", "restaurar", "purgar"];
+export const ACCIONES_AUDITORIA = ["conectar", "desconectar", "subir", "ver", "descargar", "borrar", "conexion_rota", "celular_abrir", "celular_cerrar", "renombrar", "identificar", "borrado_en_drive", "restaurar", "purgar",
+  "persona_crear", "persona_editar", "persona_agregar", "persona_quitar", "persona_borrar", "archivo_asignar"];
 const PREVISUALIZABLES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
 
 // ── Enlaces de conexión ──────────────────────────────────────────────────────

@@ -13,16 +13,16 @@
 ## Fase 0 — Base de datos y lector compartido
 
 - [x] **T0.1 🤖** (hecho 11/11/26, commit 8b42d70 y siguiente; se sumaron barrio, manzana, casa, provincia y país a `personas`, que el formulario de partes manejaba sin guardar) `scripts/personas_expediente.sql` y `_rollback.sql`: `personas.notas`, tabla `expediente_personas` (con su regla de acceso por registro), `expediente_archivos.persona_id`, `ident_apellido`, `ident_nombre`, índices. Solo aditivo. *Verif.: el script se relee contra el esquema real sin errores de nombres; la reversión deja todo como estaba.*
-- [ ] **T0.2 👤** Correr el SQL en el SQL Editor. *Verif.: "Success".*
-- [ ] **T0.3 🤖** Verificar contra la base real: tablas y columnas nuevas, reglas de acceso (una persona de un registro no se ve desde otro) y que borrar un expediente borra la pertenencia pero no la ficha. Revisar si las tablas nuevas entran en el backup. *Verif.: consultas de comprobación, sin datos de prueba dejados.*
+- [x] **T0.2 👤** (hecho 12/11/26: Lucas corrió el SQL y vio "Success") Correr el SQL en el SQL Editor. *Verif.: "Success".*
+- [x] **T0.3 🤖** (hecho 12/11/26 contra la base real: columnas, tabla, regla de acceso y cascadas confirmadas; "Soltero" ya en minúscula; el backup toma las tablas nuevas solo, porque excluye únicamente capturas, drive_conexiones y drive_enlaces. La prueba entre dos registros se hace con la API en los tests, sin escribir datos de prueba en producción) Verificar contra la base real: tablas y columnas nuevas, reglas de acceso (una persona de un registro no se ve desde otro) y que borrar un expediente borra la pertenencia pero no la ficha. Revisar si las tablas nuevas entran en el backup. *Verif.: consultas de comprobación, sin datos de prueba dejados.*
 - [x] **T0.4 🤖** (hecho 11/11/26, commit fbf31a1) Mover `escanearDocumento` (y PDF, merge) de `PartesEditor.jsx` a `src/utils/escanearDocumento.js` y exportar la lista de estados civiles. Tests del merge antes de mover. *Verif.: tests en verde; el botón "Escanear" del editor se comporta igual.*
 - [x] **T0.5 🤖** (hecho 11/11/26, commit fbf31a1; también se guardan barrio, manzana, casa, provincia y país) Corregir `guardarPartesEnCRM`: DNI vacío se guarda sin valor, no `""`. Test con dos personas sin DNI. *Verif.: tests en verde.*
 
 ## Fase 1 — Servidor
 
-- [ ] **T1.1 🤖** Tests primero y luego `api/_personas.js`: normalizar apellido/nombre para comparar (sin tildes ni mayúsculas), detectar duplicados (por DNI y por nombre), armar el detalle del historial **sin valores personales**. *Verif.: tests en verde.*
-- [ ] **T1.2 🤖** Acciones `persona_guardar`, `persona_agregar`, `persona_quitar`, `persona_borrar`, `archivo_asignar` en `api/drive.js`, con autorización por registro, historial y respuesta `{ duplicada }`. Tests con el arnés de pruebas existente, incluida la prueba de **un registro intentando tocar fichas o archivos de otro**. *Verif.: tests en verde.*
-- [ ] **T1.3 🤖** Guardar `ident_apellido` e `ident_nombre` al identificar (solo confianza alta). *Verif.: test: con confianza baja no se guarda nada.*
+- [x] **T1.1 🤖** (hecho 12/11/26, `api/_personas.js`, 21 tests) Tests primero y luego `api/_personas.js`: normalizar apellido/nombre para comparar (sin tildes ni mayúsculas), detectar duplicados (por DNI y por nombre), armar el detalle del historial **sin valores personales**. *Verif.: tests en verde.*
+- [x] **T1.2 🤖** (hecho 12/11/26, 32 tests en `personasApi.test.js`, incluida la prueba entre registros y con el administrador) Acciones `persona_guardar`, `persona_agregar`, `persona_quitar`, `persona_borrar`, `archivo_asignar` en `api/drive.js`, con autorización por registro, historial y respuesta `{ duplicada }`. Tests con el arnés de pruebas existente, incluida la prueba de **un registro intentando tocar fichas o archivos de otro**. *Verif.: tests en verde.*
+- [x] **T1.3 🤖** (hecho 12/11/26, 4 tests; también se devuelven en la lista de archivos) Guardar `ident_apellido` e `ident_nombre` al identificar (solo confianza alta). *Verif.: test: con confianza baja no se guarda nada.*
 - [ ] **T1.4 🤖** Tests, lint, build y deploy a producción. Verificar el deploy. *Verif.: producción sana, rutas viejas responden igual.*
 
 ## Fase 2 — Pestaña Personas y modal

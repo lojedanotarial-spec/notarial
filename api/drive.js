@@ -2,7 +2,7 @@
 // Spec y plan: specs/drive-escribania/.
 //
 // Quién llama a qué:
-//   Usuario logueado (Authorization: Bearer):   estado · iniciar_subida · confirmar_subida · ver · descargar · borrar
+//   Usuario logueado (Authorization: Bearer):   estado · iniciar_subida · confirmar_subida · ver · descargar · borrar · persona_* · archivo_asignar
 //   Administrador (Bearer + usuarios.is_admin): admin_estado · admin_enlace · admin_desconectar
 //   Quien recibe el enlace (solo el código):    enlace_info · enlace_iniciar
 //   Google (GET /api/drive-callback, ruta en vercel.json): callback
@@ -28,6 +28,7 @@ import {
 import { validarMiniatura, normalizarIdentificacion, armarNombreArchivo, extensionDe, evitarDuplicado } from "./_driveIdentificar.js";
 import { crearIA } from "./_driveIA.js";
 import { MAX_IMAGENES_LOTE, normalizarLote, aplicarGrupos } from "./_driveLote.js";
+import { limpiarDatosFicha, armarFilaFicha, fichaNueva, sinNombre, buscarDuplicada, camposCambiados, fichaPublica } from "./_personas.js";
 
 export const BASE = "https://notarial.lat";
 export const REDIRECT_URI = `${BASE}/api/drive-callback`;
@@ -190,6 +191,7 @@ const archivoPublico = (a) => ({
   id: a.id, expediente_id: a.expediente_id, nombre: a.nombre, tipo: a.tipo, mime_type: a.mime_type,
   tamano: a.tamano, created_at: a.created_at, subido_por_nombre: a.subido_por_nombre,
   origen: a.origen ?? "compu", identificacion: a.identificacion ?? null, almacen: a.almacen ?? null,
+  persona_id: a.persona_id ?? null, ident_apellido: a.ident_apellido ?? null, ident_nombre: a.ident_nombre ?? null,
 });
 
 // ── Acciones del usuario ─────────────────────────────────────────────────────
@@ -441,7 +443,9 @@ async function aplicarIdentificacion(d, { arch, exp, registro, ident, quien, uso
     } catch { return marcarSinIdentificar(d, arch); }
   }
 
-  const cambios = { nombre, tipo: ident.tipo, identificacion: "ok", nombre_original: arch.nombre_original ?? arch.nombre };
+  // Quién es el titular, para proponer agregarlo como persona. Solo llega con confianza alta (ver normalizarIdentificacion); si no, queda vacío.
+  const cambios = { nombre, tipo: ident.tipo, identificacion: "ok", nombre_original: arch.nombre_original ?? arch.nombre,
+    ident_apellido: ident.apellido || null, ident_nombre: ident.nombre || null };
   const { error } = await d.sb.from("expediente_archivos").update(cambios).eq("id", arch.id);
   if (error) throw new Error(`update archivo: ${error.message}`);
   await auditar(d, { registro, usuarioId: quien, accion: "identificar", expedienteId: exp.id, archivoId: arch.id,
@@ -581,6 +585,162 @@ async function renombrar(d, perfil, body) {
   if (error) throw new Error(`update archivo: ${error.message}`);
   await auditar(d, { registro, usuarioId: perfil.id, accion: "renombrar", expedienteId: exp.id, archivoId: arch.id, detalle: { de: arch.nombre, a: nombre, tipo } });
   return { archivo: archivoPublico({ ...arch, ...cambios }) };
+}
+
+// ── Personas del expediente ──────────────────────────────────────────────────
+// Las fichas (tabla `personas`) son de UN registro. Se LEEN directo desde el navegador (reglas de la base); se ESCRIBEN solo acá,
+// para que el aviso de duplicado, la autorización por registro y el historial ocurran siempre. Spec: specs/personas-expediente/.
+
+const MAX_ARCHIVOS_ASIGNAR = 50;
+
+function registroDe(perfil, registro) {
+  const r = String(registro ?? perfil.registro ?? "").trim();
+  if (!r) throw new ErrorHttp(403, "Tu usuario no tiene un registro asignado.");
+  return r;
+}
+
+// Una ficha del registro dado. Una de otro registro "no existe": nunca se distingue de una inexistente.
+async function personaDe(d, registro, personaId) {
+  const { data: p } = await d.sb.from("personas").select("*").eq("id", String(personaId ?? "")).maybeSingle();
+  if (!p || String(p.registro_id ?? "").trim() !== registro) throw new ErrorHttp(404, "No encontré a esa persona.");
+  return p;
+}
+
+const dniRepetido = () => new ErrorHttp(409, "Ya hay otra persona con ese documento en tu registro.", "dni_repetido");
+
+// Suma la persona al expediente (si ya estaba, no hace nada). Devuelve true si la sumó.
+async function sumarAlExpediente(d, { perfil, registro, expedienteId, personaId }) {
+  const { data: ya } = await d.sb.from("expediente_personas").select("id").eq("expediente_id", expedienteId).eq("persona_id", personaId).maybeSingle();
+  if (ya) return false;
+  const { error } = await d.sb.from("expediente_personas").insert({ expediente_id: expedienteId, persona_id: personaId, agregada_por: perfil.id });
+  if (error && error.code !== "23505") throw new Error(`insert expediente_personas: ${error.message}`);
+  if (error) return false;
+  await auditar(d, { registro, usuarioId: perfil.id, accion: "persona_agregar", expedienteId, detalle: { persona_id: personaId } });
+  return true;
+}
+
+// Edita una ficha existente con lo que vino. Si nada cambia, no escribe ni deja historial.
+async function editarFicha(d, { perfil, registro, actual, datos, expedienteId = null }) {
+  const fila = armarFilaFicha(actual, datos);
+  if (sinNombre(fila)) throw new ErrorHttp(400, "La persona tiene que tener al menos apellido o nombre.");
+  const campos = camposCambiados(actual, fila);
+  if (!campos.length) return fichaPublica(actual);
+  if (campos.includes("nro_doc") && fila.nro_doc) {
+    const { data: otras } = await d.sb.from("personas").select("id").eq("registro_id", registro).eq("nro_doc", fila.nro_doc);
+    if ((otras || []).some((o) => o.id !== actual.id)) throw dniRepetido();
+  }
+  const cambios = { ...Object.fromEntries(campos.map((c) => [c, fila[c]])), updated_at: new Date(d.ahora()).toISOString() };
+  const { error } = await d.sb.from("personas").update(cambios).eq("id", actual.id);
+  if (error) {
+    if (error.code === "23505") throw dniRepetido();
+    throw new Error(`update persona: ${error.message}`);
+  }
+  await auditar(d, { registro, usuarioId: perfil.id, accion: "persona_editar", expedienteId, detalle: { persona_id: actual.id, campos } });
+  return fichaPublica({ ...actual, ...cambios });
+}
+
+// Crear o editar una ficha. Al crear, si ya existe una igual (mismo documento o, sin documento, mismo apellido y nombre) NO se
+// escribe nada y se devuelve `{ duplicada }`; el cliente decide y, si confirma, repite con `actualizar_existente: true`.
+async function personaGuardar(d, perfil, body) {
+  const exped = body.expediente_id ? await expedienteAutorizado(d, perfil, body.expediente_id) : null;
+  const registro = registroDe(perfil, exped?.registro);
+  const expedienteId = exped?.exp.id ?? null;
+
+  if (body.persona_id) {
+    const actual = await personaDe(d, registro, body.persona_id);
+    const v = limpiarDatosFicha(body.datos);
+    if (!v.ok) throw new ErrorHttp(400, v.error);
+    return { persona: await editarFicha(d, { perfil, registro, actual, datos: v.datos, expedienteId }) };
+  }
+
+  const v = limpiarDatosFicha(body.datos, { crear: true });
+  if (!v.ok) throw new ErrorHttp(400, v.error);
+  const dni = v.datos.nro_doc ?? null;
+  const { data: candidatas } = dni
+    ? await d.sb.from("personas").select("*").eq("registro_id", registro).eq("nro_doc", dni)
+    : await d.sb.from("personas").select("id,apellido,nombre,nro_doc").eq("registro_id", registro);
+  const dup = buscarDuplicada(candidatas || [], v.datos);
+  let persona;
+  if (dup) {
+    const completa = await personaDe(d, registro, dup.persona.id);
+    if (!body.actualizar_existente) return { duplicada: { por: dup.por, persona: fichaPublica(completa) } };
+    // Actualizar la existente no borra lo que ya tenía: solo se pisa con lo que el usuario escribió.
+    const conValor = Object.fromEntries(Object.entries(v.datos).filter(([, valor]) => valor !== "" && valor !== null));
+    persona = await editarFicha(d, { perfil, registro, actual: completa, datos: conValor, expedienteId });
+  } else {
+    const fila = fichaNueva(v.datos, registro, new Date(d.ahora()).toISOString());
+    const { data: creada, error } = await d.sb.from("personas").insert(fila).select().single();
+    if (error) {
+      if (error.code === "23505") throw dniRepetido();
+      throw new Error(`insert persona: ${error.message}`);
+    }
+    persona = fichaPublica(creada);
+    await auditar(d, { registro, usuarioId: perfil.id, accion: "persona_crear", expedienteId,
+      detalle: { persona_id: creada.id, campos: camposCambiados({}, fila) } });
+  }
+  const agregada = expedienteId ? await sumarAlExpediente(d, { perfil, registro, expedienteId, personaId: persona.id }) : false;
+  return { persona, agregada };
+}
+
+async function personaAgregar(d, perfil, body) {
+  const { exp, registro } = await expedienteAutorizado(d, perfil, body.expediente_id);
+  const persona = await personaDe(d, registro, body.persona_id);
+  const agregada = await sumarAlExpediente(d, { perfil, registro, expedienteId: exp.id, personaId: persona.id });
+  return { ok: true, agregada };
+}
+
+// Quitar NO borra la ficha ni los archivos: los de esa persona en este expediente quedan "sin asignar".
+async function personaQuitar(d, perfil, body) {
+  const { exp, registro } = await expedienteAutorizado(d, perfil, body.expediente_id);
+  const personaId = String(body.persona_id ?? "");
+  const { data: quitadas, error } = await d.sb.from("expediente_personas").delete().eq("expediente_id", exp.id).eq("persona_id", personaId).select("id");
+  if (error) throw new Error(`delete expediente_personas: ${error.message}`);
+  if (!quitadas?.length) return { ok: true, quitada: false };
+  const { error: e2 } = await d.sb.from("expediente_archivos").update({ persona_id: null }).eq("expediente_id", exp.id).eq("persona_id", personaId);
+  if (e2) throw new Error(`update archivos: ${e2.message}`);
+  await auditar(d, { registro, usuarioId: perfil.id, accion: "persona_quitar", expedienteId: exp.id, detalle: { persona_id: personaId } });
+  return { ok: true, quitada: true };
+}
+
+// La confirmación ya la pidió el cliente. La base la saca de todos los expedientes y deja sus archivos sin asignar.
+async function personaBorrar(d, perfil, body) {
+  const registro = registroDe(perfil);
+  const persona = await personaDe(d, registro, body.persona_id);
+  const { data: miembros } = await d.sb.from("expediente_personas").select("expediente_id").eq("persona_id", persona.id);
+  const expedientes = [...new Set((miembros || []).map((m) => m.expediente_id))].slice(0, 50);
+  const { error } = await d.sb.from("personas").delete().eq("id", persona.id);
+  if (error) throw new Error(`delete persona: ${error.message}`);
+  for (const expedienteId of expedientes.length ? expedientes : [null]) {
+    await auditar(d, { registro, usuarioId: perfil.id, accion: "persona_borrar", expedienteId, detalle: { persona_id: persona.id } });
+  }
+  return { ok: true };
+}
+
+// Asigna uno o varios archivos a una persona (o los deja sin asignar con `persona_id: null`). Primero se valida TODO y recién
+// después se escribe: si un solo archivo no es del registro, no se asigna ninguno.
+async function archivoAsignar(d, perfil, body) {
+  const ids = Array.isArray(body.archivo_ids) ? [...new Set(body.archivo_ids.map((x) => String(x)))] : [];
+  if (!ids.length) throw new ErrorHttp(400, "Elegí al menos un archivo.");
+  if (ids.length > MAX_ARCHIVOS_ASIGNAR) throw new ErrorHttp(400, `Podés asignar hasta ${MAX_ARCHIVOS_ASIGNAR} archivos a la vez.`);
+  const personaId = body.persona_id == null ? null : String(body.persona_id);
+  const items = [];
+  for (const id of ids) items.push(await archivoAutorizado(d, perfil, id));
+  if (personaId) {
+    for (const exp of new Set(items.map((i) => i.exp.id))) {
+      const { registro } = items.find((i) => i.exp.id === exp);
+      await personaDe(d, registro, personaId);
+      const { data: miembro } = await d.sb.from("expediente_personas").select("id").eq("expediente_id", exp).eq("persona_id", personaId).maybeSingle();
+      if (!miembro) throw new ErrorHttp(409, "Primero agregá a esa persona al expediente.", "persona_fuera_del_expediente");
+    }
+  }
+  for (const { arch, exp, registro } of items) {
+    if ((arch.persona_id ?? null) === personaId) continue;
+    const { error } = await d.sb.from("expediente_archivos").update({ persona_id: personaId }).eq("id", arch.id);
+    if (error) throw new Error(`update archivo: ${error.message}`);
+    await auditar(d, { registro, usuarioId: perfil.id, accion: "archivo_asignar", expedienteId: exp.id, archivoId: arch.id,
+      detalle: { persona_id: personaId, antes: arch.persona_id ?? null } });
+  }
+  return { ok: true, asignados: items.length };
 }
 
 // ── Subir desde el celular: acciones del celular (solo el código del QR, sin login) ──
@@ -838,7 +998,8 @@ const PUBLICAS = {
   celular_info: celularInfo, celular_iniciar_subida: celularIniciarSubida, celular_confirmar: celularConfirmar, celular_quitar: celularQuitar,
   celular_identificar: celularIdentificar, celular_identificar_lote: celularIdentificarLote,
 };
-const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, restaurar, listar_borrados: listarBorrados, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar, identificar_lote: identificarLoteCompu, sincronizar };
+const DE_USUARIO = { estado, iniciar_subida: iniciarSubida, confirmar_subida: confirmarSubida, borrar, restaurar, listar_borrados: listarBorrados, celular_crear: celularCrear, celular_cerrar: celularCerrar, renombrar, identificar, identificar_lote: identificarLoteCompu, sincronizar,
+  persona_guardar: personaGuardar, persona_agregar: personaAgregar, persona_quitar: personaQuitar, persona_borrar: personaBorrar, archivo_asignar: archivoAsignar };
 const DE_ADMIN = { admin_estado: adminEstado, admin_enlace: adminEnlace, admin_desconectar: adminDesconectar };
 
 export function depsReales() {

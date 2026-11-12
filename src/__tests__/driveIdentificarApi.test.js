@@ -247,3 +247,32 @@ describe("TB.5 · corregir a mano después de identificar", () => {
     expect(fila(e).nombre_original).toBe("dni.jpg");
   });
 });
+
+describe("T1.3 · quién es el titular, para proponer agregarlo como persona (specs/personas-expediente)", () => {
+  it("con lectura segura guarda apellido y nombre en el archivo (además del nombre que ya se armaba)", async () => {
+    const { e, codigo, id } = await conFoto();
+    await identificar(e, codigo, id);
+    expect(fila(e)).toMatchObject({ identificacion: "ok", ident_apellido: "García", ident_nombre: "Juan" });
+  });
+  it("con confianza media no se guarda ningún nombre (ni en el archivo ni en su nombre)", async () => {
+    const { e, codigo, id } = await conFoto();
+    e.ia.consultar.mockResolvedValueOnce(respuestaIA({ confianza: "media" }));
+    await identificar(e, codigo, id);
+    expect(fila(e).ident_apellido).toBeNull();
+    expect(fila(e).ident_nombre).toBeNull();
+  });
+  it("con confianza baja el archivo queda sin identificar y sin nombre guardado", async () => {
+    const { e, codigo, id } = await conFoto();
+    e.ia.consultar.mockResolvedValueOnce(respuestaIA({ confianza: "baja" }));
+    await identificar(e, codigo, id);
+    expect(fila(e).identificacion).toBe("sin_identificar");
+    expect(fila(e).ident_apellido ?? null).toBeNull();
+  });
+  it("un documento sin titular (poder, formulario) no guarda nombre", async () => {
+    const { e, codigo, id } = await conFoto();
+    e.ia.consultar.mockResolvedValueOnce(respuestaIA({ tipo: "poder", apellido: "Funcionario", nombre: "Firmante", lado: null }));
+    await identificar(e, codigo, id);
+    expect(fila(e).ident_apellido).toBeNull();
+    expect(fila(e).ident_nombre).toBeNull();
+  });
+});

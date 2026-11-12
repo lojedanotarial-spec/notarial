@@ -62,6 +62,7 @@ export function crearSb(tablas, { unicos = {} } = {}) {
         upsert(p, o) { q.op = "upsert"; q.payload = p; q.opciones = o || {}; return api; },
         eq(c, v) { q.filtros.push((f) => f[c] === v); return api; },
         is(c, v) { q.filtros.push((f) => (v === null ? f[c] == null : f[c] === v)); return api; },
+        in(c, vs) { q.filtros.push((f) => vs.includes(f[c])); return api; },
         lt(c, v) { q.filtros.push((f) => f[c] != null && String(f[c]) < String(v)); return api; },
         limit(n) { q.limite = n; return api; },
         maybeSingle() { const r = ejecutar(); return Promise.resolve({ data: r.data?.[0] ?? null, error: r.error }); },
@@ -126,7 +127,7 @@ export function entorno({ tablas: extraTablas = {}, google = {}, unicos, config 
       { id: "e853b", nombre: "Poder", registro_id: "853", drive_carpeta_escribania_id: "carpeta-exp" },
       { id: "e111", nombre: "Ajeno", registro_id: "111", drive_carpeta_escribania_id: null },
     ],
-    expediente_archivos: [], drive_conexiones: [], drive_enlaces: [], drive_auditoria: [], drive_sesiones_celular: [],
+    expediente_archivos: [], personas: [], expediente_personas: [], drive_conexiones: [], drive_enlaces: [], drive_auditoria: [], drive_sesiones_celular: [],
     ...extraTablas,
   };
   const sb = crearSb(tablas, { unicos: { expediente_archivos: (fs, n) => (n.almacen === "escribania" && fs.some((f) => f.almacen === "escribania" && f.drive_file_id === n.drive_file_id)) || (n.almacen === "propio" && fs.some((f) => f.id === n.id)), ...unicos } });
