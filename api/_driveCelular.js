@@ -12,10 +12,15 @@ export function calcularVencimientoSesion(ahora = Date.now()) {
 
 // Por qué una sesión no sirve (null si sirve). "Cerrada" gana sobre "vencida": es lo más útil de decirle a quien
 // está en el celular. Con `paraConfirmar`, una sesión recién vencida todavía deja confirmar lo que ya se subió,
-// pero una cerrada desde la compu no se revive nunca.
-export function motivoSesionInvalida(sesion, ahora = Date.now(), { paraConfirmar = false } = {}) {
+// pero una cerrada desde la compu no se revive nunca para subir. Con `paraIdentificar` (solo ponerle nombre a lo que ya se subió en
+// esa sesión) una cerrada hace menos de 5 min todavía sirve: si Lucas cierra el QR en la compu apenas llegan las fotos, el celular
+// estaba justo identificándolas y las fotos quedaban "Sin identificar" (caso real del 17/11/26).
+export function motivoSesionInvalida(sesion, ahora = Date.now(), { paraConfirmar = false, paraIdentificar = false } = {}) {
   if (!sesion) return "inexistente";
-  if (sesion.cerrada_en) return "cerrada";
+  if (sesion.cerrada_en) {
+    const reciente = ahora - new Date(sesion.cerrada_en).getTime() < GRACIA_CONFIRMAR_MS;
+    if (!(paraIdentificar && reciente)) return "cerrada";
+  }
   const limite = new Date(sesion.expira_en).getTime() + (paraConfirmar ? GRACIA_CONFIRMAR_MS : 0);
   return limite <= ahora ? "vencida" : null;
 }

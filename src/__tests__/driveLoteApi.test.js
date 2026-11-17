@@ -160,6 +160,16 @@ describe("lote del celular: seguridad", () => {
     e.reloj.t = T0 + 33 * MIN;
     expect((await lote(e, codigo, ids)).jsonBody.identificados).toBe(2);
   });
+  it("si la compu cierra el QR mientras el celular identifica, todavía alcanza a ponerle nombre (5 min); pasado ese rato, no", async () => {
+    const { e, codigo, ids } = await conFotos(2);
+    await e.llamar({ accion: "celular_cerrar", sesion_id: e.tablas.drive_sesiones_celular[0].id }, "tok-fati");
+    e.reloj.t = T0 + 3 * MIN;
+    expect((await lote(e, codigo, ids)).jsonBody.identificados).toBe(2);
+    const otro = await conFotos(1);
+    await otro.e.llamar({ accion: "celular_cerrar", sesion_id: otro.e.tablas.drive_sesiones_celular[0].id }, "tok-fati");
+    otro.e.reloj.t = T0 + 8 * MIN;
+    expect((await lote(otro.e, otro.codigo, otro.ids)).statusCode).toBe(410);
+  });
   it("pedidos mal formados: vacío, sin lista o con demasiados archivos", async () => {
     const { e, codigo } = await conFotos(1);
     expect((await e.llamar({ accion: "celular_identificar_lote", codigo, archivos: [] })).statusCode).toBe(400);

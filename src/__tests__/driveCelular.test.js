@@ -53,6 +53,14 @@ describe("gracia para confirmar una subida que ya empezó", () => {
     const s = sesion({ cerrada_en: new Date(T0 + MIN).toISOString() });
     expect(motivoSesionInvalida(s, T0 + 2 * MIN, { paraConfirmar: true })).toBe("cerrada");
   });
+  it("identificar lo ya subido sí se permite hasta 5 minutos después de cerrada desde la compu (subir, nunca)", () => {
+    const s = sesion({ cerrada_en: new Date(T0 + MIN).toISOString() });
+    const op = { paraConfirmar: true, paraIdentificar: true };
+    expect(motivoSesionInvalida(s, T0 + 2 * MIN, op)).toBe(null);
+    expect(motivoSesionInvalida(s, T0 + 6 * MIN - 1, op)).toBe(null);
+    expect(motivoSesionInvalida(s, T0 + 6 * MIN, op)).toBe("cerrada");
+    expect(motivoSesionInvalida(s, T0 + 2 * MIN, { paraConfirmar: true })).toBe("cerrada");
+  });
 });
 
 describe("URL del QR", () => {

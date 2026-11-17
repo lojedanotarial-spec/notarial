@@ -811,7 +811,7 @@ async function celularConfirmar(d, _perfil, body) {
 
 // Identifica un archivo subido en ESTA sesión (nunca uno ajeno).
 async function celularIdentificar(d, _perfil, body) {
-  const sesion = await exigirSesion(d, body.codigo, { paraConfirmar: true });
+  const sesion = await exigirSesion(d, body.codigo, { paraConfirmar: true, paraIdentificar: true });
   const { exp, registro } = await expedienteDeSesion(d, sesion);
   const { data: arch } = await d.sb.from("expediente_archivos").select("*").eq("id", String(body.archivo_id || "")).maybeSingle();
   if (!puedeQuitar(arch, sesion)) throw new ErrorHttp(404, "No encontré esa foto.");
@@ -821,7 +821,7 @@ async function celularIdentificar(d, _perfil, body) {
 // Identifica juntos los archivos de ESTA sesión (nunca uno ajeno).
 async function celularIdentificarLote(d, _perfil, body) {
   const lista = listaDeLote(body);
-  const sesion = await exigirSesion(d, body.codigo, { paraConfirmar: true });
+  const sesion = await exigirSesion(d, body.codigo, { paraConfirmar: true, paraIdentificar: true });
   const { exp, registro } = await expedienteDeSesion(d, sesion);
   const items = [];
   for (const e of lista) {

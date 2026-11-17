@@ -198,10 +198,15 @@ describe("TB.5 · seguridad de celular_identificar", () => {
     e.reloj.t = T0 + 33 * MIN;
     expect((await identificar(e, codigo, id)).jsonBody.identificado).toBe(true);
   });
-  it("una sesión cerrada desde la compu no identifica", async () => {
+  it("una sesión cerrada desde la compu todavía identifica durante 5 minutos (lo ya subido), y después no", async () => {
     const { e, codigo, id } = await conFoto();
     await e.llamar({ accion: "celular_cerrar", sesion_id: e.tablas.drive_sesiones_celular[0].id }, "tok-fati");
-    expect((await identificar(e, codigo, id)).statusCode).toBe(410);
+    e.reloj.t = T0 + 2 * MIN;
+    expect((await identificar(e, codigo, id)).jsonBody.identificado).toBe(true);
+    const otra = await conFoto();
+    await otra.e.llamar({ accion: "celular_cerrar", sesion_id: otra.e.tablas.drive_sesiones_celular[0].id }, "tok-fati");
+    otra.e.reloj.t = T0 + 9 * MIN;
+    expect((await identificar(otra.e, otra.codigo, otra.id)).statusCode).toBe(410);
   });
 });
 
