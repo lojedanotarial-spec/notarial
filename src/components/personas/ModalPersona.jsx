@@ -8,9 +8,10 @@ import { fmtDni } from "../../utils/formato";
 import { estadosCivilesPara, concordarEstadoCivil } from "../../utils/personasDatos";
 import { listarArchivos, subirArchivoEscribania, traerArchivo } from "../../utils/driveApi";
 import { esPrevisualizable, etiquetaTipo } from "../../utils/driveCliente";
-import { escanearDocumento, mergePersonas } from "../../utils/escanearDocumento";
+import { MAX_PAGINAS_PDF, leerLecturas } from "../../utils/escanearDocumento";
+import { agruparLecturas, indiceQueCoincide } from "../../utils/fusionPersonas";
 import {
-  ETIQUETAS_CAMPO, asignarArchivos, borrarPersona, comparacionLectura, cuitCalculado, datosDeFicha, guardarPersona, nombreCompleto, resumenPersona,
+  ETIQUETAS_CAMPO, agregarPersonaAlExpediente, asignarArchivos, borrarPersona, comparacionLectura, cuitCalculado, datosDeFicha, guardarPersona, nombreCompleto, resumenPersona,
   textoActualizada, vacioFicha, validarFicha,
 } from "../../utils/personasCliente";
 import { Aviso, Modal } from "./comunes";
@@ -41,6 +42,9 @@ const Seccion = ({ titulo, children }) => (
   </fieldset>
 );
 
+// Nombre de una persona leída con el mismo formato que va a tener en la ficha ("Núñez, Rosa", no "NÚÑEZ, ROSA").
+const nombreLeido = (p) => nombreCompleto(comparacionLectura(vacioFicha(), p).rellenar);
+
 const valoresDe = (persona, inicial) => {
   const base = vacioFicha();
   const origen = persona || inicial || {};
@@ -48,7 +52,7 @@ const valoresDe = (persona, inicial) => {
   return base;
 };
 
-export default function ModalPersona({ persona, inicial, expedienteId, archivos = [], onCerrar, onGuardada, onBorrada }) {
+export default function ModalPersona({ persona, inicial, expedienteId, archivos = [], onCerrar, onGuardada, onBorrada, onOtraAgregada }) {
   const uid = useId();
   const id = (c) => `${uid}-${c}`;
   const [original] = useState(() => valoresDe(persona, inicial));
@@ -63,6 +67,7 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
   const [confirmarBorrar, setConfirmarBorrar] = useState(false);
   const [borrando, setBorrando] = useState(false);
   const [visor, setVisor] = useState(null);
+  const [otras, setOtras] = useState({});       // otras personas halladas en las fotos y qué pasó al agregarlas: { [índice]: { estado, existia, mensaje } }
   const cancelarLectura = useRef(false);
   const inputFotos = useRef(null);
 
@@ -180,26 +185,64 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
   // ── Leer del DNI ───────────────────────────────────────────────────────────
   const fotos = [...archivos, ...pendientes.filter((p) => !archivos.some((a) => a.id === p.id))].filter((a) => esPrevisualizable(a.mime_type)).sort((a, b) => (b.tipo === "dni") - (a.tipo === "dni")).slice(0, MAX_FOTOS_LECTURA);
 
+  // Cada foto (o página de un PDF) puede traer a más de una persona, y varias fotos pueden ser de la misma. Se agrupa por persona:
+  //  · una sola → se completa la ficha; · varias → si una coincide con esta ficha se usa esa, si no se pregunta cuál es.
   async function leerDelDni() {
     cancelarLectura.current = false;
     setErrorGeneral("");
-    let acumulado = null;
-    let fallidas = 0;
+    const items = [];
+    const omitidas = [];
+    let fallidas = 0, algunaLeida = false;
     for (const [i, a] of fotos.entries()) {
       if (cancelarLectura.current) { setLectura({ fase: "reposo" }); return; }
       setLectura({ fase: "leyendo", paso: i + 1, total: fotos.length, nombre: a.nombre });
       try {
         const blob = await traerArchivo(a.id, false);
-        acumulado = mergePersonas(acumulado, await escanearDocumento(new File([blob], a.nombre, { type: a.mime_type })));
+        const r = await leerLecturas(new File([blob], a.nombre, { type: a.mime_type }));
+        algunaLeida = true;
+        fallidas += r.fallidas;
+        if (r.omitidas) omitidas.push({ nombre: a.nombre, omitidas: r.omitidas });
+        for (const res of r.lecturas) for (const p of res?.personas || []) items.push({ persona: p, tipo_documento: res.tipo_documento, foto: a.nombre });
       } catch { fallidas += 1; }
     }
     if (cancelarLectura.current) { setLectura({ fase: "reposo" }); return; }
-    if (acumulado === null) { setLectura({ fase: "error" }); return; }
-    const r = comparacionLectura(form, acumulado);
-    if (!r.leidos) { setLectura({ fase: "vacia", fallidas }); return; }
+    if (!algunaLeida) { setLectura({ fase: "error" }); return; }
+    const { personas, sinAtribuir } = agruparLecturas(items);
+    const contexto = { fallidas, fotos: fotos.length, omitidas, sinAtribuir };
+    if (personas.length === 0) { setLectura({ fase: "vacia", fallidas }); return; }
+    if (personas.length === 1) { aplicarLectura(personas[0], [], contexto); return; }
+    const mia = indiceQueCoincide(form, personas);
+    if (mia >= 0) aplicarLectura(personas[mia], personas.filter((_, i) => i !== mia), contexto);
+    else setLectura({ fase: "elegir", personas, contexto });
+  }
+
+  // Otra persona que apareció en las fotos: se guarda como ficha nueva y se agrega al expediente (si ya estaba en la libreta, solo se agrega).
+  async function agregarOtra(p, i) {
+    const marcar = (cambios) => setOtras((o) => ({ ...o, [i]: { ...o[i], ...cambios } }));
+    marcar({ estado: "agregando", mensaje: "" });
+    try {
+      const datos = datosDeFicha({ ...vacioFicha(), ...comparacionLectura(vacioFicha(), p).rellenar });
+      const r = await guardarPersona({ expedienteId, datos });
+      let persona = r.persona, existia = false;
+      if (r.duplicada) { persona = r.duplicada.persona; existia = true; await agregarPersonaAlExpediente(expedienteId, persona.id); }
+      marcar({ estado: "ok", existia });
+      onOtraAgregada?.(persona);
+    } catch (e) {
+      marcar({ estado: "error", mensaje: e.message });
+    }
+  }
+
+  // Vuelca en la ficha los datos de la persona elegida (solo campos vacíos) y deja los avisos para revisar.
+  function aplicarLectura(persona, otrasPersonas, contexto) {
+    setOtras({});
+    const r = comparacionLectura(form, persona);
+    if (!r.leidos) { setLectura({ fase: "vacia", fallidas: contexto.fallidas }); return; }
     setForm((f) => ({ ...f, ...r.rellenar }));
     setLeidoDe(new Set(Object.keys(r.rellenar)));
-    setLectura({ fase: "listo", leidos: r.leidos, rellenados: Object.keys(r.rellenar), discrepancias: r.discrepancias, fallidas, fotos: fotos.length });
+    setLectura({
+      fase: "listo", leidos: r.leidos, rellenados: Object.keys(r.rellenar), discrepancias: r.discrepancias, fallidas: contexto.fallidas, fotos: contexto.fotos,
+      entreDocumentos: persona._discrepancias || [], otras: otrasPersonas, omitidas: contexto.omitidas, sinAtribuir: contexto.sinAtribuir,
+    });
   }
 
   function usarDelDni(d) {
@@ -282,6 +325,45 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
                       <button onClick={() => usarDelDni(d)} style={botonTexto}>Usar el del DNI</button>
                     </Aviso>
                   ))}
+                  {lectura.entreDocumentos?.length > 0 && (
+                    <Aviso tipo="aviso">
+                      Los documentos no coinciden entre sí en: {lectura.entreDocumentos.map((d) => `${(ETIQUETAS_CAMPO[d.campo] || d.campo).toLowerCase()} («${d.valores.join("» o «")}»)`).join("; ")}. Revisalo antes de guardar.
+                    </Aviso>
+                  )}
+                  {lectura.otras?.map((p, i) => {
+                    const estadoOtra = otras[i]?.estado;
+                    return (
+                      <Aviso key={`otra-${i}`} tipo={estadoOtra === "ok" ? "ok" : estadoOtra === "error" ? "error" : "aviso"}>
+                        {estadoOtra === "ok"
+                          ? <>Agregué a <strong>{nombreLeido(p)}</strong> al expediente{otras[i].existia ? " (ya estaba en tu libreta)" : ""}. Las fotos siguen asignadas a esta persona: podés reasignarlas desde la pestaña Archivos.</>
+                          : <>En las fotos también {nombreLeido(p) === "Sin nombre" ? "hay otra persona" : <>está <strong>{nombreLeido(p)}</strong></>}{p.nro_doc ? ` (${p.tipo_doc || "DNI"} ${fmtDni(p.nro_doc)})` : ""}.{" "}
+                            <button onClick={() => agregarOtra(p, i)} disabled={estadoOtra === "agregando" || guardando} style={botonTexto}>{estadoOtra === "agregando" ? "Agregando…" : "Agregarla al expediente"}</button>
+                            {estadoOtra === "error" && <> {otras[i].mensaje}</>}
+                          </>}
+                      </Aviso>
+                    );
+                  })}
+                  {lectura.sinAtribuir > 0 && lectura.otras?.length > 0 && (
+                    <Aviso tipo="aviso">{lectura.sinAtribuir === 1 ? "Hay una foto" : `Hay ${lectura.sinAtribuir} fotos`} sin nombre ni número (por ejemplo, un dorso con la dirección) que no pude asignar a nadie porque hay más de una persona.</Aviso>
+                  )}
+                  {lectura.omitidas?.map((o) => (
+                    <Aviso key={o.nombre} tipo="aviso">«{o.nombre}» tiene {o.omitidas === 1 ? "1 página más" : `${o.omitidas} páginas más`} de las {MAX_PAGINAS_PDF} que leo. Si falta algo, dividí el PDF o sacá una foto de esa página.</Aviso>
+                  ))}
+                </div>
+              )}
+              {lectura.fase === "elegir" && (
+                <div role="group" aria-label="Elegir la persona" style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <Aviso tipo="aviso">Encontré {lectura.personas.length} personas en {lectura.contexto.fotos === 1 ? "la foto" : "las fotos"}. ¿Cuál es esta? No completé nada todavía.</Aviso>
+                  {lectura.personas.map((p, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", border: `1px solid ${C.border}`, borderRadius: 12, padding: "8px 12px" }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: C.dark }}>{nombreLeido(p)}</div>
+                        <div style={{ fontSize: 12, color: C.faint }}>{p.nro_doc ? `${p.tipo_doc || "DNI"} ${fmtDni(p.nro_doc)}` : "Sin número de documento"}{p._fotos?.length ? ` · ${[...new Set(p._fotos)].length === 1 ? "1 archivo" : `${[...new Set(p._fotos)].length} archivos`}` : ""}</div>
+                      </div>
+                      <button onClick={() => aplicarLectura(p, lectura.personas.filter((_, j) => j !== i), lectura.contexto)} style={boton(true)}>Es esta persona</button>
+                    </div>
+                  ))}
+                  <div><button onClick={() => setLectura({ fase: "reposo" })} style={botonTexto}>Ninguna: completo a mano</button></div>
                 </div>
               )}
               {lectura.fase === "vacia" && <div style={{ marginTop: 10 }}><Aviso tipo="aviso">No pude leer datos de {fotos.length === 1 ? "esa foto" : "esas fotos"}. Probá con una foto más nítida, sin reflejos, o completá los datos a mano.</Aviso></div>}

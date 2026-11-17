@@ -1,6 +1,7 @@
 // Lógica pura de la captura de documentos desde el celular (sin red ni base: se prueba sola).
 // El handler (api/captura.js) la usa. Spec: specs/captura-documentos-celular/.
 import { createHash, randomBytes } from "node:crypto";
+import { CAMPOS_PERSONA, CLAVES_CRITICAS, claveDePersona, fusionarPersonas, vacio } from "../src/utils/fusionPersonas.js";
 
 // ── Códigos ──────────────────────────────────────────────────────────────────
 
@@ -61,60 +62,8 @@ export function esperadasPara(modo) {
 }
 
 // ── Lectura: normalización y fusión ──────────────────────────────────────────
-
-const soloDigitos = (s) => String(s || "").replace(/\D/g, "");
-const sinTildes = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
-export const vacio = (v) => v === undefined || v === null || String(v).trim() === "";
-
-// Qué tan confiable es cada tipo de documento como fuente de nombre/número/fecha (gana el DNI).
-const PRIORIDAD_DOC = { DNI: 0, dni: 0, pasaporte: 1, Pasaporte: 1, licencia: 2, partida_nacimiento: 3, partida_matrimonio: 3 };
-const prioridad = (tipo) => PRIORIDAD_DOC[tipo] ?? 9;
-
-const CLAVES_CRITICAS = ["apellido", "nombre", "nro_doc", "fecha_nac"];
-export const CAMPOS_PERSONA = [
-  "apellido", "nombre", "nro_doc", "tipo_doc", "genero", "fecha_nac", "estado_civil", "nacionalidad", "cuit",
-  "calle", "numero", "barrio", "manzana", "casa", "localidad", "departamento", "provincia", "pais",
-];
-
-export function claveDePersona(p) {
-  const dni = soloDigitos(p?.nro_doc);
-  if (dni.length >= 6) return `doc:${dni}`;
-  const nombre = `${sinTildes(p?.apellido)}|${sinTildes(p?.nombre)}`;
-  return nombre === "|" ? null : `nom:${nombre}`;
-}
-
-// items: [{ persona, tipo_documento, foto }] -> [{ ...persona fusionada, _fotos:[..], _discrepancias:[..] }]
-// Mismo número de documento (o mismo apellido+nombre) = misma persona. Para cada campo gana el primer valor no
-// vacío de la fuente más confiable (DNI antes que licencia). Si dos fuentes dan valores distintos en un campo
-// crítico, se anota la discrepancia para mostrarla al usuario.
-export function fusionarPersonas(items) {
-  const grupos = new Map();
-  const sinClave = [];
-  for (const it of items) {
-    if (!it?.persona) continue;
-    const k = claveDePersona(it.persona);
-    if (!k) { sinClave.push(it); continue; }
-    if (!grupos.has(k)) grupos.set(k, []);
-    grupos.get(k).push(it);
-  }
-  const fusionar = (lista) => {
-    const ordenada = [...lista].sort((a, b) => prioridad(a.tipo_documento) - prioridad(b.tipo_documento));
-    const out = { _fotos: [], _discrepancias: [] };
-    for (const campo of CAMPOS_PERSONA) {
-      const candidatos = ordenada.map((i) => i.persona[campo]).filter((v) => !vacio(v));
-      if (candidatos.length) out[campo] = candidatos[0];
-      if (CLAVES_CRITICAS.includes(campo) && candidatos.length > 1) {
-        const distintos = new Set(candidatos.map((v) => (campo === "nro_doc" ? soloDigitos(v) : sinTildes(v))));
-        if (distintos.size > 1) out._discrepancias.push({ campo, valores: [...new Set(candidatos.map(String))] });
-      }
-    }
-    const rol = ordenada.map((i) => i.persona._rol_sugerido).find((v) => !vacio(v));
-    if (rol) out._rol_sugerido = rol;
-    out._fotos = ordenada.map((i) => i.foto).filter((f) => f !== undefined);
-    return out;
-  };
-  return [...[...grupos.values()].map(fusionar), ...sinClave.map((i) => fusionar([i]))];
-}
+// La lógica pura de fusión vive en src/utils/fusionPersonas.js (sin Node) para que la use también la ficha de la persona en el navegador.
+export { vacio, CAMPOS_PERSONA, claveDePersona, fusionarPersonas };
 
 export function camposNoLeidos(persona) {
   const etiquetas = { apellido: "apellido", nombre: "nombre", nro_doc: "número de documento", fecha_nac: "fecha de nacimiento" };

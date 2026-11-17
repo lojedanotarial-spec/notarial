@@ -190,6 +190,7 @@ export default function PersonasExpediente({ expediente, personas, estado, libre
         <ModalPersona key={perfil.personaId || "nueva"} persona={personaAbierta} inicial={perfil.inicial} expedienteId={expediente.id}
           archivos={personaAbierta ? porPersona.get(personaAbierta.id) || [] : []}
           onCerrar={() => setPerfil(null)}
+          onOtraAgregada={() => onRecargar()}
           onGuardada={async (guardada, { agregada, existente, fotos = 0, fallaAsignar = false }) => {
             await onRecargar();
             if (fallaAsignar) { setAviso({ tipo: "aviso", texto: `Guardé a ${nombreCompleto(guardada)}, pero no pude asignarle ${fotos === 1 ? "la foto" : "las fotos"}. Asignalas desde la pestaña Archivos.` }); return; }

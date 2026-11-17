@@ -18,9 +18,9 @@ async function rasterizarPaginaPdf(page) {
   return canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
 }
 
-// Un DNI/tarjeta verde escaneado a PDF es casi siempre 1 página -- tope
-// para no colgar el navegador si por error se elige un PDF de muchas.
-const MAX_PAGINAS_PDF = 3;
+// Un DNI (frente y dorso) más una licencia (frente y dorso) son 4 páginas; con 6 entra una escritura corta de partes. Más que eso,
+// cada página es una consulta a la IA y tarda: se leen las primeras y se avisa cuántas quedaron afuera.
+export const MAX_PAGINAS_PDF = 6;
 
 async function rasterizarPdf(archivo) {
   const pdfjsLib = await import("pdfjs-dist");
@@ -34,18 +34,10 @@ async function rasterizarPdf(archivo) {
   for (let i = 1; i <= paginas; i++) {
     base64s.push(await rasterizarPaginaPdf(await pdf.getPage(i)));
   }
-  return base64s;
+  return { base64s, omitidas: Math.max(0, pdf.numPages - paginas) };
 }
 
-export async function escanearDocumento(archivo) {
-  if (archivo.type === "application/pdf") {
-    const paginas = await rasterizarPdf(archivo);
-    let acumulado = null;
-    for (const base64 of paginas) {
-      acumulado = mergePersonas(acumulado, await enviarAVision(base64, "image/jpeg"));
-    }
-    return acumulado;
-  }
+function rasterizarImagen(archivo) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(archivo);
@@ -57,12 +49,34 @@ export async function escanearDocumento(archivo) {
       canvas.height = Math.round(img.height * scale);
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
-      const base64 = canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
-      enviarAVision(base64, "image/jpeg").then(resolve).catch(reject);
+      resolve(canvas.toDataURL("image/jpeg", 0.82).split(",")[1]);
     };
     img.onerror = reject;
     img.src = url;
   });
+}
+
+// Una lectura por foto o por página, SIN fusionar: { lecturas: [resultado de la IA, ...], omitidas }.
+// Cada resultado trae `tipo_documento` y `personas[]` (puede haber más de una persona en la misma foto).
+// Si una página falla se sigue con las demás y se cuenta en `fallidas`; si fallan todas, se propaga el error.
+export async function leerLecturas(archivo) {
+  if (archivo.type === "application/pdf") {
+    const { base64s, omitidas } = await rasterizarPdf(archivo);
+    const lecturas = [];
+    let fallidas = 0, ultimoError = null;
+    for (const base64 of base64s) {
+      try { lecturas.push(await enviarAVision(base64, "image/jpeg")); } catch (e) { fallidas += 1; ultimoError = e; }
+    }
+    if (!lecturas.length && ultimoError) throw ultimoError;
+    return { lecturas, omitidas, fallidas };
+  }
+  return { lecturas: [await enviarAVision(await rasterizarImagen(archivo), "image/jpeg")], omitidas: 0, fallidas: 0 };
+}
+
+// Versión de siempre (una sola persona por archivo, todo fusionado): la usan las partes del editor.
+export async function escanearDocumento(archivo) {
+  const { lecturas } = await leerLecturas(archivo);
+  return lecturas.reduce((acumulado, l) => mergePersonas(acumulado, l), null);
 }
 
 // Merge de dos resultados de visión: usa el primer valor no vacío de cada campo
