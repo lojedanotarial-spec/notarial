@@ -3,6 +3,8 @@
 // que viene de la cámara del teléfono o de la galería, y el fotograma de la cámara de la página sale a la mayor
 // resolución que el teléfono entregue. Spec: specs/documentacion-celular-expediente/.
 
+import { recorteDeFuente } from "./escanerImagen";
+
 // Un canvas deja su memoria ocupada hasta que el navegador lo recoge (en Safari tarda): se achica a 0 apenas se usa.
 function liberar(canvas) { canvas.width = 0; canvas.height = 0; }
 
@@ -23,6 +25,29 @@ export function fotogramaAFile(video, nombre, calidad = CALIDAD_ARCHIVO) {
       resolve(new File([blob], nombre, { type: "image/jpeg" }));
     }, "image/jpeg", calidad);
   });
+}
+
+// Recorta una foto ya sacada al documento que se ve en ella (escáner automático). Si no lo encuentra con seguridad, o no
+// coincide con lo que el visor detectó, devuelve el MISMO archivo sin tocar: nunca se pierde una foto por esto.
+export async function recortarAlDocumento(file, rectVivo) {
+  try {
+    if (!rectVivo || typeof createImageBitmap !== "function") return file;
+    const bmp = await createImageBitmap(file);
+    try {
+      const r = recorteDeFuente(bmp, bmp.width, bmp.height, rectVivo);
+      if (!r) return file;
+      const canvas = document.createElement("canvas");
+      canvas.width = r.sw; canvas.height = r.sh;
+      canvas.getContext("2d").drawImage(bmp, r.sx, r.sy, r.sw, r.sh, 0, 0, r.sw, r.sh);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", CALIDAD_ARCHIVO));
+      liberar(canvas);
+      return blob ? new File([blob], file.name, { type: "image/jpeg" }) : file;
+    } finally {
+      bmp.close?.();
+    }
+  } catch {
+    return file;
+  }
 }
 
 export const LADO_IDENTIFICAR = 1000;

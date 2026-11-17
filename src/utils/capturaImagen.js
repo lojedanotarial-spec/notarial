@@ -6,6 +6,8 @@
 // Memoria: se procesa de a UNA foto (la cola está en la página) y cada lienzo se libera apenas se usa, porque en
 // un celular varias fotos de 12 MP decodificadas a la vez agotan la memoria. Spec: specs/captura-documentos-celular/.
 
+import { recorteDeFuente } from "./escanerImagen";
+
 export const LADO_MAXIMO = 2000;
 export const CALIDAD_JPEG = 0.85;
 export const MAX_BYTES_ARCHIVO = 3 * 1024 * 1024; // lo mismo que acepta el servidor
@@ -76,10 +78,16 @@ function comprimir(fuente, anchoOriginal, altoOriginal) {
 
 // Fotograma de la cámara en vivo -> { base64, mediaType, vista }. Capturar el fotograma de un <video> no usa el
 // flash del teléfono (a diferencia de la cámara nativa que abre un selector de archivos).
-export function capturarFotograma(video) {
+// Con `rectVivo` (escáner automático) se recorta al documento si se lo encuentra con seguridad; si no, sale el fotograma entero.
+export function capturarFotograma(video, rectVivo = null) {
   const ancho = video?.videoWidth, alto = video?.videoHeight;
   if (!ancho || !alto) throw new Error("La cámara todavía no está lista");
-  return comprimir(video, ancho, alto);
+  const r = rectVivo ? recorteDeFuente(video, ancho, alto, rectVivo) : null;
+  if (!r) return comprimir(video, ancho, alto);
+  const recorte = document.createElement("canvas");
+  recorte.width = r.sw; recorte.height = r.sh;
+  recorte.getContext("2d").drawImage(video, r.sx, r.sy, r.sw, r.sh, 0, 0, r.sw, r.sh);
+  try { return comprimir(recorte, r.sw, r.sh); } finally { liberar(recorte); }
 }
 
 // File (foto o PDF) -> { base64, mediaType, vista } listo para subir. `vista` es una miniatura (data URL).

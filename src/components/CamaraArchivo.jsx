@@ -9,7 +9,9 @@
 // la pantalla: un tirón de más de un segundo por foto. Donde no existe ImageCapture (iPhone) se usa el camino de antes.
 import { memo, useEffect, useRef, useState } from "react";
 import { C } from "../constants";
-import { fotogramaAFile } from "../utils/capturaArchivo";
+import { fotogramaAFile, recortarAlDocumento } from "../utils/capturaArchivo";
+import MarcoEscaner, { PistaEscaner } from "./MarcoEscaner";
+import { useEscaner, usePreferenciaAutomatica } from "./useEscaner";
 import { opcionesFotoMaxima } from "../utils/driveCliente";
 
 // Colores propios de la pantalla de la cámara (fondo negro, como cualquier app de cámara): no son parte de la paleta clara del producto.
@@ -49,6 +51,9 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
   const [resolucion, setResolucion] = useState("");
   const [estandar, setEstandar] = useState(false); // la cámara de la página no llega a calidad original (típico del iPhone)
   const ocupada = useRef(false);
+  const [auto, setAuto] = usePreferenciaAutomatica();
+  // Foto automática: el escáner mira el visor y dispara solo cuando el documento está quieto y nítido.
+  const escaner = useEscaner({ videoRef, activo: estado === "lista" && auto, estaPausado: () => ocupada.current, alDisparar: (rect) => disparar(rect) });
 
   useEffect(() => {
     let cancelado = false;
@@ -106,7 +111,13 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
     if (t) t.scrollLeft = t.scrollWidth;
   }, [recientes.length]);
 
-  async function sacarFoto() {
+  // Con foto automática la foto sale recortada al documento (con margen); si no se lo encuentra con seguridad, sale entera.
+  async function sacarFoto(rectVivo) {
+    const foto = await sacarFotoEntera();
+    return rectVivo ? recortarAlDocumento(foto, rectVivo) : foto;
+  }
+
+  async function sacarFotoEntera() {
     const nombre = nombrarFoto();
     if (capturaRef.current) {
       try {
@@ -121,11 +132,12 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
     return fotogramaAFile(videoRef.current, nombre);
   }
 
-  async function disparar() {
+  // `rectVivo` solo lo manda el escáner automático; el botón manual saca la foto entera, como siempre.
+  async function disparar(rectVivo = null) {
     if (estado !== "lista" || ocupada.current) return;
     ocupada.current = true;
     try {
-      onFoto(await sacarFoto());
+      onFoto(await sacarFoto(rectVivo));
       setAviso("");
       navigator.vibrate?.(25);
       setDestello(true);
@@ -142,10 +154,16 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
       <div style={{ position: "relative", flex: 1, minHeight: 0, overflow: "hidden" }}>
         {/* "contain": se ve la imagen COMPLETA que se va a guardar (con "cover" se recortaban los costados y la foto salía con más de lo que se veía) */}
         <video ref={videoRef} playsInline muted autoPlay style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", background: "#000" }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "12px 14px", background: "linear-gradient(rgba(0,0,0,.65), transparent)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>Sacá todas las fotos que quieras</div>
-          <div style={{ fontSize: 12, opacity: 0.9, marginTop: 3 }}>Sin flash · calidad {estandar ? "estándar" : "original"}{resolucion ? ` (${resolucion})` : ""}</div>
-          {estandar && <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>Para la calidad completa del teléfono, tocá Listo y usá «Usar la cámara del teléfono».</div>}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "12px 14px", background: "linear-gradient(rgba(0,0,0,.65), transparent)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>Sacá todas las fotos que quieras</div>
+            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 3 }}>Sin flash · calidad {estandar ? "estándar" : "original"}{resolucion ? ` (${resolucion})` : ""}</div>
+            {estandar && <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>Para la calidad completa del teléfono, tocá Listo y usá «Usar la cámara del teléfono».</div>}
+          </div>
+          <button onClick={() => setAuto(!auto)} aria-pressed={auto} aria-label={`Foto automática: ${auto ? "activada" : "desactivada"}. Tocá para cambiar`}
+            style={{ ...estiloBoton, flexShrink: 0, minHeight: 44, padding: "8px 12px", borderRadius: 12, fontSize: 13, fontWeight: 700, background: auto ? "#fff" : "rgba(255,255,255,.18)", color: auto ? C.dark : "#fff", border: "1px solid rgba(255,255,255,.5)" }}>
+            {auto ? "Automática: sí" : "Automática: no"}
+          </button>
         </div>
         {estado === "iniciando" && <div role="status" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>Abriendo la cámara…</div>}
         {estado === "error" && (
@@ -155,7 +173,9 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
           </div>
         )}
         {aviso && <div role="alert" style={{ position: "absolute", left: 14, right: 14, bottom: 14, background: "rgba(192,57,43,.95)", borderRadius: 12, padding: "10px 12px", fontSize: 13, lineHeight: 1.4 }}>{aviso}</div>}
-        {estado === "lista" && !aviso && <div style={{ position: "absolute", left: 14, right: 14, bottom: 12, fontSize: 13, textAlign: "center", textShadow: `0 1px 3px ${CAM.sombra}`, opacity: destello ? 1 : 0.92 }}>Que el documento ocupe casi toda la imagen y sin reflejos.</div>}
+        {estado === "lista" && auto && <MarcoEscaner estado={escaner} ajuste="meet" />}
+        {estado === "lista" && !aviso && auto && <PistaEscaner fase={escaner.fase} progreso={escaner.progreso} />}
+        {estado === "lista" && !aviso && !auto && <div style={{ position: "absolute", left: 14, right: 14, bottom: 12, fontSize: 13, textAlign: "center", textShadow: `0 1px 3px ${CAM.sombra}`, opacity: destello ? 1 : 0.92 }}>Que el documento ocupe casi toda la imagen y sin reflejos.</div>}
       </div>
 
       <div style={{ background: CAM.barra, padding: "10px 16px calc(14px + env(safe-area-inset-bottom))" }}>
@@ -171,7 +191,7 @@ function CamaraArchivo({ cantidad, recientes = [], nombrarFoto, onFoto, onCerrar
         )}
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12 }}>
           <div aria-live="polite" style={{ fontSize: 14, fontWeight: 700 }}>{cantidad} {cantidad === 1 ? "foto" : "fotos"}</div>
-          <button onClick={disparar} disabled={estado !== "lista"} aria-label="Sacar foto"
+          <button onClick={() => disparar()} disabled={estado !== "lista"} aria-label="Sacar foto"
             style={{ ...estiloBoton, width: 72, height: 72, borderRadius: 9999, background: estado === "lista" ? "#fff" : CAM.apagado, border: "5px solid rgba(255,255,255,.45)", backgroundClip: "padding-box", transform: destello ? "scale(.92)" : "scale(1)", transition: "transform .1s" }} />
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button onClick={onCerrar} style={{ ...estiloBoton, minHeight: 44, padding: "9px 18px", borderRadius: 12, background: "#fff", color: C.dark, fontSize: 14, fontWeight: 700 }}>Listo</button>

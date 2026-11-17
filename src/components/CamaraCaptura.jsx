@@ -5,6 +5,8 @@
 // Spec: specs/captura-documentos-celular/.
 import { useEffect, useRef, useState } from "react";
 import { capturarFotograma } from "../utils/capturaImagen";
+import MarcoEscaner, { PistaEscaner } from "./MarcoEscaner";
+import { useEscaner, usePreferenciaAutomatica } from "./useEscaner";
 
 const fuente = "'Montserrat', sans-serif";
 
@@ -30,6 +32,8 @@ export default function CamaraCaptura({ etiqueta, fotos, grupo, esVehiculos, lle
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
   const [destello, setDestello] = useState(false);
+  const [auto, setAuto] = usePreferenciaAutomatica();
+  const escaner = useEscaner({ videoRef, activo: estado === "lista" && auto && !llena, estaPausado: () => false, alDisparar: (rect) => disparar(rect) });
 
   useEffect(() => {
     let cancelado = false;
@@ -67,11 +71,12 @@ export default function CamaraCaptura({ etiqueta, fotos, grupo, esVehiculos, lle
     };
   }, []);
 
-  function disparar() {
+  // `rectVivo` solo lo manda el escáner automático (recorta al documento); el botón manual saca el fotograma entero.
+  function disparar(rectVivo = null) {
     if (estado !== "lista") return;
     if (llena) { setAviso("Llegaste al máximo de fotos por lote."); return; }
     try {
-      onFoto(capturarFotograma(videoRef.current));
+      onFoto(capturarFotograma(videoRef.current, rectVivo));
       setAviso("");
       navigator.vibrate?.(25);
       setDestello(true);
@@ -90,16 +95,23 @@ export default function CamaraCaptura({ etiqueta, fotos, grupo, esVehiculos, lle
         <video ref={videoRef} playsInline muted autoPlay style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
 
         {/* Marco de ayuda para encuadrar el documento */}
-        {estado === "lista" && (
+        {estado === "lista" && auto && <MarcoEscaner estado={escaner} ajuste="slice" />}
+        {estado === "lista" && !auto && (
           <div style={{ position: "absolute", left: "7%", right: "7%", top: "22%", bottom: "30%", border: `2px dashed ${destello ? "#fff" : "rgba(255,255,255,.6)"}`, borderRadius: 14, pointerEvents: "none", transition: "border-color .1s" }} />
         )}
 
         {/* Barra superior */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "12px 14px", background: "linear-gradient(rgba(0,0,0,.65), transparent)" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{etiqueta}</div>
-          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 3 }}>
-            Sin flash · {esVehiculos ? `Vehículo ${grupo + 1}: ${delGrupo} foto${delGrupo === 1 ? "" : "s"}` : `${fotos.filter((f) => f.estado !== "error").length} foto${fotos.filter((f) => f.estado !== "error").length === 1 ? "" : "s"}`}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "12px 14px", background: "linear-gradient(rgba(0,0,0,.65), transparent)", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3 }}>{etiqueta}</div>
+            <div style={{ fontSize: 12, opacity: 0.85, marginTop: 3 }}>
+              Sin flash · {esVehiculos ? `Vehículo ${grupo + 1}: ${delGrupo} foto${delGrupo === 1 ? "" : "s"}` : `${fotos.filter((f) => f.estado !== "error").length} foto${fotos.filter((f) => f.estado !== "error").length === 1 ? "" : "s"}`}
+            </div>
           </div>
+          <button onClick={() => setAuto(!auto)} aria-pressed={auto} aria-label={`Foto automática: ${auto ? "activada" : "desactivada"}. Tocá para cambiar`}
+            style={{ ...estiloBoton, flexShrink: 0, minHeight: 44, padding: "8px 12px", borderRadius: 12, fontSize: 13, fontWeight: 700, background: auto ? "#fff" : "rgba(255,255,255,.18)", color: auto ? "#1a2332" : "#fff", border: "1px solid rgba(255,255,255,.5)" }}>
+            {auto ? "Automática: sí" : "Automática: no"}
+          </button>
         </div>
 
         {estado === "iniciando" && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>Abriendo la cámara…</div>}
@@ -110,7 +122,8 @@ export default function CamaraCaptura({ etiqueta, fotos, grupo, esVehiculos, lle
           </div>
         )}
         {aviso && <div style={{ position: "absolute", left: 14, right: 14, bottom: 14, background: "rgba(192,57,43,.92)", borderRadius: 10, padding: "9px 12px", fontSize: 13 }}>{aviso}</div>}
-        {estado === "lista" && !aviso && <div style={{ position: "absolute", left: 14, right: 14, bottom: 12, fontSize: 12, textAlign: "center", opacity: 0.85, textShadow: "0 1px 3px #000" }}>Evitá los reflejos: inclinás un poco el documento. Podés sacar todas las fotos seguidas.</div>}
+        {estado === "lista" && !aviso && auto && <PistaEscaner fase={escaner.fase} progreso={escaner.progreso} />}
+        {estado === "lista" && !aviso && !auto && <div style={{ position: "absolute", left: 14, right: 14, bottom: 12, fontSize: 12, textAlign: "center", opacity: 0.85, textShadow: "0 1px 3px #000" }}>Evitá los reflejos: inclinás un poco el documento. Podés sacar todas las fotos seguidas.</div>}
       </div>
 
       {/* Barra inferior: miniaturas, disparador, listo */}
@@ -122,7 +135,7 @@ export default function CamaraCaptura({ etiqueta, fotos, grupo, esVehiculos, lle
             </div>
           ))}
         </div>
-        <button onClick={disparar} disabled={estado !== "lista"} aria-label="Sacar foto"
+        <button onClick={() => disparar()} disabled={estado !== "lista"} aria-label="Sacar foto"
           style={{ ...estiloBoton, width: 74, height: 74, borderRadius: 37, background: estado === "lista" ? "#fff" : "#555", border: "5px solid rgba(255,255,255,.45)", backgroundClip: "padding-box", transform: destello ? "scale(.92)" : "scale(1)", transition: "transform .1s" }} />
         <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
           {esVehiculos && (
