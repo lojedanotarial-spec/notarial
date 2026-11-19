@@ -96,12 +96,14 @@ Instrucciones: el documento puede estar en cualquier orientación — rotalo men
 Respondé SOLO con el JSON válido del formato que corresponda, sin texto adicional.`;
 
 // imagenes: [{ data, mediaType }, ...] — 1 o más imágenes del mismo o distintos documentos
-export async function extraerDocumento(imagenes) {
+// `esfuerzo` ("low" | "medium" | "high"): cuánto razona el modelo antes de responder; menos esfuerzo = respuesta más rápida.
+export async function extraerDocumento(imagenes, { esfuerzo, modelo } = {}) {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new Error("API key no configurada");
   }
   const response = await client.messages.create({
-    model: MODELOS.vision,
+    model: modelo || MODELOS.vision,
+    ...(esfuerzo ? { output_config: { effort: esfuerzo } } : {}),
     // Los modelos 5.5 piensan por defecto y esos tokens cuentan contra max_tokens: con 1500 el JSON
     // podía quedar cortado. 8192 deja lugar de sobra para pensar y para el JSON (~500 tokens).
     max_tokens: 8192,

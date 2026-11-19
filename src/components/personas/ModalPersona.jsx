@@ -20,6 +20,7 @@ import VisorArchivo from "./VisorArchivo";
 import SubidaCelular from "../SubidaCelular";
 
 const MAX_FOTOS_LECTURA = 4;
+const LECTURAS_A_LA_VEZ = 4;   // todas juntas: son pocas fotos y cada una tarda unos segundos
 
 function Campo({ id, etiqueta, error, origen, ayuda, children, ancho }) {
   return (
@@ -190,21 +191,30 @@ export default function ModalPersona({ persona, inicial, expedienteId, archivos 
   async function leerDelDni() {
     cancelarLectura.current = false;
     setErrorGeneral("");
-    const items = [];
     const omitidas = [];
-    let fallidas = 0, algunaLeida = false;
-    for (const [i, a] of fotos.entries()) {
-      if (cancelarLectura.current) { setLectura({ fase: "reposo" }); return; }
-      setLectura({ fase: "leyendo", paso: i + 1, total: fotos.length, nombre: a.nombre });
-      try {
-        const blob = await traerArchivo(a.id, false);
-        const r = await leerLecturas(new File([blob], a.nombre, { type: a.mime_type }));
-        algunaLeida = true;
-        fallidas += r.fallidas;
-        if (r.omitidas) omitidas.push({ nombre: a.nombre, omitidas: r.omitidas });
-        for (const res of r.lecturas) for (const p of res?.personas || []) items.push({ persona: p, tipo_documento: res.tipo_documento, foto: a.nombre });
-      } catch { fallidas += 1; }
+    let fallidas = 0, algunaLeida = false, hechas = 0, siguiente = 0;
+    const porFoto = [];   // lo leído de cada foto, en el orden de las fotos (no en el que terminan): así el resultado no cambia entre lecturas
+    // Se leen de a POCAS a la vez: antes iban una detrás de otra y cada una tarda unos segundos (frente + dorso + licencia = casi un minuto).
+    async function trabajador() {
+      while (!cancelarLectura.current && siguiente < fotos.length) {
+        const i = siguiente++;
+        const a = fotos[i];
+        setLectura({ fase: "leyendo", paso: Math.min(hechas + 1, fotos.length), total: fotos.length, nombre: a.nombre });
+        try {
+          const blob = await traerArchivo(a.id, false);
+          const r = await leerLecturas(new File([blob], a.nombre, { type: a.mime_type }));
+          algunaLeida = true;
+          fallidas += r.fallidas;
+          if (r.omitidas) omitidas.push({ nombre: a.nombre, omitidas: r.omitidas });
+          porFoto[i] = r.lecturas.flatMap((res) => (res?.personas || []).map((p) => ({ persona: p, tipo_documento: res.tipo_documento, foto: a.nombre })));
+        } catch { fallidas += 1; }
+        hechas += 1;
+        if (!cancelarLectura.current) setLectura({ fase: "leyendo", paso: Math.min(hechas + 1, fotos.length), total: fotos.length, nombre: a.nombre });
+      }
     }
+    setLectura({ fase: "leyendo", paso: 1, total: fotos.length, nombre: fotos[0]?.nombre });
+    await Promise.all(Array.from({ length: Math.min(LECTURAS_A_LA_VEZ, fotos.length) }, trabajador));
+    const items = porFoto.flat().filter(Boolean);
     if (cancelarLectura.current) { setLectura({ fase: "reposo" }); return; }
     if (!algunaLeida) { setLectura({ fase: "error" }); return; }
     const { personas, sinAtribuir } = agruparLecturas(items);
