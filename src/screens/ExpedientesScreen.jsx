@@ -13,7 +13,8 @@ const TrashIcon = () => (
   </svg>
 );
 
-function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
+// Lo usa también el Explorador (que reemplaza a esta pantalla, D27).
+export function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
   const [nombre, setNombre] = useState("");
   const [guardando, setGuardando] = useState(false);
 

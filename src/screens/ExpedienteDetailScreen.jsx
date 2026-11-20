@@ -159,7 +159,7 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   async function eliminarExpediente() {
     await supabase.from("expediente_documentos").delete().eq("expediente_id", expedienteId);
     await supabase.from("expedientes").delete().eq("id", expedienteId);
-    onGo?.("expedientes");
+    onGo?.("explorador");
   }
 
   if (cargando) return <div style={{ padding: 40, color: C.muted }}>Cargando...</div>;
@@ -176,8 +176,8 @@ export function ExpedienteDetailScreen({ onGo, params }) {
 
       {/* Header */}
       <div style={{ background: C.dark, padding: "0 24px", height: 52, display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
-        <button onClick={() => onGo?.("expedientes")} style={{ background: "transparent", border: "none", color: "rgba(253,252,250,.6)", cursor: "pointer", fontSize: 13 }}>
-          ← Expedientes
+        <button onClick={() => onGo?.("explorador")} style={{ background: "transparent", border: "none", color: "rgba(253,252,250,.6)", cursor: "pointer", fontSize: 13 }}>
+          ← Explorador
         </button>
         <span style={{ color: "#FDFCFA", fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 14, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {expediente.nombre}

@@ -6,7 +6,7 @@ import { SelectorScreen } from "./screens/SelectorScreen";
 import { EditorScreen }  from "./screens/EditorScreen";
 import { BulkScreen }    from "./screens/BulkScreen";
 import { AdminScreen }      from "./screens/AdminScreen";
-import { ExpedientesScreen }     from "./screens/ExpedientesScreen";
+import { ExploradorScreen }      from "./screens/ExploradorScreen";
 import { ExpedienteDetailScreen } from "./screens/ExpedienteDetailScreen";
 import { HerramientasScreen }    from "./screens/HerramientasScreen";
 import { EstimadorDNRPA }        from "./screens/tools/EstimadorDNRPA";
@@ -70,7 +70,7 @@ function leerParamsGuardados() {
 }
 
 function AppRouter() {
-  const { session, cargando, usuario, miUsuario, perfilCargado, logout, setRegistroActivo, registroActivo } = useAuth();
+  const { session, cargando, usuario, perfilCargado, logout, setRegistroActivo } = useAuth();
   const [screen, setScreen] = useState(leerPantallaGuardada);
   const [params, setParams] = useState(leerParamsGuardados);
   const [scribaOpen, setScribaOpen] = useState(false);
@@ -157,7 +157,8 @@ function AppRouter() {
       {screen === "editor"   && <EditorScreen   key={editorNonceRef.current} onGo={handleGo} params={params} onScribaContexto={setScribaContexto} />}
       {screen === "bulk"         && <BulkScreen        onGo={handleGo} />}
       {screen === "admin"        && <AdminScreen       onGo={handleGo} />}
-      {screen === "expedientes"  && <ExpedientesScreen     onGo={handleGo} registroActivo={registroActivo} miUsuario={miUsuario} />}
+      {/* El Explorador reemplaza a la lista de Expedientes (D27); "expedientes" queda como alias para enlaces viejos. */}
+      {(screen === "explorador" || screen === "expedientes") && <ExploradorScreen onGo={handleGo} />}
       {screen === "expediente"   && <ExpedienteDetailScreen onGo={handleGo} params={params} />}
       {screen === "herramientas"    && <HerramientasScreen onGo={handleGo} />}
       {screen === "estimador_dnrpa"     && <EstimadorDNRPA      onBack={() => handleGo("herramientas")} />}
