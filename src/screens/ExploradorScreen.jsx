@@ -110,17 +110,42 @@ const btnPrimario = {
   fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif",
 };
 
+// La búsqueda y los filtros se mantienen al abrir un documento y volver (patrones.md §9). Solo en esta pestaña.
+const CLAVE_GUARDADO = "explorador:estado";
+function leerGuardado() {
+  try {
+    const g = JSON.parse(sessionStorage.getItem(CLAVE_GUARDADO) || "{}");
+    return {
+      vista: g.vista === "expedientes" ? "expedientes" : "documentos",
+      f: { ...FILTROS_VACIOS, ...(g.f || {}) },
+      qInput: typeof g.qInput === "string" ? g.qInput : "",
+      tab: ["personas", "actos", "anios", "estado"].includes(g.tab) ? g.tab : "actos",
+      orden: g.orden === "fecha_asc" ? "fecha_asc" : "fecha_desc",
+    };
+  } catch {
+    return { vista: "documentos", f: FILTROS_VACIOS, qInput: "", tab: "actos", orden: "fecha_desc" };
+  }
+}
+
+const sinTildes = (s) => String(s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
 // ── Pantalla ────────────────────────────────────────────────────────────────────────────────────────
 export function ExploradorScreen({ onGo }) {
   const { usuario, registroActivo } = useAuth();
-  const [vista, setVista] = useState("documentos");
-  const [f, setF] = useState(FILTROS_VACIOS);
-  const [qInput, setQInput] = useState("");
-  const [tab, setTab] = useState("actos");
-  const [orden, setOrden] = useState("fecha_desc");
+  const [guardado] = useState(leerGuardado);
+  const [vista, setVista] = useState(guardado.vista);
+  const [f, setF] = useState(guardado.f);
+  const [qInput, setQInput] = useState(guardado.qInput);
+  const [tab, setTab] = useState(guardado.tab);
+  const [orden, setOrden] = useState(guardado.orden);
   const [res, setRes] = useState({ estado: "cargando", filas: [], total: 0, mensaje: "" });
   const [masCargando, setMasCargando] = useState(false);
+  const [avisoMas, setAvisoMas] = useState("");
   const [conteos, setConteos] = useState(null);
+  const [conteosError, setConteosError] = useState(false);
+  // Nombres ya vistos de actos y personas: así una etiqueta o un filtro activo con 0 resultados no muestra un código.
+  const [nombresVistos, setNombresVistos] = useState({ actos: {}, personas: {} });
+  const [qPersona, setQPersona] = useState("");
   const [exps, setExps] = useState({ estado: "cargando", lista: [] });
   const [sel, setSel] = useState(null); // { tipo: "doc" | "exp", id }
   const [modalNuevo, setModalNuevo] = useState(false);
@@ -132,8 +157,27 @@ export function ExploradorScreen({ onGo }) {
     return () => clearTimeout(t);
   }, [qInput]);
 
+  useEffect(() => {
+    try { sessionStorage.setItem(CLAVE_GUARDADO, JSON.stringify({ vista, f, qInput, tab, orden })); } catch { /* sin almacenamiento: no se recuerda */ }
+  }, [vista, f, qInput, tab, orden]);
+
   const filtros = armarFiltros(f, registroActivo);
   const claveFiltros = JSON.stringify(filtros);
+
+  const recibirConteos = useCallback((c) => {
+    if (c.error) { console.error("[explorador] conteos:", c.error); setConteosError(true); return; }
+    setConteosError(false);
+    setConteos(c.data);
+    setNombresVistos(prev => ({
+      actos: { ...prev.actos, ...Object.fromEntries((c.data?.actos || []).map(a => [a.acto, a.nombre])) },
+      personas: { ...prev.personas, ...Object.fromEntries((c.data?.personas || []).map(p => [p.clave, p.nombre])) },
+    }));
+  }, []);
+
+  const recontar = useCallback(() => {
+    setConteosError(false);
+    supabase.rpc("explorador_conteos", { p_filtros: JSON.parse(claveFiltros) }).then(recibirConteos);
+  }, [claveFiltros, recibirConteos]);
 
   const cargarDocs = useCallback(async () => {
     const id = ++pedido.current;
@@ -153,8 +197,9 @@ export function ExploradorScreen({ onGo }) {
     }
     const filas = b.data || [];
     setRes({ estado: "ok", filas, total: filas[0]?.total ?? 0, mensaje: "" });
-    if (!c.error) setConteos(c.data);
-  }, [claveFiltros, orden]);
+    setAvisoMas("");
+    recibirConteos(c);
+  }, [claveFiltros, orden, recibirConteos]);
 
   useEffect(() => {
     if (!usuario || vista !== "documentos") return;
@@ -162,11 +207,11 @@ export function ExploradorScreen({ onGo }) {
   }, [usuario, vista, cargarDocs]);
 
   async function verMas() {
-    setMasCargando(true);
+    setMasCargando(true); setAvisoMas("");
     const { data, error } = await supabase.rpc("explorador_buscar",
       { p_filtros: JSON.parse(claveFiltros), p_orden: orden, p_limite: POR_PAGINA, p_desde: res.filas.length });
     setMasCargando(false);
-    if (error) { console.error("[explorador] ver más:", error); return; }
+    if (error) { console.error("[explorador] ver más:", error); setAvisoMas("No pudimos traer más. Volvé a intentarlo."); return; }
     setRes(r => ({ ...r, filas: [...r.filas, ...(data || [])] }));
   }
 
@@ -184,10 +229,7 @@ export function ExploradorScreen({ onGo }) {
   }, [usuario, vista, cargarExps]);
 
   // ── Derivados ──
-  const nombres = {
-    actos: Object.fromEntries((conteos?.actos || []).map(a => [a.acto, a.nombre])),
-    personas: Object.fromEntries((conteos?.personas || []).map(p => [p.clave, p.nombre])),
-  };
+  const nombres = nombresVistos;
   const etiquetas = vista === "documentos" ? etiquetasFiltros(f, nombres) : (f.estado ? [{ clave: "estado", label: ESTADOS_EXPEDIENTE.find(e => e.key === f.estado)?.label || f.estado }] : []).concat(qInput.trim() ? [{ clave: "q", label: `«${qInput.trim()}»` }] : []);
   const interpretacion = vista === "documentos" ? interpretarBusqueda(qInput) : null;
   const poner = (clave, valor) => setF(x => ({ ...x, [clave]: x[clave] === valor ? FILTROS_VACIOS[clave] : valor }));
@@ -203,6 +245,23 @@ export function ExploradorScreen({ onGo }) {
 
   const conteoClase = conteos?.clase || {};
   const totalClase = (conteoClase.P || 0) + (conteoClase.NP || 0) + (conteoClase.sin_definir || 0);
+
+  // Un filtro elegido sigue a la vista aunque con los demás filtros quede en 0: si no, no se puede ver ni sacar desde ahí.
+  const actosLista = (() => {
+    const l = conteos?.actos || [];
+    return f.acto && !l.some(a => a.acto === f.acto) ? [{ acto: f.acto, nombre: nombres.actos[f.acto] || f.acto, n: 0 }, ...l] : l;
+  })();
+  const aniosLista = (() => {
+    const l = conteos?.anios || [];
+    return f.anio && !l.some(a => a.anio === f.anio) ? [{ anio: f.anio, n: 0 }, ...l] : l;
+  })();
+  const personasLista = (() => {
+    let l = conteos?.personas || [];
+    if (f.persona && !l.some(p => p.clave === f.persona)) l = [{ clave: f.persona, nombre: nombres.personas[f.persona] || f.persona, n: 0 }, ...l];
+    const t = sinTildes(qPersona.trim());
+    return t ? l.filter(p => sinTildes(`${p.nombre} ${p.dni || ""} ${p.cuit || ""}`).includes(t) || p.clave === f.persona) : l;
+  })();
+  const personasTope = (conteos?.personas || []).length >= 500;
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: C.warm, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
@@ -225,11 +284,11 @@ export function ExploradorScreen({ onGo }) {
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: C.faint, padding: "0 2px" }}>Ver por</div>
-                <div role="tablist" aria-label="Ver por" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 4 }}>
+                <div role="group" aria-label="Ver por" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 4 }}>
                   {[["personas", "Personas"], ["actos", "Actos"], ["anios", "Años"], ["estado", "Estado"]].map(([k, label]) => {
                     const on = tab === k;
                     return (
-                      <button key={k} type="button" role="tab" aria-selected={on} onClick={() => setTab(k)}
+                      <button key={k} type="button" aria-pressed={on} onClick={() => setTab(k)}
                         style={{ padding: "6px 8px", borderRadius: R.sm, fontSize: 12, cursor: "pointer", fontFamily: "'Inter', sans-serif",
                                  border: "1px solid " + (on ? C.dark : "rgba(26,35,50,.25)"), background: on ? C.dark : C.porcelain,
                                  color: on ? C.porcelain : C.dark, fontWeight: on ? 600 : 500 }}>
@@ -238,18 +297,37 @@ export function ExploradorScreen({ onGo }) {
                     );
                   })}
                 </div>
-                <div role="tabpanel" style={{ background: C.porcelain, borderRadius: R.md, border: "1px solid rgba(26,35,50,.08)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                  {!conteos && <div style={{ padding: 12, fontSize: 12, color: C.faint }}>Contando…</div>}
-                  {conteos && tab === "personas" && (conteos.personas.length
-                    ? conteos.personas.map(p => (
+                {conteos && tab === "personas" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <label htmlFor="explorador-buscar-persona" style={{ fontSize: 11, color: C.faint, padding: "0 2px" }}>Buscar en la lista</label>
+                    <input id="explorador-buscar-persona" value={qPersona} onChange={e => setQPersona(e.target.value)} placeholder="Apellido o DNI"
+                      style={{ width: "100%", boxSizing: "border-box", padding: "6px 10px", borderRadius: R.sm, border: "1px solid rgba(26,35,50,.5)",
+                               background: C.porcelain, fontSize: 12, color: C.dark, fontFamily: "'Inter', sans-serif" }} />
+                  </div>
+                )}
+                <div aria-busy={!conteos && !conteosError} style={{ background: C.porcelain, borderRadius: R.md, border: "1px solid rgba(26,35,50,.08)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                  {!conteos && !conteosError && <div style={{ padding: 12, fontSize: 12, color: C.faint }}>Contando…</div>}
+                  {conteosError && (
+                    <div role="alert" style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8, fontSize: 12, color: C.dark }}>
+                      No pudimos contar los resultados. La lista de la derecha sigue funcionando.
+                      <button type="button" onClick={recontar} style={{ ...btnSecundario, fontSize: 12, padding: "5px 10px", alignSelf: "flex-start" }}>Reintentar</button>
+                    </div>
+                  )}
+                  {conteos && !conteosError && tab === "personas" && (personasLista.length
+                    ? personasLista.map(p => (
                         <ItemFiltro key={p.clave} label={p.nombre || p.clave} detalle={p.dni ? "DNI " + formatoCantidad(p.dni) : p.cuit ? "CUIT " + p.cuit : null}
                                     count={p.n} activo={f.persona === p.clave} onClick={() => poner("persona", p.clave)} />))
-                    : <div style={{ padding: 12, fontSize: 12, color: C.faint }}>No hay personas con estos filtros.</div>)}
-                  {conteos && tab === "actos" && conteos.actos.map(a => (
+                    : <div style={{ padding: 12, fontSize: 12, color: C.faint }}>{qPersona.trim() ? "No hay nadie con ese apellido o DNI en la lista." : "No hay personas con estos filtros."}</div>)}
+                  {conteos && !conteosError && tab === "personas" && personasTope && (
+                    <div style={{ padding: "8px 12px", fontSize: 11, color: C.faint, borderTop: "1px solid rgba(26,35,50,.06)" }}>
+                      Se muestran las primeras 500. Para encontrar a alguien más, buscalo por apellido o DNI en el buscador de arriba.
+                    </div>
+                  )}
+                  {conteos && !conteosError && tab === "actos" && actosLista.map(a => (
                     <ItemFiltro key={a.acto} label={a.nombre} count={a.n} activo={f.acto === a.acto} onClick={() => poner("acto", a.acto)} />))}
-                  {conteos && tab === "anios" && conteos.anios.map(a => (
+                  {conteos && !conteosError && tab === "anios" && aniosLista.map(a => (
                     <ItemFiltro key={a.anio} label={String(a.anio)} count={a.n} activo={f.anio === a.anio} onClick={() => poner("anio", a.anio)} />))}
-                  {conteos && tab === "estado" && ["borrador", "revision", "completo"].map(k => (
+                  {conteos && !conteosError && tab === "estado" && ["borrador", "revision", "completo"].map(k => (
                     <ItemFiltro key={k} label={ELABELS[k]} count={conteos.estados?.[k] || 0} activo={f.estado === k} onClick={() => poner("estado", k)} />))}
                 </div>
               </div>
@@ -285,14 +363,14 @@ export function ExploradorScreen({ onGo }) {
             </div>
             <Segmentado etiqueta="Mostrar" valor={vista} onCambiar={cambiarVista} opciones={[["documentos", "Documentos"], ["expedientes", "Expedientes"]]} />
             {vista === "expedientes" && (
-              <button type="button" onClick={() => setModalNuevo(true)} style={btnPrimario}>Nuevo expediente</button>
+              <button type="button" onClick={() => setModalNuevo(true)} style={{ ...btnSecundario, padding: "8px 14px" }}>Nuevo expediente</button>
             )}
           </div>
           {interpretacion && <div aria-live="polite" style={{ fontSize: 12, color: C.ceruleanText, marginTop: -6 }}>{interpretacion.texto}</div>}
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", minHeight: 28 }}>
             {vista === "documentos" && (
-              <span aria-label="Ruta" style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginRight: 6 }}>{rutaVisible(f, nombres)}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: C.dark, marginRight: 6 }}>{rutaVisible(f, nombres)}</span>
             )}
             {etiquetas.map(e => (
               <button key={e.clave} type="button" onClick={() => quitar(e.clave)} aria-label={"Quitar filtro " + e.label}
@@ -312,7 +390,8 @@ export function ExploradorScreen({ onGo }) {
             )}
           </div>
 
-          <div style={{ flex: 1, minHeight: 0, background: C.porcelain, borderRadius: R.lg, border: "1px solid rgba(26,35,50,.08)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div aria-busy={vista === "documentos" ? res.estado === "cargando" : exps.estado === "cargando"}
+               style={{ flex: 1, minHeight: 0, background: C.porcelain, borderRadius: R.lg, border: "1px solid rgba(26,35,50,.08)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {vista === "documentos" ? (
               <TablaDocumentos res={res} sel={sel} onSel={id => setSel({ tipo: "doc", id })} orden={orden}
                 onOrden={() => setOrden(o => (o === "fecha_desc" ? "fecha_asc" : "fecha_desc"))}
@@ -322,14 +401,17 @@ export function ExploradorScreen({ onGo }) {
                 hayFiltros={!!(f.estado || qInput.trim())} onBorrar={borrarTodo} onReintentar={cargarExps} />
             )}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderTop: "1px solid rgba(26,35,50,.08)" }}>
-              <span style={{ fontSize: 12, color: C.faint, fontVariantNumeric: "tabular-nums" }}>
+              <span aria-live="polite" style={{ fontSize: 12, color: C.faint, fontVariantNumeric: "tabular-nums" }}>
                 {vista === "documentos"
                   ? (res.estado === "ok" ? `Mostrando ${formatoCantidad(res.filas.length)} de ${formatoCantidad(res.total)}` : " ")
                   : (exps.estado === "ok" ? `Mostrando ${formatoCantidad(expsFiltrados.length)} de ${formatoCantidad(exps.lista.length)}` : " ")}
               </span>
-              {vista === "documentos" && res.estado === "ok" && res.filas.length < res.total && (
-                <button type="button" onClick={verMas} disabled={masCargando} style={btnSecundario}>{masCargando ? "Trayendo más…" : "Ver más"}</button>
-              )}
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {avisoMas && <span role="alert" style={{ fontSize: 12, color: C.danger }}>{avisoMas}</span>}
+                {vista === "documentos" && res.estado === "ok" && res.filas.length < res.total && (
+                  <button type="button" onClick={verMas} disabled={masCargando} style={btnSecundario}>{masCargando ? "Trayendo más…" : "Ver más"}</button>
+                )}
+              </span>
             </div>
           </div>
         </main>
@@ -345,7 +427,7 @@ export function ExploradorScreen({ onGo }) {
             <DetalleDocumento key={sel.id} fila={res.filas.find(x => x.documento_id === sel.id)} onGo={onGo}
               onClasificado={(id, clase) => {
                 setRes(r => ({ ...r, filas: r.filas.map(x => x.documento_id === id ? { ...x, clase, clase_origen: "documento" } : x) }));
-                supabase.rpc("explorador_conteos", { p_filtros: JSON.parse(claveFiltros) }).then(({ data, error }) => { if (!error) setConteos(data); });
+                recontar();
               }} />
           )}
           {sel?.tipo === "exp" && (
