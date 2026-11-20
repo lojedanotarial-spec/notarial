@@ -8,6 +8,7 @@ import { Btn }   from "../ui/Btn";
 import { Fg, Warn } from "../ui/FormElements";
 
 import { nombreDeMiembro, escribanoDesdeMiembro } from "../../utils/escribano";
+import { ETIQUETA_CLASE, plantillaDefine } from "../../utils/protocolo";
 export function ModalEscribano({ escribano, onApply, onClose }) {
   const { miembros: ctxMiembros, registroActivo } = useAuth();
   const [miembros, setMiembros] = useState(ctxMiembros);
@@ -107,13 +108,66 @@ export function ModalInstrumento({ instrumento, onApply, onClose }) {
   );
 }
 
-export function ModalProtocolo({ protocolo, onApply, onClose }) {
+// Opción de Protocolo con radio real (teclado y lector de pantalla funcionan solos).
+function OpcionProtocolo({ name, value, elegido, onElegir, titulo, detalle }) {
+  const on = elegido === value;
+  return (
+    <label style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"10px 12px", borderRadius:8, cursor:"pointer",
+                    border:"1px solid " + (on ? C.cerulean : C.borderStrong), background: on ? C.ceruleanLight : C.porcelain }}>
+      <input type="radio" name={name} value={value} checked={on} onChange={() => onElegir(value)}
+             style={{ marginTop:2, accentColor: C.cerulean }} />
+      <span style={{ display:"flex", flexDirection:"column", gap:2 }}>
+        <span style={{ fontSize:13, fontWeight:600, color:C.dark }}>{titulo}</span>
+        <span style={{ fontSize:12, color:C.faint }}>{detalle}</span>
+      </span>
+    </label>
+  );
+}
+
+// clase: "P" | "NP" | null (según la plantilla). catalogo: { nombre, clase_defecto, fundamento } | null.
+export function ModalProtocolo({ protocolo, onApply, onClose, clase = null, catalogo = null, onClase }) {
   const [d, setD] = useState({ ...protocolo });
   const upd = (f, v) => setD(x => ({ ...x, [f]: v }));
+  const define = plantillaDefine(catalogo?.clase_defecto);
+  // "" = según la plantilla; null = sin elegir (solo cuando la plantilla admite las dos formas).
+  const [eleccion, setEleccion] = useState(clase === "P" || clase === "NP" ? clase : (define ? "" : null));
+  const resultado = eleccion === "" ? catalogo?.clase_defecto : eleccion;
+  const textoResultado = ETIQUETA_CLASE[resultado] || ETIQUETA_CLASE.sin_definir;
+
+  function aplicar() {
+    onApply(d);
+    onClase?.(eleccion === "P" || eleccion === "NP" ? eleccion : null);
+    onClose();
+  }
+
   return (
     <Modal title="Protocolo" onClose={onClose}
-           footer={<><Btn onClick={onClose}>Cancelar</Btn>
-                      <Btn primary onClick={() => { onApply(d); onClose(); }}>Aplicar</Btn></>}>
+           footer={<>
+             <span aria-live="polite" style={{ marginRight:"auto", alignSelf:"center", fontSize:12, color:C.faint }}>
+               En el Explorador va a figurar como: <b style={{ color:C.dark }}>{textoResultado}</b>
+             </span>
+             <Btn onClick={onClose}>Cancelar</Btn>
+             <Btn primary onClick={aplicar}>Aplicar</Btn></>}>
+      <fieldset style={{ margin:0, padding:"12px 14px 14px", border:"1px solid " + C.ceruleanMid, borderRadius:12,
+                         display:"flex", flexDirection:"column", gap:8 }}>
+        <legend style={{ padding:"0 6px", fontSize:12, fontWeight:600, color:C.dark }}>¿Protocolar o extraprotocolar?</legend>
+        {define ? (
+          <OpcionProtocolo name="clase" value="" elegido={eleccion} onElegir={setEleccion}
+            titulo={"Según la plantilla: " + ETIQUETA_CLASE[catalogo.clase_defecto]}
+            detalle={[catalogo.nombre, catalogo.fundamento].filter(Boolean).join(" · ") + ". Es lo que corresponde casi siempre."} />
+        ) : (
+          <Warn>
+            {catalogo
+              ? "Esta plantilla admite las dos formas" + (catalogo.fundamento ? " (" + catalogo.fundamento + ")" : "") + ". Elegí cómo vas a hacer este documento."
+              : "Elegí cómo vas a hacer este documento."}{" "}
+            Si no elegís, en el Explorador queda «Sin definir».
+          </Warn>
+        )}
+        <OpcionProtocolo name="clase" value="P" elegido={eleccion} onElegir={setEleccion}
+          titulo="Protocolar" detalle={define ? "Solo si este documento en particular se hace en el protocolo." : "Se extiende en el protocolo y queda como matriz."} />
+        <OpcionProtocolo name="clase" value="NP" elegido={eleccion} onElegir={setEleccion}
+          titulo="Extraprotocolar" detalle={define ? "Lo mismo que la plantilla, pero elegido a mano." : "Se entrega en original; en la escribanía queda la copia de trabajo."} />
+      </fieldset>
       <Fg label="Nombre del libro">
         <select style={inp} value={d.libro} onChange={e => upd("libro", e.target.value)}>
           <option>Libro de Protocolo de Actas de Requerimientos para Certificaciones de Firmas e Impresiones Digitales</option>

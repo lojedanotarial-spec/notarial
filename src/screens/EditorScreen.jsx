@@ -32,6 +32,7 @@ import { escribanoDesdeMiembro } from "../utils/escribano";
 import { subirDocxOO } from "../utils/ooDocs";
 import { useDocumentoOO } from "../hooks/useDocumentoOO";
 import { aplicarCapturaAPartes, aplicarCapturaAVehiculos } from "../utils/capturaAplicar";
+import { actoNormalizado, claseEfectiva, ETIQUETA_CLASE } from "../utils/protocolo";
 const ONLYOFFICE_URL = "https://onlyoffice.notarial.lat";
 
 // Etiquetas contextuales por template — se muestran en el panel de partes cuando no hay rol asignado
@@ -144,6 +145,11 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   const [templateNombre,setTemplateNombre]= useState("");
   const [fecha,         setFecha]         = useState(() => params?.fecha ?? FECHA_HOY());
   const [protocolo,   setProtocolo]   = useState(PROTOCOLO_INI);
+  // Protocolo elegido a mano (Protocolar "P" / Extraprotocolar "NP"); null = según la plantilla. Spec archivo-legal-y-explorador T3.
+  const [clase,       setClase]       = useState(null);
+  // En un documento existente no se manda la clase hasta leerla: si no, un guardado temprano borraría lo elegido.
+  const [claseLista,  setClaseLista]  = useState(!params?.docId);
+  const [catalogoActo, setCatalogoActo] = useState(null); // { nombre, clase_defecto, fundamento } de actos_catalogo
   const [instrumento, setInstrumento] = useState(INSTRUMENTO_INI);
 
   const { usuario } = useAuth();
@@ -166,6 +172,16 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
   }); // {VARIABLE_NAME: valor}
   const [clausulasDisponibles, setClausulasDisponibles] = useState([]); // [{slug, titulo, descripcion, contenido, variables_json}] de clausulas_biblioteca para este template
   const [clausulasActivas,     setClausulasActivas]     = useState([]); // [{slug, valores}]
+
+  // Clase por defecto de la plantilla (actos_catalogo). Si no se puede leer, el modal Protocolo pide elegir a mano.
+  useEffect(() => {
+    let vigente = true;
+    supabase.from("actos_catalogo").select("nombre, clase_defecto, fundamento")
+      .eq("codigo", actoNormalizado(templateSlug, templateKey)).maybeSingle()
+      .then(({ data }) => { if (vigente) setCatalogoActo(data || null); });
+    return () => { vigente = false; };
+  }, [templateSlug, templateKey]);
+  const protocoloEfectivo = claseEfectiva(clase, catalogoActo?.clase_defecto);
 
   // Cargar nombre, contenido y variables_json del template desde Supabase
   useEffect(() => {
@@ -333,6 +349,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       if (data.template_key) setTemplateKey(data.template_key);
       if (data.template_id)  setTemplateId(data.template_id);
       if (data.tipo_acto)    setTemplateSlug(data.tipo_acto);
+      setClase(data.clase === "P" || data.clase === "NP" ? data.clase : null);
+      setClaseLista(true);
 
       // Documento libre (sin template_id): el cuerpo/esquema/valores viven en el propio jsonb
       if (!data.template_id && c.templateContenidoLibre) {
@@ -613,6 +631,7 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
     clausulas: clausulasActivas,
     documentKey,
     tieneEdicionesManuales: hasOoEdits,
+    clase: claseLista ? clase : undefined,
     registroNumero: miUsuario?.registro || registroActivo,
     usuarioId: usuario?.id,
     initialDocId: params?.docId,
@@ -822,6 +841,10 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.dark }}>Libro {protocolo.nroLibro || "—"}</div>
                 <div style={{ fontSize: 12, color: protocolo.nroActa ? "rgba(26,35,50,.5)" : "#c0392b", fontWeight: protocolo.nroActa ? 400 : 600, marginTop: 2 }}>
                   Acta n&ordm; {protocolo.nroActa || "pendiente"}
+                </div>
+                <div style={{ fontSize: 12, marginTop: 2, fontWeight: protocoloEfectivo.clase === "sin_definir" ? 600 : 400,
+                              color: protocoloEfectivo.clase === "sin_definir" ? C.warnText : C.faint }}>
+                  {ETIQUETA_CLASE[protocoloEfectivo.clase]}
                 </div>
               </PanelSection>
 
@@ -1033,7 +1056,8 @@ export function EditorScreen({ onGo, params = {}, onScribaContexto }) {
       )}
       {modal === "escribano"   && <ModalEscribano   escribano={escribano}     onApply={applyAndGen(setEscribano)}   onClose={() => setModal(null)}/>}
       {modal === "instrumento" && <ModalInstrumento instrumento={instrumento} onApply={applyAndGen(setInstrumento)} onClose={() => setModal(null)}/>}
-      {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={applyAndGen(setProtocolo)}   onClose={() => setModal(null)}/>}
+      {modal === "protocolo"   && <ModalProtocolo   protocolo={protocolo}     onApply={applyAndGen(setProtocolo)}   onClose={() => setModal(null)}
+                                                    clase={clase} catalogo={catalogoActo} onClase={setClase}/>}
       {modal === "fecha"       && <ModalFecha       fecha={fecha}             onApply={applyAndGen(setFecha)}       onClose={() => setModal(null)}/>}
       {modal === "formato"     && <ModalFormato
         estilos={estilos}

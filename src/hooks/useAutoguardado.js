@@ -3,7 +3,8 @@ import { supabase } from "../supabase";
 
 const DEBOUNCE = 2000;
 
-export function useAutoguardado({ titulo, estado, contenido, templateKey, templateId, tipoActo, clausulas, documentKey, tieneEdicionesManuales, registroNumero, usuarioId, initialDocId }) {
+// clase: Protocolo elegido a mano ("P" Protocolar | "NP" Extraprotocolar | null = según la plantilla). undefined = no tocarlo.
+export function useAutoguardado({ titulo, estado, contenido, templateKey, templateId, tipoActo, clausulas, documentKey, tieneEdicionesManuales, clase, registroNumero, usuarioId, initialDocId }) {
   const [docId,          setDocId]          = useState(initialDocId || null);
   const [guardando,      setGuardando]      = useState(false);
   const [ultimoGuardado, setUltimoGuardado] = useState(null);
@@ -32,6 +33,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
       ...(tipoActo      ? { tipo_acto:    tipoActo    } : {}),
       ...(documentKey   ? { document_key: documentKey } : {}),
       ...(tieneEdicionesManuales !== undefined ? { tiene_ediciones_manuales: tieneEdicionesManuales } : {}),
+      ...(clase !== undefined ? { clase: clase === "P" || clase === "NP" ? clase : null } : {}),
       clausulas:    clausulas || [],
       registro_id:  registroNumero,
       usuario_id:   usuarioId,
@@ -66,12 +68,12 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
     } finally {
       setGuardando(false);
     }
-  }, [docId, titulo, estado, contenido, registroNumero, usuarioId, templateKey, tipoActo, clausulas, documentKey, tieneEdicionesManuales]);
+  }, [docId, titulo, estado, contenido, registroNumero, usuarioId, templateKey, tipoActo, clausulas, documentKey, tieneEdicionesManuales, clase]);
 
   // Debounce — guarda 2s después del último cambio
   useEffect(() => {
     if (!registroNumero || !usuarioId) return;
-    const serializado = JSON.stringify({ titulo, estado, contenido, clausulas, documentKey, tieneEdicionesManuales });
+    const serializado = JSON.stringify({ titulo, estado, contenido, clausulas, documentKey, tieneEdicionesManuales, clase });
     if (serializado === prevRef.current) return;
     prevRef.current = serializado;
 
@@ -80,7 +82,7 @@ export function useAutoguardado({ titulo, estado, contenido, templateKey, templa
     timerRef.current = setTimeout(() => guardar(), DEBOUNCE);
 
     return () => clearTimeout(timerRef.current);
-  }, [titulo, estado, contenido, clausulas, documentKey, tieneEdicionesManuales, guardar, registroNumero, usuarioId]);
+  }, [titulo, estado, contenido, clausulas, documentKey, tieneEdicionesManuales, clase, guardar, registroNumero, usuarioId]);
 
   // Guardar al cerrar la pestaña — listener estable (ref), no se re-registra
   const guardarRef = useRef(guardar);
