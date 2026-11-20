@@ -7,13 +7,7 @@ import ArchivosEscribania from "../components/ArchivosEscribania";
 import PersonasExpediente from "../components/personas/PersonasExpediente";
 import { listarArchivos } from "../utils/driveApi";
 import { listarLibreta, listarPersonasDelExpediente } from "../utils/personasCliente";
-
-const ESTADOS = [
-  { key: "abierto",    label: "Abierto",    color: "#3a7ca5" },
-  { key: "en_tramite", label: "En trámite", color: "#c9a961" },
-  { key: "completado", label: "Completado", color: "#27ae60" },
-  { key: "archivado",  label: "Archivado",  color: "rgba(26,35,50,.4)" },
-];
+import { ESTADOS_ELEGIBLES, infoEstado } from "../utils/estadosExpediente";
 
 function Tag({ children, color = C.cerulean }) {
   return (
@@ -124,7 +118,9 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   useEffect(() => { if (expedienteId) cargar(); }, [expedienteId]); // eslint-disable-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
 
   async function cambiarEstado(nuevoEstado) {
-    await supabase.from("expedientes").update({ estado: nuevoEstado }).eq("id", expedienteId);
+    const { error } = await supabase.from("expedientes").update({ estado: nuevoEstado }).eq("id", expedienteId);
+    // Si no se guardó, el selector vuelve solo al estado anterior: nunca mostrar algo que no quedó en la base.
+    if (error) { console.error("[expediente] no se pudo cambiar el estado:", error); return; }
     setExpediente(prev => ({ ...prev, estado: nuevoEstado }));
   }
 
@@ -169,7 +165,11 @@ export function ExpedienteDetailScreen({ onGo, params }) {
   if (cargando) return <div style={{ padding: 40, color: C.muted }}>Cargando...</div>;
   if (!expediente) return <div style={{ padding: 40 }}>Expediente no encontrado.</div>;
 
-  const stateInfo = ESTADOS.find(e => e.key === expediente.estado) || ESTADOS[0];
+  // Un estado que no se elige a mano (Cerrado) o uno viejo se muestra como opción fija, sin poder volver a elegirlo.
+  const estadoActual = infoEstado(expediente.estado);
+  const opcionesEstado = ESTADOS_ELEGIBLES.some(e => e.key === expediente.estado)
+    ? ESTADOS_ELEGIBLES
+    : [{ ...estadoActual, fija: true }, ...ESTADOS_ELEGIBLES];
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#f5f2ed" }}>
@@ -183,9 +183,13 @@ export function ExpedienteDetailScreen({ onGo, params }) {
           {expediente.nombre}
         </span>
         {/* Selector de estado */}
-        <select value={expediente.estado} onChange={e => cambiarEstado(e.target.value)}
-          style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: stateInfo.color + "22", color: stateInfo.color, fontFamily: "'Montserrat',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>
-          {ESTADOS.map(e => <option key={e.key} value={e.key}>{e.label}</option>)}
+        {/* Un expediente cerrado no se reabre desde acá: reabrir pide motivo (decisión pendiente, diseno-ux.md §7). */}
+        <select value={expediente.estado} onChange={e => cambiarEstado(e.target.value)} aria-label="Estado del expediente"
+          disabled={!!estadoActual.soloPorCierre}
+          style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid rgba(253,252,250,.35)", background: "rgba(253,252,250,.08)", color: "#FDFCFA", fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
+          {opcionesEstado.map(e => (
+            <option key={e.key} value={e.key} disabled={e.fija} style={{ color: C.dark }}>{e.label}</option>
+          ))}
         </select>
       </div>
 

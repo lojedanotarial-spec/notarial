@@ -4,30 +4,14 @@ import { supabase } from "../supabase";
 import { useAuth } from "../context/AuthContext";
 import ConfirmarEliminarExpediente from "../components/ConfirmarEliminarExpediente";
 import { contarArchivos } from "../utils/driveApi";
+import { ESTADOS_EXPEDIENTE, ESTADO_INICIAL } from "../utils/estadosExpediente";
+import { InsigniaEstado } from "../components/ui/InsigniaEstado";
 
 const TrashIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c0392b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
   </svg>
 );
-
-const ESTADOS = [
-  { key: "abierto",     label: "Abierto",     color: "#3a7ca5", bg: "rgba(58,124,165,.1)" },
-  { key: "en_tramite",  label: "En trámite",  color: "#c9a961", bg: "rgba(201,169,97,.15)" },
-  { key: "completado",  label: "Completado",  color: "#27ae60", bg: "rgba(39,174,96,.1)" },
-  { key: "archivado",   label: "Archivado",   color: "rgba(26,35,50,.4)", bg: "rgba(26,35,50,.06)" },
-];
-
-function BadgeEstado({ estado }) {
-  const st = ESTADOS.find(e => e.key === estado) || ESTADOS[0];
-  return (
-    <span style={{
-      fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
-      color: st.color, background: st.bg, fontFamily: "'Montserrat',sans-serif",
-      letterSpacing: ".04em", textTransform: "uppercase",
-    }}>{st.label}</span>
-  );
-}
 
 function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
   const [nombre, setNombre] = useState("");
@@ -48,7 +32,7 @@ function ModalNuevoExpediente({ onCrear, onClose, registroId, userId }) {
       nombre: nombre.trim(),
       registro_id: registroId || null,
       usuario_id: userId || null,
-      estado: "abierto",
+      estado: ESTADO_INICIAL,
     }).select().single();
     setGuardando(false);
     if (!error) { onCrear(data); onClose(); }
@@ -132,7 +116,7 @@ function FilaExpediente({ exp, onOpen, onDelete }) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-          <BadgeEstado estado={exp.estado} />
+          <InsigniaEstado estado={exp.estado} />
           <button
             className="trash-btn"
             onClick={e => { e.stopPropagation(); onDelete(exp); }}
@@ -226,7 +210,11 @@ export function ExpedientesScreen({ onGo, registroActivo, miUsuario }) {
           <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(26,35,50,.45)", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 4 }}>
             Estado
           </div>
-          {[{ key: "", label: "Todos", count: expedientes.length }, ...ESTADOS.map(e => ({ ...e, count: expedientes.filter(x => x.estado === e.key).length }))].map(e => (
+          {[{ key: "", label: "Todos", count: expedientes.length },
+            ...ESTADOS_EXPEDIENTE
+              .map(e => ({ ...e, count: expedientes.filter(x => x.estado === e.key).length }))
+              // «Cerrado» solo aparece cuando exista el cierre y haya alguno: un filtro siempre en 0 es ruido.
+              .filter(e => !e.soloPorCierre || e.count > 0)].map(e => (
             <div key={e.key} onClick={() => setFiltroEstado(e.key)}
               style={{
                 padding: "6px 10px", borderRadius: 7, cursor: "pointer", fontSize: 13,
