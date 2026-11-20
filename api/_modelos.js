@@ -9,11 +9,12 @@ export const MODELOS = {
   // en segundos; Opus 5.5 redactó una cláusula sin pasar por leer_template_base y tardó 41 s.
   scriba: "claude-sonnet-5-5",
 
-  // Lectura de DNI, tarjeta verde, licencias, partidas. Volumen bajísimo (unas pocas imágenes por día)
-  // y el error sale caro (un número o una fecha mal leídos), así que va con el más capaz de la
-  // generación. Opus 5.5 rinde ~10 puntos más que Sonnet 5.5 en ParseBench (un solo agregador:
-  // tomarlo como indicio, no como prueba). Revisar con fotos reales (ver BACKLOG).
-  vision: "claude-opus-5-5",
+  // Lectura de DNI, tarjeta verde, licencias, partidas. Volumen bajísimo (unas pocas imágenes por día) y el error sale caro
+  // (un número o una fecha mal leídos). Hasta el 19/11/26 usaba Opus 5.5; ese día Lucas pidió pasar a Sonnet 5.5 porque tardaba
+  // demasiado. Medido con 5 fotos oficiales de muestra (fotos_prueba/oficiales, incluidas 2 con reflejo y borrosas): Sonnet leyó
+  // exactamente lo mismo que Opus y tardó 3-8 s contra 6-9 s. Sin probar con fotos reales de celular: ver BACKLOG.
+  // Para volver a comparar modelos sin tocar producción: `extraerDocumento(imagenes, { modelo })` en api/vision.js.
+  vision: "claude-sonnet-5-5",
 
   // Resumen nocturno de conversaciones. Es texto → texto, no necesita más.
   aprendizaje: "claude-sonnet-5-5",
